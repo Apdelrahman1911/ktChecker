@@ -3,6 +3,7 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtensi
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.StandardCopyOption
+import java.util.Locale
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
 
@@ -92,7 +93,10 @@ extensions.configure<KotlinMultiplatformAndroidComponentsExtension> {
         boundLintVariant = variant.name
         val selectedReport = variant.artifacts.get(SingleArtifact.LINT_XML_REPORT)
         val retainedReport = layout.buildDirectory.file("reports/lint-results.xml")
-        val reportTaskName = variant.computeTaskName("lintReport", "")
+        // AGP 9.3.1's producer uses its internal prefix + capitalized variant
+        // name form. The public action/subject API rejects a blank subject and
+        // adding a subject would instead name a different task.
+        val reportTaskName = "lintReport${variant.name.replaceFirstChar { it.toString().uppercase(Locale.US) }}"
         var reportPrepared = false
         val retainReport = tasks.register("retainFixtureLintReport") {
             group = "verification"

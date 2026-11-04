@@ -10,6 +10,7 @@ import ast
 from collections import Counter
 from contextlib import ExitStack, contextmanager, redirect_stderr, redirect_stdout
 import copy
+import hashlib
 import io
 import json
 import os
@@ -35,14 +36,115 @@ IDENTITY = {"commit": "1" * 40, "dirty": False, "file_count": 100,
 CONTEXT = {"run_id": "1234", "run_attempt": "1", "job": "synthetic_native_controls"}
 PRIVATE = "PRIVATE hostile diagnostic, source excerpt, /private/owner/path, token=not-a-secret"
 FAKE_SIGCHLD, FAKE_SIGTERM, FAKE_SIGKILL = 20, 15, 9
+STAMP_FIELDS = ("st_dev", "st_ino", "st_mode", "st_nlink", "st_size", "st_mtime_ns", "st_ctime_ns")
 
 
-def synthetic_posix_os(**overrides):
-    """Real owned-fixture file IO, explicit fake wait capabilities, no host process API."""
+class SyntheticPosixFixtureIO:
+    """Owned real fixture bytes with explicitly SYNTHETIC POSIX handle stamps.
+
+    Windows path/CRT descriptor stats need not describe identical POSIX fields.
+    An opened read handle therefore retains the path-stat captured at open ONLY
+    while every actual handle-stat field and its actual byte fingerprint remain
+    unchanged. Mutation produces a synthetic ctime change witness. Replacement
+    never refreshes the opened identity from a later path lookup: the collector's
+    separate final real path-stat check must still reject a changed path.
+
+    This is fake filesystem physics, not Windows/POSIX handle-identity evidence.
+    All descriptor IO is binary, confined to the declared fresh owned root, and
+    accounted for until close. No process API is provided by this object.
+    """
+
+    def __init__(self, root):
+        self.root = Path(root).resolve(strict=True) if root is not None else None
+        self.opened = {}
+        self.binary_flag = getattr(os, "O_BINARY", 0)
+        self.host = SimpleNamespace(**{name: getattr(os, name) for name in (
+            "open", "close", "fstat", "read", "write", "lseek", "ftruncate", "fsync", "access", "readlink", "walk")})
+
+    def owned_path(self, value):
+        path = Path(value)
+        if self.root is None or not path.is_absolute() or ".." in path.parts \
+                or not path.is_relative_to(self.root) or path.resolve(strict=False) != path:
+            raise AssertionError("No unowned or aliased fixture IO authorized")
+        return path
+
+    def owned_fd(self, fd):
+        if type(fd) is not int or fd not in self.opened:
+            raise AssertionError("No unowned fixture descriptor IO authorized")
+        return self.opened[fd]
+
+    def fingerprint(self, fd):
+        self.owned_fd(fd)
+        position = self.host.lseek(fd, 0, os.SEEK_CUR)
+        try:
+            self.host.lseek(fd, 0, os.SEEK_SET)
+            digest, total = hashlib.sha256(), 0
+            while True:
+                part = self.host.read(fd, 65_536)
+                if not part:
+                    return digest.digest()
+                total += len(part)
+                if total > checks.MAX_FILE:
+                    raise AssertionError("Synthetic owned fixture byte bound exceeded")
+                digest.update(part)
+        finally:
+            self.host.lseek(fd, position, os.SEEK_SET)
+
+    def open(self, value, flags, mode=0o777):
+        path = self.owned_path(value)
+        fd = self.host.open(path, flags | self.binary_flag, mode)
+        try:
+            read_only = (flags & (os.O_WRONLY | os.O_RDWR)) == os.O_RDONLY
+            self.opened[fd] = SimpleNamespace(path_stat=path.lstat(), host_stamp=checks.stamp(self.host.fstat(fd)),
+                                             fingerprint=None)
+            if read_only:
+                self.opened[fd].fingerprint = self.fingerprint(fd)
+        except BaseException:
+            self.host.close(fd)
+            self.opened.pop(fd, None)
+            raise
+        return fd
+
+    def fstat(self, fd):
+        opened = self.owned_fd(fd)
+        changed = checks.stamp(self.host.fstat(fd)) != opened.host_stamp
+        if opened.fingerprint is not None:
+            changed = self.fingerprint(fd) != opened.fingerprint or changed
+        if not changed:
+            return opened.path_stat
+        witness = {name: getattr(opened.path_stat, name) for name in STAMP_FIELDS}
+        witness["st_ctime_ns"] += 1  # Explicit fake POSIX change witness, not a host timestamp claim.
+        return SimpleNamespace(**witness)
+
+    def close(self, fd):
+        self.owned_fd(fd)
+        self.host.close(fd)
+        del self.opened[fd]
+
+    def descriptor_io(self, name, fd, *args):
+        self.owned_fd(fd)
+        return getattr(self.host, name)(fd, *args)
+
+    def assert_closed(self):
+        remaining = list(self.opened)
+        for fd in remaining:
+            self.close(fd)
+        if remaining:
+            raise AssertionError("Synthetic fixture leaked owned descriptors")
+
+
+def synthetic_posix_os(root=None, **overrides):
+    """Explicit fake process capabilities plus declared owned-fixture IO only."""
     filesystem = ("O_CREAT", "O_EXCL", "O_RDONLY", "O_WRONLY", "O_NOFOLLOW", "SEEK_SET", "X_OK",
-                  "access", "close", "environ", "fsdecode", "fsencode", "fstat", "fsync", "ftruncate",
-                  "lseek", "open", "read", "readlink", "stat_result", "walk", "write")
+                  "environ", "fsdecode", "fsencode", "stat_result")
     values = {name: getattr(os, name) for name in filesystem if hasattr(os, name)}
+    fixture_io = SyntheticPosixFixtureIO(root)
+    values.update(open=fixture_io.open, close=fixture_io.close, fstat=fixture_io.fstat, fixture_io=fixture_io,
+                  access=lambda value, mode: fixture_io.host.access(fixture_io.owned_path(value), mode),
+                  readlink=lambda value: fixture_io.host.readlink(fixture_io.owned_path(value)),
+                  walk=lambda value, **kwargs: fixture_io.host.walk(fixture_io.owned_path(value), **kwargs))
+    for name in ("read", "write", "lseek", "ftruncate", "fsync"):
+        values[name] = lambda fd, *args, name=name: fixture_io.descriptor_io(name, fd, *args)
 
     def no_process(*args, **kwargs):
         raise AssertionError("Unconfigured synthetic process API; no real process authorized")
@@ -194,8 +296,10 @@ class Fixture:
 
     @contextmanager
     def context(self):
+        facade = synthetic_posix_os(self.root)
         with ExitStack() as stack:
-            stack.enter_context(patch.object(checks, "os", synthetic_posix_os()))
+            stack.callback(facade.fixture_io.assert_closed)
+            stack.enter_context(patch.object(checks, "os", facade))
             stack.enter_context(patch.object(checks, "signal", synthetic_posix_signal()))
             stack.enter_context(patch.object(checks.platform, "system", return_value="Darwin"))
             stack.enter_context(patch.object(checks.platform, "machine", return_value="arm64"))
@@ -300,13 +404,236 @@ class Fixture:
         return result
 
 
+class SyntheticPosixFixtureIOTests(unittest.TestCase):
+    """Portable fake-physics controls, never real Windows/POSIX identity evidence."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve(strict=True)
+        self.facade = synthetic_posix_os(self.root)
+        self.addCleanup(self.facade.fixture_io.assert_closed)
+
+    @staticmethod
+    def stat_model(info, **changes):
+        values = {name: getattr(info, name) for name in STAMP_FIELDS}
+        values.update(changes)
+        return SimpleNamespace(**values)
+
+    def test_binary_flag_routes_read_and_write_descriptors_and_preserves_exact_bytes(self):
+        raw = b"first\r\nsecond\n\x1aafter-control-z\n"
+        path = self.root / "input"
+        write(path, raw)
+        real_open, actual_binary = os.open, getattr(os, "O_BINARY", 0)
+        fake_binary, recorded = actual_binary or (1 << 29), []
+
+        def binary_open(value, flags, mode=0o777):
+            recorded.append(flags)
+            # The flag-routing fake strips only its invented POSIX-host bit.
+            return real_open(value, (flags & ~fake_binary) | actual_binary, mode)
+
+        with patch.object(os, "O_BINARY", fake_binary, create=True), patch.object(os, "open", side_effect=binary_open):
+            facade = synthetic_posix_os(self.root)
+            with patch.object(checks, "os", facade):
+                self.assertEqual(pin(path), checks.file_pin(path, checks.Budget.start(30)))
+                self.assertEqual(raw, checks.bounded_read(path, checks.Budget.start(30), len(raw)))
+                output = self.root / "output"
+                fd = facade.open(output, facade.O_WRONLY | facade.O_CREAT | facade.O_EXCL, 0o600)
+                try:
+                    self.assertEqual(len(raw), facade.write(fd, raw))
+                    facade.fsync(fd)
+                finally:
+                    facade.close(fd)
+            facade.fixture_io.assert_closed()
+        self.assertEqual(raw, output.read_bytes())
+        self.assertEqual(3, len(recorded))
+        self.assertTrue(all(flags & fake_binary for flags in recorded))
+
+    def test_explicit_synthetic_crt_stat_difference_maps_only_unchanged_opened_bytes(self):
+        path = self.root / "input"
+        raw = b"inert exact enrolled fixture bytes\r\n\x1aend\n"
+        write(path, raw)
+        actual_fstat = self.facade.fixture_io.host.fstat
+
+        def crt_model(fd):
+            info = actual_fstat(fd)
+            return self.stat_model(info, st_dev=info.st_dev + 11, st_ino=info.st_ino + 13,
+                                   st_mtime_ns=info.st_mtime_ns // 1_000_000_000 * 1_000_000_000, st_ctime_ns=0)
+
+        with patch.object(self.facade.fixture_io.host, "fstat", side_effect=crt_model), patch.object(checks, "os", self.facade):
+            self.assertEqual(pin(path), checks.file_pin(path, checks.Budget.start(30)))
+            self.assertEqual(raw, checks.bounded_read(path, checks.Budget.start(30), len(raw)))
+        self.assertEqual({}, self.facade.fixture_io.opened)
+
+    def test_undeclared_root_aliased_path_and_unknown_fds_never_delegate_io(self):
+        outside = self.root.parent / "not-owned-synthetic-input"
+        aliased = self.root / ".." / self.root.name / "input"
+        no_root = synthetic_posix_os()
+        with patch.object(self.facade.fixture_io.host, "open") as opened, patch.object(no_root.fixture_io.host, "open") as undeclared:
+            for facade, path in ((self.facade, outside), (self.facade, aliased), (no_root, self.root / "input")):
+                with self.subTest(path_kind="owned" if facade is no_root else "outside-or-alias"), \
+                        self.assertRaisesRegex(AssertionError, "No unowned or aliased fixture IO"):
+                    facade.open(path, os.O_RDONLY)
+            opened.assert_not_called()
+            undeclared.assert_not_called()
+        with ExitStack() as stack:
+            host_calls = [stack.enter_context(patch.object(self.facade.fixture_io.host, name))
+                          for name in ("fstat", "read", "write", "lseek", "ftruncate", "fsync", "close")]
+            for name, args in (("fstat", ()), ("read", (1,)), ("write", (b"x",)), ("lseek", (0, os.SEEK_SET)),
+                               ("ftruncate", (0,)), ("fsync", ()), ("close", ())):
+                with self.subTest(name=name), self.assertRaisesRegex(AssertionError, "No unowned fixture descriptor IO"):
+                    getattr(self.facade, name)(123456, *args)
+            with self.assertRaisesRegex(AssertionError, "No unowned fixture descriptor IO"):
+                self.facade.fixture_io.fingerprint(123456)
+            for call in host_calls:
+                call.assert_not_called()
+
+    def test_same_size_restored_mtime_byte_mutation_during_read_still_changes_stamp(self):
+        for operation in ("file_pin", "bounded_read"):
+            with self.subTest(operation=operation):
+                path = self.root / operation
+                write(path, b"A" * 32)
+                before = path.stat()
+                facade = synthetic_posix_os(self.root)
+                actual_fstat, actual_read = facade.fixture_io.host.fstat, facade.read
+                held_stat, mutated, observed_stamps = [], [False], []
+
+                def fixed_host_stat(fd):
+                    if not held_stat:
+                        held_stat.append(actual_fstat(fd))
+                    return held_stat[0]  # Explicit lossy host-stat model; bytes must still witness mutation.
+
+                def mutate_after_read(fd, size):
+                    part = actual_read(fd, size)
+                    if part and not mutated[0]:
+                        write(path, b"B" * 32)
+                        os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+                        mutated[0] = True
+                    return part
+
+                original_fstat = facade.fstat
+
+                def observed_fstat(fd):
+                    info = original_fstat(fd)
+                    observed_stamps.append(checks.stamp(info))
+                    return info
+
+                with patch.object(facade.fixture_io.host, "fstat", side_effect=fixed_host_stat), \
+                        patch.object(facade, "read", side_effect=mutate_after_read), \
+                        patch.object(facade, "fstat", side_effect=observed_fstat), patch.object(checks, "os", facade):
+                    with self.assertRaises(checks.Problem) as caught:
+                        if operation == "file_pin":
+                            checks.file_pin(path, checks.Budget.start(30))
+                        else:
+                            checks.bounded_read(path, checks.Budget.start(30), 32)
+                self.assertEqual("native_throws_file_changed", str(caught.exception))
+                self.assertTrue(mutated[0])
+                self.assertNotEqual(observed_stamps[0], observed_stamps[-1])
+                self.assertEqual(b"B" * 32, path.read_bytes())
+                facade.fixture_io.assert_closed()
+
+    def test_each_actual_handle_stamp_field_change_is_preserved_as_a_synthetic_negative(self):
+        for field in STAMP_FIELDS:
+            with self.subTest(field=field):
+                path = self.root / field
+                write(path, b"unchanged owned bytes")
+                facade = synthetic_posix_os(self.root)
+                actual_fstat, actual_read = facade.fixture_io.host.fstat, facade.read
+                changed = [False]
+
+                def handle_model(fd):
+                    info = actual_fstat(fd)
+                    return self.stat_model(info, **{field: getattr(info, field) + 1}) if changed[0] else info
+
+                def mark_read(fd, size):
+                    part = actual_read(fd, size)
+                    changed[0] = changed[0] or bool(part)
+                    return part
+
+                with patch.object(facade.fixture_io.host, "fstat", side_effect=handle_model), \
+                        patch.object(facade, "read", side_effect=mark_read), patch.object(checks, "os", facade):
+                    with self.assertRaises(checks.Problem) as caught:
+                        checks.file_pin(path, checks.Budget.start(30))
+                self.assertEqual("native_throws_file_changed", str(caught.exception))
+                facade.fixture_io.assert_closed()
+
+    def test_synthetic_replacement_path_identity_never_refreshes_the_held_opened_stamp(self):
+        # Explicit replacement physics avoid claiming Windows permits renaming a
+        # real CRT-open handle. Real owned bytes remain unchanged; only the final
+        # path identity is modeled as replaced, independently of the held stamp.
+        for operation in ("file_pin", "bounded_read"):
+            with self.subTest(operation=operation):
+                path = self.root / operation
+                write(path, b"original opened bytes")
+                original_info, actual_lstat = path.lstat(), Path.lstat
+                replaced, observed_stamps = [False], []
+                facade = synthetic_posix_os(self.root)
+                actual_read, actual_fstat = facade.read, facade.fstat
+
+                def path_model(current, *args, **kwargs):
+                    if current == path and replaced[0]:
+                        return self.stat_model(original_info, st_ino=original_info.st_ino + 1)
+                    return actual_lstat(current, *args, **kwargs)
+
+                def replace_after_read(fd, size):
+                    part = actual_read(fd, size)
+                    replaced[0] = replaced[0] or bool(part)
+                    return part
+
+                def held_fstat(fd):
+                    info = actual_fstat(fd)
+                    observed_stamps.append(checks.stamp(info))
+                    return info
+
+                with patch.object(Path, "lstat", new=path_model), patch.object(facade, "read", side_effect=replace_after_read), \
+                        patch.object(facade, "fstat", side_effect=held_fstat), patch.object(checks, "os", facade):
+                    with self.assertRaises(checks.Problem) as caught:
+                        if operation == "file_pin":
+                            checks.file_pin(path, checks.Budget.start(30))
+                        else:
+                            checks.bounded_read(path, checks.Budget.start(30), original_info.st_size)
+                self.assertEqual("native_throws_file_changed", str(caught.exception))
+                self.assertTrue(replaced[0])
+                self.assertTrue(all(value == checks.stamp(original_info) for value in observed_stamps))
+                facade.fixture_io.assert_closed()
+
+    def test_real_inventory_membership_change_remains_rejected(self):
+        write(self.root / "inputs/first", b"inert enrolled bytes")
+        with patch.object(checks, "os", self.facade):
+            pins = checks.inventory(self.root, ["inputs"], checks.Budget.start(30))
+            write(self.root / "inputs/extra", b"inert unselected bytes")
+            with self.assertRaises(checks.Problem):
+                checks.verify_inventory(self.root, ["inputs"], pins, checks.Budget.start(30))
+
+    def test_module_local_fixture_facade_restores_after_exception_without_host_api_changes(self):
+        path = self.root / "input"
+        write(path, b"inert owned bytes")
+        host_os = checks.os
+        host_calls = {name: getattr(os, name) for name in ("open", "read", "fstat", "write", "close")}
+        with self.assertRaisesRegex(RuntimeError, "synthetic unwind"):
+            with patch.object(checks, "os", self.facade):
+                self.assertEqual(pin(path), checks.file_pin(path, checks.Budget.start(30)))
+                raise RuntimeError("synthetic unwind")
+        self.assertIs(checks.os, host_os)
+        self.assertEqual({}, self.facade.fixture_io.opened)
+        for name, value in host_calls.items():
+            self.assertIs(value, getattr(os, name))
+
+
 class SourceContractTests(unittest.TestCase):
     def test_collector_and_tests_are_parseable_source_only(self):
         for path in (Path(checks.__file__), Path(__file__)):
             ast.parse(path.read_text())
 
     def test_frozen_manifest_and_authored20_expectations(self):
-        cohort, pins = checks.fixture_input(checks.REPO_ROOT, checks.REPO_ROOT / checks.FIXTURE, checks.Budget.start(30))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            fixture = root / checks.FIXTURE
+            shutil.copytree(checks.REPO_ROOT / checks.FIXTURE, fixture)
+            facade = synthetic_posix_os(root)
+            with patch.object(checks, "os", facade):
+                cohort, pins = checks.fixture_input(root, fixture, checks.Budget.start(30))
+            facade.fixture_io.assert_closed()
         self.assertEqual(28, len(pins))
         self.assertEqual({"named_error": 7, "compatible": 11, "observation_only": 2}, Counter(case["expectation"] for case in cohort["cases"]))
 
@@ -1010,8 +1337,10 @@ class HeldLeaderFakeProcessTests(unittest.TestCase):
         def sleep(delay):
             self.assertGreaterEqual(delay, 0)
             self.now += max(delay, 0.0001)
+        facade = synthetic_posix_os(self.root, waitid=waitid, killpg=killpg, waitpid=waitpid)
         with ExitStack() as stack:
-            stack.enter_context(patch.object(checks, "os", synthetic_posix_os(waitid=waitid, killpg=killpg, waitpid=waitpid)))
+            stack.callback(facade.fixture_io.assert_closed)
+            stack.enter_context(patch.object(checks, "os", facade))
             stack.enter_context(patch.object(checks, "signal", synthetic_posix_signal()))
             stack.enter_context(patch.object(checks, "subprocess", SimpleNamespace(Popen=popen, DEVNULL=checks.subprocess.DEVNULL)))
             stack.enter_context(patch.object(checks, "UNREAPED_CHILDREN", []))

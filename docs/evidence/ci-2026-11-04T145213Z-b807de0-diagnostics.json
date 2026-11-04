@@ -1,0 +1,270 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "github_exact_push_terminal_job_diagnostic_addendum",
+  "repository": "Apdelrahman1911/ktChecker",
+  "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+  "attempt": 1,
+  "record_authored_at": "2026-11-04T14:58:11.906420+00:00",
+  "metadata_collection_completed_at": "2026-11-04T14:47:51.284935+00:00",
+  "referenced_terminal_observation": {
+    "path": "docs/evidence/ci-2026-11-04T144751Z-b807de0.json",
+    "sha256": "475e41a544f89c906469fb63da42a7bb66766b5b5f7d170018c90eeb2eb67239",
+    "size_bytes": 44927,
+    "preserved_byte_for_byte": true,
+    "summary": {
+      "workflow_count": 4,
+      "terminal_workflow_count": 4,
+      "job_count": 12,
+      "job_status_counts": {
+        "completed": 12
+      },
+      "job_conclusion_counts": {
+        "failure": 8,
+        "success": 4
+      },
+      "all_workflows_terminal": true,
+      "all_required_workflows_passed": false
+    }
+  },
+  "collection_scope": {
+    "method": "Exactly three newly authorized complete failed single-job original text logs after the referenced terminal API snapshot; no new workflow status request or artifact download in this addendum.",
+    "new_single_job_log_response_count": 3,
+    "new_single_job_log_response_bytes": 260347,
+    "single_job_log_response_byte_limit": 2097152,
+    "single_job_log_timeout_seconds": 60,
+    "log_collection_completed_at": "2026-11-04T14:52:13.334894+00:00",
+    "earlier_failed_job_logs_in_referenced_snapshot": 5,
+    "artifact_bundles_downloaded": false,
+    "original_test_report_artifacts_downloaded": false,
+    "distribution_archives_downloaded": false,
+    "manual_workflow_dispatch": false,
+    "workflow_cancellation_by_collector": false,
+    "workflow_rerun_by_collector": false,
+    "private_log_bytes_in_this_record": false
+  },
+  "qualification": {
+    "release_qualified": false,
+    "rule_qualification": false,
+    "production_native_supervision_qualification": false,
+    "apple_abi_qualification": false,
+    "native_throws_qualification": false,
+    "loaded_artifact_enrollment_verified_by_this_record": false,
+    "original_junit_and_stress_artifacts_verified_by_this_record": false
+  },
+  "private_diagnostic_log_digests": [
+    {
+      "run_id": 41845843534,
+      "job_id": 126628981687,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "403b41e63ac3e9e1c8c301d87bfbd0eab413b2ca849af5f67f420b4de9cfa781",
+      "size_bytes": 121840,
+      "complete_download": true,
+      "download_byte_limit": 2097152,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T14:52:06.394912+00:00",
+      "download_completed_at": "2026-11-04T14:52:08.436386+00:00",
+      "raw_bytes_published": false
+    },
+    {
+      "run_id": 41845843534,
+      "job_id": 126628982198,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "6bde30770ce8a4a381249101be97883adc784c7587874aa920b5377e49d0bbc1",
+      "size_bytes": 102321,
+      "complete_download": true,
+      "download_byte_limit": 2097152,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T14:52:08.436477+00:00",
+      "download_completed_at": "2026-11-04T14:52:11.419456+00:00",
+      "raw_bytes_published": false
+    },
+    {
+      "run_id": 41845843666,
+      "job_id": 126628982160,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "1a4c95266e5206397fdea04bd915eb0c4e7304bfa75f9aa17803b236eeaf469b",
+      "size_bytes": 36186,
+      "complete_download": true,
+      "download_byte_limit": 2097152,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T14:52:11.419571+00:00",
+      "download_completed_at": "2026-11-04T14:52:13.334837+00:00",
+      "raw_bytes_published": false
+    }
+  ],
+  "jobs": [
+    {
+      "job_id": 126628981687,
+      "job_name": "JVM 21 checker build and installed launcher (ubuntu-24.04)",
+      "run_id": 41845843534,
+      "workflow_name": "Preview implementation (real pinned JVM)",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843534/job/126628981687",
+      "attempt": 1,
+      "head_sha": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "api_status": "completed",
+      "api_conclusion": "failure",
+      "first_failed_step": {
+        "number": 14,
+        "name": "Build and test actual modules; assemble preview distributions"
+      },
+      "diagnosis_basis": "The exact completed failed job's original text log was downloaded within the declared bound and retained privately without transformation; publication is fixed sanitized attribution only.",
+      "python_harness_log_summary": {
+        "tests_run": 293,
+        "duration_seconds": 66.19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "original_test_report_artifact_inspected": false
+      },
+      "failure_diagnosis": {
+        "code": "provider_runtime_owned_image_fixture_directory_move_failure",
+        "observed_cause": "The module build/test step reports java.nio.file.AccessDeniedException at OwnedSupervisorImageTest.kt lines 195 and 207. At this exact commit both locations call Files.move on an extracted protected image root, before the subsequent image-drift assertions.",
+        "source_file_at_commit": "modules/provider-runtime/src/test/kotlin/dev/ktchecker/providers/runtime/OwnedSupervisorImageTest.kt",
+        "source_lines": [
+          195,
+          207
+        ],
+        "exception_class": "java.nio.file.AccessDeniedException",
+        "scope": "Observed JVM test-fixture directory rename failure, not a demonstrated failure of production image drift rejection or a Native compiler/helper.",
+        "specific_filesystem_reason_for_move_rejection_identified": false,
+        "tiny_native_wrapper_controls_reported_state": "passed",
+        "tiny_native_report_or_binary_artifact_inspected": false
+      }
+    },
+    {
+      "job_id": 126628982198,
+      "job_name": "JVM 21 checker build and installed launcher (macos-26)",
+      "run_id": 41845843534,
+      "workflow_name": "Preview implementation (real pinned JVM)",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843534/job/126628982198",
+      "attempt": 1,
+      "head_sha": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "api_status": "completed",
+      "api_conclusion": "failure",
+      "first_failed_step": {
+        "number": 12,
+        "name": "Execute exact tiny native controls or record Windows native unavailability"
+      },
+      "diagnosis_basis": "The exact completed failed job's original text log was downloaded within the declared bound and retained privately without transformation; publication is fixed sanitized attribution only.",
+      "python_harness_log_summary": {
+        "tests_run": 293,
+        "duration_seconds": 63.343,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "original_test_report_artifact_inspected": false
+      },
+      "failure_diagnosis": {
+        "code": "macos_tiny_native_wrapper_generic_control_failure",
+        "observed_cause": "The exact Mac Python harness completes 293 tests successfully. The later tiny-native step reports successful supervisor preflight, then failed supervisor controls and the closed code native_supervisor_fixture_controls_unavailable_or_failed.",
+        "observed_error_code": "native_supervisor_fixture_controls_unavailable_or_failed",
+        "source_file_at_commit": "scripts/ci/run_supervisor_checks.py",
+        "source_lines": [
+          405,
+          435
+        ],
+        "scope": "Failure of the tiny-native control wrapper. Its original inner unittest/report output is not exposed in the retained job text; the exact pre-launch, inner-run or post-validation branch remains unknown.",
+        "inner_report_or_artifact_inspected": false,
+        "native_helper_execution_count_established_from_job_text": false,
+        "specific_inner_failure_mechanism_identified": false
+      }
+    },
+    {
+      "job_id": 126628982160,
+      "job_name": "Real iOS arm64 compile/link and iOS 26.4 simulator execution",
+      "run_id": 41845843666,
+      "workflow_name": "Preview platform execution (actual KMP targets)",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843666/job/126628982160",
+      "attempt": 1,
+      "head_sha": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "api_status": "completed",
+      "api_conclusion": "failure",
+      "first_failed_step": {
+        "number": 9,
+        "name": "Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals"
+      },
+      "diagnosis_basis": "The exact completed failed job's original text log was downloaded within the declared bound and retained privately without transformation; publication is fixed sanitized attribution only.",
+      "failure_diagnosis": {
+        "code": "ios_pinned_simulator_pair_not_selected_before_target_execution",
+        "observed_cause": "The target wrapper is unavailable and emits the fixed selection error No available iPhone 17 in the pinned iOS 26.4 simulator runtime. No Target stage output appears. At this commit the error is emitted after both bounded inventories and their schemas are accepted, but before the target wrapper invokes its Gradle stages.",
+        "source_file_at_commit": "scripts/ci/run_platform_checks.py",
+        "source_lines": [
+          32,
+          50,
+          83,
+          100,
+          150,
+          153
+        ],
+        "scope": "Pre-execution runtime/device pair selection failure, not an observed target compiler/linker/simulator failure.",
+        "structured_inventory_repair_reached_selection_branch": true,
+        "accepted_available_runtime_device_pair_selected": false,
+        "specific_selection_predicate_failure_identified": false,
+        "runtime_absence_proven": false,
+        "device_absence_proven": false,
+        "target_wrapper_gradle_stage_execution": false,
+        "independent_native_semantic_gate": {
+          "state": "unavailable",
+          "error_code": "native_semantic_prerequisites_unavailable",
+          "actual_compiler_attempts": 0,
+          "exact_failed_prerequisite_branch_identified": false,
+          "specific_native_home_or_dependency_absence_proven": false,
+          "simulator_selection_failure_does_not_identify_native_prerequisite_failure": true,
+          "simulator_runtime_required_for_this_gate": false,
+          "android_required_for_this_gate": false
+        }
+      }
+    }
+  ],
+  "exact_source_inventory": [
+    {
+      "path": "modules/provider-runtime/src/test/kotlin/dev/ktchecker/providers/runtime/OwnedSupervisorImageTest.kt",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "bd2c832aedaff5f3425e09f607aabf80c2f4c7ee9457f6e906dbf4a5828a4bb4",
+      "size_bytes": 18558
+    },
+    {
+      "path": "scripts/ci/run_supervisor_checks.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "38a8ee9b8c5eb3e64374e57fefebabcc9c12ab719fae4be4809e27f50b8155d1",
+      "size_bytes": 51262
+    },
+    {
+      "path": "scripts/ci/supervisor_test_runner.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "9a5e4cf70caf104fa2e64e7f40cb0d334e2f6da49a08d3dc82aef0fdb271cd04",
+      "size_bytes": 6265
+    },
+    {
+      "path": "scripts/ci/run_platform_checks.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "0b98a045d5ff1b0c7639044e61ecddd7abba72d26cfa79f5f871d1c88bfb7cb7",
+      "size_bytes": 15653
+    },
+    {
+      "path": "scripts/ci/record_environment.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "533dffc90c8041e62158229b82aa9a2786f9e52051143705f4ece363561dffe6",
+      "size_bytes": 19659
+    },
+    {
+      "path": "scripts/ci/run_semantic_checks.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "75e25068c8aec4365feba1591250897bc6f75feeaa84db76aa00ac0eb011d62f",
+      "size_bytes": 34312
+    }
+  ],
+  "limitations": [
+    "This diagnostic followup does not replace or re-date the terminal API snapshot. All four exact push attempt-1 workflows failed; four job successes and eight failures remain as observed at 14:47:51Z.",
+    "Each diagnosis is tied to one exact job and source commit. Linux wrapper success, Mac preflight success and Python fixture success are not transferred across hosts or converted into qualification.",
+    "Linux errors identify Files.move test-fixture locations, not the detailed Java/filesystem mechanism or production guard behavior. No JVM repair execution is established by this addendum.",
+    "The Mac tiny-native job exposes only a generic wrapper code, not its original inner report or specific method failure. No artifact or bundle was inspected, and no helper/compiler execution count is inferred.",
+    "The iOS fixed error establishes failure to select the accepted runtime/device pair; it does not identify a particular absent runtime, device, UUID or failing selection predicate. No target Gradle stage follows that unavailable branch.",
+    "Independent Native semantic prerequisites remain generic with zero compiler attempts. Simulator selection does not explain that separate gate or prove a particular Native cache/LLVM/libffi/sysroot absence.",
+    "Original logs are private, bounded and untouched. Only their exact byte digests/sizes and fixed code/source attributions are public; original report/distribution/toolchain artifacts were not downloaded.",
+    "All qualification flags remain false. Neither local fake tests nor these CI summaries qualify Apple ABI, Native process ownership, Windows bridge private state, all rules, or release behavior."
+  ]
+}

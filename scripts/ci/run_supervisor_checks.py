@@ -560,9 +560,13 @@ def jar_resources(path: Path, expected: dict[str, bytes], root: Path) -> dict:
             if len(entries) > 100_000 or len({entry.filename for entry in entries}) != len(entries):
                 raise ValueError("packaged runtime JAR identities ambiguous")
             for entry in entries:
-                name = entry.filename
+                # ZipInfo can truncate NULs and normalize Windows separators.
+                # orig_filename is the decoded central-directory name, not proof
+                # that unopened local headers or raw Unicode Path extras are
+                # canonical. Reject original/effective aliases at this boundary.
+                name = entry.orig_filename
                 parts = name.rstrip("/").split("/")
-                if not name or name.startswith("/") or any(part in {"", ".", ".."} for part in parts) \
+                if name != entry.filename or not name or name.startswith("/") or any(part in {"", ".", ".."} for part in parts) \
                         or re.search(r"[\\:\x00-\x1f\x7f]", name) or stat.S_ISLNK(entry.external_attr >> 16) \
                         or entry.compress_type not in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED} \
                         or name.rstrip("/") == PREFIX.rstrip("/") and not entry.is_dir() \

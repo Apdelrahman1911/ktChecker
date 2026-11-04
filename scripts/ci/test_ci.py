@@ -744,10 +744,21 @@ class FixtureDslSourceTests(unittest.TestCase):
         source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
         self.assertIn("extensions.configure<KotlinMultiplatformAndroidComponentsExtension>", source)
         self.assertIn("variant.artifacts.get(SingleArtifact.LINT_XML_REPORT)", source)
-        self.assertIn('variant.computeTaskName("lintReport", "")', source)
         self.assertIn("checkDependencies = false", source)
         for removed in ("xmlReport =", "xmlOutput =", "htmlReport =", "textReport ="):
             self.assertNotIn(removed, source)
+
+    def test_lint_report_names_pinned_internal_producer_not_public_action_subject_task(self):
+        source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
+        # Pinned AGP 9.3.1 uses computeTaskNameInternal("lintReport"), whose
+        # naming is prefix + capitalized variant name, without a subject.
+        self.assertIn(
+            'val reportTaskName = "lintReport${variant.name.replaceFirstChar { it.toString().uppercase(Locale.US) }}"',
+            source,
+        )
+        self.assertIn("import java.util.Locale", source)
+        self.assertNotIn("variant.computeTaskName(", source)
+        self.assertNotIn("variant.computeTaskNameInternal(", source)
 
     def test_negative_report_finalizer_has_no_failed_producer_dependency_and_requires_fresh_file(self):
         source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")

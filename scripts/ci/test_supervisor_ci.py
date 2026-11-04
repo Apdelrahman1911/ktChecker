@@ -7,7 +7,7 @@ import copy
 import io
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import stat
 import sys
 import tempfile
@@ -387,8 +387,8 @@ class NativeReceiptTests(unittest.TestCase):
 
     def test_compiler_public_paths_reject_private_traversal_controls_and_wrong_selection(self):
         for path in ("/home/PRIVATE/compiler", "/usr/bin/../PRIVATE/compiler", "/usr/bin/cc\nPRIVATE", "/usr/bin/cc with-space"):
-            self.assertEqual("<private-compiler>", checks.public_compiler_path(Path(path)))
-        self.assertEqual("/usr/bin/cc", checks.public_compiler_path(Path("/usr/bin/cc")))
+            self.assertEqual("<private-compiler>", checks.public_compiler_path(PurePosixPath(path)))
+        self.assertEqual("/usr/bin/cc", checks.public_compiler_path(PurePosixPath("/usr/bin/cc")))
         with tempfile.TemporaryDirectory() as temporary:
             fixture = Fixture(Path(temporary)); prerequisite = fixture.prerequisite(); receipt = fixture.receipt(prerequisite)
             for field in ("selectedPath", "resolvedPath"):
@@ -604,7 +604,7 @@ class NativeInstalledByteTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             fixture = Fixture(Path(temporary)); fixture.bundle()
             for name in (checks.PREFIX + "windows-x86_64/supervisor", checks.PREFIX + "windows-x86_64/", checks.PREFIX + "manifest",
-                         "../private", "/absolute/private", "C:/private", "dev\\private", "dev//private", "dev/./private"):
+                         "../private", "/absolute/private", "C:/private", "dev//private", "dev/./private"):
                 with self.subTest(name=name), warnings.catch_warnings():
                     warnings.simplefilter("ignore", UserWarning)
                     fixture.jar(fixture.module_jar, fixture.expected, extras=((name, b"PRIVATE unrelated resource"),))
@@ -614,6 +614,51 @@ class NativeInstalledByteTests(unittest.TestCase):
             with self.assertRaises(ValueError): checks.jar_resources(fixture.module_jar, fixture.expected, fixture.root)
             absent = dict(fixture.expected); absent.pop(checks.PREFIX + "manifest"); fixture.jar(fixture.module_jar, absent)
             with self.assertRaises(ValueError): checks.jar_resources(fixture.module_jar, fixture.expected, fixture.root)
+
+    def test_packaged_raw_backslash_and_nul_names_are_rejected_but_canonical_name_is_allowed(self):
+        for name in ("dev/private", "dev\\private", "dev/private\x00suffix"):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(name=name):
+                fixture = Fixture(Path(temporary)); fixture.bundle()
+                encoded = name.encode("ascii")
+                placeholder = b"raw" + b"_" * (len(encoded) - 3)
+                self.assertEqual(len(encoded), len(placeholder))
+                payload = b"PRIVATE raw-name fixture payload"
+                fixture.jar(fixture.module_jar, fixture.expected, extras=((placeholder.decode("ascii"), payload),))
+                raw = bytearray(fixture.module_jar.read_bytes())
+                original_size = len(raw)
+                self.assertEqual(2, raw.count(placeholder))
+                local_name = raw.index(placeholder)
+                central_name = raw.index(placeholder, local_name + len(placeholder))
+                # writestr sanitizes backslashes on Windows and NULs everywhere.
+                # Patch only equally sized local/central filename fields, not a
+                # ZipInfo object or unchecked occurrences in arbitrary ZIP data.
+                for offset, header_size, signature, length_field in (
+                        (local_name, 30, b"PK\x03\x04", 26), (central_name, 46, b"PK\x01\x02", 28)):
+                    self.assertGreaterEqual(offset, header_size)
+                    header = offset - header_size
+                    self.assertEqual(signature, raw[header:header + 4])
+                    self.assertEqual(len(placeholder), int.from_bytes(raw[header + length_field:header + length_field + 2], "little"))
+                    self.assertEqual(0, int.from_bytes(raw[header + length_field + 2:header + length_field + 4], "little"))
+                self.assertEqual(local_name - 30, int.from_bytes(raw[central_name - 4:central_name], "little"))
+                for offset in (local_name, central_name):
+                    raw[offset:offset + len(placeholder)] = encoded
+                self.assertEqual(original_size, len(raw))
+                self.assertEqual(2, raw.count(encoded))
+                self.assertNotIn(placeholder, raw)
+                fixture.module_jar.write_bytes(raw)
+                with zipfile.ZipFile(fixture.module_jar) as archive:
+                    entries = [entry for entry in archive.infolist() if entry.orig_filename == name]
+                    self.assertEqual(1, len(entries))
+                    # Prove the raw central name and matching local header can
+                    # be read; BadZipFile is not evidence of policy rejection.
+                    self.assertEqual(name, entries[0].orig_filename)
+                    self.assertEqual(payload, archive.read(entries[0]))
+                if name == "dev/private":
+                    result = checks.jar_resources(fixture.module_jar, fixture.expected, fixture.root)
+                    self.assertEqual(set(fixture.expected), {entry["path"] for entry in result["native_resources"]})
+                else:
+                    with self.assertRaisesRegex(ValueError, "unsafe or foreign resource path"):
+                        checks.jar_resources(fixture.module_jar, fixture.expected, fixture.root)
 
     def test_installed_jar_smoke_input_and_doctor_identity_must_bind_the_same_bytes(self):
         for alteration in ("installed", "smoke_digest", "doctor_source", "doctor_binary", "doctor_qualified", "exit_boolean"):

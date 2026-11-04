@@ -1,0 +1,858 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "github_push_run_job_status_observation",
+  "repository": "Apdelrahman1911/ktChecker",
+  "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+  "observation_kind": "partial_observed_snapshot",
+  "metadata_collection_started_at": "2026-11-04T14:17:46.163118+00:00",
+  "metadata_collection_completed_at": "2026-11-04T14:17:57.272785+00:00",
+  "record_authored_at": "2026-11-04T14:31:51.008334+00:00",
+  "collection_is_atomic": false,
+  "related_earlier_observations": [
+    {
+      "path": "docs/evidence/ci-2026-11-04-75fc659.json",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "1386c610e1420d3f7e813fe2ff24cc874761dfb164c38b27d396a2edad8b3f22",
+      "size_bytes": 21355,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T135437Z-75fc659.json",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "340135f4138546297cca4639df506a1c2613bd1decd84bed08808677f0b04625",
+      "size_bytes": 47878,
+      "preserved_byte_for_byte": true
+    }
+  ],
+  "collection_scope": {
+    "method": "One bounded exact-SHA push lookup and four exact run/job metadata pairs, then exactly five newly authorized terminal failed single-job text logs; no other logs or artifacts downloaded.",
+    "metadata_request_count": 9,
+    "metadata_response_byte_limit_per_request": 2097152,
+    "metadata_timeout_seconds_per_request": 45,
+    "workflow_lookup_request": {
+      "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs?head_sha=b807de0d254d496c54a221b9b6f94edc4ac4b398&event=push&per_page=20",
+      "started_at": "2026-11-04T14:17:46.163432+00:00",
+      "completed_at": "2026-11-04T14:17:47.436025+00:00",
+      "response_sha256": "0fafb398ca23cae2da369d265aa20a3f443c7ddbccc03abcb3b276de3f9fb061",
+      "response_size_bytes": 54566,
+      "response_byte_limit": 2097152,
+      "timeout_seconds": 45
+    },
+    "retained_metadata_container_sha256": "a5e1c6818d8b045b164e5cec5b636d9decadfa3be0674c03ae2dc51f49ba67dc",
+    "retained_metadata_container_size_bytes": 195086,
+    "new_single_job_log_response_count": 5,
+    "new_single_job_log_response_bytes": 356501,
+    "new_single_job_log_collection_completed_at": "2026-11-04T14:19:01.096234+00:00",
+    "previously_retained_logs_reused": 0,
+    "manual_workflow_dispatch": false,
+    "workflow_cancellation_by_collector": false,
+    "workflow_rerun_by_collector": false,
+    "artifact_bundles_downloaded": false,
+    "original_test_report_artifacts_downloaded": false,
+    "distribution_archives_downloaded": false,
+    "private_log_bytes_in_this_record": false
+  },
+  "qualification": {
+    "release_qualified": false,
+    "rule_qualification": false,
+    "production_native_supervision_qualification": false,
+    "apple_abi_qualification": false,
+    "native_throws_qualification": false,
+    "loaded_artifact_enrollment_verified_by_this_record": false,
+    "original_junit_and_stress_artifacts_verified_by_this_record": false
+  },
+  "runs": [
+    {
+      "workflow_id": 406620452,
+      "workflow_name": "Planning evidence and registry",
+      "run_id": 41845843070,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843070",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T14:16:02Z",
+      "api_updated_at": "2026-11-04T14:16:02Z",
+      "run_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41845843070",
+        "started_at": "2026-11-04T14:17:47.437449+00:00",
+        "completed_at": "2026-11-04T14:17:48.511810+00:00",
+        "response_sha256": "250ea779b345338a5e6ef7df648c1db2026b0d9a8c93ac19e106a241aafb3a77",
+        "response_size_bytes": 13617,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41845843070/jobs?filter=latest&per_page=100",
+        "started_at": "2026-11-04T14:17:48.512118+00:00",
+        "completed_at": "2026-11-04T14:17:49.834626+00:00",
+        "response_sha256": "045983873532214ddaae0e4256c3a464bb24b58d718e097b54589c9e88ecb8d6",
+        "response_size_bytes": 6971,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs": [
+        {
+          "job_id": 126628980362,
+          "job_name": "Planning integrity (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843070/job/126628980362",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T14:16:05Z",
+          "api_completed_at": "2026-11-04T14:16:46Z",
+          "api_runner_labels": [
+            "windows-2025"
+          ],
+          "first_failed_step": {
+            "number": 5,
+            "name": "Test validation failure paths"
+          },
+          "failed_steps": [
+            {
+              "number": 5,
+              "name": "Test validation failure paths"
+            }
+          ],
+          "windows_checkout_repair_observation": {
+            "basis": "Exact-job API step observations at this collection boundary, not transferred from another host or attempt.",
+            "steps": [
+              {
+                "number": 2,
+                "name": "Enable Windows long paths before checkout",
+                "api_status": "completed",
+                "api_conclusion": "success"
+              },
+              {
+                "number": 3,
+                "name": "Check out reviewed revision",
+                "api_status": "completed",
+                "api_conclusion": "success"
+              }
+            ],
+            "long_path_configuration_and_checkout_steps_passed": true,
+            "whole_workflow_passed": false
+          },
+          "failure_diagnosis": {
+            "code": "windows_python_synthetic_native_and_supervisor_harness_failure",
+            "observed_cause": "After checkout succeeds, the Python evidence-harness suite fails. Native fake serial controls report unavailable; direct authored-manifest and synthetic-enrollment checks raise native_throws_file_changed at the descriptor/path stat equality boundary. Supervisor tests also reject an intentional POSIX compiler-path expectation on Windows and fail to reject the backslash ZIP-name negative.",
+            "scope": "Python source/fixture/fake-process failures before implementation build or planning validation; not real Native/compiler/target execution.",
+            "diagnosis_basis": "Authorized exact-job attempt-1 complete original text log retained privately, with its byte digest and size reverified.",
+            "unittest_log_summary": {
+              "tests_run": 449,
+              "duration_seconds": 22.015,
+              "failures": 19,
+              "errors": 3,
+              "skipped": 70
+            },
+            "observed_categories": [
+              {
+                "code": "native_synthetic_descriptor_path_stat_boundary",
+                "source_file_at_commit": "scripts/ci/run_native_throws_checks.py",
+                "source_lines": [
+                  467,
+                  477
+                ],
+                "exact_differing_stat_field_reported": false
+              },
+              {
+                "code": "supervisor_intended_posix_public_compiler_path_on_windows",
+                "source_file_at_commit": "scripts/ci/test_supervisor_ci.py",
+                "source_line": 391
+              },
+              {
+                "code": "supervisor_backslash_zip_name_negative_not_rejected",
+                "source_file_at_commit": "scripts/ci/test_supervisor_ci.py",
+                "source_line": 611
+              }
+            ],
+            "inference_boundary": "Windows host lstat/fstat semantics and text-mode descriptor IO are investigation hypotheses, not a reproduced field-level diagnosis. The ZIP writer and reader may both normalize names; raw-name fixture and production validation require independent review. No production Native stamp/process guard was changed by this observation."
+          }
+        },
+        {
+          "job_id": 126628980783,
+          "job_name": "Planning integrity (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843070/job/126628980783",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "success",
+          "api_started_at": "2026-11-04T14:16:05Z",
+          "api_completed_at": "2026-11-04T14:17:05Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126628981178,
+          "job_name": "Planning integrity (macos-15)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843070/job/126628981178",
+          "run_attempt": 1,
+          "api_status": "queued",
+          "api_conclusion": null,
+          "api_started_at": "2026-11-04T14:16:03Z",
+          "api_completed_at": null,
+          "api_runner_labels": [
+            "macos-15"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        }
+      ]
+    },
+    {
+      "workflow_id": 406714086,
+      "workflow_name": "Preview implementation (real pinned JVM)",
+      "run_id": 41845843534,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843534",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T14:16:02Z",
+      "api_updated_at": "2026-11-04T14:16:02Z",
+      "run_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41845843534",
+        "started_at": "2026-11-04T14:17:49.835173+00:00",
+        "completed_at": "2026-11-04T14:17:50.958213+00:00",
+        "response_sha256": "82d319895b1c9872ce6fb84c53af61b327390bcb00337117309de8d28192452a",
+        "response_size_bytes": 13626,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41845843534/jobs?filter=latest&per_page=100",
+        "started_at": "2026-11-04T14:17:50.958773+00:00",
+        "completed_at": "2026-11-04T14:17:52.381622+00:00",
+        "response_sha256": "2b811644b965dba126f819e513ee6af3e6a19587ae24eb97d453392c527b6198",
+        "response_size_bytes": 12584,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs": [
+        {
+          "job_id": 126628981687,
+          "job_name": "JVM 21 checker build and installed launcher (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843534/job/126628981687",
+          "run_attempt": 1,
+          "api_status": "in_progress",
+          "api_conclusion": null,
+          "api_started_at": "2026-11-04T14:16:05Z",
+          "api_completed_at": null,
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126628982198,
+          "job_name": "JVM 21 checker build and installed launcher (macos-26)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843534/job/126628982198",
+          "run_attempt": 1,
+          "api_status": "queued",
+          "api_conclusion": null,
+          "api_started_at": "2026-11-04T14:16:03Z",
+          "api_completed_at": null,
+          "api_runner_labels": [
+            "macos-26"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126628982606,
+          "job_name": "JVM 21 checker build and installed launcher (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843534/job/126628982606",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T14:16:07Z",
+          "api_completed_at": "2026-11-04T14:17:24Z",
+          "api_runner_labels": [
+            "windows-2025"
+          ],
+          "first_failed_step": {
+            "number": 6,
+            "name": "Verify the evidence harness failure paths"
+          },
+          "failed_steps": [
+            {
+              "number": 6,
+              "name": "Verify the evidence harness failure paths"
+            },
+            {
+              "number": 10,
+              "name": "Bind observed Gradle to the selected JVM"
+            },
+            {
+              "number": 11,
+              "name": "Observe exact helper build inputs and compiler or explicit unsupported host"
+            },
+            {
+              "number": 12,
+              "name": "Execute exact tiny native controls or record Windows native unavailability"
+            },
+            {
+              "number": 15,
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips"
+            },
+            {
+              "number": 18,
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes"
+            },
+            {
+              "number": 19,
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices"
+            },
+            {
+              "number": 20,
+              "name": "Collect actual suites and artifact identities, including failures"
+            }
+          ],
+          "windows_checkout_repair_observation": {
+            "basis": "Exact-job API step observations at this collection boundary, not transferred from another host or attempt.",
+            "steps": [
+              {
+                "number": 2,
+                "name": "Enable Windows long paths before checkout",
+                "api_status": "completed",
+                "api_conclusion": "success"
+              },
+              {
+                "number": 3,
+                "name": "Check out candidate (no persisted credentials)",
+                "api_status": "completed",
+                "api_conclusion": "success"
+              }
+            ],
+            "long_path_configuration_and_checkout_steps_passed": true,
+            "whole_workflow_passed": false
+          },
+          "failure_diagnosis": {
+            "code": "windows_python_synthetic_native_and_supervisor_harness_failure",
+            "observed_cause": "After checkout succeeds, the Python evidence-harness suite fails. Native fake serial controls report unavailable; direct authored-manifest and synthetic-enrollment checks raise native_throws_file_changed at the descriptor/path stat equality boundary. Supervisor tests also reject an intentional POSIX compiler-path expectation on Windows and fail to reject the backslash ZIP-name negative.",
+            "scope": "Python source/fixture/fake-process failures before implementation build or planning validation; not real Native/compiler/target execution.",
+            "diagnosis_basis": "Authorized exact-job attempt-1 complete original text log retained privately, with its byte digest and size reverified.",
+            "unittest_log_summary": {
+              "tests_run": 293,
+              "duration_seconds": 24.983,
+              "failures": 19,
+              "errors": 3,
+              "skipped": 1
+            },
+            "observed_categories": [
+              {
+                "code": "native_synthetic_descriptor_path_stat_boundary",
+                "source_file_at_commit": "scripts/ci/run_native_throws_checks.py",
+                "source_lines": [
+                  467
+                ],
+                "exact_differing_stat_field_reported": false
+              },
+              {
+                "code": "supervisor_intended_posix_public_compiler_path_on_windows",
+                "source_file_at_commit": "scripts/ci/test_supervisor_ci.py",
+                "source_line": 391
+              },
+              {
+                "code": "supervisor_backslash_zip_name_negative_not_rejected",
+                "source_file_at_commit": "scripts/ci/test_supervisor_ci.py",
+                "source_line": 611
+              }
+            ],
+            "inference_boundary": "Windows host lstat/fstat semantics and text-mode descriptor IO are investigation hypotheses, not a reproduced field-level diagnosis. The ZIP writer and reader may both normalize names; raw-name fixture and production validation require independent review. No production Native stamp/process guard was changed by this observation."
+          }
+        }
+      ]
+    },
+    {
+      "workflow_id": 406714087,
+      "workflow_name": "Preview platform execution (actual KMP targets)",
+      "run_id": 41845843666,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843666",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T14:16:02Z",
+      "api_updated_at": "2026-11-04T14:16:02Z",
+      "run_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41845843666",
+        "started_at": "2026-11-04T14:17:52.381969+00:00",
+        "completed_at": "2026-11-04T14:17:53.503693+00:00",
+        "response_sha256": "9a09273dbb9492982d1bf2aa20d25054aab681a93309cead259c673787c2963e",
+        "response_size_bytes": 13638,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41845843666/jobs?filter=latest&per_page=100",
+        "started_at": "2026-11-04T14:17:53.504077+00:00",
+        "completed_at": "2026-11-04T14:17:54.776540+00:00",
+        "response_sha256": "b75332c234188327862e9d0419cdc827cc480be294adaaa8e1244dc00bb17a15",
+        "response_size_bytes": 8978,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs": [
+        {
+          "job_id": 126628982160,
+          "job_name": "Real iOS arm64 compile/link and iOS 26.4 simulator execution",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843666/job/126628982160",
+          "run_attempt": 1,
+          "api_status": "queued",
+          "api_conclusion": null,
+          "api_started_at": "2026-11-04T14:16:03Z",
+          "api_completed_at": null,
+          "api_runner_labels": [
+            "macos-26"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126628982598,
+          "job_name": "Actual Desktop/JVM KMP common boundary tests",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843666/job/126628982598",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T14:16:05Z",
+          "api_completed_at": "2026-11-04T14:17:09Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": {
+            "number": 8,
+            "name": "Execute Desktop/JVM KMP fixture tests"
+          },
+          "failed_steps": [
+            {
+              "number": 8,
+              "name": "Execute Desktop/JVM KMP fixture tests"
+            },
+            {
+              "number": 9,
+              "name": "Collect exact Desktop/JVM test reports"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "kmp_root_configuration_blank_subject",
+            "observed_cause": "The first failed target step reaches root-project configuration and reports Subject parameter must not be empty or blank.",
+            "scope": "KMP configuration failure before successful Desktop/Android target-test execution; no target success or qualification inferred.",
+            "diagnosis_basis": "Authorized exact-job attempt-1 complete original text log retained privately, with its byte digest and size reverified.",
+            "exact_plugin_or_source_branch_in_raw_log_identified": false,
+            "old_script_compilation_failure_not_the_observed_first_cause": true
+          }
+        },
+        {
+          "job_id": 126628982642,
+          "job_name": "Actual Android KMP compile, host tests and NewApi adapter controls",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843666/job/126628982642",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T14:16:05Z",
+          "api_completed_at": "2026-11-04T14:17:38Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": {
+            "number": 9,
+            "name": "Execute Android host tests and clean/invalid actual Lint controls"
+          },
+          "failed_steps": [
+            {
+              "number": 9,
+              "name": "Execute Android host tests and clean/invalid actual Lint controls"
+            },
+            {
+              "number": 11,
+              "name": "Collect exact Android host-side reports and provider outcomes"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "kmp_root_configuration_blank_subject",
+            "observed_cause": "The first failed target step reaches root-project configuration and reports Subject parameter must not be empty or blank.",
+            "scope": "KMP configuration failure before successful Desktop/Android target-test execution; no target success or qualification inferred.",
+            "diagnosis_basis": "Authorized exact-job attempt-1 complete original text log retained privately, with its byte digest and size reverified.",
+            "exact_plugin_or_source_branch_in_raw_log_identified": false,
+            "old_script_compilation_failure_not_the_observed_first_cause": true
+          }
+        }
+      ]
+    },
+    {
+      "workflow_id": 406714085,
+      "workflow_name": "Preview bridges (actual SDK and synthetic host controls)",
+      "run_id": 41845843788,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843788",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T14:16:02Z",
+      "api_updated_at": "2026-11-04T14:16:02Z",
+      "run_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41845843788",
+        "started_at": "2026-11-04T14:17:54.776859+00:00",
+        "completed_at": "2026-11-04T14:17:55.949124+00:00",
+        "response_sha256": "6a446566392abbfb7fcae26f4b7c3c03cc16bb4a5f16c06904539fcc14533676",
+        "response_size_bytes": 13646,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41845843788/jobs?filter=latest&per_page=100",
+        "started_at": "2026-11-04T14:17:55.949677+00:00",
+        "completed_at": "2026-11-04T14:17:57.272448+00:00",
+        "response_sha256": "705353356136d7ea6ae86a6dec7dca0e02c501f13ea76ca79b7711a64aaaa7c9",
+        "response_size_bytes": 7822,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs": [
+        {
+          "job_id": 126628982412,
+          "job_name": "MCP SDK and synthetic host tests/audits (macos-26)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843788/job/126628982412",
+          "run_attempt": 1,
+          "api_status": "queued",
+          "api_conclusion": null,
+          "api_started_at": "2026-11-04T14:16:03Z",
+          "api_completed_at": null,
+          "api_runner_labels": [
+            "macos-26"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126628982814,
+          "job_name": "MCP SDK and synthetic host tests/audits (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843788/job/126628982814",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "success",
+          "api_started_at": "2026-11-04T14:16:05Z",
+          "api_completed_at": "2026-11-04T14:16:37Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126628982932,
+          "job_name": "MCP SDK and synthetic host tests/audits (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41845843788/job/126628982932",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T14:16:05Z",
+          "api_completed_at": "2026-11-04T14:17:16Z",
+          "api_runner_labels": [
+            "windows-2025"
+          ],
+          "first_failed_step": {
+            "number": 6,
+            "name": "Execute npm ci, actual SDK/synthetic-host tests/audits and validated unsigned npm packs"
+          },
+          "failed_steps": [
+            {
+              "number": 6,
+              "name": "Execute npm ci, actual SDK/synthetic-host tests/audits and validated unsigned npm packs"
+            },
+            {
+              "number": 7,
+              "name": "Bind sanitized bridge evidence to actual source and job outcome"
+            }
+          ],
+          "windows_checkout_repair_observation": {
+            "basis": "Exact-job API step observations at this collection boundary, not transferred from another host or attempt.",
+            "steps": [
+              {
+                "number": 2,
+                "name": "Enable Windows long paths before checkout",
+                "api_status": "completed",
+                "api_conclusion": "success"
+              },
+              {
+                "number": 3,
+                "name": "Check out candidate without persisted credentials",
+                "api_status": "completed",
+                "api_conclusion": "success"
+              }
+            ],
+            "long_path_configuration_and_checkout_steps_passed": true,
+            "whole_workflow_passed": false
+          },
+          "failure_diagnosis": {
+            "code": "windows_bridge_sdk_and_private_state_test_failure",
+            "observed_cause": "After checkout succeeds, the bridge test step reports failed MCP and reference-host stages. Its sanitized protocol/private-state log contains ERR_TEST_FAILURE, ERR_ASSERTION, private_path_unsupported and private_state_platform_unqualified categories; category occurrence alone is not an actual failed-outcome count.",
+            "scope": "Failed actual SDK/synthetic-host test stages, not successful Windows private-state qualification or real host delivery evidence.",
+            "diagnosis_basis": "Authorized exact-job attempt-1 complete original text log retained privately; contained Node diagnostics are already sanitized categories, not original tracebacks.",
+            "sanitized_codes_present_not_all_failed_outcomes": [
+              "ERR_TEST_FAILURE",
+              "ERR_ASSERTION",
+              "private_path_unsupported",
+              "private_state_platform_unqualified"
+            ],
+            "specific_acl_or_source_mechanism_identified": false
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "workflow_count": 4,
+    "terminal_workflow_count": 0,
+    "job_count": 12,
+    "job_status_counts": {
+      "completed": 7,
+      "in_progress": 1,
+      "queued": 4
+    },
+    "job_conclusion_counts": {
+      "failure": 5,
+      "not_terminal": 5,
+      "success": 2
+    },
+    "all_workflows_terminal": false,
+    "all_required_workflows_passed": false
+  },
+  "private_diagnostic_log_digests": [
+    {
+      "run_id": 41845843070,
+      "job_id": 126628980362,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "9808b0e6b488301ecf0b9f1ac0ea9f780037d459ed66e52874ff88f6c9c89cf8",
+      "size_bytes": 136415,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T14:18:50.925331+00:00",
+      "download_completed_at": "2026-11-04T14:18:53.100727+00:00",
+      "raw_bytes_published": false,
+      "collected_in_this_observation": true
+    },
+    {
+      "run_id": 41845843534,
+      "job_id": 126628982606,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "dbe9c0185cc98cd8d46351fc9b517b584f050e423678c7bfc2caef7a381cf084",
+      "size_bytes": 125862,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T14:18:53.101125+00:00",
+      "download_completed_at": "2026-11-04T14:18:55.174994+00:00",
+      "raw_bytes_published": false,
+      "collected_in_this_observation": true
+    },
+    {
+      "run_id": 41845843666,
+      "job_id": 126628982598,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "a32dc021176b706f5ae651260d36a771de6b52b60ca16171e43d0a5e38a69301",
+      "size_bytes": 29412,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T14:18:55.175283+00:00",
+      "download_completed_at": "2026-11-04T14:18:57.147978+00:00",
+      "raw_bytes_published": false,
+      "collected_in_this_observation": true
+    },
+    {
+      "run_id": 41845843666,
+      "job_id": 126628982642,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "d94a1654ba56bc2c26dc53a40c486428e4ea38a1cbec984f9b22cc8c871ab3f0",
+      "size_bytes": 32794,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T14:18:57.148376+00:00",
+      "download_completed_at": "2026-11-04T14:18:59.121283+00:00",
+      "raw_bytes_published": false,
+      "collected_in_this_observation": true
+    },
+    {
+      "run_id": 41845843788,
+      "job_id": 126628982932,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "04b9fd65c1167bde2371921ed64a8a5d85b9a5da4f905c18716133b3164e6b5a",
+      "size_bytes": 32018,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T14:18:59.121685+00:00",
+      "download_completed_at": "2026-11-04T14:19:01.095947+00:00",
+      "raw_bytes_published": false,
+      "collected_in_this_observation": true
+    }
+  ],
+  "checkpoint_repair_source_inventory": [
+    {
+      "path": ".github/workflows/bridges-validation.yml",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "2c309d6717e84c91cae3ce410e2fdec4a7be7329eb3e1d01a5b397f8e7b3cffa",
+      "size_bytes": 3287,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": ".github/workflows/implementation.yml",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "37221540c46d393790cd2194aa9c6314fd281dc7dc101d0217db85318b3ee1b9",
+      "size_bytes": 12488,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": ".github/workflows/plan-validation.yml",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "bb8eb1384427d945a556dadb0f93858aff5bd477c0a50a218bdf7a9872de13c7",
+      "size_bytes": 1773,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "fixtures/kmp/build.gradle.kts",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "dabc794404b660733ab339be36d8c2aa76bc1940be6a7db3dc53bdc1e63e5da0",
+      "size_bytes": 6702,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "modules/cli/src/test/kotlin/dev/ktchecker/cli/CodeImageTest.kt",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "88dd9158d1247b87513417de57e8e634d20dcc3c8aa5c0a5a92397db6c2ffeb7",
+      "size_bytes": 23747,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/record_environment.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "533dffc90c8041e62158229b82aa9a2786f9e52051143705f4ece363561dffe6",
+      "size_bytes": 19659,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/run_platform_checks.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "0b98a045d5ff1b0c7639044e61ecddd7abba72d26cfa79f5f871d1c88bfb7cb7",
+      "size_bytes": 15653,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_ci.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "93d29bdb42b0948127c639da93500a231d55883b53422d4a32b0682c2840eb9c",
+      "size_bytes": 71194,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_library_ci.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "8c2dbf643b95fb7b604a2ea29017ec7d34a27e117712be6ded46931791a54fff",
+      "size_bytes": 20095,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_native_throws_ci.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "848044510b8e3db1a503cf84159c2ea367d309639c2a4fb532d996ca5462e8ef",
+      "size_bytes": 70794,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_workflow_ci.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "e80c22548bcdcc71f9af947aed661fd13da108fe020d6aebdb6c85133b4ac864",
+      "size_bytes": 8156,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": "scripts/test_prepare_jdk_image.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "94b4a58cb4e060808c267a74aabacdbf44aec8097eb3c871d2a986908f2f9b8f",
+      "size_bytes": 28868,
+      "changed_in_checkpoint": true
+    },
+    {
+      "path": ".gitattributes",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "c1b173a4a5c59205aafb4efd1a06c03a8f15fbd29240729844057941eab06285",
+      "size_bytes": 478,
+      "changed_in_checkpoint": false
+    },
+    {
+      "path": "scripts/ci/run_native_throws_checks.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "c2a2aacb33592383036adf57f97a47716ca8bf98f66ec71c37b906aa63f68a1b",
+      "size_bytes": 101806,
+      "changed_in_checkpoint": false
+    },
+    {
+      "path": "scripts/ci/run_supervisor_checks.py",
+      "commit": "b807de0d254d496c54a221b9b6f94edc4ac4b398",
+      "sha256": "38a8ee9b8c5eb3e64374e57fefebabcc9c12ab719fae4be4809e27f50b8155d1",
+      "size_bytes": 51262,
+      "changed_in_checkpoint": false
+    }
+  ],
+  "repair_observation_boundaries": {
+    "windows_long_path_and_checkout": {
+      "empirically_observed_pass": true,
+      "job_ids": [
+        126628980362,
+        126628982606,
+        126628982932
+      ],
+      "scope": "Only the API-observed pre-checkout long-path and checkout steps; later Windows stages fail."
+    },
+    "macos_python_harness": {
+      "empirically_observed_at_this_checkpoint": false,
+      "job_ids": [
+        126628981178,
+        126628982198
+      ],
+      "api_status_at_collection": "queued",
+      "queued_is_not_unavailability_or_execution_evidence": true
+    },
+    "linux_cli_permission_cleanup": {
+      "empirically_observed_at_this_checkpoint": false,
+      "job_id": 126628981687,
+      "api_status_at_collection": "in_progress"
+    },
+    "ios_simulator_and_native_prerequisites": {
+      "empirically_observed_at_this_checkpoint": false,
+      "job_id": 126628982160,
+      "api_status_at_collection": "queued",
+      "native_prerequisite_branch_identified": false
+    }
+  },
+  "limitations": [
+    "This immutable timestamped record is a partial observation of the exact b807de0 push and attempt 1, not a later terminal result. Both baseline observations remain byte-identical.",
+    "Sequential requests are non-atomic. All four run responses report queued/null while job responses include terminal jobs; those actual API values are preserved rather than normalized or inferred.",
+    "Only Planning Linux and Bridges Linux have observed successful job conclusions here. Seven jobs are completed, one is in progress and four are queued. Queued macOS jobs are not unavailable or executed evidence.",
+    "All three Windows long-path and checkout steps passed empirically, but each Windows job later failed. That narrow repair pass is not suite, workflow, Native, bridge-private-state or release qualification.",
+    "Windows unittest counts come from exact complete text-log summaries, not original test-report artifact inspection. Host file-stat semantics and binary-mode hypotheses have not been independently reproduced on Windows.",
+    "KMP jobs reach a new root-project configuration error. No exact stacktrace/source/plugin branch or successful Android/Desktop target tests are established by the retained logs.",
+    "Bridge diagnostics are already sanitized categories, including expected-assertion code text. Category scans do not count actual failed outcomes, identify an ACL mechanism or reproduce a Windows failure from an original Node traceback.",
+    "No macOS, iOS, successful-job or in-progress-job logs were downloaded for this checkpoint. No artifact bundles, distributions, toolchains, workflow reruns, dispatches or cancellations were requested by this collector.",
+    "Source digests refer to exact committed bytes, not unrelated shared working-tree changes. A matching head SHA and step name are not same-job loaded-artifact enrollment or compiler/linker/simulator execution proof.",
+    "Original log bytes remain private and untouched; only exact digests, sizes, bounded collection metadata and fixed sanitized causes are public. Fake tests and local source repairs are not real Darwin ownership, Native support or Apple ABI evidence.",
+    "All qualification fields are false. CI harness process-group cleanup remains best effort, not a sandbox or production supervision/descendant-absence proof."
+  ]
+}
