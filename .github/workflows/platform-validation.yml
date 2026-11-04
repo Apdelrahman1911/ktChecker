@@ -211,6 +211,13 @@ jobs:
           --require-java-major 25
           --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
           --require-xcode 26.4.1 --require-xcode-build 17E202
+      - name: Record optional bounded all-runtime and all-device availability diagnostics
+        # Standalone sanitized *.json artifact, NOT a required --command-result.
+        # Neither incomplete diagnostics nor alternatives change target/FIR gates.
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python scripts/ci/record_ios_inventory.py --output build/ci-evidence/ios-inventory.json
       - name: Enroll exact checksum-pinned Native 2.4.21 on this hosted Mac
         # Availability only; no no-source bootstrap or target-pass claim.
         # SDK/simulator failures must not suppress explicit Native diagnostics.
