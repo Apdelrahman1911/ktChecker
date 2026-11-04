@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "central_compiler_unit_reports_post_run_preservation",
+  "verified_at": "2026-11-04T10:26:03.689837+00:00",
+  "preserved_at": "2026-11-04T10:26:03.689837+00:00",
+  "counts": {
+    "tests": 29,
+    "skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "passed": 28
+  },
+  "suite_reports": [
+    {
+      "report": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/TEST-dev.ktchecker.compiler.CompilerProviderTest.xml",
+        "sha256": "d047a2c41b10efaaf667fae749769edff505ff4ff7051146682c865a3cebe1a2"
+      },
+      "report_observations": {
+        "name": "dev.ktchecker.compiler.CompilerProviderTest",
+        "tests": "15",
+        "skipped": "0",
+        "failures": "0",
+        "errors": "0",
+        "timestamp": "2026-11-04T10:22:16.555Z",
+        "hostname": "(none)",
+        "time": "0.567"
+      },
+      "skipped_cases": []
+    },
+    {
+      "report": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/TEST-dev.ktchecker.compiler.KotlinJvmRuntimeImageTest.xml",
+        "sha256": "e22a0c36ac1d2217a9e9775eecd445a1943b217b0d784040a86f1da2689a758e"
+      },
+      "report_observations": {
+        "name": "dev.ktchecker.compiler.KotlinJvmRuntimeImageTest",
+        "tests": "14",
+        "skipped": "1",
+        "failures": "0",
+        "errors": "0",
+        "timestamp": "2026-11-04T10:22:17.125Z",
+        "hostname": "(none)",
+        "time": "0.308"
+      },
+      "skipped_cases": [
+        {
+          "name": "windowsJunctionHomeLeavesAndDescendantsAreRejectedWhenOnWindows()",
+          "reason": "org.opentest4j.TestAbortedException: Assumption failed: Native Windows junction control is unverified on other hosts"
+        }
+      ]
+    }
+  ],
+  "source_freeze_preservation": {
+    "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/source-freeze-preservation.json",
+    "sha256": "b22c0e403a37601559e39f15c4f427be0b43f23575ae6bd7f984dd788cf6c048"
+  },
+  "central_batch_state": "Compiler unit reports completed; integrated batch failed elsewhere in CLI/controller compilation. This is not an all-modules passing report.",
+  "execution_scope": "Parser, sealed-input, flag, authority-denial and tiny synthetic runtime-image identity controls only. No fake Java/compiler launcher or real compiler child was executed by these compiler tests.",
+  "portability_gap": "Native Windows junction case was explicitly skipped on Linux; native Windows/macOS execution remains unverified.",
+  "attribution": "Actual JUnit report preservation plus independently matching compiler source freeze; post-run source copies are not unit-startup bytecode attestation or per-ID compiler corpus/qualification evidence."
+}

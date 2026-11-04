@@ -1,0 +1,4 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13831686528416522419/sources/cases/non_vararg_spread.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'NON_VARARG_SPREAD' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("NON_VARARG_SPREAD")
+               ^^^^^^^^^^^^^^^^^^^

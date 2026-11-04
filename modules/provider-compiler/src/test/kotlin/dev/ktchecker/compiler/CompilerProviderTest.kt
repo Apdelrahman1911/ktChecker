@@ -168,7 +168,7 @@ class CompilerProviderTest {
     }
 
     @Test fun provenanceReadsAreBoundedAndRejectSymlinkInputs() {
-        val root = Files.createTempDirectory("ktc-provenance-unit-")
+        val root = CompilerFixtureProvenance.canonicalOuterDirectory(Files.createTempDirectory("ktc-provenance-unit-"))
         try {
             val path = root.resolve("original.kt")
             Files.writeString(path, "sealed")
@@ -178,7 +178,36 @@ class CompilerProviderTest {
                 val link = root.resolve("symlink.kt")
                 Files.createSymbolicLink(link, path.fileName)
                 assertFails { CompilerFixtureProvenance.readStable(link, 6) }
+                val nested = Files.createDirectory(root.resolve("nested"))
+                Files.writeString(nested.resolve("original.kt"), "sealed")
+                val linkedDirectory = Files.createSymbolicLink(root.resolve("linked-directory"), nested.fileName)
+                assertFails { CompilerFixtureProvenance.readStable(linkedDirectory.resolve("original.kt"), 6) }
             }
+        } finally { root.toFile().deleteRecursively() }
+    }
+
+    @Test fun provenanceCanonicalizesOnlyDeclaredOuterRootAliases() {
+        val root = Files.createTempDirectory("ktc-provenance-alias-unit-").toRealPath()
+        try {
+            if (!root.fileSystem.supportedFileAttributeViews().contains("posix")) return
+            val outer = Files.createDirectory(root.resolve("actual-outer"))
+            val evidence = Files.createDirectory(outer.resolve("evidence"))
+            Files.writeString(evidence.resolve("original.kt"), "sealed")
+            // Simulate macOS /var -> /private/var above the configured ordinary root.
+            val alias = Files.createSymbolicLink(root.resolve("outer-alias"), outer.fileName)
+            val suppliedRoot = alias.resolve("evidence")
+            val canonicalRoot = CompilerFixtureProvenance.canonicalOuterDirectory(suppliedRoot)
+            assertEquals(evidence, canonicalRoot)
+            assertEquals("sealed", CompilerFixtureProvenance.readStable(canonicalRoot.resolve("original.kt"), 6).toString(Charsets.UTF_8))
+            // The reader must not silently turn arbitrary descendant paths into real paths.
+            assertFails { CompilerFixtureProvenance.readStable(suppliedRoot.resolve("original.kt"), 6) }
+            assertFails { CompilerFixtureProvenance.canonicalOuterDirectory(alias) }
+            val leaf = Files.createSymbolicLink(evidence.resolve("leaf.kt"), Path.of("original.kt"))
+            assertFails { CompilerFixtureProvenance.readStable(leaf, 6) }
+            val ordinaryDescendant = Files.createDirectory(evidence.resolve("ordinary-descendant"))
+            Files.writeString(ordinaryDescendant.resolve("original.kt"), "sealed")
+            val descendant = Files.createSymbolicLink(evidence.resolve("descendant"), ordinaryDescendant.fileName)
+            assertFails { CompilerFixtureProvenance.readStable(descendant.resolve("original.kt"), 6) }
         } finally { root.toFile().deleteRecursively() }
     }
 
@@ -189,7 +218,7 @@ class CompilerProviderTest {
             // input. No fake compiler execution or rule evidence is claimed.
             val artifact = root.resolve("kotlin-compiler-embeddable-2.4.21.jar")
             Files.writeString(artifact, "not a compiler; must never execute")
-            val installation = KotlinJvmToolchain(Path.of(System.getProperty("java.home"), "bin", "java"), listOf(
+            val installation = KotlinJvmToolchain(SyntheticJdk.create(root.resolve("synthetic-jdk")), listOf(
                 ArtifactIdentity("unit:never-run", Digests.sha256(Files.readAllBytes(artifact)), artifact.toString())))
             val source = "fun ok() = 1\n"
             val snapshot = SnapshotManifest(Digests.sha256("authority-input"), "workspace", "worktree", listOf(
@@ -217,6 +246,48 @@ class CompilerProviderTest {
             mutableMembers += "undeclared.kt"
             assertEquals("execution_not_authorized", provider.analyze(prepared).reasons.single())
             assertFalse(verified)
+        } finally { root.toFile().deleteRecursively() }
+    }
+
+    @Test fun compilerInstallationOrderAndPathsBindProfilesWithoutImportedToolchainDigest() {
+        val root = Files.createTempDirectory("ktc-compiler-order-unit-")
+        try {
+            // These are authority/profile inputs only, never executable compiler evidence.
+            val names = listOf("kotlin-compiler-embeddable-2.4.21.jar", "first.jar", "second.jar")
+            val artifacts = names.map { name ->
+                val path = root.resolve(name)
+                Files.writeString(path, "not a compiler: $name")
+                ArtifactIdentity("unit:$name", Digests.sha256(Files.readAllBytes(path)), path.toString())
+            }
+            val java = SyntheticJdk.create(root.resolve("synthetic-jdk"))
+            val ordered = KotlinJvmToolchain(java, artifacts)
+            val reversed = KotlinJvmToolchain(java, listOf(artifacts[0], artifacts[2], artifacts[1]))
+            assertNotEquals(ordered.digest, reversed.digest)
+            val relocated = root.resolve("relocated/first.jar")
+            Files.createDirectory(relocated.parent)
+            Files.copy(Path.of(artifacts[1].path), relocated)
+            val differentPath = KotlinJvmToolchain(java, listOf(artifacts[0], artifacts[1].copy(path = relocated.toString()), artifacts[2]))
+            assertNotEquals(ordered.digest, differentPath.digest)
+            val source = "fun ok() = 1\n"
+            val base = AnalysisInput(SnapshotManifest(Digests.sha256("ordered-unit"), "workspace", "worktree",
+                listOf(SnapshotFile("source.kt", Digests.sha256(source), source.toByteArray().size.toLong()))), root.toString(),
+                AnalysisContext(compilerVersion = "2.4.21", compilationFiles = listOf("source.kt")),
+                listOf("ktc.compiler.common.unresolved_reference"))
+            assertNull(base.context.toolchainDigest)
+            val before = KotlinJvmCompilerProvider(ordered).executionProfile(base)
+            val after = KotlinJvmCompilerProvider(reversed).executionProfile(base)
+            assertNotEquals(before, after)
+            assertTrue("-Dktchecker.compiler.toolchain=${ordered.digest}" in before.arguments)
+            val prepared = base.copy(execution = before)
+            assertNotEquals(prepared.analysisKey(), base.copy(execution = after).analysisKey())
+            var snapshotChecked = false
+            val authority = ExactExecutionAuthority(ExecutionPermit(before, prepared.snapshot.snapshotId, root,
+                prepared.analysisKey(), { snapshotChecked = true }))
+            assertEquals("execution_profile_mismatch", KotlinJvmCompilerProvider(reversed, authority).analyze(prepared).reasons.single())
+            assertFalse(snapshotChecked)
+            val wrongDeclared = prepared.copy(context = prepared.context.copy(toolchainDigest = ordered.digest))
+            assertEquals("compiler_toolchain_identity_mismatch", KotlinJvmCompilerProvider(reversed, authority).analyze(wrongDeclared).reasons.single())
+            assertFalse(snapshotChecked)
         } finally { root.toFile().deleteRecursively() }
     }
 }

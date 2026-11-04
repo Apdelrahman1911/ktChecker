@@ -1,0 +1,162 @@
+{
+    "rule_id": "ktc.compiler.common.no_value_for_parameter",
+    "upstream_id": "NO_VALUE_FOR_PARAMETER",
+    "kind": "version",
+    "passed": true,
+    "assertions": "Executed Kotlin2.4.21 banner and internal-name renderer under explicit language/API2.4. A2.4.20 request was denied before execution; no alternate compiler version is claimed.",
+    "jobs": [
+        {
+            "label": "version-cohort-0",
+            "analysis_key": "sha256:c981e027b6b87a74f7db6e7aaa734c87097df27a3de32e6798fcd2fa996fb6da",
+            "snapshot_id": "sha256:74528979d45b4113b20f1f49166cd4a67aa72ed7cf233e735cc4a254b9c9dd72",
+            "actual_exit_code": 1,
+            "provider_status": "failed"
+        },
+        {
+            "label": "wrong-requested-compiler-version",
+            "analysis_key": "sha256:f957da5203262f96f8530d640e10bb857221af6815347d5ddcb8fb51ee8aef81",
+            "snapshot_id": "sha256:49628275553e12881269d2ae3c0ec1a4184607e91a042aa43b24e841f68f0221",
+            "actual_exit_code": null,
+            "provider_status": "unavailable"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/input.json",
+            "sha256": "cec230a53ede2da9e86d660c7aa764e46ef22c2b0936b90a280b80fabd438593"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/process.json",
+            "sha256": "85cfe96003e78c0f33cb1640522c82332862df716a1e96d8865b6f42188a54ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/result.json",
+            "sha256": "be5568bb5e46deb078fa438a49a2d86c24b1ab0820f21d1a4bd8af29e589bd30"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/stderr.txt",
+            "sha256": "ebce69c5512da04afe7f205808cddf0f25a9283c5ce20fb95139238c3fea4414"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/argument_passed_twice.kt",
+            "sha256": "ea61635a65c3ff235a0bd1e8f8e2e78d4aa9bc9a6c861ffcac1a83a6d0d80470"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/argument_type_mismatch.kt",
+            "sha256": "e3ca48f35c28d63c5df1a72ce786fefd02da2cb052cd104f5859951f4a76b0f7"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/assignment_type_mismatch.kt",
+            "sha256": "67b5b7ba4da08a6349637de33f955c029067001675c138e4571280df3e03d048"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/exposed_function_return_type.kt",
+            "sha256": "8963fb30a263ae6a268ed19743d7d7c8706781eebc15b62c1c381f963bd22d1e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/initializer_type_mismatch.kt",
+            "sha256": "09b2517fe550b84a8e18b33f99941e866fd0e76bd7bf757ea319fda4cca4f155"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/named_parameter_not_found.kt",
+            "sha256": "d8a874bc538fcd2399712682d6d6b255c0ebedb495c8c2762a912ce567223706"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/no_else_in_when.kt",
+            "sha256": "5d8f5be96dcbe428c44cf261201a0a02afc48c4734e8e7850c117bfd3d14e575"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/no_value_for_parameter.kt",
+            "sha256": "870e8886fa5dbdf28e79b57226ef0c303b2672f1304d8adf7f090a97c0f0634d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/non_vararg_spread.kt",
+            "sha256": "02dd78ac96f8906436e5cb2609f34fa2416cba1b665deac09abd6fedde4c6f90"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/null_for_nonnull_type.kt",
+            "sha256": "960419f714930897b4c5910942d4cdedc2804949357043766e0ff14c7f508a5e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/return_type_mismatch.kt",
+            "sha256": "c986ad1553c671aae2f601948702d049951977d9249a240493d7fda39f3ad88e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/spread_of_nullable.kt",
+            "sha256": "fbb0192f4de9a69c5229ada9655571d9d4c143aeb48e6b5d6873b9a9c1c44d4d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/too_many_arguments.kt",
+            "sha256": "94f3450e4cccca25c787bd9f2f34518d4dd9bb03e9974d372e122005be9ed7a3"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/uninitialized_variable.kt",
+            "sha256": "50b19de9b95ef105643f1515b5d12b5b7b6074329a982e913378533e3c946465"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/unresolved_import.kt",
+            "sha256": "ed407fd6fcb4501abac71543be3b3dbb5eb3d69c3016e900c6e52157d22dfaf7"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/unresolved_reference.kt",
+            "sha256": "cc58d834595d3f05f4dad1f3a568ea60561c63a08974847a5024d627cc3e940a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/unsafe_call.kt",
+            "sha256": "4f903026cb19f77c8a7e8fa600cd8bbc75609f9aeb03d7bbe6297bbac5d193f0"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/upper_bound_violated.kt",
+            "sha256": "d4c523be141bce9e62df159a14cb7e31c3bc7842cedca3630dca17b2223b0f50"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/val_reassignment.kt",
+            "sha256": "3bf39cc517c492848601e06ff06ee5f6ec0fec12b80b99309a129cb8a8a11ac3"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/021-version-cohort-0/sources/cases/wrong_annotation_target.kt",
+            "sha256": "2b118d54a8d08ec37128a443af8394088f1b9006fbf5bde609e4d69fc801f2cc"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/027-wrong-requested-compiler-version/input.json",
+            "sha256": "327660cec055c980bc8837f9dc6957a17f32e42880f658b57317baf961d870bd"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/027-wrong-requested-compiler-version/process.json",
+            "sha256": "431bb665a6fd4cccadcfecf6d8f23ae81adde846485f1708f3e9019c2b4d3f92"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/027-wrong-requested-compiler-version/result.json",
+            "sha256": "4ca9427ba19a06ca3d75a221527dacbc6508efb5b44c9b80983da424ac95695f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/027-wrong-requested-compiler-version/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/027-wrong-requested-compiler-version/stderr.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/027-wrong-requested-compiler-version/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/027-wrong-requested-compiler-version/sources/version-control.kt",
+            "sha256": "dbd1f33ebda74e25e251ae2865879bda03dbf0fb4aae42319d78808f10d12504"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

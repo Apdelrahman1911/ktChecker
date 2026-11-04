@@ -1,0 +1,11 @@
+{
+    "schema_version": 1,
+    "checked_at": "2026-11-04T09:45:52.843339200Z",
+    "startup_provenance": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+        "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+    },
+    "passed": true,
+    "drift": [],
+    "claim": "Startup source identities and executed-artifact identities are independent; unchanged live sources alone are not executed bytecode proof."
+}

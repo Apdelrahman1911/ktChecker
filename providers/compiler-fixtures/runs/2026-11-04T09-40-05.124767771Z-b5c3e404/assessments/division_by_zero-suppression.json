@@ -1,0 +1,95 @@
+{
+    "rule_id": "ktc.compiler.common.division_by_zero",
+    "upstream_id": "DIVISION_BY_ZERO",
+    "kind": "suppression",
+    "passed": true,
+    "assertions": "Real @file:Suppress removed only this warning from its sealed file while an adjacent unsuppressed control still emitted the same ID; coverage remained non-complete.",
+    "jobs": [
+        {
+            "label": "suppression-cohort-1",
+            "analysis_key": "sha256:7df387d1da70f2165b7a9cc77f1b33d9417c411fc08a33582033a17674d396b5",
+            "snapshot_id": "sha256:e21f56f176de62df40e7f68f040c2c84e873b95b7805639081a535209a2a4494",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/input.json",
+            "sha256": "48e2b2d1cc9088469e1a891ca8acbba2528a4774a6959f6a6d86f4c0201a5b4f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/process.json",
+            "sha256": "052540a121f04f52a1713dbf2f2dbb65fef873caf2a638f45b55bf890d22d6c4"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/result.json",
+            "sha256": "3be5b1c57c473e530d96c692842e6a5cd50aa338e83f0f99929ec62b42cbb5c1"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/stderr.txt",
+            "sha256": "7b7b66a0b9d92e8e5684a2a5d11f3394bd82e6c573f621ac0c8bd08234be5727"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/cases/cast_never_succeeds.kt",
+            "sha256": "bd62047d5ba7d1b0d9394743f18f2470bde573b4f75e79a18ac690f4c6a6b926"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/cases/deprecation.kt",
+            "sha256": "fc4f2a8444f306afbdcdce16aaabeea15571cc2ceac7cb7bace44ac00e07461a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/cases/division_by_zero.kt",
+            "sha256": "33d6493b81f02c1fcf5e0e36db6389d2aa099ad5d3a99be8e99a64431838d1ea"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/cases/unnecessary_not_null_assertion.kt",
+            "sha256": "8552445cca7a3ef0dc90fdbdccefe5b6e565f3d6c2e5d3c6df61d0bb9fc2ee19"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/cases/unnecessary_safe_call.kt",
+            "sha256": "e2f693dbc269eb54bfe1b43e8546ccd9c8914ed6a4d0bb9e1cd4af7e957864c8"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/cases/useless_cast.kt",
+            "sha256": "b68cb039243792f76fb913dbd3b03d6f85fe4251993cd3e5fafe300433578080"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/unsuppressed/cast_never_succeeds.kt",
+            "sha256": "3c84c574059b6f7bc90983122b728260787d43ec2a7936fab36e19cfa6e870ce"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/unsuppressed/deprecation.kt",
+            "sha256": "43b111d84f7a99c27dca22005f85c8e0a284e3832958dc070d8d99e842b54ca9"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/unsuppressed/division_by_zero.kt",
+            "sha256": "19b24f60fa33a5cf5d34814b91a2f01344c695cbfc902b5f7894f97369b27541"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/unsuppressed/unnecessary_not_null_assertion.kt",
+            "sha256": "65c3d0206ba90f1872e741c2aeaf1e1792434144683a837e78d43eed9097186a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/unsuppressed/unnecessary_safe_call.kt",
+            "sha256": "87b87067de47d586d5965fdfb5dc1158f5075c6f2b996c1ab906e65b4499b82b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/029-suppression-cohort-1/sources/unsuppressed/useless_cast.kt",
+            "sha256": "fe28113645007e9bc52a427593e82bd33d3666ee6e5258e16ec7252a03a2d9f2"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

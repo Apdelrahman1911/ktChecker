@@ -1,0 +1,33 @@
+{
+    "schema_version": 1,
+    "mappings": 443,
+    "jvm_available_mappings": 400,
+    "original_fixture_ids": 42,
+    "implemented": 42,
+    "tested": 41,
+    "qualified": 0,
+    "failed_case_count": 2,
+    "actual_executions": 74,
+    "unique_output_directories": 74,
+    "startup_provenance_evidence": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+        "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+    },
+    "provenance_check_evidence": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/provenance-check.json",
+        "sha256": "4be5bf97e343f84fb94a87755428beb63fdcb09d9386c35383c7618e8f6ccde4"
+    },
+    "provenance_check_passed": true,
+    "toolchain_evidence": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/toolchain.json",
+        "sha256": "2ed986948a33911f1959750a935e99012ff6ce9fac9b283815c8e4a737016430"
+    },
+    "intent_control_evidence": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/intent-controls.json",
+        "sha256": "ff6298cebc94378fe8f27f2369b265427ebb9f6b850ba04ce841f727f01da00d"
+    },
+    "transport_control_evidence": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/transport-controls.json",
+        "sha256": "c607c6e927b3607ef1360259c3ec608f03c8c7ba8a0efea7813e5d966d63a8db"
+    }
+}

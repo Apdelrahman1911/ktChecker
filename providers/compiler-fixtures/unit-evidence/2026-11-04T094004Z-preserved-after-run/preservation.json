@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "post_run_preservation_of_existing_junit_xml",
+  "preserved_at": "2026-11-04T10:17:47.063997+00:00",
+  "original_build_report_path": "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.CompilerProviderTest.xml",
+  "original_build_report_mtime_utc": "2026-11-04T09:40:05.024653+00:00",
+  "report": {
+    "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T094004Z-preserved-after-run/TEST-dev.ktchecker.compiler.CompilerProviderTest.xml",
+    "sha256": "4321ff88e29c9c17269b2af7796c6d530ec1c6168071fd9053d16069ba549b7c"
+  },
+  "report_observations": {
+    "name": "dev.ktchecker.compiler.CompilerProviderTest",
+    "tests": "14",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-11-04T09:40:04.605Z",
+    "hostname": "(none)",
+    "time": "0.309"
+  },
+  "historical_compiler_run_evidence": {
+    "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/compiler-jvm-2.4.21.json",
+    "sha256": "313f442bb953f752f11b89aaaf5fa4c31c3e619bca99b6104305f6444f566597"
+  },
+  "attribution": "Existing JUnit XML read after the historical batch and before later report overwrite. This is not startup unit execution/bytecode provenance, qualification, or evidence for later compiler/runtime source edits."
+}

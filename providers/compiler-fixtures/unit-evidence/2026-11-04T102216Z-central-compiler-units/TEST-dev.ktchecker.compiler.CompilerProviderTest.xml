@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.ktchecker.compiler.CompilerProviderTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-04T10:22:16.555Z" hostname="(none)" time="0.567">
+  <properties/>
+  <testcase name="artifactByteBoundsAndCancellationPrecedeLargeReads()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.074"/>
+  <testcase name="verificationIsAnExactContextFutureCheckNotAnInventedShellCommand()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.071"/>
+  <testcase name="compilerInstallationOrderAndPathsBindProfilesWithoutImportedToolchainDigest()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.263"/>
+  <testcase name="exactManifestIsNotTargetCoverage()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.029"/>
+  <testcase name="provenanceCanonicalizesOnlyDeclaredOuterRootAliases()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.002"/>
+  <testcase name="provenanceReadsAreBoundedAndRejectSymlinkInputs()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.001"/>
+  <testcase name="dangerousAndUnknownSettingsCannotEscapeIsolation()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.001"/>
+  <testcase name="compilationSelectionIsDeclaredNotInferredFromMixedSnapshot()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.005"/>
+  <testcase name="disabledAndUnenabledCheckersDoNotMeanCleanCoverage()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.029"/>
+  <testcase name="actualHeaderProducesReportedPointNotGuessedTokenRange()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.004"/>
+  <testcase name="quotesUnknownPathsAndUnnamedErrorsNeverNormalize()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.002"/>
+  <testcase name="fileUrisDecodeWithoutGuessingCoordinatesOrPhase()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.004"/>
+  <testcase name="emittedWarningSeverityIsNotReplacedWithSourceDeclaration()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.019"/>
+  <testcase name="transportApprovalAndChangedContextNeverGrantCompilerExecution()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.043"/>
+  <testcase name="sourceIdentityAndTraversalCheckedBeforeCompilerExecution()" classname="dev.ktchecker.compiler.CompilerProviderTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

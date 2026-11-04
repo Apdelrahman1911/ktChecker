@@ -10,15 +10,24 @@ import java.nio.file.StandardOpenOption
 import java.util.Collections
 import java.util.concurrent.CancellationException
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.*
 
-/** Trusted installation descriptor; compiler jars never enter ktChecker's classloader. */
-class KotlinJvmToolchain(javaExecutable: Path, compilerClasspath: List<ArtifactIdentity>) {
-    val javaExecutable: Path = javaExecutable.toRealPath()
+/** Trusted explicit link-free JDK21 installation; compiler jars never enter ktChecker's classloader. */
+class KotlinJvmToolchain(javaExecutable: Path, compilerClasspath: List<ArtifactIdentity>,
+    runtimeLimits: KotlinJvmRuntimeLimits = KotlinJvmRuntimeLimits()) {
+    val runtimeImage: KotlinJvmRuntimeImage = KotlinJvmRuntimeImage.capture(javaExecutable, runtimeLimits)
+    val javaExecutable: Path = runtimeImage.javaExecutable
     val compilerClasspath: List<ArtifactIdentity> = Collections.unmodifiableList(compilerClasspath.map { it.copy() })
-    val executableDigest: String = fileDigest(this.javaExecutable)
-    val digest: String = Digests.sha256(this.compilerClasspath.sortedBy { it.coordinate }.joinToString("\n") {
-        "${it.coordinate}:${it.digest}"
-    } + "\njava:$executableDigest")
+    val executableDigest: String = runtimeImage.executableDigest
+    // The compiler sees this exact ordered classpath. JSON frames arbitrary
+    // coordinates/paths without delimiter collisions; sorting would change semantics.
+    val digest: String = Digests.sha256(Digests.canonical(buildJsonObject {
+        put("schema", "ktchecker/kotlin-jvm-toolchain-3")
+        put("compilerClasspath", ContractJson.encodeToJsonElement(this@KotlinJvmToolchain.compilerClasspath))
+        put("javaExecutable", this@KotlinJvmToolchain.javaExecutable.toString())
+        put("javaExecutableDigest", executableDigest)
+        put("javaRuntimeImageDigest", runtimeImage.digest)
+    }))
 
     init {
         require(this.compilerClasspath.any {
@@ -30,9 +39,7 @@ class KotlinJvmToolchain(javaExecutable: Path, compilerClasspath: List<ArtifactI
 
     fun verify(checkpoint: () -> Unit = {}) {
         checkpoint()
-        require(Files.isExecutable(javaExecutable) && fileDigest(javaExecutable) == executableDigest) {
-            "Pinned Java executable changed"
-        }
+        runtimeImage.verify(checkpoint)
         CompilerSnapshot.classpath(compilerClasspath, checkpoint)
     }
 }
@@ -78,7 +85,10 @@ class KotlinJvmCompilerProvider(
      */
     fun executionProfile(input: AnalysisInput, timeoutMillis: Long = 60_000, maxOutputBytes: Int = 1_048_576): TrustedExecution {
         val flags = CompilerFlags.validate(input.context.compilerArguments)
-        val arguments = mutableListOf("-Xmx${compilerHeapMiB}m", "-Dfile.encoding=UTF-8", "-Duser.language=en",
+        // Installed compiler identities are intrinsic to the approved profile,
+        // even for limited requests without an owner-imported toolchain digest.
+        val arguments = mutableListOf("-Xmx${compilerHeapMiB}m", "-Dktchecker.compiler.toolchain=${toolchain.digest}",
+            "-Dfile.encoding=UTF-8", "-Duser.language=en",
             "-Duser.country=US", "-Djava.io.tmpdir={output}/tmp", "-cp")
         arguments += toolchain.compilerClasspath.indices.joinToString(File.pathSeparator) { "{output}/compiler/$it.jar" }
         arguments += listOf("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-version", "-Xrender-internal-diagnostic-names",
@@ -103,6 +113,9 @@ class KotlinJvmCompilerProvider(
         if (cancellation.isCancelled()) return unavailable("cancelled_before_execution", "cancelled")
         if (request.context.scope.target.lowercase() !in JVM_TARGETS) return unavailable("target_not_jvm")
         if (request.context.compilerVersion != version) return unavailable("compiler_version_not_pinned_2_4_21")
+        if (request.context.toolchainDigest != null && request.context.toolchainDigest != toolchain.digest) {
+            return unavailable("compiler_toolchain_identity_mismatch")
+        }
         val permit = runCatching { authority.authorize(request) }.getOrNull()
             ?: return unavailable("execution_not_authorized")
         val execution = request.execution ?: return unavailable("execution_profile_missing")
@@ -133,13 +146,19 @@ class KotlinJvmCompilerProvider(
             return unavailable("cancelled_during_compiler_preparation", "cancelled")
         } catch (problem: ExecutionProblem) {
             return unavailable(problem.code)
+        } catch (problem: KotlinJvmRuntimeException) {
+            return unavailable(problem.code)
         } catch (_: Exception) {
             return unavailable("sealed_input_or_toolchain_verification_failed")
         }
         val wrappedPermit = ExecutionPermit(execution, permit.snapshotId, permit.materializedRoot, permit.expectedAnalysisKey, {
             checkpoint()
             permit.verifySnapshot()
-            toolchain.verify(checkpoint)
+            // The runner invokes this both before and after the child. Preserve
+            // full-runtime drift codes without discarding actual exit/output.
+            try { toolchain.verify(checkpoint) } catch (problem: KotlinJvmRuntimeException) {
+                throw ExecutionProblem(problem.code, problem.message ?: "Selected Java runtime verification failed")
+            }
             CompilerSnapshot.classpath(request.context.classpath, checkpoint)
         }, { output ->
             checkpoint()
@@ -205,7 +224,8 @@ class KotlinJvmCompilerProvider(
                     Evidence("snapshot", "Registered immutable ${request.snapshot.snapshotId}; source batch, not inferred Gradle scope",
                         digest = diagnostic.location.fileDigest),
                     Evidence("compiler-options", "Actual explicit flags/classpath/context bound to $key", digest = key),
-                    Evidence("toolchain", "Pinned isolated compiler artifacts and Java executable ${toolchain.javaExecutable}; not loaded into host",
+                    Evidence("toolchain", "Pinned ordered isolated compiler artifacts and whole selected link-free JDK21 image " +
+                        "${toolchain.runtimeImage.root} (${toolchain.runtimeImage.digest}); disk identity, not loaded-code or OS/JNI attestation",
                         digest = toolchain.digest),
                     Evidence("upstream-factory", mapping.source),
                     Evidence("location-precision", "Reported point: one-based line, zero-based UTF-16 column; no inferred end span"),

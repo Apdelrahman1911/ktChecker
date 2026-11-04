@@ -1,0 +1,94 @@
+{
+    "rule_id": "ktc.compiler.jvm.synchronized_on_inline",
+    "upstream_id": "SYNCHRONIZED_ON_INLINE",
+    "kind": "regression",
+    "passed": true,
+    "assertions": "Fresh changed/moved snapshot re-emitted the exact ID at the verified two-line shift with new source digest/key and a unique job output; no stale span or result was reused.",
+    "jobs": [
+        {
+            "label": "positive-cohort-5",
+            "analysis_key": "sha256:5b9b46d8224562221bf6e858e94486c0815ae0a029ac7ce2de7aa962b965ac74",
+            "snapshot_id": "sha256:528f482577fe2efcd98e2f44a5e427bb153b7465baf59a0c9a634609904c1a11",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        },
+        {
+            "label": "regression-cohort-5",
+            "analysis_key": "sha256:b551d0e3b4d460a4f7c2c1c2fc12a8c937725ca913bc84ba89bf4cf9aa067162",
+            "snapshot_id": "sha256:03329b3805c71c6ed9598e25fd8768f1df53cfcce7cd5f0da0b73b6b9050a8c5",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/006-positive-cohort-5/input.json",
+            "sha256": "5eb9c0ef67347c52309fd932cfd6061c6443227f9bcf54697d16c4def8b3f184"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/006-positive-cohort-5/process.json",
+            "sha256": "a001add1b4e0e7588b4d1a113798619248a863b0fbcd7380daa1e85b91409705"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/006-positive-cohort-5/result.json",
+            "sha256": "d96ddde8573ef04fa1fcea36d04c6037c9b47790725c86cd42a257d15acca4e6"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/006-positive-cohort-5/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/006-positive-cohort-5/stderr.txt",
+            "sha256": "6fd66e6a7d1e3974a6bc13253c55c9d4759b57781395c55225d00794ae266425"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/006-positive-cohort-5/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/006-positive-cohort-5/sources/cases/overloads_without_default_arguments.kt",
+            "sha256": "c46dd40de00400bbe0b26406c1c6b4dcaf19e757742c813feb15f72c2d53f74d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/006-positive-cohort-5/sources/cases/synchronized_on_inline.kt",
+            "sha256": "deed6c4c156441afcd5541bf99fe17e89f5691d5248bc974a67841c47457f8c5"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/071-regression-cohort-5/input.json",
+            "sha256": "7d979806c91c573fc86b78a9b9c4ba6ca934f571e674904431fed23acc41df42"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/071-regression-cohort-5/process.json",
+            "sha256": "b9bdeb585a9b6a3f692eeea4dafaf5f8fbfc9918841c3887bfa1921823ed5225"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/071-regression-cohort-5/result.json",
+            "sha256": "0e2a504d0854f38fd91548344b0730f8c0feb6dcd4f4f0dfe87c389b7b7af296"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/071-regression-cohort-5/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/071-regression-cohort-5/stderr.txt",
+            "sha256": "32109133fc53c816c41c97d2ab9339b79e3a51fa31c51c02712a62403318cd3d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/071-regression-cohort-5/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/071-regression-cohort-5/sources/moved/overloads_without_default_arguments.kt",
+            "sha256": "7168844f805f186f9251a1e4a2e6d60e758ad900a4f6a29511c03379973b5e74"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/071-regression-cohort-5/sources/moved/synchronized_on_inline.kt",
+            "sha256": "6791f831f1e1a4359a9d73735899efe914912f2501b9d6e6e37d1e0ecd35ff1d"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

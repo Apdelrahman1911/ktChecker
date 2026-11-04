@@ -1,0 +1,54 @@
+{
+    "analysis_key": "sha256:e3c7905a38e5140e0962fdc31d28bc5adad7b14ea5f4e2c56c0bbb7a30480a6e",
+    "snapshot_id": "sha256:c1f1162d9b413fcb92d3cb25fc6d7d4ad3bb9e12fc7405be362378da2a3c7dbe",
+    "startup_provenance": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+        "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+    },
+    "context_id": "[\":compiler-fixtures\",\"synthetic\",\"jvm\",\"main\"]",
+    "status": "executed",
+    "reasons": [],
+    "exit_code": 0,
+    "command": [
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+        "-Xmx512m",
+        "-Dfile.encoding=UTF-8",
+        "-Duser.language=en",
+        "-Duser.country=US",
+        "-Djava.io.tmpdir=/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/tmp",
+        "-cp",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/compiler/0.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/compiler/1.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/compiler/2.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/compiler/3.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/compiler/4.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/compiler/5.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/compiler/6.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/compiler/7.jar",
+        "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler",
+        "-version",
+        "-Xrender-internal-diagnostic-names",
+        "-no-stdlib",
+        "-no-reflect",
+        "-d",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/classes",
+        "-classpath",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/dependencies/0.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/dependencies/1.jar",
+        "-jvm-target",
+        "17",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900/sources/cases/assignment_type_mismatch.kt"
+    ],
+    "output_directory": "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-17465027596515071900",
+    "cancelled": false,
+    "timed_out": false,
+    "truncated": false,
+    "elapsed_millis": 3746,
+    "output_bytes": 530,
+    "stdout_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "sha256:52ab2c614a0a3fda441fcc3d5e595e11b8185d297ddca3f79126c74853488d34",
+    "sealed_source_files": [
+        {
+            "path": "build.gradle.kts",
+            "sha256": "sha256:a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d",
+            "size": 68
+        },
+        {
+            "path": "cases/assignment_type_mismatch.kt",
+            "sha256": "sha256:085be59bec1baba83e0dc8295a660b00abfd96e3db22022a8d5b309ae11951c0",
+            "size": 140
+        }
+    ]
+}

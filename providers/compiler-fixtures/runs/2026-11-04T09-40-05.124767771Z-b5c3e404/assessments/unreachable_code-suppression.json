@@ -1,0 +1,55 @@
+{
+    "rule_id": "ktc.compiler.common.unreachable_code",
+    "upstream_id": "UNREACHABLE_CODE",
+    "kind": "suppression",
+    "passed": true,
+    "assertions": "Real @file:Suppress removed only this warning from its sealed file while an adjacent unsuppressed control still emitted the same ID; coverage remained non-complete.",
+    "jobs": [
+        {
+            "label": "suppression-cohort-2",
+            "analysis_key": "sha256:a10e5260b25a74d2545c0e235ff0dbfbaecadcb704520a02927e0476159e8c58",
+            "snapshot_id": "sha256:067c9985b0356129d05ce0478bbec94facd30317b3a83607da416333f7580676",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/030-suppression-cohort-2/input.json",
+            "sha256": "289f51519e0a3a38e744d16eb3382cdaceca71b72084c9eb196e43a2db234720"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/030-suppression-cohort-2/process.json",
+            "sha256": "c2e57e83d2d675925879858280e690fc8a676ab16496f60c112fc0bc5a3de4d1"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/030-suppression-cohort-2/result.json",
+            "sha256": "c634efa6c1ee15b32e71e9a0aa186bdff1b3654028c70ade16c466c1e3c2bb07"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/030-suppression-cohort-2/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/030-suppression-cohort-2/stderr.txt",
+            "sha256": "bc5b0d3caa13dab75028031e0e32597ef383660770e2b8737fd3f1528ef4537e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/030-suppression-cohort-2/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/030-suppression-cohort-2/sources/cases/unreachable_code.kt",
+            "sha256": "0095775c5dbeafa322bdb8e10f2c691cf7b3361e52e61e8b97ff9e773aa7d938"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/030-suppression-cohort-2/sources/unsuppressed/unreachable_code.kt",
+            "sha256": "a06743103bcdbbb0ee2da7f4a7384a3d0bd352b3ec320c26c5dc4a72fef46a54"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

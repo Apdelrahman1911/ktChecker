@@ -1,0 +1,4 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-15487506654507084622/sources/cases/jvm_inline_without_value_class.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'JVM_INLINE_WITHOUT_VALUE_CLASS' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("JVM_INLINE_WITHOUT_VALUE_CLASS")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

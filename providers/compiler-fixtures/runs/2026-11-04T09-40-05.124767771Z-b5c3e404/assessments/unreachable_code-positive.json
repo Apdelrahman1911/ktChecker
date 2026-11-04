@@ -1,0 +1,51 @@
+{
+    "rule_id": "ktc.compiler.common.unreachable_code",
+    "upstream_id": "UNREACHABLE_CODE",
+    "kind": "positive",
+    "passed": true,
+    "assertions": "Actual exact internal ID normalized to its reviewed rule with sealed UTF-8 point provenance and truthful not-run future Verification; compilation failure remains failure.",
+    "jobs": [
+        {
+            "label": "positive-cohort-2",
+            "analysis_key": "sha256:419a0985ca2a47e1c8804c80230dfa9e29967e2503f3778dc99ead5216434085",
+            "snapshot_id": "sha256:451d2850a678ee7e5388f7a48e71136b56e2fd516af76650e4f6ecb6bc492a4e",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/003-positive-cohort-2/input.json",
+            "sha256": "b7df0620ef669cc5da9c6b41b0ef0db509fd164d6ba538a7db4b5e42d2c4266a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/003-positive-cohort-2/process.json",
+            "sha256": "138e683ef8dc89ae02074e9a5c2eef4e77b099c8099597903e4b32807c55aa6f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/003-positive-cohort-2/result.json",
+            "sha256": "1ba8d7373bce547d6dff277c02375e4b244f21fb7a023cbb490fc4792ec73c98"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/003-positive-cohort-2/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/003-positive-cohort-2/stderr.txt",
+            "sha256": "f2baddc6d1207239335cfce5a2dbc9b916e2c7df22b5db8d7e9af538cb73399f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/003-positive-cohort-2/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/003-positive-cohort-2/sources/cases/unreachable_code.kt",
+            "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

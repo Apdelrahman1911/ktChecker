@@ -1,0 +1,84 @@
+{
+    "analysis_key": "sha256:c342139413cc7df9a02567a65a94467368570216e904e2704a679b88c4133109",
+    "snapshot_id": "sha256:545c4c4fea6a0bb662a9671f8a64a391274eefa69e2d2ba8a1a1bfb7991bdc4e",
+    "startup_provenance": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+        "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+    },
+    "context_id": "[\":compiler-fixtures\",\"synthetic\",\"jvm\",\"main\"]",
+    "status": "executed",
+    "reasons": [],
+    "exit_code": 0,
+    "command": [
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+        "-Xmx512m",
+        "-Dfile.encoding=UTF-8",
+        "-Duser.language=en",
+        "-Duser.country=US",
+        "-Djava.io.tmpdir=/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/tmp",
+        "-cp",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/compiler/0.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/compiler/1.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/compiler/2.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/compiler/3.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/compiler/4.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/compiler/5.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/compiler/6.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/compiler/7.jar",
+        "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler",
+        "-version",
+        "-Xrender-internal-diagnostic-names",
+        "-no-stdlib",
+        "-no-reflect",
+        "-d",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/classes",
+        "-classpath",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/dependencies/0.jar:/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/dependencies/1.jar",
+        "-jvm-target",
+        "17",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/sources/cases/division_by_zero.kt",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/sources/cases/cast_never_succeeds.kt",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/sources/cases/useless_cast.kt",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/sources/cases/unnecessary_safe_call.kt",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/sources/cases/unnecessary_not_null_assertion.kt",
+        "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276/sources/cases/deprecation.kt"
+    ],
+    "output_directory": "/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-13208159695459635276",
+    "cancelled": false,
+    "timed_out": false,
+    "truncated": false,
+    "elapsed_millis": 3796,
+    "output_bytes": 1602,
+    "stdout_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "sha256:a39eb81c9673d2e923cc3bc926034c9f6b66fc1dccf5be759afafd0c27aa02b5",
+    "sealed_source_files": [
+        {
+            "path": "build.gradle.kts",
+            "sha256": "sha256:a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d",
+            "size": 68
+        },
+        {
+            "path": "cases/cast_never_succeeds.kt",
+            "sha256": "sha256:4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138",
+            "size": 82
+        },
+        {
+            "path": "cases/deprecation.kt",
+            "sha256": "sha256:a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399",
+            "size": 90
+        },
+        {
+            "path": "cases/division_by_zero.kt",
+            "sha256": "sha256:620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc",
+            "size": 54
+        },
+        {
+            "path": "cases/unnecessary_not_null_assertion.kt",
+            "sha256": "sha256:8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2",
+            "size": 84
+        },
+        {
+            "path": "cases/unnecessary_safe_call.kt",
+            "sha256": "sha256:ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548",
+            "size": 74
+        },
+        {
+            "path": "cases/useless_cast.kt",
+            "sha256": "sha256:08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4",
+            "size": 65
+        }
+    ]
+}

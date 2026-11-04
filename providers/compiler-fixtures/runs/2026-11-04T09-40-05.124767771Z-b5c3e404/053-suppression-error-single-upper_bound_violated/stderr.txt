@@ -1,0 +1,4 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-10982190319177226824/sources/cases/upper_bound_violated.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'UPPER_BOUND_VIOLATED' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("UPPER_BOUND_VIOLATED")
+               ^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,9 @@
+# Exact process output is immutable evidence, including trailing blank lines.
+runs/**/stdout.txt -text -whitespace
+runs/**/stderr.txt -text -whitespace
+# Executed bytecode archives must never undergo checkout/newline conversion.
+runs/**/executed-code/** -text -whitespace
+# Existing JUnit XML is preserved byte-for-byte with explicit post-run labels.
+unit-evidence/**/*.xml -text -whitespace
+# Authored Kotlin input identity is stable on Windows as well as POSIX hosts.
+cases/**/*.kt text eol=lf

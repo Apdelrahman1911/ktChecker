@@ -1,0 +1,121 @@
+{
+    "rule_id": "ktc.compiler.common.empty_range",
+    "upstream_id": "EMPTY_RANGE",
+    "kind": "configuration",
+    "passed": false,
+    "assertions": "The actual compiler warning was explicitly promoted to error without rewriting source-declared severity.",
+    "jobs": [
+        {
+            "label": "configuration-cohort-3",
+            "analysis_key": "sha256:35fc5bab6adc6e95e956bc3e271f56e22cb266c1fe2cd3fe6bd50a1442108b61",
+            "snapshot_id": "sha256:ad5adb34c2d0d98e8633b82b80edb5ba12cf3930f4e2520a0bc01da89afd089e",
+            "actual_exit_code": 1,
+            "provider_status": "failed"
+        },
+        {
+            "label": "positive-cohort-3",
+            "analysis_key": "sha256:515e25845ae1dc5ddd672adb9c53c81a367dbb6c2c88cbd15e171cf06da93afd",
+            "snapshot_id": "sha256:ad5adb34c2d0d98e8633b82b80edb5ba12cf3930f4e2520a0bc01da89afd089e",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        },
+        {
+            "label": "warning-disabled-cohort-2",
+            "analysis_key": "sha256:bb7f1fce8064e6f036704d404e2de1053c981ddd7e2fc6541abc0e0ebd3736bc",
+            "snapshot_id": "sha256:ad5adb34c2d0d98e8633b82b80edb5ba12cf3930f4e2520a0bc01da89afd089e",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/018-configuration-cohort-3/input.json",
+            "sha256": "fc9c3a98e8b2261f59201ac2ba14cfb91f4bbf192ddbf1756e5b7f00d6a44859"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/018-configuration-cohort-3/process.json",
+            "sha256": "4ea28d2aa893b35cc81e1c48a8ca0d355aaf8751ed9379526cae4ecc5ff3b116"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/018-configuration-cohort-3/result.json",
+            "sha256": "b561f6ad6124bb0ff036d8738cfb5fb0899eccd9ac7703d3752f37f64ce49a41"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/018-configuration-cohort-3/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/018-configuration-cohort-3/stderr.txt",
+            "sha256": "e25d9ef930511e3bdb306b512f522904b8ac8e6415e15fd6fd0b8049ac18fc15"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/018-configuration-cohort-3/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/018-configuration-cohort-3/sources/cases/empty_range.kt",
+            "sha256": "823eb81e16992276d5cebd6fe5dc19bb7b314158e1af9c75df71caefe9fe76bd"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/004-positive-cohort-3/input.json",
+            "sha256": "02abfac777d296965023300610323e83f591805aa383782907daff7db1d4a385"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/004-positive-cohort-3/process.json",
+            "sha256": "325a773cdefb38aa5b8f8c2280beebeeeb48618c215553d1f06f923642cf3a19"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/004-positive-cohort-3/result.json",
+            "sha256": "c7bacd875bb14b7ef320be658ff23c7176c4b4b64bd67118fcd0543cae75e63e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/004-positive-cohort-3/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/004-positive-cohort-3/stderr.txt",
+            "sha256": "f4458ecec847000979b216dd9812e0c8122a39fc789c561645fb4f677030ce19"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/004-positive-cohort-3/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/004-positive-cohort-3/sources/cases/empty_range.kt",
+            "sha256": "823eb81e16992276d5cebd6fe5dc19bb7b314158e1af9c75df71caefe9fe76bd"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/013-warning-disabled-cohort-2/input.json",
+            "sha256": "c2db2d0cb4414b6b8fb750ac7f023f883852d9e95a5a6a7a5e232694e48da85e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/013-warning-disabled-cohort-2/process.json",
+            "sha256": "c7276a1a109b95907aacee1178438c244695702da985f303100d823bf3b9dd64"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/013-warning-disabled-cohort-2/result.json",
+            "sha256": "a8e83d9f46db45468a5503e12b5a84012cf6ff3f3189aacfc3d3fef5f126a142"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/013-warning-disabled-cohort-2/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/013-warning-disabled-cohort-2/stderr.txt",
+            "sha256": "a629675c68fd3e0dfc58477cbca3a05e701e6e436a6c4452f78ee2427955fdeb"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/013-warning-disabled-cohort-2/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/013-warning-disabled-cohort-2/sources/cases/empty_range.kt",
+            "sha256": "823eb81e16992276d5cebd6fe5dc19bb7b314158e1af9c75df71caefe9fe76bd"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

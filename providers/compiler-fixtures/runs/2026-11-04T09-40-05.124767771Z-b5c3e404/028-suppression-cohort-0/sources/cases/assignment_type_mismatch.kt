@@ -1,0 +1,4 @@
+@file:Suppress("ASSIGNMENT_TYPE_MISMATCH")
+package fixtures.assignment_type_mismatch
+
+fun assign(): Int { var x = 1; x = "text"; return x }

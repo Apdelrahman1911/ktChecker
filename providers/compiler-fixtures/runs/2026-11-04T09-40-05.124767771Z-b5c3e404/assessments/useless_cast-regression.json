@@ -1,0 +1,126 @@
+{
+    "rule_id": "ktc.compiler.common.useless_cast",
+    "upstream_id": "USELESS_CAST",
+    "kind": "regression",
+    "passed": true,
+    "assertions": "Fresh changed/moved snapshot re-emitted the exact ID at the verified two-line shift with new source digest/key and a unique job output; no stale span or result was reused.",
+    "jobs": [
+        {
+            "label": "positive-cohort-1",
+            "analysis_key": "sha256:c342139413cc7df9a02567a65a94467368570216e904e2704a679b88c4133109",
+            "snapshot_id": "sha256:545c4c4fea6a0bb662a9671f8a64a391274eefa69e2d2ba8a1a1bfb7991bdc4e",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        },
+        {
+            "label": "regression-cohort-1",
+            "analysis_key": "sha256:9d92b99b18fec74e21395a45438c584c62484b158aee669ccced103208a05c8d",
+            "snapshot_id": "sha256:dc46f0a36dcbd2593d2bf9ce24388db7bdc14b53def2b2e306af0adaa1da2ee2",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/input.json",
+            "sha256": "40f69d79b023764fad1c59bc84c02221748e984d4e086078d4f44d6ec4bd97dd"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/process.json",
+            "sha256": "3aed75960cd70e84ca0883b867ebd786a378cacac250357a941159ee4f213fb8"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/result.json",
+            "sha256": "577ec0ce18db7528eb958bda9e75bc7c2b0762afb5f010b07ccb0cf00541fbac"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/stderr.txt",
+            "sha256": "a39eb81c9673d2e923cc3bc926034c9f6b66fc1dccf5be759afafd0c27aa02b5"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/sources/cases/cast_never_succeeds.kt",
+            "sha256": "4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/sources/cases/deprecation.kt",
+            "sha256": "a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/sources/cases/division_by_zero.kt",
+            "sha256": "620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/sources/cases/unnecessary_not_null_assertion.kt",
+            "sha256": "8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/sources/cases/unnecessary_safe_call.kt",
+            "sha256": "ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/002-positive-cohort-1/sources/cases/useless_cast.kt",
+            "sha256": "08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/input.json",
+            "sha256": "a5df121fcdcf2c869502a84f8e8e98ae20c7db5fa5792af2c11743d2896df89c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/process.json",
+            "sha256": "3e91db56cd701a9fb8d6270a6c35fb8262ddc209f8c5db00de09e18d90fcbcda"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/result.json",
+            "sha256": "bde141a0b168e864e45f43e293447f20f70db11623b15c45b3af7ee1c956f248"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/stderr.txt",
+            "sha256": "5d378a5fd26632b6140add02eb24c7a0aaed31a5443582bb0da6f8de5bfe3a77"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/sources/moved/cast_never_succeeds.kt",
+            "sha256": "6f04ffb68692f7855fce51525119db7a3b2a6952c5bc3efab3cedcb4161b8384"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/sources/moved/deprecation.kt",
+            "sha256": "86911fd141cc5908ae17bc9b58dc0fceee1f3684bf3d1ea17ef7903d0a13603d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/sources/moved/division_by_zero.kt",
+            "sha256": "0d4b3c2b0edcb4d0cb4cdfd8c85a4304530ea5440f3734a2a9b96be654d3ebb2"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/sources/moved/unnecessary_not_null_assertion.kt",
+            "sha256": "883f5579e3bdb53c7a35009369c867e697bc7eb5b45cc98991857447a6203dcb"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/sources/moved/unnecessary_safe_call.kt",
+            "sha256": "9bdf603ad3ae119c2bc6d95bf6f1b15f9c5a0c44e8cc72823738341d05f85d15"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/067-regression-cohort-1/sources/moved/useless_cast.kt",
+            "sha256": "6395fb3384d6f2ffb67dc2e3b2f2bcfb81a706a52a59506ec0c569c61cad4714"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

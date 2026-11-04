@@ -1,0 +1,35 @@
+{
+    "analysis_key": "sha256:f957da5203262f96f8530d640e10bb857221af6815347d5ddcb8fb51ee8aef81",
+    "snapshot_id": "sha256:49628275553e12881269d2ae3c0ec1a4184607e91a042aa43b24e841f68f0221",
+    "startup_provenance": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+        "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+    },
+    "context_id": "[\":compiler-fixtures\",\"synthetic\",\"jvm\",\"main\"]",
+    "status": "not_executed",
+    "reasons": [
+        "compiler_version_not_pinned_2_4_21"
+    ],
+    "exit_code": null,
+    "command": [],
+    "output_directory": null,
+    "cancelled": false,
+    "timed_out": false,
+    "truncated": false,
+    "elapsed_millis": 0,
+    "output_bytes": 0,
+    "stdout_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sealed_source_files": [
+        {
+            "path": "build.gradle.kts",
+            "sha256": "sha256:a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d",
+            "size": 68
+        },
+        {
+            "path": "version-control.kt",
+            "sha256": "sha256:dbd1f33ebda74e25e251ae2865879bda03dbf0fb4aae42319d78808f10d12504",
+            "size": 25
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" tests="14" skipped="1" failures="0" errors="0" timestamp="2026-11-04T10:22:17.125Z" hostname="(none)" time="0.308">
+  <properties/>
+  <testcase name="runtimeImageDigestIntrinsicallyBindsProfilesAndExactPermitsWithoutImportedDigest()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.099"/>
+  <testcase name="sameSizeNonLauncherWritesWithRestoredMtimeCannotReuseCapturedIdentity()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.013"/>
+  <testcase name="addedRenamedEntriesAndEmptyDirectoriesChangeContentIdentity()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.029"/>
+  <testcase name="onlyOuterAncestorAliasesAreAcceptedAndTheirTargetsStayPinned()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.008"/>
+  <testcase name="depthUtf8PathAndTotalNameByteBoundsAreEnforced()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.004"/>
+  <testcase name="entryFileTotalAndReleaseByteBoundsAreEnforcedBeforeOversizedReads()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.009"/>
+  <testcase name="executablePolicyIsIncludedEvenWhenBytesAndMtimeAreUnchanged()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.009"/>
+  <testcase name="selectionAndLimitParametersAreExplicitAndBounded()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.003"/>
+  <testcase name="windowsJunctionHomeLeavesAndDescendantsAreRejectedWhenOnWindows()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.005">
+    <skipped message="org.opentest4j.TestAbortedException: Assumption failed: Native Windows junction control is unverified on other hosts" type="org.opentest4j.TestAbortedException">org.opentest4j.TestAbortedException: Assumption failed: Native Windows junction control is unverified on other hosts
+	at org.junit.jupiter.api.Assumptions.throwAssumptionFailed(Assumptions.java:316)
+	at org.junit.jupiter.api.Assumptions.assumeTrue(Assumptions.java:115)
+	at dev.ktchecker.compiler.KotlinJvmRuntimeImageTest.windowsJunctionHomeLeavesAndDescendantsAreRejectedWhenOnWindows(KotlinJvmRuntimeImageTest.kt:283)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+</skipped>
+  </testcase>
+  <testcase name="linkedHomeLeafIsRejectedRatherThanSilentlyCanonicalized()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.001"/>
+  <testcase name="linkedFilesAndDescendantDirectoriesAreRejectedThroughoutTheWholeImage()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.004"/>
+  <testcase name="scanCancellationDeadlinesAndStreamingCheckpointsDoNotUseACache()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.094"/>
+  <testcase name="unsupportedReleaseMetadataAndIncompleteLayoutsFailClosed()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.013"/>
+  <testcase name="fullFramedInventoryIncludesConfigurationNativeFilesAndEmptyDirectories()" classname="dev.ktchecker.compiler.KotlinJvmRuntimeImageTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

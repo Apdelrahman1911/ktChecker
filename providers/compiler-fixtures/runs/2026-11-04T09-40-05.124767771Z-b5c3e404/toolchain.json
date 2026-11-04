@@ -1,0 +1,71 @@
+{
+    "provider_id": "kotlin-compiler-jvm",
+    "provider_version": "2.4.21",
+    "java_executable": "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+    "java_executable_digest": "sha256:377196a32c5e4442b604bbf36add1c49cfe8680cd27edd693b60872e58895e9e",
+    "jdk_host_version": "21.0.12",
+    "toolchain_digest": "sha256:043ae3aa0883b1fc323c2a9179c59f114b8c90f9d779e2819406cad11653f865",
+    "tested_revision": "bc3208ffb14bb30bdd1e81b6959db1ddcfef5541",
+    "source_state": "Startup source copies and actual executed class-directory/jar identities are independent; HEAD/live sources are not bytecode or release certificates.",
+    "startup_provenance": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+        "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+    },
+    "compiler_classpath": [
+        {
+            "coordinate": "selected-compiler:kotlin-compiler-embeddable-2.4.21.jar",
+            "sha256": "sha256:ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable/2.4.21/3cd9c37c505fb9879e03ebeaf91d9c9500ab6eca/kotlin-compiler-embeddable-2.4.21.jar"
+        },
+        {
+            "coordinate": "selected-compiler:kotlin-build-tools-api-2.4.21.jar",
+            "sha256": "sha256:c5cd6a49bd072b529ae10809111c16a7aa0f92147e95d288354017fd65799461",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-api/2.4.21/f5fd68c20ba38519b91ab2411b004a1730453d6f/kotlin-build-tools-api-2.4.21.jar"
+        },
+        {
+            "coordinate": "selected-compiler:kotlin-stdlib-2.4.21.jar",
+            "sha256": "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.21/c343e135bd1e7dd94b7ed76b4159068d888d09db/kotlin-stdlib-2.4.21.jar"
+        },
+        {
+            "coordinate": "selected-compiler:kotlin-script-runtime-2.4.21.jar",
+            "sha256": "sha256:a658cf5902a1525a06c264a5e42b437e97a6679ddeef8ca641246f270cf6a013",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-script-runtime/2.4.21/abc7ff9f7e229cb6bdfadad81e93c871e6cdde41/kotlin-script-runtime-2.4.21.jar"
+        },
+        {
+            "coordinate": "selected-compiler:kotlin-reflect-1.6.10.jar",
+            "sha256": "sha256:3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.6.10/1cbe9c92c12a94eea200d23c2bbaedaf3daf5132/kotlin-reflect-1.6.10.jar"
+        },
+        {
+            "coordinate": "selected-compiler:kotlin-daemon-embeddable-2.4.21.jar",
+            "sha256": "sha256:7b3ef24674e5bcffcadfc4e43202ea314194939ecbcdd90a4770b2f1b04e0d07",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-embeddable/2.4.21/5d9b0394b3ff65cd3dd33c6c31a2956b1d59885a/kotlin-daemon-embeddable-2.4.21.jar"
+        },
+        {
+            "coordinate": "selected-compiler:kotlinx-coroutines-core-jvm-1.8.0.jar",
+            "sha256": "sha256:9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.8.0/ac1dc37a30a93150b704022f8d895ee1bd3a36b3/kotlinx-coroutines-core-jvm-1.8.0.jar"
+        },
+        {
+            "coordinate": "selected-compiler:annotations-13.0.jar",
+            "sha256": "sha256:ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar"
+        }
+    ],
+    "dependency_classpath": [
+        {
+            "coordinate": "selected-compiler:kotlin-stdlib-2.4.21.jar",
+            "sha256": "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.21/c343e135bd1e7dd94b7ed76b4159068d888d09db/kotlin-stdlib-2.4.21.jar"
+        },
+        {
+            "coordinate": "selected-compiler:annotations-13.0.jar",
+            "sha256": "sha256:ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478",
+            "path": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar"
+        }
+    ],
+    "compiler_heap_mib": 512,
+    "execution_mode": "serial isolated child JVMs",
+    "qualification": "none; synthetic input integration only; not a release/performance/precision certificate"
+}

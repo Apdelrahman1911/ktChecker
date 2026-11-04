@@ -14,6 +14,10 @@ import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.Instant
 import java.util.jar.JarFile
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /** Startup copies bind authored inputs and executed artifacts separately; live sources are not bytecode proof. */
 internal class CompilerFixtureProvenance private constructor(
@@ -51,6 +55,7 @@ internal class CompilerFixtureProvenance private constructor(
         "bounds" to mapOf("maximum_files_per_inventory" to MAX_FILES, "maximum_source_file_bytes" to MAX_SOURCE_BYTES,
             "maximum_artifact_file_bytes" to MAX_ARTIFACT_BYTES, "maximum_total_inventory_bytes" to MAX_TOTAL_BYTES),
         "limitations" to listOf("This is cooperative trusted fixture execution, not adversarial classloader or same-UID sandbox attestation.",
+            "Only configured outer directories are canonicalized once for operating-system ancestor aliases; symlinked outer leaves and evidence descendants remain rejected.",
             "Captured source identities alone do not prove which sources produced bytecode; actual class artifacts are separately preserved.",
             "Executed class locations/resources are checked before every compiler job and at run end; source drift is checked at run end.",
             "Synthetic compiler-provider results establish neither independent qualification nor current-code results after later edits."),
@@ -129,10 +134,17 @@ internal class CompilerFixtureProvenance private constructor(
         private val SOURCE_FILES = listOf("modules/provider-compiler/build.gradle.kts", "modules/provider-runtime/build.gradle.kts",
             "modules/contracts/build.gradle.kts", "providers/compiler-fixtures/manifest.json",
             "providers/compiler-fixtures/generate_fixtures.py", "providers/compiler-fixtures/generate_rule_map.py",
-            "providers/compiler-fixtures/README.md", "build.gradle.kts", "settings.gradle.kts", "gradle.properties",
+            "providers/compiler-fixtures/README.md", "providers/compiler-fixtures/.gitattributes",
+            "build.gradle.kts", "settings.gradle.kts", "gradle.properties",
             "gradle/wrapper/gradle-wrapper.properties")
 
-        fun capture(repository: Path, runRoot: Path): CompilerFixtureProvenance {
+        fun capture(repositoryPath: Path, runPath: Path): CompilerFixtureProvenance {
+            val suppliedRepository = repositoryPath.toAbsolutePath().normalize()
+            val repository = canonicalOuterDirectory(suppliedRepository)
+            val suppliedRun = runPath.toAbsolutePath().normalize()
+            require(suppliedRun.startsWith(suppliedRepository)) { "Evidence run must remain below the configured repository" }
+            val runRoot = repository.resolve(suppliedRepository.relativize(suppliedRun))
+            require(Files.isDirectory(runRoot, NOFOLLOW_LINKS) && runRoot.toRealPath() == runRoot) { "Unsafe evidence run directory" }
             val capturedAt = Instant.now().toString()
             var total = 0L
             fun preserve(original: Path, destination: Path, maximum: Int): Capture {
@@ -159,7 +171,13 @@ internal class CompilerFixtureProvenance private constructor(
             val locations = roleClasses.entries.groupBy { entry ->
                 val url = checkNotNull(entry.value.protectionDomain.codeSource?.location) { "Missing actual class code source" }
                 require(url.protocol == "file") { "Unsupported class code-source protocol" }
-                Path.of(url.toURI()).toAbsolutePath().normalize().also { require(it.toRealPath() == it) { "Symlinked class code source" } }
+                val supplied = Path.of(url.toURI()).toAbsolutePath().normalize()
+                // This is an explicit class-source boundary, not an evidence descendant.
+                // Reject a linked class-source leaf and all links within directory inventories.
+                if (Files.isDirectory(supplied, NOFOLLOW_LINKS)) canonicalOuterDirectory(supplied)
+                else canonicalOuterDirectory(supplied.parent).resolve(supplied.fileName).also {
+                    require(Files.isRegularFile(it, NOFOLLOW_LINKS) && it.toRealPath() == it) { "Symlinked class code source" }
+                }
             }
             val artifacts = locations.entries.mapIndexed { index, (location, roles) ->
                 val files = artifactFiles(location).map { original -> preserve(original,
@@ -194,6 +212,21 @@ internal class CompilerFixtureProvenance private constructor(
             check(registryBytes.contentEquals(readStable(authoredRegistry.preserved, MAX_SOURCE_BYTES))) {
                 "Loaded compiler registry differs from captured authored mapping resource; rebuild before running"
             }
+            val implementationSources = sources.filter { it.original.startsWith(repository.resolve("modules/provider-compiler/src/main/kotlin")) &&
+                it.original.toString().endsWith(".kt") }.associateBy { repository.relativize(it.original).toString() }
+            for (row in Json.parseToJsonElement(strictUtf8(registryBytes)).jsonObject.getValue("mappings").jsonArray) {
+                val refs = row.jsonObject.getValue("implementation_evidence").jsonArray
+                check(refs.map { it.jsonObject.getValue("path").jsonPrimitive.content }.toSet() == implementationSources.keys) {
+                    "Mapping implementation inventory differs from captured provider sources; refresh mappings before running"
+                }
+                for (ref in refs) {
+                    val fields = ref.jsonObject
+                    check(implementationSources.getValue(fields.getValue("path").jsonPrimitive.content).digest ==
+                        fields.getValue("sha256").jsonPrimitive.content.removePrefix("sha256:")) {
+                        "Mapping source digest differs from startup source bytes; refresh mappings before running"
+                    }
+                }
+            }
             val registryPath = runRoot.resolve("executed-resources/compiler-rule-map.json")
             Files.createDirectories(registryPath.parent)
             Files.write(registryPath, registryBytes, CREATE_NEW, WRITE)
@@ -225,6 +258,13 @@ internal class CompilerFixtureProvenance private constructor(
 
         private fun inventoryDigest(location: Path, files: List<Capture>): String = Digests.sha256(files.sortedBy { artifactEntry(location, it.original) }
             .joinToString("\n") { "${artifactEntry(location, it.original)}\u0000${it.digest}\u0000${it.size}" }).removePrefix("sha256:")
+
+        /** Resolve OS aliases above a caller-declared outer root once, never aliases in evidence descendants. */
+        internal fun canonicalOuterDirectory(root: Path): Path {
+            val supplied = root.toAbsolutePath().normalize()
+            require(Files.isDirectory(supplied, NOFOLLOW_LINKS) && !Files.isSymbolicLink(supplied)) { "Unsafe outer evidence directory" }
+            return supplied.toRealPath()
+        }
 
         internal fun readStable(path: Path, maximum: Int): ByteArray {
             require(Files.isRegularFile(path, NOFOLLOW_LINKS) && !Files.isSymbolicLink(path) &&

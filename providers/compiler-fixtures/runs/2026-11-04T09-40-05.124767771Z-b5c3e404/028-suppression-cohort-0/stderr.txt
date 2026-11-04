@@ -1,0 +1,4 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-12950814587570847081/sources/cases/spread_of_nullable.kt:5:34: error: [ARGUMENT_TYPE_MISMATCH] Argument type mismatch: actual type is 'IntArray?', but 'IntArray' was expected.
+fun broken(xs: IntArray?) = use(*xs)
+                                 ^^

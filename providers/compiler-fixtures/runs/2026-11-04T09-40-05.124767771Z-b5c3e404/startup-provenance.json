@@ -1,0 +1,1346 @@
+{
+    "schema_version": 1,
+    "captured_at": "2026-11-04T09:40:05.164932851Z",
+    "capture_timing": "startup_before_loading_fixture_inputs_or_executing_compiler_jobs",
+    "source_to_bytecode_claim": "none; startup source identities and actual class-directory/jar identities are recorded independently",
+    "sources": [
+        {
+            "original_path": "build.gradle.kts",
+            "size": 1202,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/build.gradle.kts",
+                "sha256": "e60805338b9dc154584ef2e829b848ac6b690848d2d02f9202b78cb388183138"
+            }
+        },
+        {
+            "original_path": "gradle.properties",
+            "size": 197,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/gradle.properties",
+                "sha256": "d8866022c3156e41c017d3cfa624de8ca97f81c53cc932f8e92117eb579cd70b"
+            }
+        },
+        {
+            "original_path": "gradle/wrapper/gradle-wrapper.properties",
+            "size": 368,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/gradle/wrapper/gradle-wrapper.properties",
+                "sha256": "89f62533208a72b7a8cc2892b6b3540c445fa6175508297d932dae57d653591a"
+            }
+        },
+        {
+            "original_path": "modules/contracts/build.gradle.kts",
+            "size": 80,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/contracts/build.gradle.kts",
+                "sha256": "0f70506d7e2488b39d0b239856da79691384c5f504e692ab70f1b05996665157"
+            }
+        },
+        {
+            "original_path": "modules/contracts/src/main/kotlin/dev/ktchecker/contracts/Contracts.kt",
+            "size": 8465,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/contracts/src/main/kotlin/dev/ktchecker/contracts/Contracts.kt",
+                "sha256": "70ac2bd31df1fc4af8316b97aeb8db92f67a4067c759bb013af73ac81f2e6970"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/build.gradle.kts",
+            "size": 1154,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/build.gradle.kts",
+                "sha256": "c300f0625be2dde8bd02330f7a4cfd10fda0a7c2c77fa7a85a812b93d529e16b"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt",
+            "size": 6408,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt",
+                "sha256": "db0048e7083bfc8d1565d0505d1b3c00ad574e6e50ef2dc39797a947912e3f3e"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt",
+            "size": 3598,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt",
+                "sha256": "fb19a9de4bab6c1f2273b1d7466ce1fb4dd18fa9ca38e5e09139f12612af3b37"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+            "size": 3893,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+                "sha256": "4acda521ed44c2c30232c2ebd47ef4ed7ecde85e589736d48a98937a0191e667"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt",
+            "size": 9451,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt",
+                "sha256": "d089b942352d99fa4f0920338669d0fbc35bbc4112fc7d032f7e8ff0684015b7"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerVerification.kt",
+            "size": 2634,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerVerification.kt",
+                "sha256": "a7930f91d8c3031bd39b5fab47c826db29ccd846189912b5e5f2d51d88196bd9"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt",
+            "size": 19681,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt",
+                "sha256": "fc9d0e6c679551c0a28acfa666981818ff4fbd646d3d2c74905bafd7e5672da1"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+            "size": 986809,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+                "sha256": "3be83303286f2bdaca112279f099a0e0169e63ceae6fecaa836deee8b0b7f638"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureProvenance.kt",
+            "size": 20114,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureProvenance.kt",
+                "sha256": "262ecc61590268375a70e3a1c88ee97d0cb433ca4d88d5d13f489b8e180e9713"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureRunner.kt",
+            "size": 41148,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureRunner.kt",
+                "sha256": "f0d10a77aa8e4bc1d6b296d868266a33e47c9e488679c7a92012433a30d651fa"
+            }
+        },
+        {
+            "original_path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerProviderTest.kt",
+            "size": 17193,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerProviderTest.kt",
+                "sha256": "3f8229febde1add59d7e7002f22d72a4924dc47de8aca0cf96ed1536b431fae9"
+            }
+        },
+        {
+            "original_path": "modules/provider-runtime/build.gradle.kts",
+            "size": 100,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-runtime/build.gradle.kts",
+                "sha256": "27144c84f5de5a693f3d3f7ff7c0a741aa49a89bbfceb452c778ed77ab16bc51"
+            }
+        },
+        {
+            "original_path": "modules/provider-runtime/src/main/kotlin/dev/ktchecker/providers/runtime/Execution.kt",
+            "size": 27009,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-runtime/src/main/kotlin/dev/ktchecker/providers/runtime/Execution.kt",
+                "sha256": "90e487b1d1b9a59ac00f45888d6a8feacfec34d784fca3434f66e3fe7db989bb"
+            }
+        },
+        {
+            "original_path": "modules/provider-runtime/src/main/kotlin/dev/ktchecker/providers/runtime/FixtureSnapshots.kt",
+            "size": 9794,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-runtime/src/main/kotlin/dev/ktchecker/providers/runtime/FixtureSnapshots.kt",
+                "sha256": "1d37c374f59b255695747b5ee5f4b7ccf87b8530f15a891eb565291a3915c6c4"
+            }
+        },
+        {
+            "original_path": "modules/provider-runtime/src/main/kotlin/dev/ktchecker/providers/runtime/ModelBindings.kt",
+            "size": 4244,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/modules/provider-runtime/src/main/kotlin/dev/ktchecker/providers/runtime/ModelBindings.kt",
+                "sha256": "e4e854840fc496953537d95cae36ded5ef3dc2a5eff137d146eea37821b25161"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/.gitattributes",
+            "size": 376,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/.gitattributes",
+                "sha256": "cceedd6b7f3bd96b0a5cc28e5df7b1aa8209f550b8ca2dfedc865bd0766e242b"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/README.md",
+            "size": 5561,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/README.md",
+                "sha256": "d6f76a41f518895dd8b39cd8a293dc0e671cc3b3c46e596eb1bfb1d57f973f6e"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/argument_passed_twice/negative.kt",
+            "size": 84,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/argument_passed_twice/negative.kt",
+                "sha256": "37051bf8322e7c636d451de85296d640d79121bb4fb45f0bcfc24674d1b397cc"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/argument_passed_twice/positive.kt",
+            "size": 87,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/argument_passed_twice/positive.kt",
+                "sha256": "ea61635a65c3ff235a0bd1e8f8e2e78d4aa9bc9a6c861ffcac1a83a6d0d80470"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/argument_type_mismatch/negative.kt",
+            "size": 89,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/argument_type_mismatch/negative.kt",
+                "sha256": "84ddc70e56de0a4da5dbc3c603d8978a57c146d1acfaf98b6ee3a136c5dd4c71"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/argument_type_mismatch/positive.kt",
+            "size": 94,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/argument_type_mismatch/positive.kt",
+                "sha256": "e3ca48f35c28d63c5df1a72ce786fefd02da2cb052cd104f5859951f4a76b0f7"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/assignment_type_mismatch/negative.kt",
+            "size": 92,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/assignment_type_mismatch/negative.kt",
+                "sha256": "0e2a8e5c13bd454f0f33f0b54c3cee6f19180852e89fbc8d2c4dcc51f0d12399"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/assignment_type_mismatch/positive.kt",
+            "size": 97,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/assignment_type_mismatch/positive.kt",
+                "sha256": "67b5b7ba4da08a6349637de33f955c029067001675c138e4571280df3e03d048"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/cast_never_succeeds/negative.kt",
+            "size": 71,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/cast_never_succeeds/negative.kt",
+                "sha256": "eec391d9fcce29e433f582ce9fdfd14bdbafac4c0b9ed5ad4eb3a1ff719f3a68"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/cast_never_succeeds/positive.kt",
+            "size": 82,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/cast_never_succeeds/positive.kt",
+                "sha256": "4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/deprecation/negative.kt",
+            "size": 71,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/deprecation/negative.kt",
+                "sha256": "bd72e7cab839f26de91a9265f6a325150e0c20b736f3d16dff8080791fad54b0"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/deprecation/positive.kt",
+            "size": 90,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/deprecation/positive.kt",
+                "sha256": "a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/division_by_zero/negative.kt",
+            "size": 54,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/division_by_zero/negative.kt",
+                "sha256": "768029687bcb1f822397d08592dc6dddf337c2eb1dfa1b949a4297df99c3076a"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/division_by_zero/positive.kt",
+            "size": 54,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/division_by_zero/positive.kt",
+                "sha256": "620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/empty_range/negative.kt",
+            "size": 57,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/empty_range/negative.kt",
+                "sha256": "79d3f1591aa626f44afa8cc18691dcabe9480163fa49d4d34d993e5f26bd9d78"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/empty_range/positive.kt",
+            "size": 59,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/empty_range/positive.kt",
+                "sha256": "823eb81e16992276d5cebd6fe5dc19bb7b314158e1af9c75df71caefe9fe76bd"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/exposed_function_return_type/negative.kt",
+            "size": 100,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/exposed_function_return_type/negative.kt",
+                "sha256": "f593184550060456f13aad945e690e8b35a5d35690aafb64b3b3cb781415ce47"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/exposed_function_return_type/positive.kt",
+            "size": 93,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/exposed_function_return_type/positive.kt",
+                "sha256": "8963fb30a263ae6a268ed19743d7d7c8706781eebc15b62c1c381f963bd22d1e"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/external_declaration_cannot_have_body/negative.kt",
+            "size": 75,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/external_declaration_cannot_have_body/negative.kt",
+                "sha256": "909b551935117bb94e0432fca13903d5bb254f2775cc9c70f4bcf108cd6f5650"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/external_declaration_cannot_have_body/positive.kt",
+            "size": 78,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/external_declaration_cannot_have_body/positive.kt",
+                "sha256": "8b64781a0667b325d7e715efdb3845e4210ff8bd15e974bc65b6b3c02c441669"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/field_in_jvm_record/negative.kt",
+            "size": 107,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/field_in_jvm_record/negative.kt",
+                "sha256": "decca913e3c2f1f3b4ac213fc74106be3df3a202e264a7e2d55e1780200600eb"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/field_in_jvm_record/positive.kt",
+            "size": 101,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/field_in_jvm_record/positive.kt",
+                "sha256": "66b92c8378a9df8fd02153d7e69991736b2925be8debdbf656baaaacc1fc5a22"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/inapplicable_jvm_field/negative.kt",
+            "size": 89,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/inapplicable_jvm_field/negative.kt",
+                "sha256": "f5fe1ea129f8033c79feb7440f41bf11d0b6ce8b64be34615b58932f3cf53e0d"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/inapplicable_jvm_field/positive.kt",
+            "size": 97,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/inapplicable_jvm_field/positive.kt",
+                "sha256": "f2da19a17c53a85c2ae3bbfe65d0d6e3b8322a344e698f7ea9cdf99e807d442f"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/initializer_type_mismatch/negative.kt",
+            "size": 63,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/initializer_type_mismatch/negative.kt",
+                "sha256": "08997eea65a80881d420c90bf9d806bf242475791103c6e1fbaf1d0885533c44"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/initializer_type_mismatch/positive.kt",
+            "size": 68,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/initializer_type_mismatch/positive.kt",
+                "sha256": "09b2517fe550b84a8e18b33f99941e866fd0e76bd7bf757ea319fda4cca4f155"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/jvm_inline_without_value_class/negative.kt",
+            "size": 96,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/jvm_inline_without_value_class/negative.kt",
+                "sha256": "25a249a86e91aba07c9b9a69f6441e2eaa12207d1aa68585d464c784d4364f94"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/jvm_inline_without_value_class/positive.kt",
+            "size": 90,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/jvm_inline_without_value_class/positive.kt",
+                "sha256": "95a5b2916882ac920002f5cc6e5e813cfe7cccd4513a385b21deccc9fc4779ce"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/jvm_record_not_val_parameter/negative.kt",
+            "size": 92,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/jvm_record_not_val_parameter/negative.kt",
+                "sha256": "21afc3f91a6e01a9c991cb8a5bbec10e5a910b6e7455aed448c6210683bd63b5"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/jvm_record_not_val_parameter/positive.kt",
+            "size": 92,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/jvm_record_not_val_parameter/positive.kt",
+                "sha256": "92055ea6a5f487c36a93a08fa7be1b8fd83289450e5ff7c8f0d104905f399e49"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/jvm_static_not_in_object_or_companion/negative.kt",
+            "size": 100,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/jvm_static_not_in_object_or_companion/negative.kt",
+                "sha256": "b86ef61cf9806a9d0b0b6938a9d6973a57a79f1f5a0fb96ce01f739ab31e523f"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/jvm_static_not_in_object_or_companion/positive.kt",
+            "size": 98,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/jvm_static_not_in_object_or_companion/positive.kt",
+                "sha256": "e7be9832a7faf93fd48fea27bed75f836145ae746c4cd0459c250549ca5f9a88"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/named_parameter_not_found/negative.kt",
+            "size": 92,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/named_parameter_not_found/negative.kt",
+                "sha256": "5c20a523e3eb890796ef6c3b21940fe0f16b0bbd1e64f6e9e1aedd3140df4545"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/named_parameter_not_found/positive.kt",
+            "size": 92,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/named_parameter_not_found/positive.kt",
+                "sha256": "d8a874bc538fcd2399712682d6d6b255c0ebedb495c8c2762a912ce567223706"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/no_else_in_when/negative.kt",
+            "size": 98,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/no_else_in_when/negative.kt",
+                "sha256": "4aafd331666be6854bf57d3642bd7257d60163803b0dc3ae982691bd59dd6b5c"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/no_else_in_when/positive.kt",
+            "size": 87,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/no_else_in_when/positive.kt",
+                "sha256": "5d8f5be96dcbe428c44cf261201a0a02afc48c4734e8e7850c117bfd3d14e575"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/no_value_for_parameter/negative.kt",
+            "size": 89,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/no_value_for_parameter/negative.kt",
+                "sha256": "168700c9d126cd38057b379840e8f4d722825e3d41676619ad3b255562db536f"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/no_value_for_parameter/positive.kt",
+            "size": 88,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/no_value_for_parameter/positive.kt",
+                "sha256": "870e8886fa5dbdf28e79b57226ef0c303b2672f1304d8adf7f090a97c0f0634d"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/non_data_class_jvm_record/negative.kt",
+            "size": 89,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/non_data_class_jvm_record/negative.kt",
+                "sha256": "e28b0b5ccaa935d7ffe5c80d16fab36fc943211fd205b4368c4836fda322ce57"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/non_data_class_jvm_record/positive.kt",
+            "size": 84,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/non_data_class_jvm_record/positive.kt",
+                "sha256": "ca919b1c863819f48f365752a348b440fb74580576dd3bb8d43ed4dc01bcfb37"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/non_vararg_spread/negative.kt",
+            "size": 100,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/non_vararg_spread/negative.kt",
+                "sha256": "8dac2d7a498631eeb6e3e235cf26e2a0b01387115c5690db91dec2f50a96a274"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/non_vararg_spread/positive.kt",
+            "size": 101,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/non_vararg_spread/positive.kt",
+                "sha256": "02dd78ac96f8906436e5cb2609f34fa2416cba1b665deac09abd6fedde4c6f90"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/null_for_nonnull_type/negative.kt",
+            "size": 102,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/null_for_nonnull_type/negative.kt",
+                "sha256": "1bbfb915c432d6f14bcb4086ec22d6b1731ea2a640f39ab7f6773faca66b1fa9"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/null_for_nonnull_type/positive.kt",
+            "size": 100,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/null_for_nonnull_type/positive.kt",
+                "sha256": "960419f714930897b4c5910942d4cdedc2804949357043766e0ff14c7f508a5e"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/overloads_abstract/negative.kt",
+            "size": 94,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/overloads_abstract/negative.kt",
+                "sha256": "4f1d0d2bc8de320edae518649f70176df7bfc8b81f9aed36eee221db6270cb81"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/overloads_abstract/positive.kt",
+            "size": 108,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/overloads_abstract/positive.kt",
+                "sha256": "f267bce2c4c7a1f302626a535208c9747476f01f6497dff5ca2fb6285d373654"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/overloads_interface/negative.kt",
+            "size": 95,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/overloads_interface/negative.kt",
+                "sha256": "5988fb3c335705efc1ed053807422f64fb2543c25c356f9aa8a7eb428a4d54c3"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/overloads_interface/positive.kt",
+            "size": 95,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/overloads_interface/positive.kt",
+                "sha256": "53ed21646366bc097838318d558128412c41861ff4e687205701d998b89ccda5"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/overloads_without_default_arguments/negative.kt",
+            "size": 92,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/overloads_without_default_arguments/negative.kt",
+                "sha256": "cc302a10c855f2dbe851317a4e38aac4b1ce9d5e32549b84a86f9ce20ffbd6d3"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/overloads_without_default_arguments/positive.kt",
+            "size": 88,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/overloads_without_default_arguments/positive.kt",
+                "sha256": "c46dd40de00400bbe0b26406c1c6b4dcaf19e757742c813feb15f72c2d53f74d"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/return_type_mismatch/negative.kt",
+            "size": 61,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/return_type_mismatch/negative.kt",
+                "sha256": "0193c131a5bb90f961699f6da6c2803a41a7b7c0986471468838da0a425bee1d"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/return_type_mismatch/positive.kt",
+            "size": 66,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/return_type_mismatch/positive.kt",
+                "sha256": "c986ad1553c671aae2f601948702d049951977d9249a240493d7fda39f3ad88e"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/spread_of_nullable/negative.kt",
+            "size": 130,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/spread_of_nullable/negative.kt",
+                "sha256": "54133866b669f4c598a416a2085af7104e0005ba0b2418e94eccc5dbd3d10db0"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/spread_of_nullable/positive.kt",
+            "size": 108,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/spread_of_nullable/positive.kt",
+                "sha256": "fbb0192f4de9a69c5229ada9655571d9d4c143aeb48e6b5d6873b9a9c1c44d4d"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/synchronized_on_abstract/negative.kt",
+            "size": 84,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/synchronized_on_abstract/negative.kt",
+                "sha256": "2dffa2b068a6f44545603aa4cf8246779e11c97424b0302e9f1a26bcccb64d33"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/synchronized_on_abstract/positive.kt",
+            "size": 99,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/synchronized_on_abstract/positive.kt",
+                "sha256": "faa782995219cd8213520c430ed99ab2130b4102fe5bc1f11388663afbca6145"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/synchronized_on_inline/negative.kt",
+            "size": 96,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/synchronized_on_inline/negative.kt",
+                "sha256": "8e69a7864553d650fcc43b3f98dd43dacda874d8bba77a57997f6c63fc12a81f"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/synchronized_on_inline/positive.kt",
+            "size": 103,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/synchronized_on_inline/positive.kt",
+                "sha256": "deed6c4c156441afcd5541bf99fe17e89f5691d5248bc974a67841c47457f8c5"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/synchronized_on_suspend_error/negative.kt",
+            "size": 76,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/synchronized_on_suspend_error/negative.kt",
+                "sha256": "08f28afe892afd4f8c23ea8290721d41ea847afd542ad8bbb46baed3aeea20fd"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/synchronized_on_suspend_error/positive.kt",
+            "size": 84,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/synchronized_on_suspend_error/positive.kt",
+                "sha256": "38cf0b428a803a6d92cf436b45e45b21104a460fb6ab1e3c33d8b7e5b6a22d3d"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/too_many_arguments/negative.kt",
+            "size": 72,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/too_many_arguments/negative.kt",
+                "sha256": "d07b0b6ce2d154e827627cd6ce7b2f0ad2a8c750712e189875f1edd3f875ab5b"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/too_many_arguments/positive.kt",
+            "size": 73,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/too_many_arguments/positive.kt",
+                "sha256": "94f3450e4cccca25c787bd9f2f34518d4dd9bb03e9974d372e122005be9ed7a3"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/uninitialized_variable/negative.kt",
+            "size": 87,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/uninitialized_variable/negative.kt",
+                "sha256": "a38a03ced2e492e0d67299b1ab4b12ff674435bf080b2dee38d4d67f8ff544e2"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/uninitialized_variable/positive.kt",
+            "size": 84,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/uninitialized_variable/positive.kt",
+                "sha256": "50b19de9b95ef105643f1515b5d12b5b7b6074329a982e913378533e3c946465"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unnecessary_not_null_assertion/negative.kt",
+            "size": 93,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unnecessary_not_null_assertion/negative.kt",
+                "sha256": "3c9dbcee9ae1e837ef55c6286d76490ab04384b3f4a945fe681650429aa88e4b"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unnecessary_not_null_assertion/positive.kt",
+            "size": 84,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unnecessary_not_null_assertion/positive.kt",
+                "sha256": "8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unnecessary_safe_call/negative.kt",
+            "size": 75,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unnecessary_safe_call/negative.kt",
+                "sha256": "809ccd608c17ae112809fd952f506cf1166196b008acd1189277b9b20af5b159"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unnecessary_safe_call/positive.kt",
+            "size": 74,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unnecessary_safe_call/positive.kt",
+                "sha256": "ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unreachable_code/negative.kt",
+            "size": 95,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unreachable_code/negative.kt",
+                "sha256": "c116121d5e27e7f351736fb701838c0ab3f793c25d81e8be4ddadb11c8b95af4"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unreachable_code/positive.kt",
+            "size": 90,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unreachable_code/positive.kt",
+                "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unresolved_import/negative.kt",
+            "size": 101,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unresolved_import/negative.kt",
+                "sha256": "312ef33f114811ca282e51a44c617bcdc91838f79e1d86731355f2bc57c7a919"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unresolved_import/positive.kt",
+            "size": 83,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unresolved_import/positive.kt",
+                "sha256": "ed407fd6fcb4501abac71543be3b3dbb5eb3d69c3016e900c6e52157d22dfaf7"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unresolved_reference/negative.kt",
+            "size": 92,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unresolved_reference/negative.kt",
+                "sha256": "b806e34702c37d638d0a6452ff9b6c90484a256f6e285ca51a08ae33b5f0970e"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unresolved_reference/positive.kt",
+            "size": 69,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unresolved_reference/positive.kt",
+                "sha256": "cc58d834595d3f05f4dad1f3a568ea60561c63a08974847a5024d627cc3e940a"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unsafe_call/negative.kt",
+            "size": 65,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unsafe_call/negative.kt",
+                "sha256": "f2a9d838a60636e6383e842c6f819fe32e9ecd60fee6b2d47215f0a02d66b9ca"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/unsafe_call/positive.kt",
+            "size": 64,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/unsafe_call/positive.kt",
+                "sha256": "4f903026cb19f77c8a7e8fa600cd8bbc75609f9aeb03d7bbe6297bbac5d193f0"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/upper_bound_violated/negative.kt",
+            "size": 99,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/upper_bound_violated/negative.kt",
+                "sha256": "d48e64516ae15b1c4fb1fca18bcca2b2e2992fe8b300b80bc1793b5b10e30be3"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/upper_bound_violated/positive.kt",
+            "size": 97,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/upper_bound_violated/positive.kt",
+                "sha256": "d4c523be141bce9e62df159a14cb7e31c3bc7842cedca3630dca17b2223b0f50"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/useless_cast/negative.kt",
+            "size": 67,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/useless_cast/negative.kt",
+                "sha256": "4963806bb8acc6e0d49d6e8e711c701aae8a5fd25420a013c6de50c72dfd9d28"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/useless_cast/positive.kt",
+            "size": 65,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/useless_cast/positive.kt",
+                "sha256": "08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/val_reassignment/negative.kt",
+            "size": 83,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/val_reassignment/negative.kt",
+                "sha256": "3ad282b3a83b8f21f31eb83a10aee22ad8b21a5c5b512e2694c52f85fc5d34fb"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/val_reassignment/positive.kt",
+            "size": 84,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/val_reassignment/positive.kt",
+                "sha256": "3bf39cc517c492848601e06ff06ee5f6ec0fec12b80b99309a129cb8a8a11ac3"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/value_class_without_jvm_inline_annotation/negative.kt",
+            "size": 107,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/value_class_without_jvm_inline_annotation/negative.kt",
+                "sha256": "066b585e95d08c5459a48bd9fc34655bae4c2eda1608c4c69df3071c31c1441c"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/value_class_without_jvm_inline_annotation/positive.kt",
+            "size": 96,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/value_class_without_jvm_inline_annotation/positive.kt",
+                "sha256": "1b1efa55fa59f3d9c9a0e71bfeefa00bf443dd1cedf5176a7232ea29beabe81b"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/wrong_annotation_target/negative.kt",
+            "size": 139,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/wrong_annotation_target/negative.kt",
+                "sha256": "6fbe78a340fee808c5cfdfa929359a9237e370718c25bafe144707d4764a244a"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/cases/wrong_annotation_target/positive.kt",
+            "size": 133,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/cases/wrong_annotation_target/positive.kt",
+                "sha256": "2b118d54a8d08ec37128a443af8394088f1b9006fbf5bde609e4d69fc801f2cc"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/generate_fixtures.py",
+            "size": 7326,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/generate_fixtures.py",
+                "sha256": "92062aa182333bdc400fe4f1b4738253b9b4ab40e7bad64ffba4a7d7c75c4e26"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/generate_rule_map.py",
+            "size": 2799,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/generate_rule_map.py",
+                "sha256": "2cd63d0192a4d821cb25cef604080c551b85920567b752e40d3c7bf830246ba6"
+            }
+        },
+        {
+            "original_path": "providers/compiler-fixtures/manifest.json",
+            "size": 23631,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/providers/compiler-fixtures/manifest.json",
+                "sha256": "9374f0e53e28370871345cf8a20b55bfa452e682b4b7d3b7dec3374b9d9ea26f"
+            }
+        },
+        {
+            "original_path": "settings.gradle.kts",
+            "size": 494,
+            "preserved": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/captured-sources/settings.gradle.kts",
+                "sha256": "998a690570fc6f4970b977e234b4c0a8fdbdb206a088b8afeb3754975e08f5b7"
+            }
+        }
+    ],
+    "executed_artifacts": [
+        {
+            "code_source": "/root/projects/kt-chcker/modules/provider-compiler/build/classes/kotlin/main",
+            "kind": "class_directory",
+            "roles": [
+                "compiler_provider",
+                "compiler_verification"
+            ],
+            "manifest_sha256": "fe07c6bec7f0add686015be0b426dbe99740890f40637bb8b3190176b45db92b",
+            "files": [
+                {
+                    "entry": "META-INF/dev.ktchecker_provider-compiler.kotlin_module",
+                    "size": 24,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/META-INF/dev.ktchecker_provider-compiler.kotlin_module",
+                        "sha256": "06d262cf732152000d8cb1453e8dc1209b37fa4411e5c4d202265ff0d18ec16d"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerDiagnosticParser$Companion.class",
+                    "size": 1171,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerDiagnosticParser$Companion.class",
+                        "sha256": "39208e83435052321648c4c25f708fb6838d3dd4ecb728e80b47c5a7ae5612e3"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerDiagnosticParser.class",
+                    "size": 13699,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerDiagnosticParser.class",
+                        "sha256": "9671477afb6f48540044d66d4f66a63c8689da01ce09d674717b24fb71a78bf7"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFlags.class",
+                    "size": 8097,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerFlags.class",
+                        "sha256": "7ea93e52c24d928076f3b884ecc37f2c28540dcd65f659ccb262082c37c573cb"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerParseResult.class",
+                    "size": 4781,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerParseResult.class",
+                        "sha256": "4a2c5a280cda8d95239609430538252891405aeff8a1ab488a0e0c0ef7e8c1ec"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerQualification.class",
+                    "size": 6720,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerQualification.class",
+                        "sha256": "278ba54335c22b3feeb292e2a41f0ed35f87b0258bf8580972d24c2b313f8bed"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerRuleMapping.class",
+                    "size": 6544,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerRuleMapping.class",
+                        "sha256": "96a3fe18ffed166bef01ed01b37f251595bdc8b5c258de826d0cd96c21791210"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerRuleRegistry$Companion.class",
+                    "size": 8845,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerRuleRegistry$Companion.class",
+                        "sha256": "6ad5205325dab011414435eabab0b0a6c53ff2440c06b363e772749710dfc1c8"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerRuleRegistry$special$$inlined$groupingBy$1.class",
+                    "size": 2614,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerRuleRegistry$special$$inlined$groupingBy$1.class",
+                        "sha256": "2dd183d338c3362fc3431759a952017e6e87643704aef6b218a3d5fd004178cd"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerRuleRegistry.class",
+                    "size": 8274,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerRuleRegistry.class",
+                        "sha256": "6af1ff4f00e5b13113a765cfe7aeb63e51d569d2c1511811449c8d661865d19d"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerSnapshot.class",
+                    "size": 26288,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerSnapshot.class",
+                        "sha256": "0f35a7c4c5fd0067dbfe985730d81074798d755a94bae0fea88f56b5626c9568"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerSourceIdentity.class",
+                    "size": 3405,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerSourceIdentity.class",
+                        "sha256": "d0313105db70f1122c1797ee6d7d9a806fa504a49ec23377c21a43df777e17b3"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerVerification.class",
+                    "size": 6650,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerVerification.class",
+                        "sha256": "d3edd4fac9686064f3b1247e63d54bdcb145b116cb8bb51e308f29562baace33"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/KotlinJvmCompilerProvider$Companion.class",
+                    "size": 1026,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/KotlinJvmCompilerProvider$Companion.class",
+                        "sha256": "20c34a2424dd22081fd44921145f6da5bdf86c3646c2bdb681c824b663be3457"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/KotlinJvmCompilerProvider.class",
+                    "size": 53002,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/KotlinJvmCompilerProvider.class",
+                        "sha256": "0f7d74c741f99c94fe80ae30b9db6374e767356d0dfece6f9103c96492234678"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/KotlinJvmToolchain$special$$inlined$sortedBy$1.class",
+                    "size": 2061,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/KotlinJvmToolchain$special$$inlined$sortedBy$1.class",
+                        "sha256": "7bc7d9180d0267f9843183c7cb593a57e19b3e1ac59b00e9951976b8a5e005fd"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/KotlinJvmToolchain.class",
+                    "size": 9098,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/KotlinJvmToolchain.class",
+                        "sha256": "6f1523f80168fc12d2836695b24cee9dd8f9fc717a1939c4ef15f23eb30f99ef"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/ParsedCompilerDiagnostic.class",
+                    "size": 4937,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/ParsedCompilerDiagnostic.class",
+                        "sha256": "d477b717c63043f798224e897df08773a7cba3a981eaf913a5cc59ab1980772c"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/SealedCompilerSource.class",
+                    "size": 3409,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/SealedCompilerSource.class",
+                        "sha256": "3173248a57daa4e9b0fd2851c6c7d1d8adbef9e1f956530496e7db352a8b7cd7"
+                    }
+                }
+            ]
+        },
+        {
+            "code_source": "/root/projects/kt-chcker/modules/provider-compiler/build/classes/kotlin/test",
+            "kind": "class_directory",
+            "roles": [
+                "fixture_runner",
+                "fixture_provenance"
+            ],
+            "manifest_sha256": "84b88db24e299b8884aa949d7875f4d47dcd48aef41d703b0e44523f90d7a48c",
+            "files": [
+                {
+                    "entry": "META-INF/dev.ktchecker_provider-compiler_test.kotlin_module",
+                    "size": 24,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/META-INF/dev.ktchecker_provider-compiler_test.kotlin_module",
+                        "sha256": "06d262cf732152000d8cb1453e8dc1209b37fa4411e5c4d202265ff0d18ec16d"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureProvenance$Artifact.class",
+                    "size": 5487,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureProvenance$Artifact.class",
+                        "sha256": "eb7b18ced2e5d0e83a09bb5ed6ec9a5cd07a4b50e8e8af73aabc14b91b15a25a"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureProvenance$Capture.class",
+                    "size": 4027,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureProvenance$Capture.class",
+                        "sha256": "0a3851564eae30b91c0fd06fcbb9f9bf370e945630bab20785ff6903df9d1e05"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureProvenance$Companion$inventoryDigest$$inlined$sortedBy$1.class",
+                    "size": 2664,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureProvenance$Companion$inventoryDigest$$inlined$sortedBy$1.class",
+                        "sha256": "98d011849ebdedd0d0b13dabab2b3ae69a0dc3d7ca24c9c922c41a14950be4b2"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureProvenance$Companion.class",
+                    "size": 39329,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureProvenance$Companion.class",
+                        "sha256": "4d66bafbbdef7f6bc0dacae94ea0f9744814d7b75793bc55bf2beb3cb9cb15e1"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureProvenance.class",
+                    "size": 23122,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureProvenance.class",
+                        "sha256": "cd3129d9458fb9fa868755d28913d019ab71db2aff7c249c3face7efb705353c"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureRunner$Assessment.class",
+                    "size": 4597,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureRunner$Assessment.class",
+                        "sha256": "f3866ad1bd4430f5fc4bf5ca7b10364741a67a275b2058318fc79123c6bb9358"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureRunner$Fixture.class",
+                    "size": 5437,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureRunner$Fixture.class",
+                        "sha256": "027920295ad3b8aa4206a8b76906c880af07f2d2bc6e22a07f3e1dcf55bdaf57"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureRunner$Job.class",
+                    "size": 6480,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureRunner$Job.class",
+                        "sha256": "512e12651b0a39559cddb03d4ea415315e8fe5355d5b48f700a31260e268ea86"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerFixtureRunner.class",
+                    "size": 118991,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureRunner.class",
+                        "sha256": "8a61c484107aa66afb9b978340ec0a3c810b18d1b22c21fbd4ace643286ee562"
+                    }
+                },
+                {
+                    "entry": "dev/ktchecker/compiler/CompilerProviderTest.class",
+                    "size": 34128,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerProviderTest.class",
+                        "sha256": "5661005881b5d02acc8dca5e880745e42039fa37827160943e9461ce5e31db18"
+                    }
+                }
+            ]
+        },
+        {
+            "code_source": "/root/projects/kt-chcker/modules/provider-runtime/build/libs/provider-runtime-0.1.0-dev.1.jar",
+            "kind": "jar",
+            "roles": [
+                "process_runner"
+            ],
+            "manifest_sha256": "c0857db6c1632769de4981d71163dd7816452be35e55fe048e196e65f461b9cc",
+            "files": [
+                {
+                    "entry": "provider-runtime-0.1.0-dev.1.jar",
+                    "size": 86566,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/2/provider-runtime-0.1.0-dev.1.jar",
+                        "sha256": "48b8934ab5bd81b796bcd66fd7c92b402520ce121635964e34f2777c194796ef"
+                    }
+                }
+            ]
+        },
+        {
+            "code_source": "/root/projects/kt-chcker/modules/contracts/build/libs/contracts-0.1.0-dev.1.jar",
+            "kind": "jar",
+            "roles": [
+                "contracts"
+            ],
+            "manifest_sha256": "e43fc29d6379a422f7c32ee6303e1585ffd5edfe84a8aea7431cd980f4a7252b",
+            "files": [
+                {
+                    "entry": "contracts-0.1.0-dev.1.jar",
+                    "size": 133059,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/3/contracts-0.1.0-dev.1.jar",
+                        "sha256": "380ad8afe410dd1a324a683bd01e05a220b76982ec751f54a221ff2ecb364057"
+                    }
+                }
+            ]
+        },
+        {
+            "code_source": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-serialization-json-jvm/1.11.0/e7e045e99e56f07599bb9ccb708c2190e2af0606/kotlinx-serialization-json-jvm-1.11.0.jar",
+            "kind": "jar",
+            "roles": [
+                "host_json_runtime"
+            ],
+            "manifest_sha256": "9164df53b05b4658535329c0bcec7db0850c7bce9924122bd07d286a33e9132a",
+            "files": [
+                {
+                    "entry": "kotlinx-serialization-json-jvm-1.11.0.jar",
+                    "size": 294166,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/4/kotlinx-serialization-json-jvm-1.11.0.jar",
+                        "sha256": "563a25b4eb5c9128ae9c2479f3d1a5c44dcd176112b91cf03682e906eba5c935"
+                    }
+                }
+            ]
+        },
+        {
+            "code_source": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-serialization-core-jvm/1.11.0/c1905c9bf7452b045d5af9248835abe64ddad6bf/kotlinx-serialization-core-jvm-1.11.0.jar",
+            "kind": "jar",
+            "roles": [
+                "host_serialization_runtime"
+            ],
+            "manifest_sha256": "0107841d154eac2ef2ac7ae5e7c3ae4aad6b04998642886ad827e9b59c54121a",
+            "files": [
+                {
+                    "entry": "kotlinx-serialization-core-jvm-1.11.0.jar",
+                    "size": 404509,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/5/kotlinx-serialization-core-jvm-1.11.0.jar",
+                        "sha256": "f4a801c647d4351327cd9e1ac4113e2be9ea37a64ab0abae269c25a52e28f35d"
+                    }
+                }
+            ]
+        },
+        {
+            "code_source": "/root/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.21/c343e135bd1e7dd94b7ed76b4159068d888d09db/kotlin-stdlib-2.4.21.jar",
+            "kind": "jar",
+            "roles": [
+                "host_kotlin_runtime"
+            ],
+            "manifest_sha256": "e2b797694a0b0c83fc704a48b2656180615240da31c217d33b22fd01158e5ecc",
+            "files": [
+                {
+                    "entry": "kotlin-stdlib-2.4.21.jar",
+                    "size": 1853315,
+                    "preserved": {
+                        "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/6/kotlin-stdlib-2.4.21.jar",
+                        "sha256": "bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3"
+                    }
+                }
+            ]
+        }
+    ],
+    "class_resource_anchors": [
+        {
+            "role": "compiler_provider",
+            "class_name": "dev.ktchecker.compiler.KotlinJvmCompilerProvider",
+            "class_resource_sha256": "0f7d74c741f99c94fe80ae30b9db6374e767356d0dfece6f9103c96492234678",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/KotlinJvmCompilerProvider.class",
+                "sha256": "0f7d74c741f99c94fe80ae30b9db6374e767356d0dfece6f9103c96492234678"
+            }
+        },
+        {
+            "role": "compiler_verification",
+            "class_name": "dev.ktchecker.compiler.CompilerVerification",
+            "class_resource_sha256": "d3edd4fac9686064f3b1247e63d54bdcb145b116cb8bb51e308f29562baace33",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/0/dev/ktchecker/compiler/CompilerVerification.class",
+                "sha256": "d3edd4fac9686064f3b1247e63d54bdcb145b116cb8bb51e308f29562baace33"
+            }
+        },
+        {
+            "role": "fixture_runner",
+            "class_name": "dev.ktchecker.compiler.CompilerFixtureRunner",
+            "class_resource_sha256": "8a61c484107aa66afb9b978340ec0a3c810b18d1b22c21fbd4ace643286ee562",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureRunner.class",
+                "sha256": "8a61c484107aa66afb9b978340ec0a3c810b18d1b22c21fbd4ace643286ee562"
+            }
+        },
+        {
+            "role": "fixture_provenance",
+            "class_name": "dev.ktchecker.compiler.CompilerFixtureProvenance",
+            "class_resource_sha256": "cd3129d9458fb9fa868755d28913d019ab71db2aff7c249c3face7efb705353c",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/1/dev/ktchecker/compiler/CompilerFixtureProvenance.class",
+                "sha256": "cd3129d9458fb9fa868755d28913d019ab71db2aff7c249c3face7efb705353c"
+            }
+        },
+        {
+            "role": "process_runner",
+            "class_name": "dev.ktchecker.providers.runtime.IsolatedProcessRunner",
+            "class_resource_sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/2/provider-runtime-0.1.0-dev.1.jar",
+                "sha256": "48b8934ab5bd81b796bcd66fd7c92b402520ce121635964e34f2777c194796ef"
+            }
+        },
+        {
+            "role": "contracts",
+            "class_name": "dev.ktchecker.contracts.AnalysisInput",
+            "class_resource_sha256": "3bdf8fba5c4f3d6dedcfa81693cac081150544de9d8d82d4f6dd980718836daa",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/3/contracts-0.1.0-dev.1.jar",
+                "sha256": "380ad8afe410dd1a324a683bd01e05a220b76982ec751f54a221ff2ecb364057"
+            }
+        },
+        {
+            "role": "host_json_runtime",
+            "class_name": "kotlinx.serialization.json.Json",
+            "class_resource_sha256": "13f6ae31baf352a9576671a7d9b96c7abfd31a30700433c6a207e135942b889e",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/4/kotlinx-serialization-json-jvm-1.11.0.jar",
+                "sha256": "563a25b4eb5c9128ae9c2479f3d1a5c44dcd176112b91cf03682e906eba5c935"
+            }
+        },
+        {
+            "role": "host_serialization_runtime",
+            "class_name": "kotlinx.serialization.KSerializer",
+            "class_resource_sha256": "82307d3cf8461bee961d32d78dec61ef7f3e431d38c0a3b2990653b444c4c73e",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/5/kotlinx-serialization-core-jvm-1.11.0.jar",
+                "sha256": "f4a801c647d4351327cd9e1ac4113e2be9ea37a64ab0abae269c25a52e28f35d"
+            }
+        },
+        {
+            "role": "host_kotlin_runtime",
+            "class_name": "kotlin.Unit",
+            "class_resource_sha256": "af1de41aa77b1b3d24adb889098b3524a984d710008cb41130ced1c87cb99e5d",
+            "preserved_artifact": {
+                "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-code/6/kotlin-stdlib-2.4.21.jar",
+                "sha256": "bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3"
+            }
+        }
+    ],
+    "executed_registry_resource": {
+        "resource_url": "file:/root/projects/kt-chcker/modules/provider-compiler/build/resources/main/compiler-rule-map.json",
+        "preserved": {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/executed-resources/compiler-rule-map.json",
+            "sha256": "3be83303286f2bdaca112279f099a0e0169e63ceae6fecaa836deee8b0b7f638"
+        },
+        "size": 986809
+    },
+    "bounds": {
+        "maximum_files_per_inventory": 4000,
+        "maximum_source_file_bytes": 4194304,
+        "maximum_artifact_file_bytes": 67108864,
+        "maximum_total_inventory_bytes": 134217728
+    },
+    "limitations": [
+        "This is cooperative trusted fixture execution, not adversarial classloader or same-UID sandbox attestation.",
+        "Only configured outer directories are canonicalized once for operating-system ancestor aliases; symlinked outer leaves and evidence descendants remain rejected.",
+        "Captured source identities alone do not prove which sources produced bytecode; actual class artifacts are separately preserved.",
+        "Executed class locations/resources are checked before every compiler job and at run end; source drift is checked at run end.",
+        "Synthetic compiler-provider results establish neither independent qualification nor current-code results after later edits."
+    ]
+}

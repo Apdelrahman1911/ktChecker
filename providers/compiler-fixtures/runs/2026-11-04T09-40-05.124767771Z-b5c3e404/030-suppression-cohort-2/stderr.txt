@@ -1,0 +1,4 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-16803864103625177078/sources/unsuppressed/unreachable_code.kt:3:31: warning: [UNREACHABLE_CODE] Unreachable code.
+fun broken(): Int { return 1; println("scaffolding") }
+                              ^^^^^^^^^^^^^^^^^^^^^^

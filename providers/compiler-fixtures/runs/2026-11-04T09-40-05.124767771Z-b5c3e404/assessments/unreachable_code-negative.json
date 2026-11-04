@@ -1,0 +1,51 @@
+{
+    "rule_id": "ktc.compiler.common.unreachable_code",
+    "upstream_id": "UNREACHABLE_CODE",
+    "kind": "negative",
+    "passed": true,
+    "assertions": "Corrected control actually compiled successfully without the selected internal ID; unexecuted/failed builds do not count as absence.",
+    "jobs": [
+        {
+            "label": "negative-cohort-1",
+            "analysis_key": "sha256:1e08cfdc92e7e97d96f878c544835e9cfe834a20c79bd127bed58e489567c409",
+            "snapshot_id": "sha256:78b2964908e6804015ce29d3b4ba3262891f71a4863955ddad2b693c18aeb83d",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/008-negative-cohort-1/input.json",
+            "sha256": "3e73e37dd032eed4a6dcb3382e1da064f4fc9e2993bb56d83a1a5582617686f7"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/008-negative-cohort-1/process.json",
+            "sha256": "62c908e4bc633bc8ee95334fd504fbd4b69b2eb18cde708ee07be1f7856163ff"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/008-negative-cohort-1/result.json",
+            "sha256": "c1a4623063bea7e47d600412d024ee5fbe75556c4a450a81266f7229ea6b4b81"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/008-negative-cohort-1/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/008-negative-cohort-1/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/008-negative-cohort-1/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/008-negative-cohort-1/sources/cases/unreachable_code.kt",
+            "sha256": "c116121d5e27e7f351736fb701838c0ab3f793c25d81e8be4ddadb11c8b95af4"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

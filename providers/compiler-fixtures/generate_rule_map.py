@@ -12,6 +12,11 @@ source_files = sorted((MODULE / 'src/main/kotlin').rglob('*.kt'))
 evidence = [{'path': str(p.relative_to(ROOT)), 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in source_files]
 mappings = []
 for row in rows:
+    activation = (['-Xuse-fir-experimental-checkers'] if row['upstream_id'] == 'EMPTY_RANGE' else
+                  ['-Wextra'] if row['compiler_factory']['source_section'].lower() == 'extra checkers' or
+                                row['upstream_id'] == 'UNREACHABLE_CODE' else [])
+    activation_gap = ([f"Pinned checker registration requires explicit {activation[0]}; factory-file section alone is not activation evidence."]
+                      if activation else [])
     mappings.append({
         'rule_id': row['id'], 'upstream_id': row['upstream_id'], 'relation': 'exact',
         'catalog_record_sha256': hashlib.sha256(json.dumps(row, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()).hexdigest(),
@@ -21,11 +26,12 @@ for row in rows:
         'default_activation': row['default_activation'],
         'source': row['sources'][0],
         'source_section': row['compiler_factory']['source_section'],
+        'known_checker_activation_flags': activation,
         'implementation_evidence': evidence,
         'gaps': [f"{row['id']} / {row['upstream_id']} is a Kotlin/Native factory at {row['sources'][0]}; "
                  "the JVM adapter does not execute it. Requires actual pinned Native target, imported compilation, "
                  "Native dependencies and per-ID fixture/link/simulator evidence; JVM mapping availability is not Native/iOS support."] if row['category'].endswith('.native') else
-            ['Exact mapping availability alone does not establish per-ID fixture testing or tuple qualification'],
+            ['Exact mapping availability alone does not establish per-ID fixture testing or tuple qualification'] + activation_gap,
     })
 output = MODULE / 'src/main/resources/compiler-rule-map.json'
 output.parent.mkdir(parents=True, exist_ok=True)

@@ -43,8 +43,11 @@ object CompilerFixtureRunner {
 
     @JvmStatic fun main(args: Array<String>) {
         require(args.size == 1) { "Fixture root is required" }
-        fixtureRoot = Path.of(args.single()).toAbsolutePath().normalize()
-        repository = fixtureRoot.parent.parent
+        val suppliedFixtureRoot = Path.of(args.single()).toAbsolutePath().normalize()
+        val suppliedRepository = suppliedFixtureRoot.parent.parent
+        repository = CompilerFixtureProvenance.canonicalOuterDirectory(suppliedRepository)
+        fixtureRoot = repository.resolve(suppliedRepository.relativize(suppliedFixtureRoot))
+        require(Files.isDirectory(fixtureRoot, NOFOLLOW_LINKS) && fixtureRoot.toRealPath() == fixtureRoot) { "Unsafe fixture directory" }
         val runId = Instant.now().toString().replace(":", "-") + "-" + UUID.randomUUID().toString().take(8)
         runRoot = fixtureRoot.resolve("runs").resolve(runId)
         Files.createDirectories(runRoot)
@@ -87,6 +90,7 @@ object CompilerFixtureRunner {
             save(runRoot.resolve("toolchain.json"), mapOf(
                 "provider_id" to registryProvider(), "provider_version" to VERSION,
                 "java_executable" to toolchain.javaExecutable.toString(), "java_executable_digest" to toolchain.executableDigest,
+                "selected_java_runtime_image" to toolchain.runtimeImage.description(),
                 "jdk_host_version" to System.getProperty("java.version"), "toolchain_digest" to toolchain.digest,
                 "tested_revision" to testedRevision(),
                 "source_state" to "Startup source copies and actual executed class-directory/jar identities are independent; HEAD/live sources are not bytecode or release certificates.",

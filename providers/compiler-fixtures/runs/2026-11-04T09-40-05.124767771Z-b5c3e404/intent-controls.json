@@ -1,0 +1,48 @@
+{
+    "passed": true,
+    "scope": "Actual compiler warning transport only; intentional NaN/infinity/empty sentinels may still warn.",
+    "absence_required": false,
+    "no_behavioral_intent_inferred": true,
+    "emitted_ids": [
+        "DIVISION_BY_ZERO",
+        "DIVISION_BY_ZERO"
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/072-intent-preserving-warning-controls/input.json",
+            "sha256": "dda57d2196ac65417a934e655d6b3b0479f4a11fe5b8c3c06ccbb6ca1256a010"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/072-intent-preserving-warning-controls/process.json",
+            "sha256": "6af1cf41d0898ba22610bfd21a23f35fab7c1acbf713fa32370435ea7b644236"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/072-intent-preserving-warning-controls/result.json",
+            "sha256": "ba8bf1a5974c6e49cc8188b72067aa3b414401f92b33c3356c87bd99d2bbc37e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/072-intent-preserving-warning-controls/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/072-intent-preserving-warning-controls/stderr.txt",
+            "sha256": "ebe87f52a6db1d4053932aa2820c8c839d04e1bfdaa5a61deb824486d976fbd1"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/072-intent-preserving-warning-controls/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/072-intent-preserving-warning-controls/sources/intent/division.kt",
+            "sha256": "f2d3ad5c78bdc6fa4ae9301d908fce6fe768f2b13fce88ab73d1b72562af6b63"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/072-intent-preserving-warning-controls/sources/intent/sentinel.kt",
+            "sha256": "ca23bcca3c7a260d17d950d10ba2129e046acc0429624feb636669b2f4e859f3"
+        }
+    ]
+}

@@ -1,0 +1,137 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "post_run_preservation_of_matching_pre_batch_source_freeze",
+  "preserved_at": "2026-11-04T10:26:03.689837+00:00",
+  "pre_batch_freeze_created_at": "2026-11-04T10:20:48.482068+00:00",
+  "pre_batch_freeze_manifest_sha256": "dbd07a7e74ba232834ff3cba52b225686cf0d5cf5716d7c7af666067998f8137",
+  "matching_live_sources_verified_before_documentation_evidence_updates": true,
+  "sources": [
+    {
+      "observed_source_path": "modules/provider-compiler/build.gradle.kts",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/build.gradle.kts",
+        "sha256": "8a957bc366ed04acf35cb75f740e1d67b7c43ddf78c0a959b6c9afc6a12c1b61"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt",
+        "sha256": "db0048e7083bfc8d1565d0505d1b3c00ad574e6e50ef2dc39797a947912e3f3e"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt",
+        "sha256": "fb19a9de4bab6c1f2273b1d7466ce1fb4dd18fa9ca38e5e09139f12612af3b37"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+        "sha256": "4acda521ed44c2c30232c2ebd47ef4ed7ecde85e589736d48a98937a0191e667"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt",
+        "sha256": "d089b942352d99fa4f0920338669d0fbc35bbc4112fc7d032f7e8ff0684015b7"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerVerification.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerVerification.kt",
+        "sha256": "a7930f91d8c3031bd39b5fab47c826db29ccd846189912b5e5f2d51d88196bd9"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt",
+        "sha256": "6e7262d7bf41686c75342f0e32493b3327e8f117fffc597aac0737547b7ddf3d"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmRuntimeImage.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmRuntimeImage.kt",
+        "sha256": "afdaa0fc6f8a4ab2db4763b87933095299f3afe428a917755684f63a786c33bb"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+        "sha256": "94de2d6506d9269dbc0163a513159e3aad9d22ab659513fb3f7346469c124a8d"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureProvenance.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureProvenance.kt",
+        "sha256": "262ecc61590268375a70e3a1c88ee97d0cb433ca4d88d5d13f489b8e180e9713"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureRunner.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureRunner.kt",
+        "sha256": "020ecbd61d97da6ff33b657c15bc5ff1d9c13f8a5e40e6d6205cbb8e87175393"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerProviderTest.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerProviderTest.kt",
+        "sha256": "39176ac8f5b79ce775386357878509e25a9541d2837e40a77902ed6c8b3fcc7f"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/KotlinJvmRuntimeImageTest.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/KotlinJvmRuntimeImageTest.kt",
+        "sha256": "402b334ee8ea1b7fe37242c1ed8b9750149614b627005a4b227716fa6bcc2c75"
+      }
+    },
+    {
+      "observed_source_path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/SyntheticJdk.kt",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/SyntheticJdk.kt",
+        "sha256": "dacb723cb0ff0ac511ddb9e28008997e2fbbd88ef912bf88e5bfc9093b05d7a7"
+      }
+    },
+    {
+      "observed_source_path": "providers/compiler-fixtures/.gitattributes",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/providers/compiler-fixtures/.gitattributes",
+        "sha256": "e4519d412a8e504c6e5172054e0de13cf19eb416a889eeeaea572511969b072e"
+      }
+    },
+    {
+      "observed_source_path": "providers/compiler-fixtures/README.md",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/providers/compiler-fixtures/README.md",
+        "sha256": "a49c49fe707e038e95f39fedd286b3a0ff00f5e77107e2868bb33223c9724b7d"
+      }
+    },
+    {
+      "observed_source_path": "providers/compiler-fixtures/evidence/compiler-jvm-2.4.21.json",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/providers/compiler-fixtures/evidence/compiler-jvm-2.4.21.json",
+        "sha256": "8d53cb99b6dc4cb4624319d78fde274ceda2ab136d596b4a68f4a7d4e9f6b520"
+      }
+    },
+    {
+      "observed_source_path": "providers/compiler-fixtures/generate_rule_map.py",
+      "preserved": {
+        "path": "providers/compiler-fixtures/unit-evidence/2026-11-04T102216Z-central-compiler-units/frozen-sources/providers/compiler-fixtures/generate_rule_map.py",
+        "sha256": "2cd63d0192a4d821cb25cef604080c551b85920567b752e40d3c7bf830246ba6"
+      }
+    }
+  ],
+  "attribution": "Source hashes matched the pre-batch freeze after the central compiler unit test reports completed. These copies were preserved after the run, not at unit JVM startup; no source-to-bytecode or loaded-code attestation is inferred."
+}

@@ -1,0 +1,105 @@
+{
+    "passed": true,
+    "unmapped_is_raw_and_failed": true,
+    "quoted_name_does_not_normalize": true,
+    "werror_failure_stays_unnamed_raw_and_failed": true,
+    "return_value_checker_option_scope": "Actual Kotlin2.4.21 option acceptance only; not a RETURN_VALUE_NOT_USED rule fixture or qualification.",
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/073-unmapped-syntax-control/input.json",
+            "sha256": "406808ebb595ea7cf3de57df6322cf57184d015fe04b33d1c8acd9b82dae5d05"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/073-unmapped-syntax-control/process.json",
+            "sha256": "d88e9b745699661a039bc3b3b7d872dbbb8ae3806346d8b49fa74640bf8fea01"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/073-unmapped-syntax-control/result.json",
+            "sha256": "5ba4746622a0c5fb4ef6e4ea369413590d784691da683bc284eceaccfe4cb5bc"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/073-unmapped-syntax-control/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/073-unmapped-syntax-control/stderr.txt",
+            "sha256": "297648aa3d665663797d8379df3aea88b68a34d6c613f9a06621fb2892a2b9d7"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/073-unmapped-syntax-control/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/073-unmapped-syntax-control/sources/transport/syntax.kt",
+            "sha256": "60d8058f50ba5410eeb62dca7a569f545e6716d5c1d96e4fbb00bbf9403dac0a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/074-quoted-name-is-not-emission/input.json",
+            "sha256": "4c77fc06f570555e41ceda2ea3f14ec121c1efd4e9e98e5fbbba8c24f9a96dc6"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/074-quoted-name-is-not-emission/process.json",
+            "sha256": "31420a7801f2a7fbfa2c4b4b07c8bca574f6a70d5640659b08aedb1cf5a0da9b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/074-quoted-name-is-not-emission/result.json",
+            "sha256": "f1cd9ca305e3efb8475fd4c556bd46ad3ad0c998de59a2c5e73766de3d985c4f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/074-quoted-name-is-not-emission/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/074-quoted-name-is-not-emission/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/074-quoted-name-is-not-emission/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/074-quoted-name-is-not-emission/sources/transport/quote.kt",
+            "sha256": "f9ef83e91a4127e73bdc8e8e895a05fd583a3cf4510c20881d2c596dc4750eb0"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/startup-provenance.json",
+            "sha256": "c7f9bd9034aa7ade3abd7f36ca2655819368e67f1a2b03a6a33fee19431b89ae"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/075-unnamed-werror-failure-control/input.json",
+            "sha256": "1905ee8a2e60d368e596c3b106ded6000447761d5bca6094ed6911309fe03dd8"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/075-unnamed-werror-failure-control/process.json",
+            "sha256": "7f1a72534235b5d84021d182805be5d04dcacaafc157653cae1a789a9ea97882"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/075-unnamed-werror-failure-control/result.json",
+            "sha256": "a5a8b930fd9f4f504d7a0a8ed4cd55da6a7cde9dbc1aae122d5839f0c7a889a0"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/075-unnamed-werror-failure-control/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/075-unnamed-werror-failure-control/stderr.txt",
+            "sha256": "69ceee608c322b1584102c97a491955bf402bc389421446cf77efb823d121779"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/075-unnamed-werror-failure-control/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/075-unnamed-werror-failure-control/sources/transport/werror.kt",
+            "sha256": "2930d63f36b00d34d4cce746fc78375f20ca03fec1a71dff55f4948d3beb54b2"
+        }
+    ]
+}

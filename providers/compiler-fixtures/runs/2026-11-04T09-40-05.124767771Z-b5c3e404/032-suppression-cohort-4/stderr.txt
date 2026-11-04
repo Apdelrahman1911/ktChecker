@@ -1,0 +1,37 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/external_declaration_cannot_have_body.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'EXTERNAL_DECLARATION_CANNOT_HAVE_BODY' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("EXTERNAL_DECLARATION_CANNOT_HAVE_BODY")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/field_in_jvm_record.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'FIELD_IN_JVM_RECORD' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("FIELD_IN_JVM_RECORD")
+               ^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/inapplicable_jvm_field.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'INAPPLICABLE_JVM_FIELD' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("INAPPLICABLE_JVM_FIELD")
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/jvm_inline_without_value_class.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'JVM_INLINE_WITHOUT_VALUE_CLASS' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("JVM_INLINE_WITHOUT_VALUE_CLASS")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/jvm_record_not_val_parameter.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'JVM_RECORD_NOT_VAL_PARAMETER' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("JVM_RECORD_NOT_VAL_PARAMETER")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/jvm_static_not_in_object_or_companion.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'JVM_STATIC_NOT_IN_OBJECT_OR_COMPANION' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("JVM_STATIC_NOT_IN_OBJECT_OR_COMPANION")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/non_data_class_jvm_record.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'NON_DATA_CLASS_JVM_RECORD' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("NON_DATA_CLASS_JVM_RECORD")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/overloads_abstract.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'OVERLOADS_ABSTRACT' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("OVERLOADS_ABSTRACT")
+               ^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/overloads_interface.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'OVERLOADS_INTERFACE' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("OVERLOADS_INTERFACE")
+               ^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/synchronized_on_abstract.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'SYNCHRONIZED_ON_ABSTRACT' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("SYNCHRONIZED_ON_ABSTRACT")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/synchronized_on_suspend_error.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'SYNCHRONIZED_ON_SUSPEND_ERROR' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("SYNCHRONIZED_ON_SUSPEND_ERROR")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-1267674828836170488/sources/cases/value_class_without_jvm_inline_annotation.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'VALUE_CLASS_WITHOUT_JVM_INLINE_ANNOTATION' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("VALUE_CLASS_WITHOUT_JVM_INLINE_ANNOTATION")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

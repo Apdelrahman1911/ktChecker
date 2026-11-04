@@ -1,0 +1,64 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/argument_passed_twice.kt:4:21: error: [ARGUMENT_PASSED_TWICE] Argument already passed for this parameter.
+val result = use(1, x = 2)
+                    ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/argument_type_mismatch.kt:4:22: error: [ARGUMENT_TYPE_MISMATCH] Argument type mismatch: actual type is 'String', but 'Int' was expected.
+val result = needInt("text")
+                     ^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/assignment_type_mismatch.kt:3:34: error: [ASSIGNMENT_TYPE_MISMATCH] Assignment type mismatch: actual type is 'String', but 'Int' was expected.
+fun assign(): Int { var x = 1; x = "text"; return x }
+                                 ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/exposed_function_return_type.kt:4:5: error: [EXPOSED_FUNCTION_RETURN_TYPE] 'public' function exposes its 'private-in-file' return type 'Hidden'.
+fun exposed() = Hidden()
+    ^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/initializer_type_mismatch.kt:3:16: error: [INITIALIZER_TYPE_MISMATCH] Initializer type mismatch: expected 'Int', actual 'String'.
+val value: Int = "text"
+               ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/named_parameter_not_found.kt:4:18: error: [NAMED_PARAMETER_NOT_FOUND] No parameter with name 'z' found.
+val result = use(z = 1)
+                 ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/no_else_in_when.kt:3:31: error: [NO_ELSE_IN_WHEN] 'when' expression must be exhaustive. Add the 'false' branch or an 'else' branch.
+fun broken(x: Boolean): Int = when (x) { true -> 1 }
+                              ^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/no_value_for_parameter.kt:4:14: error: [NO_VALUE_FOR_PARAMETER] No value passed for parameter 'x'.
+val result = needInt()
+             ^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/non_vararg_spread.kt:4:18: error: [NON_VARARG_SPREAD] The spread operator (*foo) can only be applied in a vararg position.
+val result = use(*intArrayOf(1))
+                 ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/null_for_nonnull_type.kt:4:25: error: [NULL_FOR_NONNULL_TYPE] Null cannot be a value of a non-null type 'String'.
+val result = needString(null)
+                        ^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/return_type_mismatch.kt:3:21: error: [RETURN_TYPE_MISMATCH] Return type mismatch: expected 'Int', actual 'String'.
+fun broken(): Int = "text"
+                    ^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/spread_of_nullable.kt:4:33: error: [SPREAD_OF_NULLABLE] The spread operator (*foo) cannot be applied to an argument of nullable type.
+fun broken(xs: IntArray?) = use(*xs)
+                                ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/spread_of_nullable.kt:4:34: error: [ARGUMENT_TYPE_MISMATCH] Argument type mismatch: actual type is 'IntArray?', but 'IntArray' was expected.
+fun broken(xs: IntArray?) = use(*xs)
+                                 ^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/too_many_arguments.kt:4:19: error: [TOO_MANY_ARGUMENTS] Too many arguments for 'fun zero(): Int'.
+val result = zero(2)
+                  ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/uninitialized_variable.kt:3:40: error: [UNINITIALIZED_VARIABLE] Variable 'x' must be initialized.
+fun broken(): Int { val x: Int; return x }
+                                       ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/unresolved_import.kt:3:8: error: [UNRESOLVED_IMPORT] Unresolved reference 'absent'.
+import absent.packageName.Missing
+       ^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/unresolved_reference.kt:3:16: error: [UNRESOLVED_REFERENCE] Unresolved reference 'absentSymbol'.
+fun broken() = absentSymbol()
+               ^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/unsafe_call.kt:3:27: error: [UNSAFE_CALL] Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+fun length(x: String?) = x.length
+                          ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/upper_bound_violated.kt:4:21: error: [UPPER_BOUND_VIOLATED] Type argument is not within its bounds: type parameter 'T (of class Holder<T : CharSequence>)' must be subtype of 'CharSequence', but actual: 'Int'.
+val broken = Holder<Int>()
+                    ^^^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/val_reassignment.kt:3:32: error: [VAL_REASSIGNMENT] 'val' cannot be reassigned.
+fun broken(): Int { val x = 1; x = 2; return x }
+                               ^
+/tmp/ktc-compiler-fixtures-8433938296306712739/outputs/provider-9732295850445310179/sources/cases/wrong_annotation_target.kt:4:1: error: [WRONG_ANNOTATION_TARGET] This annotation is not applicable to target 'class'. Applicable targets: function
+@OnlyFunction class Wrong
+^^^^^^^^^^^^^

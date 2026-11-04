@@ -1,0 +1,6 @@
+{
+    "type": "java.lang.IllegalStateException",
+    "message": "2 compiler fixture cases failed; actual results and gaps retained",
+    "completed_jobs": 75,
+    "qualification": "not established; failure retained"
+}
