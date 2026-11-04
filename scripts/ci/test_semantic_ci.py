@@ -599,6 +599,14 @@ class NativeArchiveControlsTests(unittest.TestCase):
         archive.write_bytes(synthetic_archive(entries))
         return native.extract_archive(archive, root / "staging")
 
+    def inspect_headers(self, body, budget=None):
+        budget = native.ExtractionBudget() if budget is None else budget
+        with io.BytesIO(body) as raw, gzip.GzipFile(
+                fileobj=native.BoundedReader(raw, budget, compressed=True), mode="rb") as uncompressed, \
+                native.BoundedTarFile.open(fileobj=native.BoundedReader(uncompressed, budget, compressed=False),
+                                           mode="r|", tarinfo=native.BoundedTarInfo, native_budget=budget) as archive:
+            return list(archive), budget
+
     def test_fixed_official_pin_has_author_not_upstream_sha256_provenance(self):
         self.assertEqual(290160802, native.ARCHIVE_SIZE)
         self.assertEqual("bfa7a92e6654ac8f060648a2937ec08f8d4b1c49", native.ARCHIVE_SHA1)
@@ -610,6 +618,16 @@ class NativeArchiveControlsTests(unittest.TestCase):
         self.assertEqual(384 * 1024 * 1024, native.MAX_ARCHIVE_BYTES)
         self.assertEqual(4 * 1024 * 1024 * 1024, native.MAX_EXTRACTED_BYTES)
         self.assertEqual(100000, native.MAX_MEMBERS)
+        self.assertEqual(16, native.MAX_EXTENSION_DEPTH)
+        self.assertEqual(1700000, native.MAX_RAW_HEADERS)
+        self.assertEqual(native.MAX_MEMBERS * (native.MAX_EXTENSION_DEPTH + 1), native.MAX_RAW_HEADERS)
+        self.assertEqual(512 * 1024 * 1024, native.MAX_FILE_BYTES)
+        self.assertEqual(64 * 1024 * 1024, native.MAX_METADATA_BYTES)
+        self.assertEqual(4464476160, native.MAX_TAR_STREAM_BYTES)
+        self.assertEqual(1024 * 1024, native.MAX_READ_BYTES)
+        self.assertEqual(64, native.MAX_PATH_COMPONENTS)
+        self.assertEqual(20000, native.MAX_COMPONENTS)
+        self.assertEqual(300, native.EXTRACTION_TIMEOUT_SECONDS)
 
     def test_synthetic_regular_files_safe_links_and_mode_stripping(self):
         entries = [(native.HOME_NAME + "/lib/regular", tarfile.REGTYPE, b"synthetic bytes"),
@@ -619,6 +637,9 @@ class NativeArchiveControlsTests(unittest.TestCase):
             root = Path(temporary)
             result = self.extract(root, entries)
             self.assertEqual(3, result["members"])
+            self.assertEqual(result["members"], result["logical_members"])
+            self.assertEqual(3, result["headers"])
+            self.assertEqual(native.MAX_RAW_HEADERS, result["max_raw_headers"])
             self.assertEqual(2, result["links"])
             self.assertEqual(len(b"synthetic bytes"), result["extracted_regular_bytes"])
             self.assertEqual(b"synthetic bytes", (root / "staging" / native.HOME_NAME / "lib/symbolic").read_bytes())
@@ -736,10 +757,10 @@ class NativeArchiveControlsTests(unittest.TestCase):
         regular = tarfile.TarInfo(native.HOME_NAME + "/synthetic-regular")
         regular.size = 1
         recursive = gzip.compress(synthetic_raw_tar_member(gnu, name) * 3 + synthetic_raw_tar_member(regular, b"x") + b"\0" * 1024)
-        cases = (("MAX_MEMBERS", 2, recursive, "native_archive_member_bound_exceeded"),
+        cases = (("MAX_RAW_HEADERS", 2, recursive, "native_archive_header_bound_exceeded"),
                  ("MAX_EXTENSION_DEPTH", 2, recursive, "native_archive_extension_depth_exceeded"),
                  ("MAX_METADATA_BYTES", len(name) + 1, recursive, "native_archive_metadata_bound_exceeded"),
-                 ("MAX_MEMBERS", 1, synthetic_pax_archive({"comment": "synthetic metadata"}), "native_archive_member_bound_exceeded"))
+                 ("MAX_RAW_HEADERS", 1, synthetic_pax_archive({"comment": "synthetic metadata"}), "native_archive_header_bound_exceeded"))
         for constant, limit, body, code in cases:
             with self.subTest(constant=constant, body_kind="pax" if limit == 1 else "gnu"), tempfile.TemporaryDirectory() as temporary, \
                     patch.object(native, constant, limit):
@@ -749,6 +770,139 @@ class NativeArchiveControlsTests(unittest.TestCase):
                 with self.assertRaises(native.NativePrerequisiteError) as error:
                     native.extract_archive(archive, root / "staging")
                 self.assertEqual(code, error.exception.code)
+
+    def test_logical_entries_and_raw_gnu_pax_headers_have_separate_exact_limits(self):
+        directory = tarfile.TarInfo(native.HOME_NAME)
+        directory.type = tarfile.DIRTYPE
+        regular = tarfile.TarInfo(native.HOME_NAME + "/synthetic-regular")
+        regular.size = 1
+        name = (regular.name + "\0").encode("ascii")
+        gnu = tarfile.TarInfo("synthetic-longname")
+        gnu.type, gnu.size = tarfile.GNUTYPE_LONGNAME, len(name)
+        pax = tarfile.TarInfo(regular.name)
+        pax.size, pax.pax_headers = 1, {"comment": "synthetic metadata"}
+        bodies = {
+            "gnu": synthetic_raw_tar_member(gnu, name) + synthetic_raw_tar_member(regular, b"x"),
+            "pax": synthetic_raw_tar_member(pax, b"x", format=tarfile.PAX_FORMAT),
+        }
+        for kind, members in bodies.items():
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary, \
+                    patch.object(native, "MAX_MEMBERS", 2), patch.object(native, "MAX_RAW_HEADERS", 3):
+                root = Path(temporary)
+                archive = root / "synthetic.tar.gz"
+                archive.write_bytes(gzip.compress(synthetic_raw_tar_member(directory) + members + b"\0" * 1024))
+                result = native.extract_archive(archive, root / "staging")
+                self.assertEqual(2, result["members"])
+                self.assertEqual(result["members"], result["logical_members"])
+                self.assertEqual(2, result["namespace_entries"])
+                self.assertEqual(3, result["headers"])
+                self.assertEqual(2, result["max_members"])
+                self.assertEqual(3, result["max_raw_headers"])
+                self.assertGreater(result["metadata_bytes"], 0)
+                self.assertEqual(b"x", (root / "staging" / regular.name).read_bytes())
+
+    def test_raw_header_overflow_precedes_first_and_later_metadata_payload_processing(self):
+        directory = tarfile.TarInfo(native.HOME_NAME)
+        directory.type = tarfile.DIRTYPE
+        regular = tarfile.TarInfo(native.HOME_NAME + "/synthetic-regular")
+        regular.size = 1
+        prefix = synthetic_raw_tar_member(directory) + synthetic_raw_tar_member(regular, b"x")
+        for kind in native.METADATA_TYPES:
+            extension = tarfile.TarInfo("synthetic-extension")
+            extension.type, extension.size = kind, 17
+            for phase, preceding, limit in (("first", b"", 0), ("later", prefix, 2)):
+                with self.subTest(kind=kind, phase=phase), patch.object(native, "MAX_RAW_HEADERS", limit), \
+                        patch.object(tarfile.TarInfo, "_proc_pax", side_effect=AssertionError("PAX payload parser entered")) as pax, \
+                        patch.object(tarfile.TarInfo, "_proc_gnulong", side_effect=AssertionError("GNU payload parser entered")) as gnu:
+                    budget = native.ExtractionBudget()
+                    body = gzip.compress(preceding + synthetic_raw_tar_member(extension))
+                    with self.assertRaises(native.NativePrerequisiteError) as error:
+                        self.inspect_headers(body, budget)
+                    self.assertEqual("native_archive_header_bound_exceeded", error.exception.code)
+                    self.assertEqual(limit + 1, budget.headers)
+                    self.assertEqual(limit, budget.logical_members)
+                    self.assertEqual(0, budget.metadata_bytes)
+                    self.assertEqual(0, budget.extension_depth)
+                    pax.assert_not_called()
+                    gnu.assert_not_called()
+
+    def test_logical_member_overflow_precedes_first_and_later_file_payload_processing(self):
+        directory = tarfile.TarInfo(native.HOME_NAME)
+        directory.type = tarfile.DIRTYPE
+        regular = tarfile.TarInfo(native.HOME_NAME + "/synthetic-regular")
+        regular.size = 1
+        first = synthetic_raw_tar_member(regular)
+        later = synthetic_raw_tar_member(directory) + synthetic_raw_tar_member(regular)
+        original = tarfile.TarInfo._proc_builtin
+        for phase, raw, limit in (("first", first, 0), ("later", later, 1)):
+            processed = []
+
+            def observe_builtin(member, archive):
+                processed.append(member.name)
+                return original(member, archive)
+
+            with self.subTest(phase=phase), patch.object(native, "MAX_MEMBERS", limit), \
+                    patch.object(native, "MAX_RAW_HEADERS", 10), \
+                    patch.object(tarfile.TarInfo, "_proc_builtin", new=observe_builtin):
+                budget = native.ExtractionBudget()
+                with self.assertRaises(native.NativePrerequisiteError) as error:
+                    self.inspect_headers(gzip.compress(raw), budget)
+                self.assertEqual("native_archive_member_bound_exceeded", error.exception.code)
+                self.assertEqual(limit + 1, budget.headers)
+                self.assertEqual(limit + 1, budget.logical_members)
+                self.assertEqual([] if limit == 0 else [native.HOME_NAME], processed)
+
+    def test_metadata_only_zero_and_tiny_payload_chains_have_raw_and_depth_bounds(self):
+        for kind, payloads in ((tarfile.GNUTYPE_LONGNAME, (b"", b"file\0")),
+                               (tarfile.XHDTYPE, (b"", b"13 comment=x\n"))):
+            for payload in payloads:
+                extension = tarfile.TarInfo("synthetic-extension")
+                extension.type, extension.size = kind, len(payload)
+                body = gzip.compress(synthetic_raw_tar_member(extension, payload) * 4 + b"\0" * 1024)
+                for bound in ("raw", "depth"):
+                    with self.subTest(kind=kind, payload_bytes=len(payload), bound=bound), \
+                            patch.object(native, "MAX_RAW_HEADERS", 2 if bound == "raw" else 100), \
+                            patch.object(native, "MAX_EXTENSION_DEPTH", 2 if bound == "depth" else 16):
+                        budget = native.ExtractionBudget()
+                        with self.assertRaises(native.NativePrerequisiteError) as error:
+                            self.inspect_headers(body, budget)
+                        self.assertEqual("native_archive_header_bound_exceeded" if bound == "raw" else
+                                         "native_archive_extension_depth_exceeded", error.exception.code)
+                        self.assertEqual(3, budget.headers)
+                        self.assertEqual(0, budget.logical_members)
+                        self.assertEqual(0, budget.extension_depth)
+                        self.assertEqual(len(payload) * (2 if bound == "raw" else 3), budget.metadata_bytes)
+
+    def test_maximum_mixed_extension_chain_yields_one_logical_member(self):
+        directory = tarfile.TarInfo(native.HOME_NAME)
+        directory.type = tarfile.DIRTYPE
+        regular = tarfile.TarInfo(native.HOME_NAME + "/synthetic-regular")
+        regular.size = 1
+        name, comment = (regular.name + "\0").encode("ascii"), b"13 comment=x\n"
+        gnu, pax = tarfile.TarInfo("synthetic-longname"), tarfile.TarInfo("synthetic-pax")
+        gnu.type, gnu.size = tarfile.GNUTYPE_LONGNAME, len(name)
+        pax.type, pax.size = tarfile.XHDTYPE, len(comment)
+        extensions = (synthetic_raw_tar_member(gnu, name) + synthetic_raw_tar_member(pax, comment)) * 8
+        body = gzip.compress(synthetic_raw_tar_member(directory) + extensions +
+                             synthetic_raw_tar_member(regular, b"x") + b"\0" * 1024)
+        with patch.object(native, "MAX_MEMBERS", 2), patch.object(native, "MAX_RAW_HEADERS", 18):
+            members, budget = self.inspect_headers(body)
+        self.assertEqual([native.HOME_NAME, regular.name], [member.name for member in members])
+        self.assertEqual(2, budget.logical_members)
+        self.assertEqual(18, budget.headers)
+        self.assertEqual(8 * (len(name) + len(comment)), budget.metadata_bytes)
+        self.assertEqual(0, budget.extension_depth)
+        for bound in ("raw", "depth"):
+            with self.subTest(bound=bound), patch.object(native, "MAX_RAW_HEADERS", 17 if bound == "raw" else 100), \
+                    patch.object(native, "MAX_EXTENSION_DEPTH", 15 if bound == "depth" else 16):
+                budget = native.ExtractionBudget()
+                with self.assertRaises(native.NativePrerequisiteError) as error:
+                    self.inspect_headers(body, budget)
+                self.assertEqual("native_archive_header_bound_exceeded" if bound == "raw" else
+                                 "native_archive_extension_depth_exceeded", error.exception.code)
+                self.assertEqual(18 if bound == "raw" else 17, budget.headers)
+                self.assertEqual(1, budget.logical_members)
+                self.assertEqual(0, budget.extension_depth)
 
     def test_compressed_decompressed_read_and_cooperative_deadline_bounds_are_operative(self):
         body = synthetic_archive([(native.HOME_NAME + "/compressible", tarfile.REGTYPE, b"\0" * 131072)])
@@ -909,8 +1063,10 @@ class NativeProvisioningMockTests(unittest.TestCase):
 
     def test_quiescent_host_and_unobserved_archive_layout_limitations_are_explicit(self):
         text = " ".join(native.LIMITATIONS)
-        for required in ("fresh/quiescent", "same-UID", "not race-proof", "host attestation", "never listed/extracted/executed",
-                         "layout", "unvalidated", "cooperative", "not a preemptive"):
+        for required in ("fresh/quiescent", "same-UID", "not race-proof", "host attestation",
+                         "Original author enrollment acquired and hashed", "bounded read-only inventory",
+                         "header 100,001", "50,027 logical entries", "did not complete",
+                         "source/synthetic-controlled only", "layout", "unvalidated", "cooperative", "not a preemptive"):
             self.assertIn(required, text)
 
     def run_provisioning(self, root, *, transport_state="completed", transport_exit=0, version_state="completed", version_exit=0,

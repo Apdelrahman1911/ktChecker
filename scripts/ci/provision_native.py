@@ -52,9 +52,13 @@ MAX_FILE_BYTES = 512 * 1024 * 1024
 MAX_MEMBERS = 100_000
 MAX_METADATA_BYTES = 64 * 1024 * 1024
 MAX_EXTENSION_DEPTH = 16
+# A logical entry may have at most 16 preceding GNU/PAX extension headers.
+# Count those raw headers separately; they do not create filesystem members.
+MAX_RAW_HEADERS = MAX_MEMBERS * (MAX_EXTENSION_DEPTH + 1)
 MAX_PATH_COMPONENTS = 64
 MAX_READ_BYTES = 1024 * 1024
-# Regular bytes plus bounded metadata, headers and per-file tar padding.
+# Independent decompressed-stream ceiling, unchanged by raw-header accounting.
+# It is not an allowance for simultaneously maximizing every other budget.
 MAX_TAR_STREAM_BYTES = MAX_EXTRACTED_BYTES + MAX_METADATA_BYTES + MAX_MEMBERS * 1024
 EXTRACTION_TIMEOUT_SECONDS = 300
 MAX_COMPONENTS = 20_000
@@ -66,7 +70,8 @@ JAVA_FILES = ("bin/java", "release", "lib/modules")
 LIMITATIONS = [
     "Same-job Native distribution/JDK launcher availability only; not target compilation, linking, cinterop, simulator or runtime evidence.",
     "Trust boundary is fresh/quiescent ephemeral GitHub-hosted state with trusted same-job scripts and no hostile concurrent same-UID writer; pathname rechecks are not race-proof capability binding or host attestation.",
-    "The enrolled official archive was acquired and hashed only, never listed/extracted/executed during author enrollment; its actual layout, metadata and link-policy compatibility remain unvalidated until hosted provisioning.",
+    "Original author enrollment acquired and hashed the official archive only. A later bounded read-only inventory rejected v2's conflated raw-header/member cap at header 100,001 after 50,027 logical entries; it did not complete the inventory or extract/execute content.",
+    "Separate logical/raw-header accounting is source/synthetic-controlled only; complete archive layout, metadata and link-policy compatibility remain unvalidated and require separately authorized or hosted provisioning evidence.",
     "Extraction uses bounded read/parser work and a cooperative 300-second deadline, not a preemptive hard real-time guarantee.",
     "SHA-256 was author-enrolled from one exact official HTTPS acquisition verified against published SHA-1; no upstream SHA-256 or signature validation is claimed.",
     "Selected component hashes do not qualify the complete LLVM/libffi/Apple SDK/header/cache closure or the whole JDK distribution.",
@@ -340,7 +345,7 @@ def effective_member_bounds(member) -> None:
 class ExtractionBudget:
     def __init__(self):
         self.deadline = time.monotonic() + EXTRACTION_TIMEOUT_SECONDS
-        self.headers = self.metadata_bytes = self.extension_depth = 0
+        self.headers = self.logical_members = self.metadata_bytes = self.extension_depth = 0
         self.compressed_bytes = self.stream_bytes = 0
 
     def check(self):
@@ -385,12 +390,18 @@ class BoundedTarInfo(tarfile.TarInfo):
         budget = archive.native_budget
         budget.check()
         budget.headers += 1
-        if budget.headers > MAX_MEMBERS:
-            fail("native_archive_member_bound_exceeded")
+        if budget.headers > MAX_RAW_HEADERS:
+            fail("native_archive_header_bound_exceeded")
         effective_member_bounds(self)
         metadata = self.type in METADATA_TYPES
         if not metadata and self.type not in ENTRY_TYPES:
             fail("native_archive_member_type_or_bound_invalid")
+        if not metadata:
+            # Recursive extension frames return this same effective entry.
+            # Count it only at its nonmetadata header, before payload work.
+            budget.logical_members += 1
+            if budget.logical_members > MAX_MEMBERS:
+                fail("native_archive_member_bound_exceeded")
         if metadata:
             budget.metadata_bytes += self.size
             if self.size > 65536 or budget.metadata_bytes > MAX_METADATA_BYTES:
@@ -523,10 +534,12 @@ def extract_archive(path: Path, staging: Path) -> dict:
         raise
     except (OSError, EOFError, ValueError, RuntimeError, tarfile.TarError):
         fail("native_archive_corrupt_or_path_conflict")
-    return {"members": len(seen), "extracted_regular_bytes": extracted, "links": len(links),
+    return {"members": len(seen), "logical_members": budget.logical_members,
+            "extracted_regular_bytes": extracted, "links": len(links),
             "headers": budget.headers, "namespace_entries": len(spellings), "metadata_bytes": budget.metadata_bytes,
             "compressed_read_bytes": budget.compressed_bytes, "decompressed_read_bytes": budget.stream_bytes,
-            "max_members": MAX_MEMBERS, "max_extracted_bytes": MAX_EXTRACTED_BYTES,
+            "max_members": MAX_MEMBERS, "max_raw_headers": MAX_RAW_HEADERS,
+            "max_extracted_bytes": MAX_EXTRACTED_BYTES,
             "max_metadata_bytes": MAX_METADATA_BYTES, "max_decompressed_bytes": MAX_TAR_STREAM_BYTES,
             "max_extension_depth": MAX_EXTENSION_DEPTH, "max_path_components": MAX_PATH_COMPONENTS,
             "deadline_seconds": EXTRACTION_TIMEOUT_SECONDS, "deadline_kind": "cooperative"}
