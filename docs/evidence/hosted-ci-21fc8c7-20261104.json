@@ -1,0 +1,690 @@
+{
+  "acquisition": {
+    "acquisition_is_not_complete": true,
+    "bridge_or_original_report_artifacts_acquired": false,
+    "downloaded_bytes_including_unverified_failed_response": 722587,
+    "missing_approved_members": [
+      {
+        "artifact_id": 13353267304,
+        "members": [
+          "dependency-manifest-command.json",
+          "distribution-smoke.json"
+        ]
+      },
+      {
+        "artifact_id": 13353142481,
+        "members": [
+          "dependency-manifest-command.json",
+          "distribution-smoke.json",
+          "environment-initial.json",
+          "gradle-version.json",
+          "host-build.json",
+          "library-prerequisites.json"
+        ]
+      },
+      {
+        "artifact_id": 13353127532,
+        "members": [
+          "dependency-manifest-command.json",
+          "distribution-smoke.json",
+          "environment-initial.json",
+          "gradle-version.json",
+          "host-build.json",
+          "library-prerequisites.json"
+        ]
+      }
+    ],
+    "raw_job_logs_acquired": false,
+    "retries": 0,
+    "selected_files_retained": 32,
+    "selected_uncompressed_bytes": 7232799,
+    "state": "stopped",
+    "stopped_request": {
+      "artifact_id": 13354690053,
+      "attempt": 1,
+      "classification": "request_failed",
+      "exit_code": 1,
+      "http_cause_known": false,
+      "request_index": 6,
+      "response_body_included": false,
+      "response_bytes": 212,
+      "run_id": 41890345256,
+      "verified_zip": false
+    },
+    "unattempted_platform_artifact_ids": [
+      13354560474,
+      13351984703,
+      13352624862
+    ],
+    "unselected_members_decompressed": false,
+    "verified_zip_artifacts": 5
+  },
+  "commit": "21fc8c7725b176d093ddf40e5d5c335b2e7c16aa",
+  "evidence_kind": "bounded_retained_hosted_ci_observation",
+  "limitations": {
+    "failure_causes_not_inferred_from_omitted_diagnostics": true,
+    "hosted_failures_resolved": false,
+    "no_failure_attribution_to_prior_commits": true,
+    "no_further_remote_acquisition_performed_for_this_summary": true,
+    "no_os_native_target_rule_or_release_qualification": true,
+    "private_paths_exception_text_and_console_excluded": true
+  },
+  "linux_implementation_aggregate": {
+    "aggregate_counts": {
+      "error": 0,
+      "failure": 2,
+      "passed": 897,
+      "skipped": 1,
+      "tests": 900
+    },
+    "aggregate_report_count": 86,
+    "artifact_id": 13353267304,
+    "attempt": 1,
+    "failing_methods": [
+      {
+        "class": "dev.ktchecker.reviewcontroller.ControllerKernelIntegrationTest",
+        "method": "fullImportedPlanExecutesOnlyItsExactTransformedWholeArchiveAndNeverBecomesQualified()",
+        "state": "failure"
+      },
+      {
+        "class": "dev.ktchecker.reviewcontroller.OwnerReviewPlanRegistryTest",
+        "method": "changedSourceBytesOrUnavailableCaptureCannotUseAnAlreadyRegisteredReference()",
+        "state": "failure"
+      }
+    ],
+    "host": "ubuntu-24.04",
+    "host_build": {
+      "elapsed_seconds": 248.55,
+      "failed_tasks": [
+        ":review-controller:test"
+      ],
+      "return_code": 1,
+      "state": "failed",
+      "task_count": 173,
+      "task_status_counts": {
+        "EXECUTED": 81,
+        "FAILED": 1,
+        "NO-SOURCE": 54,
+        "SKIPPED": 16,
+        "UP-TO-DATE": 21
+      }
+    },
+    "identity_bindings_passed": {
+      "aggregate_job_conclusion_matches_status": true,
+      "embedded_environment_exactly_matches_retained_environment": true,
+      "embedded_host_build_exactly_matches_retained_host_build": true,
+      "environment_ci_tuple_and_runner_os": true,
+      "source_commit_matches_status": true
+    },
+    "job_id": 126785762532,
+    "receipts": [
+      {
+        "bytes": 4314,
+        "member": "environment.json",
+        "sha256": "8104d552da38ca5e08749c0866ae14fa3dc6a46f7796a18df4f4f11ca3221150"
+      },
+      {
+        "bytes": 10682,
+        "member": "host-build.json",
+        "sha256": "30c689fda606835c29dd91fbe54919d2249fb70af31988527dbcc1d7ea3071d6"
+      },
+      {
+        "bytes": 318741,
+        "member": "evidence.json",
+        "sha256": "7ec91c009b628a5a8b28bb9899aa4b92bb525de5315caecd067b78490eddb9d2"
+      }
+    ],
+    "run_id": 41890345417,
+    "source_and_stdout_omitted": true,
+    "underlying_exception_or_message_available": false
+  },
+  "observed_through": "2026-11-04T18:57:38.663577+00:00",
+  "python_count_semantics": "Standard unittest callback counts: failures include subtest callbacks and are not distinct failing-method denominators. A callback count can exceed the started/completed method denominator.",
+  "python_identity_and_pairing_gates_verified_for_each_report": [
+    "API_job_name_host_matches",
+    "API_job_run_attempt_commit_matches",
+    "API_run_attempt_matches",
+    "API_run_commit_matches",
+    "JSON_declared_XML_digest_matches",
+    "JSON_declared_XML_size_matches",
+    "XML_harness_state_matches_JSON",
+    "XML_results_complete_matches_JSON",
+    "XML_unittest_counts_match_JSON",
+    "all_four_report_source_brackets_identical",
+    "error_event_count_matches_unittest",
+    "failure_event_count_matches_unittest",
+    "report_attempt_matches",
+    "report_expected_commit_matches",
+    "report_host_matches",
+    "report_run_matches",
+    "report_runner_OS_matches",
+    "report_sanitization_declarations_match",
+    "report_source_commit_matches",
+    "retained_JSON_digest_matches",
+    "retained_XML_digest_matches"
+  ],
+  "repository": "Apdelrahman1911/ktChecker",
+  "retained_python_reports": [
+    {
+      "all_identity_and_pairing_gates_passed": true,
+      "artifact_id": 13354215535,
+      "attempt": 1,
+      "counts": {
+        "errors": 2,
+        "expected_failures": 0,
+        "failures": 305,
+        "skipped": 36,
+        "successful_tests": 687,
+        "tests_run": 860,
+        "unexpected_successes": 0
+      },
+      "denominators": {
+        "completed_test_cases": 860,
+        "discovered_test_cases": 860,
+        "pending_selected_test_cases": 0,
+        "started_test_cases": 860
+      },
+      "distinct_failing_or_error_methods": 137,
+      "host": "macos-15",
+      "job_conclusion": "failure",
+      "job_id": 126785762939,
+      "persistence_complete": true,
+      "receipts": [
+        {
+          "bytes": 868741,
+          "format": "JSON",
+          "member": "python-checks.json",
+          "sha256": "d62ec362fd86ff930eefbf0b48adb7f66b67fb6f536c15b2b3b187f560750f64"
+        },
+        {
+          "bytes": 799788,
+          "format": "XML",
+          "member": "python-checks.xml",
+          "sha256": "82b3ad28154f0a49bf89ca08684a9f0d9b57a33f992322e0b2fc830bf8716372"
+        }
+      ],
+      "report_state": "failed",
+      "results_complete": true,
+      "run_id": 41890345256,
+      "runner_os": "macOS",
+      "source_python_bytes": 1523513,
+      "source_python_files": 43,
+      "source_tree": "scripts",
+      "source_tree_digest": "sha256:32b05102882e8e8598574bf34be1318d7371f988e1d63dfbb2f5379129b62cd8",
+      "subtest_failure_callbacks": 203,
+      "worker_return_code": 1
+    },
+    {
+      "all_identity_and_pairing_gates_passed": true,
+      "artifact_id": 13353561105,
+      "attempt": 1,
+      "counts": {
+        "errors": 2,
+        "expected_failures": 0,
+        "failures": 17,
+        "skipped": 225,
+        "successful_tests": 616,
+        "tests_run": 860,
+        "unexpected_successes": 0
+      },
+      "denominators": {
+        "completed_test_cases": 860,
+        "discovered_test_cases": 860,
+        "pending_selected_test_cases": 0,
+        "started_test_cases": 860
+      },
+      "distinct_failing_or_error_methods": 19,
+      "host": "windows-2025",
+      "job_conclusion": "failure",
+      "job_id": 126785763162,
+      "persistence_complete": true,
+      "receipts": [
+        {
+          "bytes": 729011,
+          "format": "JSON",
+          "member": "python-checks.json",
+          "sha256": "3f857304cdc8a3a6f8554a7bfb3f416c6fbdea9055d4159a190088a499566b24"
+        },
+        {
+          "bytes": 740828,
+          "format": "XML",
+          "member": "python-checks.xml",
+          "sha256": "9effc247b28cd16fd3642a67e67f9363ea37625aedef413e3c056215d81fa2f1"
+        }
+      ],
+      "report_state": "failed",
+      "results_complete": true,
+      "run_id": 41890345256,
+      "runner_os": "Windows",
+      "source_python_bytes": 1523513,
+      "source_python_files": 43,
+      "source_tree": "scripts",
+      "source_tree_digest": "sha256:32b05102882e8e8598574bf34be1318d7371f988e1d63dfbb2f5379129b62cd8",
+      "subtest_failure_callbacks": 0,
+      "worker_return_code": 1
+    },
+    {
+      "all_identity_and_pairing_gates_passed": true,
+      "artifact_id": 13353267304,
+      "attempt": 1,
+      "counts": {
+        "errors": 0,
+        "expected_failures": 0,
+        "failures": 0,
+        "skipped": 1,
+        "successful_tests": 681,
+        "tests_run": 682,
+        "unexpected_successes": 0
+      },
+      "denominators": {
+        "completed_test_cases": 682,
+        "discovered_test_cases": 682,
+        "pending_selected_test_cases": 0,
+        "started_test_cases": 682
+      },
+      "distinct_failing_or_error_methods": 0,
+      "host": "ubuntu-24.04",
+      "job_conclusion": "failure",
+      "job_id": 126785762532,
+      "persistence_complete": true,
+      "receipts": [
+        {
+          "bytes": 573838,
+          "format": "JSON",
+          "member": "python/python-checks.json",
+          "sha256": "61f482b1aeee67439fc5926ab7b5dd0fc87cf49f23e7db9ec9a0fb9ea879cbf6"
+        },
+        {
+          "bytes": 571434,
+          "format": "XML",
+          "member": "python/python-checks.xml",
+          "sha256": "2e4548043e5f1ea7612d490c8610420b126d554e8c6aaa4db4f06e9a0aeb5fb9"
+        }
+      ],
+      "report_state": "passed",
+      "results_complete": true,
+      "run_id": 41890345417,
+      "runner_os": "Linux",
+      "source_python_bytes": 1236232,
+      "source_python_files": 32,
+      "source_tree": "scripts/ci",
+      "source_tree_digest": "sha256:e01614bd5459762b3138c6bff313671b9e82986c0a12def2e18ea5d23173a659",
+      "subtest_failure_callbacks": 0,
+      "worker_return_code": 0
+    },
+    {
+      "all_identity_and_pairing_gates_passed": true,
+      "artifact_id": 13353142481,
+      "attempt": 1,
+      "counts": {
+        "errors": 2,
+        "expected_failures": 0,
+        "failures": 17,
+        "skipped": 156,
+        "successful_tests": 507,
+        "tests_run": 682,
+        "unexpected_successes": 0
+      },
+      "denominators": {
+        "completed_test_cases": 682,
+        "discovered_test_cases": 682,
+        "pending_selected_test_cases": 0,
+        "started_test_cases": 682
+      },
+      "distinct_failing_or_error_methods": 19,
+      "host": "windows-2025",
+      "job_conclusion": "failure",
+      "job_id": 126785763015,
+      "persistence_complete": true,
+      "receipts": [
+        {
+          "bytes": 577445,
+          "format": "JSON",
+          "member": "python/python-checks.json",
+          "sha256": "26a08bfe43d0aac3290a9dd61ce743ee37d494be1e6cf63553c7d81a4b443b0c"
+        },
+        {
+          "bytes": 582878,
+          "format": "XML",
+          "member": "python/python-checks.xml",
+          "sha256": "422143a5fb1544d8ddc425c1ae0c0b0de6df48614aa49ddbee50688a6c85b203"
+        }
+      ],
+      "report_state": "failed",
+      "results_complete": true,
+      "run_id": 41890345417,
+      "runner_os": "Windows",
+      "source_python_bytes": 1236232,
+      "source_python_files": 32,
+      "source_tree": "scripts/ci",
+      "source_tree_digest": "sha256:e01614bd5459762b3138c6bff313671b9e82986c0a12def2e18ea5d23173a659",
+      "subtest_failure_callbacks": 0,
+      "worker_return_code": 1
+    },
+    {
+      "all_identity_and_pairing_gates_passed": true,
+      "artifact_id": 13353127532,
+      "attempt": 1,
+      "counts": {
+        "errors": 2,
+        "expected_failures": 0,
+        "failures": 305,
+        "skipped": 1,
+        "successful_tests": 544,
+        "tests_run": 682,
+        "unexpected_successes": 0
+      },
+      "denominators": {
+        "completed_test_cases": 682,
+        "discovered_test_cases": 682,
+        "pending_selected_test_cases": 0,
+        "started_test_cases": 682
+      },
+      "distinct_failing_or_error_methods": 137,
+      "host": "macos-26",
+      "job_conclusion": "failure",
+      "job_id": 126785763004,
+      "persistence_complete": true,
+      "receipts": [
+        {
+          "bytes": 716618,
+          "format": "JSON",
+          "member": "python/python-checks.json",
+          "sha256": "167f433dbf0843f5cf27f78d019e648d6018941b3eefdad72e74f89d0dcb32e6"
+        },
+        {
+          "bytes": 643354,
+          "format": "XML",
+          "member": "python/python-checks.xml",
+          "sha256": "fb6926289ba02365bb39061b1c6e6e4363ac2a5a37911799cdfb46e81c7c46ed"
+        }
+      ],
+      "report_state": "failed",
+      "results_complete": true,
+      "run_id": 41890345417,
+      "runner_os": "macOS",
+      "source_python_bytes": 1236232,
+      "source_python_files": 32,
+      "source_tree": "scripts/ci",
+      "source_tree_digest": "sha256:e01614bd5459762b3138c6bff313671b9e82986c0a12def2e18ea5d23173a659",
+      "subtest_failure_callbacks": 203,
+      "worker_return_code": 1
+    }
+  ],
+  "runs": [
+    {
+      "attempt": 1,
+      "conclusion": "failure",
+      "initial_conclusion": "failure",
+      "initial_status": "completed",
+      "jobs": [
+        {
+          "conclusion": "success",
+          "failed_steps": [],
+          "job_id": 126785761659,
+          "name": "MCP SDK and synthetic host tests/audits (ubuntu-24.04)",
+          "status": "completed"
+        },
+        {
+          "conclusion": "failure",
+          "failed_steps": [
+            {
+              "name": "Execute npm ci, actual SDK/synthetic-host tests/audits and validated unsigned npm packs",
+              "number": 6
+            },
+            {
+              "name": "Bind sanitized bridge evidence to actual source and job outcome",
+              "number": 7
+            }
+          ],
+          "job_id": 126785762106,
+          "name": "MCP SDK and synthetic host tests/audits (windows-2025)",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "failed_steps": [],
+          "job_id": 126785762304,
+          "name": "MCP SDK and synthetic host tests/audits (macos-26)",
+          "status": "completed"
+        }
+      ],
+      "run_id": 41890345303,
+      "status": "completed",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41890345303",
+      "workflow": "Preview bridges (actual SDK and synthetic host controls)"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "failure",
+      "initial_conclusion": null,
+      "initial_status": "in_progress",
+      "jobs": [
+        {
+          "conclusion": "failure",
+          "failed_steps": [
+            {
+              "name": "Build and test actual modules; assemble preview distributions",
+              "number": 14
+            },
+            {
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips",
+              "number": 15
+            },
+            {
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes",
+              "number": 18
+            },
+            {
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices",
+              "number": 19
+            },
+            {
+              "name": "Collect actual suites and artifact identities, including failures",
+              "number": 21
+            }
+          ],
+          "job_id": 126785762532,
+          "name": "JVM 21 checker build and installed launcher (ubuntu-24.04)",
+          "status": "completed"
+        },
+        {
+          "conclusion": "failure",
+          "failed_steps": [
+            {
+              "name": "Verify the evidence harness failure paths",
+              "number": 6
+            },
+            {
+              "name": "Bind observed Gradle to the selected JVM",
+              "number": 10
+            },
+            {
+              "name": "Observe exact helper build inputs and compiler or explicit unsupported host",
+              "number": 11
+            },
+            {
+              "name": "Execute exact tiny native controls or record Windows native unavailability",
+              "number": 12
+            },
+            {
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips",
+              "number": 15
+            },
+            {
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes",
+              "number": 18
+            },
+            {
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices",
+              "number": 19
+            },
+            {
+              "name": "Collect actual suites and artifact identities, including failures",
+              "number": 21
+            }
+          ],
+          "job_id": 126785763004,
+          "name": "JVM 21 checker build and installed launcher (macos-26)",
+          "status": "completed"
+        },
+        {
+          "conclusion": "failure",
+          "failed_steps": [
+            {
+              "name": "Verify the evidence harness failure paths",
+              "number": 6
+            },
+            {
+              "name": "Bind observed Gradle to the selected JVM",
+              "number": 10
+            },
+            {
+              "name": "Observe exact helper build inputs and compiler or explicit unsupported host",
+              "number": 11
+            },
+            {
+              "name": "Execute exact tiny native controls or record Windows native unavailability",
+              "number": 12
+            },
+            {
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips",
+              "number": 15
+            },
+            {
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes",
+              "number": 18
+            },
+            {
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices",
+              "number": 19
+            },
+            {
+              "name": "Collect actual suites and artifact identities, including failures",
+              "number": 21
+            }
+          ],
+          "job_id": 126785763015,
+          "name": "JVM 21 checker build and installed launcher (windows-2025)",
+          "status": "completed"
+        }
+      ],
+      "run_id": 41890345417,
+      "status": "completed",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41890345417",
+      "workflow": "Preview implementation (real pinned JVM)"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "failure",
+      "initial_conclusion": "failure",
+      "initial_status": "completed",
+      "jobs": [
+        {
+          "conclusion": "success",
+          "failed_steps": [],
+          "job_id": 126785762411,
+          "name": "Planning integrity (ubuntu-24.04)",
+          "status": "completed"
+        },
+        {
+          "conclusion": "failure",
+          "failed_steps": [
+            {
+              "name": "Test validation failure paths",
+              "number": 5
+            }
+          ],
+          "job_id": 126785762939,
+          "name": "Planning integrity (macos-15)",
+          "status": "completed"
+        },
+        {
+          "conclusion": "failure",
+          "failed_steps": [
+            {
+              "name": "Test validation failure paths",
+              "number": 5
+            }
+          ],
+          "job_id": 126785763162,
+          "name": "Planning integrity (windows-2025)",
+          "status": "completed"
+        }
+      ],
+      "run_id": 41890345256,
+      "status": "completed",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41890345256",
+      "workflow": "Planning evidence and registry"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "failure",
+      "initial_conclusion": "failure",
+      "initial_status": "completed",
+      "jobs": [
+        {
+          "conclusion": "failure",
+          "failed_steps": [
+            {
+              "name": "Exercise real Lint adapter against immutable fixture captures",
+              "number": 10
+            },
+            {
+              "name": "Collect exact Android host-side reports and provider outcomes",
+              "number": 11
+            }
+          ],
+          "job_id": 126785763393,
+          "name": "Actual Android KMP compile, host tests and NewApi adapter controls",
+          "status": "completed"
+        },
+        {
+          "conclusion": "failure",
+          "failed_steps": [
+            {
+              "name": "Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals",
+              "number": 11
+            },
+            {
+              "name": "Execute independent offline Native FIR library feasibility with explicit enrollment",
+              "number": 13
+            },
+            {
+              "name": "Collect exact simulator reports, linked frameworks and provider outcomes",
+              "number": 14
+            }
+          ],
+          "job_id": 126785763404,
+          "name": "Real iOS arm64 compile/link and iOS 26.4 simulator execution",
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "failed_steps": [],
+          "job_id": 126785763498,
+          "name": "Actual Desktop/JVM KMP common boundary tests",
+          "status": "completed"
+        }
+      ],
+      "run_id": 41890345173,
+      "status": "completed",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41890345173",
+      "workflow": "Preview platform execution (actual KMP targets)"
+    }
+  ],
+  "schema_version": 1,
+  "source_receipt_sha256": {
+    "acquisition-manifest-v1.json": "c1d4451aec590e7ccade64d965b1d67883079da892e89537abd322906b8a4981",
+    "retained-python-failure-inventory-v1.json": "2d2651bb27a9a159b66c3864d6b1e00b9d17ed882700e492e13a7293a18d6481",
+    "status-observation-v1.json": "4664b0326b522d688148c59bbbb32bbbf892d584f14336d6ecf5de908e89c7c8"
+  },
+  "status_counts": {
+    "job_failures": 8,
+    "job_successes": 4,
+    "jobs": 12,
+    "run_failures": 4,
+    "runs": 4,
+    "runs_completed": 4
+  }
+}

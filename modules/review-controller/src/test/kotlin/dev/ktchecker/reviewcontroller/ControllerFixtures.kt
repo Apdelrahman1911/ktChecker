@@ -6,7 +6,13 @@ import dev.ktchecker.kernel.SubmitPlanRequest
 import dev.ktchecker.projectmodel.*
 import dev.ktchecker.snapshot.*
 import java.nio.file.Files
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
+import java.nio.file.StandardOpenOption.WRITE
+import java.nio.file.attribute.DosFileAttributeView
+import java.nio.file.attribute.PosixFileAttributeView
+import java.nio.file.attribute.PosixFilePermission.OWNER_WRITE
 import java.util.UUID
 import kotlinx.serialization.encodeToString
 
@@ -36,6 +42,39 @@ internal class ControllerFixtures(val work: Path, val namespace: ModelNamespace 
         var epoch = Digests.sha256("registered-capture:${snapshot.snapshotId}")
         var available = true
         var verifies = 0
+
+        /**
+         * Deliberately perturb only this test fixture's existing sealed Common.kt. Same-owner
+         * tampering requires temporarily changing its permissions on nonprivileged hosts;
+         * UID 0 can otherwise mask that prerequisite. The registered CAS stays untouched and
+         * sealed directories stay read-only; changed bytes must still fail production verification.
+         */
+        fun replaceCommonSourceForTest(text: String) {
+            val path = root.resolve("lib/src/commonMain/kotlin/Common.kt")
+            check(Files.isRegularFile(path, NOFOLLOW_LINKS)) { "Test capture source is not a regular file" }
+            val posix = Files.getFileAttributeView(path, PosixFileAttributeView::class.java, NOFOLLOW_LINKS)
+            if (posix != null) {
+                val original = posix.readAttributes().permissions().toSet()
+                try {
+                    posix.setPermissions(original + OWNER_WRITE)
+                    Files.writeString(path, text, WRITE, TRUNCATE_EXISTING, NOFOLLOW_LINKS)
+                } finally {
+                    posix.setPermissions(original)
+                }
+            } else {
+                val dos = checkNotNull(Files.getFileAttributeView(path, DosFileAttributeView::class.java, NOFOLLOW_LINKS)) {
+                    "Test capture source needs supported read-only attributes"
+                }
+                val original = dos.readAttributes().isReadOnly
+                try {
+                    dos.setReadOnly(false)
+                    Files.writeString(path, text, WRITE, TRUNCATE_EXISTING, NOFOLLOW_LINKS)
+                } finally {
+                    dos.setReadOnly(original)
+                }
+            }
+        }
+
         fun materialization(model: VerifiedProjectModel, transform: (MaterializationVerification) -> MaterializationVerification = { it }): OwnerPlanMaterialization =
             OwnerPlanMaterialization(model, root) {
                 verifies++

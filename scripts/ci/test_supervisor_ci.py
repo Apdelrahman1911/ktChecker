@@ -205,6 +205,42 @@ class Fixture:
         return result
 
 
+class NativeFixtureInventoryTests(unittest.TestCase):
+    def test_explicit_live_sibling_preserves_v1_input_and_method_inventory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = Fixture(Path(temporary))
+            original = checks.native_test_inputs(fixture.root)
+            self.assertEqual(("test_supervisor.py",), checks.native_test_file_inventory(fixture.root))
+            write(fixture.root / checks.MODULE / "native/test_live_supervisor.py", b"synthetic independent v2 fixture\n")
+            self.assertEqual(("test_live_supervisor.py", "test_supervisor.py"), checks.native_test_file_inventory(fixture.root))
+            self.assertEqual(original, checks.native_test_inputs(fixture.root))
+            self.assertEqual({"source", "builder", "probe", "tests", "runner"}, set(original))
+            self.assertEqual(22, len(checks.CASES))
+
+    def test_unknown_sibling_and_missing_v1_file_are_rejected(self):
+        for alteration in ("unknown_sibling", "missing_v1"):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(alteration=alteration):
+                fixture = Fixture(Path(temporary))
+                if alteration == "unknown_sibling":
+                    write(fixture.root / checks.MODULE / "native/test_future_supervisor.py", b"synthetic unknown fixture\n")
+                else:
+                    (fixture.root / checks.TEST_FILE).unlink()
+                with self.assertRaises((OSError, ValueError)):
+                    checks.native_test_inputs(fixture.root)
+
+    def test_known_sibling_must_be_nonempty_bounded_regular_source(self):
+        for alteration in ("empty", "oversized", "directory"):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(alteration=alteration):
+                fixture = Fixture(Path(temporary))
+                sibling = fixture.root / checks.MODULE / "native/test_live_supervisor.py"
+                if alteration == "directory":
+                    sibling.mkdir()
+                else:
+                    write(sibling, b"" if alteration == "empty" else b"x" * (1_048_576 + 1))
+                with self.assertRaises((OSError, ValueError)):
+                    checks.native_test_inputs(fixture.root)
+
+
 class NativeFormatTests(unittest.TestCase):
     def test_host_identities_are_normalized_without_unknown_aliases(self):
         for target, (system, machine) in HOSTS.items():
@@ -463,6 +499,7 @@ class NativeOutcomeTests(unittest.TestCase):
         for target in ("linux-x86_64", "macos-aarch64"):
             with tempfile.TemporaryDirectory() as temporary:
                 fixture = Fixture(Path(temporary), target)
+                write(fixture.root / checks.MODULE / "native/test_live_supervisor.py", b"synthetic independent v2 fixture\n")
                 class FakeCase(unittest.TestCase):
                     def __init__(self, name): super().__init__("runTest"); self.name = name
                     def id(self): return self.name
@@ -470,11 +507,12 @@ class NativeOutcomeTests(unittest.TestCase):
                         if fixture.host["os"] == "macos" and self.name in checks.LINUX_ONLY:
                             self.skipTest(checks.LINUX_ONLY[self.name][0])
                 suite = unittest.TestSuite(FakeCase(name) for name in sorted(checks.CASES))
-                with fixture.context(), patch.object(runner.unittest.TestLoader, "discover", return_value=suite), \
+                with fixture.context(), patch.object(runner.unittest.TestLoader, "discover", return_value=suite) as discovery, \
                         patch.dict(sys.modules, {"test_supervisor": SimpleNamespace()}), patch.object(runner.sys, "stdout", io.StringIO()):
                     result = runner.run(fixture.args.output, fixture.cc, fixture.root)
                 self.assertEqual("passed", result["state"])
                 self.assertEqual(22, result["tests_run"])
+                discovery.assert_called_once_with(str(fixture.root / checks.MODULE / "native"), pattern="test_supervisor.py")
                 checks.outcome_metadata(result, IDENTITY, fixture.host, checks.native_test_inputs(fixture.root))
 
     def test_reporter_maps_unknown_skip_and_setup_failure_to_metadata_not_private_text(self):

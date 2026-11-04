@@ -119,7 +119,7 @@ def run(output: Path, cc: Path, root: Path = checks.REPO_ROOT) -> dict:
             raise ValueError("actual native fixture runner requires a supported host and explicit compiler")
         native = root / checks.MODULE / "native"
         diagnostic_sources = checks.native_diagnostic_sources(result["test_inputs"], root)
-        suite = unittest.TestLoader().discover(str(native), pattern="test_*.py")
+        suite = unittest.TestLoader().discover(str(native), pattern="test_supervisor.py")
         selected = [case.id() for case in suite_cases(suite)]
         if len(selected) != len(checks.CASES) or set(selected) != set(checks.CASES):
             raise ValueError("actual native fixture method inventory differs")

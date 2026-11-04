@@ -14,7 +14,7 @@ import hashlib
 import io
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import shutil
 import signal
 import sys
@@ -198,6 +198,47 @@ def inert_macho():
     return bytes(raw)  # Merely a header for byte-validation tests; never executable.
 
 
+class SyntheticDarwinClasspathPath(os.PathLike):
+    """Explicit fake Darwin spelling backed ONLY by an owned real fixture path.
+
+    The production verifier still pins the real absolute host path before each
+    projection. Only str(view) is synthetic; fspath, suffix, stat, equality, and
+    duplicate identity use the original host path. In particular Windows drive
+    syntax is not admitted by the real collector: this view exists solely inside
+    Fixture.context, where any real subprocess launch is prohibited.
+    """
+
+    def __init__(self, root, path):
+        self.root, self.host_path = Path(root), Path(path)
+        if not self.root.is_absolute() or not self.host_path.is_absolute() or ".." in self.host_path.parts \
+                or not self.host_path.is_relative_to(self.root):
+            raise AssertionError("No unowned or aliased synthetic classpath path authorized")
+        if self.root.resolve(strict=True) != self.root or self.host_path.resolve(strict=True) != self.host_path:
+            raise AssertionError("No unowned or aliased synthetic classpath path authorized")
+        self.spelling = str(PurePosixPath("/synthetic-darwin-classpath") / self.host_path.relative_to(self.root).as_posix())
+
+    def __str__(self):
+        return self.spelling
+
+    def __fspath__(self):
+        return os.fspath(self.host_path)
+
+    @property
+    def suffix(self):
+        return self.host_path.suffix
+
+    def stat(self):
+        return self.host_path.stat()
+
+    def __eq__(self, other):
+        if not isinstance(other, SyntheticDarwinClasspathPath):
+            return NotImplemented
+        return self.host_path == other.host_path
+
+    def __hash__(self):
+        return hash(self.host_path)
+
+
 class Fixture:
     def __init__(self, root, cohort="first-mac", targets=None):
         self.root = root
@@ -297,9 +338,27 @@ class Fixture:
     @contextmanager
     def context(self):
         facade = synthetic_posix_os(self.root)
+        real_classpath_input, real_verify_absolute_pin = checks.classpath_input, checks.verify_absolute_pin
+
+        def synthetic_classpath_input(value, budget):
+            def verified_view(row, budget, maximum=checks.MAX_FILE):
+                # Never cache or rewrite authority: validate actual owned bytes
+                # before every fake-Darwin lexical projection.
+                path = real_verify_absolute_pin(row, budget, maximum)
+                return SyntheticDarwinClasspathPath(self.root, path)
+
+            with patch.object(checks, "verify_absolute_pin", side_effect=verified_view):
+                return real_classpath_input(value, budget)
+
+        def no_actual_process(*args, **kwargs):
+            raise AssertionError("No actual process authorized in synthetic fixture")
+
+        no_process = SimpleNamespace(Popen=no_actual_process, DEVNULL=checks.subprocess.DEVNULL)
         with ExitStack() as stack:
             stack.callback(facade.fixture_io.assert_closed)
             stack.enter_context(patch.object(checks, "os", facade))
+            stack.enter_context(patch.object(checks, "classpath_input", side_effect=synthetic_classpath_input))
+            stack.enter_context(patch.object(checks, "subprocess", no_process))
             stack.enter_context(patch.object(checks, "signal", synthetic_posix_signal()))
             stack.enter_context(patch.object(checks.platform, "system", return_value="Darwin"))
             stack.enter_context(patch.object(checks.platform, "machine", return_value="arm64"))
@@ -618,6 +677,125 @@ class SyntheticPosixFixtureIOTests(unittest.TestCase):
         self.assertEqual({}, self.facade.fixture_io.opened)
         for name, value in host_calls.items():
             self.assertIs(value, getattr(os, name))
+
+
+class SyntheticDarwinClasspathTests(unittest.TestCase):
+    """Host-neutral fake authority controls, never Native/Windows qualification."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.fixture = Fixture(Path(temporary.name).resolve(strict=True))
+
+    def budget(self):
+        return checks.Budget.start(30)
+
+    def test_views_keep_real_pin_io_stat_and_ordered_authority_digests(self):
+        fixture, opened = self.fixture, []
+        actual_archive, actual_pin = checks.zipfile.ZipFile, checks.verify_absolute_pin
+
+        def archive(path, *args, **kwargs):
+            self.assertIsInstance(path, SyntheticDarwinClasspathPath)
+            opened.append(path)
+            return actual_archive(path, *args, **kwargs)
+
+        with patch.object(checks.zipfile, "ZipFile", side_effect=archive), \
+                patch.object(checks, "verify_absolute_pin", wraps=actual_pin) as pinned, fixture.context():
+            launch = checks.classpath_input(fixture.authority, self.budget())
+        self.assertEqual(4, pinned.call_count)
+        self.assertEqual(fixture.authority["classpath"], [call.args[0] for call in pinned.call_args_list])
+        self.assertEqual(fixture.jars, [Path(os.fspath(view)) for view in opened])
+        self.assertEqual([path.stat() for path in fixture.jars], [view.stat() for view in opened])
+        self.assertEqual([".jar"] * 4, [view.suffix for view in opened])
+        self.assertEqual(["/synthetic-darwin-classpath/" + path.name for path in fixture.jars], [str(view) for view in opened])
+        self.assertTrue(all(":" not in str(view) for view in opened))
+        self.assertEqual(checks.canonical_digest(fixture.authority["classpath"]), launch["ordered_classpath_digest"])
+        self.assertEqual(checks.canonical_digest(fixture.authority["components"]), launch["component_digest"])
+        self.assertEqual(fixture.authority["supervisor_identity"], launch["supervisor_identity"])
+
+    def test_unmodified_production_gate_still_rejects_windows_drive_and_posix_colons(self):
+        # Only the pin boundary is modeled here; the UNMODIFIED colon gate must
+        # reject both spellings before any archive IO. No fixture context/view.
+        for path in (PureWindowsPath("C:/synthetic/driver.jar"), PurePosixPath("/synthetic/driver:extra.jar")):
+            with self.subTest(path_kind=type(path).__name__), \
+                    patch.object(checks, "verify_absolute_pin", return_value=path) as pinned, \
+                    patch.object(checks.zipfile, "ZipFile", side_effect=AssertionError("No archive IO authorized")) as archive:
+                with self.assertRaises(checks.Problem) as caught:
+                    checks.classpath_input(self.fixture.authority, self.budget())
+                self.assertEqual("native_throws_classpath_ambiguous", str(caught.exception))
+                self.assertEqual(1, pinned.call_count)
+                archive.assert_not_called()
+
+    def test_duplicate_checks_use_real_backing_paths_not_only_fake_spellings(self):
+        fixture = self.fixture
+        first = SyntheticDarwinClasspathPath(fixture.root, fixture.jars[0])
+        same = SyntheticDarwinClasspathPath(fixture.root, fixture.jars[0])
+        other = SyntheticDarwinClasspathPath(fixture.root, fixture.jars[1])
+        self.assertEqual(first, same)
+        self.assertEqual(hash(first), hash(same))
+        self.assertNotEqual(first, other)
+        alternate_root = fixture.root / "alternate-owned-root"
+        alternate = alternate_root / fixture.jars[0].name
+        write(alternate, b"distinct owned inert bytes")
+        collision = SyntheticDarwinClasspathPath(alternate_root, alternate)
+        self.assertEqual(str(first), str(collision))
+        self.assertNotEqual(first, collision)
+        self.assertEqual(alternate, Path(os.fspath(collision)))
+        value = copy.deepcopy(fixture.authority)
+        value["classpath"].append(value["classpath"][0])
+        with fixture.context(), self.assertRaises(checks.Problem) as caught:
+            checks.classpath_input(value, self.budget())
+        self.assertEqual("native_throws_classpath_ambiguous", str(caught.exception))
+
+    def test_real_pin_is_rechecked_after_byte_mutation_before_each_projection(self):
+        fixture = self.fixture
+        with fixture.context():
+            checks.classpath_input(fixture.authority, self.budget())
+            with fixture.jars[0].open("ab") as jar:
+                jar.write(b"changed inert fixture bytes")
+            with self.assertRaises(checks.Problem) as caught:
+                checks.classpath_input(fixture.authority, self.budget())
+        self.assertEqual("native_throws_enrolled_bytes_changed", str(caught.exception))
+
+    def test_unowned_aliases_and_real_authority_use_of_a_view_are_rejected(self):
+        fixture = self.fixture
+        for path in (fixture.root.parent / "not-owned-do-not-read.jar", fixture.root / ".." / fixture.root.name / fixture.jars[0].name):
+            with self.subTest(path_kind="outside-or-alias"), \
+                    self.assertRaisesRegex(AssertionError, "No unowned or aliased synthetic classpath"):
+                SyntheticDarwinClasspathPath(fixture.root, path)
+        value = copy.deepcopy(fixture.authority)
+        value["classpath"][0]["path"] = str(fixture.root / ".." / fixture.root.name / fixture.jars[0].name)
+        with fixture.context(), self.assertRaises(checks.Problem) as caught:
+            checks.classpath_input(value, self.budget())
+        self.assertEqual("native_throws_path_invalid", str(caught.exception))
+        view = SyntheticDarwinClasspathPath(fixture.root, fixture.jars[0])
+        with self.assertRaises(checks.Problem) as caught:
+            checks.absolute(view)
+        self.assertEqual("native_throws_path_invalid", str(caught.exception))
+
+    def test_context_blocks_actual_processes_and_restores_all_projection_boundaries(self):
+        host_os, host_subprocess = checks.os, checks.subprocess
+        actual_classpath, actual_pin, host_popen = checks.classpath_input, checks.verify_absolute_pin, checks.subprocess.Popen
+        with self.assertRaisesRegex(RuntimeError, "synthetic unwind"):
+            with self.fixture.context():
+                self.assertIsNot(checks.classpath_input, actual_classpath)
+                self.assertIsNot(checks.subprocess, host_subprocess)
+                self.assertIs(host_popen, host_subprocess.Popen)
+                with self.assertRaisesRegex(AssertionError, "No actual process authorized"):
+                    checks.subprocess.Popen(["inert fixture input; never execute"])
+                checks.classpath_input(self.fixture.authority, self.budget())
+                self.assertIs(checks.verify_absolute_pin, actual_pin)
+                raise RuntimeError("synthetic unwind")
+        self.assertIs(checks.os, host_os)
+        self.assertIs(checks.subprocess, host_subprocess)
+        self.assertIs(checks.classpath_input, actual_classpath)
+        self.assertIs(checks.verify_absolute_pin, actual_pin)
+        self.assertIs(host_popen, host_subprocess.Popen)
+        envelope = self.fixture.envelope(self.fixture.root / "build/synthetic-receipt", self.fixture.case())
+        self.assertFalse(envelope["releaseQualified"])
+        self.assertFalse(envelope["targetQualificationEstablished"])
+        self.assertFalse(envelope["providerResult"]["coverage"][0]["tested"])
+        self.assertFalse(envelope["providerResult"]["coverage"][0]["qualified"])
 
 
 class SourceContractTests(unittest.TestCase):

@@ -7,6 +7,72 @@ catalog mapping, mocked diagnostic, or successful prerequisite probe does not
 establish the next category. Release gates in [validation-ci.md](validation-ci.md)
 and [PLAN.md](PLAN.md) remain unchanged.
 
+## Current checkpoint (2026-11-04)
+
+These are separate local Linux runs of source base
+`21fc8c7725b176d093ddf40e5d5c335b2e7c16aa` **plus dirty exact tested bytes**,
+with individual source/postimage postchecks, not a final-commit or complete
+final-source suite result. Repeated runs and normal/optimized variants stay
+separate, never added as independent diagnostic cases. All successful table
+entries exited zero with no failures, errors or skips.
+
+| Local metadata receipt | Observed result | Deliberate scope and exclusions |
+| --- | --- | --- |
+| JVM runtime v2 — `build/evidence/live-v2-jvm-tests/20261104-duplex-cachefix/summary.json` and `build/evidence/live-v2-jvm-tests/20261104-duplex-cachefix-repeat/summary.json` | **155/155 first; separately 155/155 repeated** | Same 155 methods: 62 fake/byte-only v2 controls, 92 prior runtime controls including actual v1 execution, and one genuine two-request v2 byte-duplex method. Local Linux x86_64 / Java 21 only. |
+| Native v2 — `build/ci-evidence/live-v2-native-20261104/summary.json` and `normal.json` | **94/94: 45 pure/mocked Python controls + 49 compiled native methods** | Local Linux x86_64 fixture controls with verified inventory/method bindings; **31.300 s** suite wall interval, not latency/SLO. Not JVM application-worker, compiler, ABI, or release qualification. |
+| Synthetic v2 reporter — `build/ci-evidence/live-v2-ci-synthetic-20261104/summary.json` | **71/71 normal; separately 71/71 optimized** | Synthetic reporter controls only; no Native execution or qualification. |
+| Runtime cache wiring — `build/evidence/live-v2-test-wiring/20261104-first/summary.json` | **4/4 normal; separately 4/4 optimized** | Source-text/mutation controls only; not themselves Gradle-cache or native-execution proof. |
+| Probe provisioner — `build/evidence/live-v2-probe/20261104-first/synthetic-summary.json` | **15/15 normal; separately 15/15 optimized** | Synthetic provisioner controls; no real compiler or probe execution by these controls. |
+| Workflow wiring — `build/evidence/live-v2-workflow/20261104-first/summary.json` | **25/25 normal; separately 25/25 optimized** | Authored workflow wiring/mutation controls, not hosted execution. |
+| Related-location suppressions — `build/evidence/suppressions-related/20261104-tests/summary.json` | **62/62: 10 new + 52 existing** | Synthetic finding-policy controls with real configuration persistence; not library, provider, or hosted qualification. |
+| Kernel policy R2 — `build/evidence/kernel-policy/20261104-r2/summary.json` | **kernel 97/97; CLI 98/98; controller 28/28; 18 new methods** | Captured-evaluator fencing/lazy archived-policy recovery, rotating ≤32-row cursor and quota/archive ordering; synthetic provider/policy controls with actual SQLite, immutable archive/config persistence and worker-thread restarts. **104.334 s** suite wall interval; not a shipped CLI bypass, historical evaluator replacement, real Native/library diagnostics, or host qualification. |
+| Earlier controller — `build/evidence/controller-ci-failures/20261104-fixed-controller-tests/root-exits-postcheck.json` | **28/28** | Full controller suite: synthetic analysis callbacks with real filesystem/CAS, SQLite native binding, ledger and worker threads; Gradle compilation, **not external analysis-compiler or owned-supervisor execution by tests**. Local UID0, not hosted nonroot/DOS evidence. |
+| Windows fixture portability — `build/ci-evidence/windows-native-fixture-portability-20261104/root-exits-postcheck.json` | **103/103 normal; separately 103/103 optimized** | Local Linux synthetic Native-collector controls, including fake Darwin classpath projection; not hosted Windows/macOS or Native target qualification. Hosted failure remains unresolved. |
+| Earlier macOS archive portability — `build/ci-evidence/macos-archive-portability-20261104/root-exits-postcheck.json` | **162/162 normal; separately 162/162 optimized** | Local Linux synthetic archive controls, including temp-alias/case-enumeration regression; not hosted macOS observation or release qualification. Hosted failure remains unresolved. |
+| Earlier v1 builder custody — `build/ci-evidence/v1-builder-custody-20261104/root-exits-postcheck.json` | **52/52 normal; separately 52/52 optimized** | Synthetic compiler-driver lifecycle/filesystem custody controls; **no real child, compiler, or native execution**, and no qualification. |
+| Native CLI admission — `build/evidence/native-cli-selection/20261104-first/summary.json` | **50/50: 21 new + 29 existing** | Entire portable provider-native JVM suite, with exact ordered source/common/library selection and immutable owner binding. **29.436 s** Gradle interval. Structural controls only: no actual Native compiler parser, Apple compile/link/simulator execution, or Native rule-context qualification. |
+
+Both JVM Test tasks were **EXECUTED** with `--build-cache` and without
+`--rerun-tasks`; the repeated gate used the same source/probe inputs and retained
+new timestamped, digest-distinct original JUnit XML. Request two was constructed
+only after reply one; real graceful stdin EOF, native flags/counters,
+`cleanupAcknowledged` and `terminalExecutionConfirmed` checks passed. The
+**36.857 s** and **26.438 s** suite wall times are not latency/SLO evidence. This
+is opaque-byte transport, **not compiler-application HELLO, semantic-worker
+readiness/integration, host-model delivery, or platform qualification**.
+
+The earlier `build/evidence/live-v2-jvm-tests/20261104-duplex/summary.json`
+records a rejected **Test UP-TO-DATE** attempt: no execution credit, no new test
+counts, and no reuse of old XML as new evidence. The first v2-gate-skipped runtime
+record (`build/evidence/live-v2-jvm-tests/20261104-first/summary.json`: 154 passed,
+one real-duplex gate skipped) also remains separate and retained.
+
+The separate Native-v2 collector records `closed_by_original_harness`, zero
+unresolved obtained handles and observed absence of its original attempt
+directory; **its wrapper did not independently verify native process closure**.
+Neither reporter completeness nor the JVM checks upgrade that collector claim or
+establish compiler readiness/default routing.
+
+Related-location identity changes reopen legacy raw exact-finding/baseline
+suppressions rather than silently accepting them; retained entries remain
+auditable. Library direct tests passed **47/47** synthetic authority/algorithm controls
+(`build/evidence/library-direct/20261104-first/summary.json`; **43.743 s** Gradle
+wall interval; source postcheck passed). The owner-bound direct route remains
+**unqualified and default-disabled**: no genuine plugin/library extraction or
+coroutines artifact execution, no catalog/rule-context credit, and **all 125
+obligations retained**. The R2
+controller 28/28 is a separate rerun, not additional controller case coverage.
+
+The independently reviewed [public hosted baseline](evidence/hosted-ci-21fc8c7-20261104.json)
+at the older commit above reports **12 jobs: four successes, eight failures;
+all four workflows failed**. It is not a new hosted run of these dirty changes;
+local controls do not establish that those hosted failures are resolved.
+
+This checkpoint adds no new installed distribution or publication, compiler
+semantics, warm-target proof, Native/iOS/Windows target qualification, ABI, or
+release qualification. Historical failures, distributions and qualification
+boundaries below remain unchanged.
+
 ## Latest corrections — 2026-11-04
 
 The corrected compiler suite actually executed **122 methods: 121 passed, one

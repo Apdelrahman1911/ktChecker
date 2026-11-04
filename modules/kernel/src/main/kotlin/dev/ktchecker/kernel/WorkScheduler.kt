@@ -28,6 +28,7 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
     private val active = ConcurrentHashMap<String, Claim>()
     private val workers = mutableListOf<Thread>()
     private var heartbeat: Thread? = null
+    private var policyRecovery: Thread? = null
 
     private data class Claim(
         val key: String,
@@ -67,6 +68,16 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
                     // No data is acknowledged or discarded while persistence is unavailable.
                 }
                 if (!sleep(config.heartbeatMillis)) break
+            }
+        }
+        // Policy-only recovery also runs with workerCount=0. Restoration cannot hold up raw-work
+        // leases/heartbeats, and one lane cannot build an unbounded queue of duplicate retries.
+        policyRecovery = thread(name = "ktchecker-policy-recovery-$instanceId", isDaemon = true) {
+            while (!stopped.get()) {
+                val selected = try { service.recoverPolicyEvaluations() } catch (_: SQLException) { 0 }
+                if (stopped.get()) break
+                val delay = if (selected == 0) maxOf(config.heartbeatMillis, 1_000L) else maxOf(config.heartbeatMillis, 50L)
+                if (!sleep(delay)) break
             }
         }
     }
@@ -218,7 +229,7 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
                 val original = c.one("SELECT input_json FROM reviews WHERE review_id=?", reviewId) {
                     ContractJson.decodeFromString<AnalysisInput>(it.getString(1))
                 }!!
-                val (classified, policyIssues) = service.classifyResult(binding, original, partial)
+                val (classified, policyIssues) = service.classifyResult(c, binding, reviewId, original, partial)
                 service.appendEvent(c, binding, status.copy(result = classified, reasons = status.reasons + policyIssues), "progress")
                 c.execute("UPDATE clients SET epoch=epoch+1 WHERE client_id=?", binding.clientId)
             }
@@ -360,9 +371,10 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
     override fun close() {
         if (!stopped.compareAndSet(false, true)) return
         heartbeat?.interrupt()
+        policyRecovery?.interrupt()
         workers.forEach { it.interrupt() }
         val deadline = System.nanoTime() + 2_000_000_000L
-        workers.forEach { worker ->
+        (workers + listOfNotNull(policyRecovery, heartbeat)).forEach { worker ->
             val remaining = (deadline - System.nanoTime()) / 1_000_000
             if (remaining > 0 && worker != Thread.currentThread()) {
                 try { worker.join(remaining) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }

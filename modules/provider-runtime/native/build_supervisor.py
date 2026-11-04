@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """Build only the current host's bundled, preview owned-child supervisor.
 
-This is a build-time tool, not a runtime fallback. Compiler output is bounded and
-never printed or retained. The separate receipt identifies the driver and inputs,
-not the transitive compiler/linker/SDK closure or reproducibility of its output.
+This is a build-time tool, not a runtime fallback. Compiler transcripts are bounded
+and never printed or persisted. Failed attempts retain their guard and any private
+output residue without automatic reclamation. The separate receipt identifies the
+driver and inputs, not the transitive compiler/linker/SDK closure or reproducibility
+of its output.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -19,7 +22,6 @@ import shutil
 import stat
 import subprocess
 import sys
-import tempfile
 import time
 
 
@@ -89,64 +91,135 @@ def public_version_line(_output: bytes) -> tuple[str, bool]:
 
 
 def bounded_command(argv: list[str], timeout: float) -> bytes:
-    """Trusted build driver, bounded combined diagnostics, no shell or transcript."""
-    process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT, env=COMPILER_ENVIRONMENT)
-    assert process.stdout is not None
-    output = bytearray()
+    """Trusted direct compiler driver only, not descendant containment.
+
+    Deadlines are checked cooperatively around launch/I/O/cleanup; OS calls are
+    not preemptible here. A constructor exception without a returned handle is
+    launch-unknown, not evidence of no child and not authorization to retry.
+    """
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise BuildProblem("native_supervisor_compiler_timeout")
     deadline = time.monotonic() + timeout
-    selector = selectors.DefaultSelector()
-    selector.register(process.stdout, selectors.EVENT_READ)
+
+    def remaining_time() -> float:
+        remaining = deadline - time.monotonic()
+        if not math.isfinite(remaining) or remaining <= 0:
+            raise BuildProblem("native_supervisor_compiler_timeout")
+        return remaining
+
+    process = None
+    selector = None
+    cleanup_observed = False
     try:
+        remaining_time()
+        try:
+            process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT, env=COMPILER_ENVIRONMENT)
+        except BaseException:
+            if process is None:
+                raise BuildProblem("native_supervisor_compiler_launch_unknown") from None
+            raise
+        remaining_time()
+        if process.stdout is None:
+            raise BuildProblem("native_supervisor_compiler_failed")
+        output = bytearray()
+        selector = selectors.DefaultSelector()
+        selector.register(process.stdout, selectors.EVENT_READ)
         while selector.get_map():
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise BuildProblem("native_supervisor_compiler_timeout")
+            remaining = remaining_time()
             for key, _ in selector.select(min(remaining, 0.1)):
+                remaining_time()
                 part = os.read(key.fd, 8192)
+                remaining_time()
                 if not part:
                     selector.unregister(key.fd)
                 else:
                     if len(output) + len(part) > MAX_COMPILER_OUTPUT:
                         raise BuildProblem("native_supervisor_compiler_output_limit")
                     output.extend(part)
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
-            raise BuildProblem("native_supervisor_compiler_timeout")
+        remaining = remaining_time()
         try:
             code = process.wait(timeout=remaining)
         except subprocess.TimeoutExpired:
             raise BuildProblem("native_supervisor_compiler_timeout") from None
+        remaining_time()
         if code != 0:
             raise BuildProblem("native_supervisor_compiler_failed")
-        return bytes(output)
+        result = bytes(output)
     finally:
-        selector.close()
-        process.stdout.close()
-        if process.poll() is None:
-            process.kill()  # positive PID of our still-unreaped direct child only
+        try:
             try:
-                process.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                pass
+                if process is not None:
+                    try:
+                        if process.poll() is None:
+                            process.kill()  # owned, still-unreaped direct compiler only
+                    finally:
+                        cleanup_observed = process.wait(timeout=2) is not None
+            finally:
+                try:
+                    if selector is not None:
+                        selector.close()
+                finally:
+                    if process is not None and process.stdout is not None:
+                        process.stdout.close()
+        finally:
+            # Neither a close failure nor interruption may hide unknown direct
+            # child retirement. No returned handle remains launch-unknown.
+            if process is not None and not cleanup_observed:
+                raise BuildProblem("native_supervisor_compiler_cleanup_unknown") from None
+    # A zero exit or successful close observed at/after the deadline is not a
+    # successful bounded command, including when cleanup itself used the budget.
+    remaining_time()
+    return result
 
 
-def _clear_resource_tree(root: Path) -> None:
-    """The caller selected generated resources; never reuse a stale native image."""
+def _write_attempt_phase(attempt: Path, phase: str) -> None:
+    """Fixed, bounded custody metadata; never paths, output, or error messages."""
+    if phase not in ("preflight", "version_probe_pending", "version_probe_direct_return_observed",
+                     "compile_pending", "compile_direct_return_observed"):
+        raise BuildProblem("native_supervisor_build_attempt_state_invalid")
+    data = f"ktchecker-native-compiler-attempt/1\n{phase}\n".encode("ascii")
+    if (attempt / "phase").write_bytes(data) != len(data):
+        raise BuildProblem("native_supervisor_build_attempt_state_failed")
+
+
+def _clear_resource_tree(root: Path) -> Path:
+    """Exclusively own this output before clearing it; never reclaim an attempt.
+
+    The sibling guard survives clearing PREFIX, including for unsupported hosts.
+    mkdir is the acquisition, not an existence check followed by destructive
+    cleanup. Any retained entry (even malformed state) refuses reuse. This is
+    per-output exclusivity, not protection from arbitrary ancestor-tree removal.
+    """
+    attempt = root.with_name(f".{root.name}.compiler-attempt")
+    try:
+        attempt.parent.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        raise BuildProblem("native_supervisor_build_attempt_unavailable") from None
+    try:
+        attempt.mkdir(mode=0o700, exist_ok=False)
+    except FileExistsError:
+        raise BuildProblem("native_supervisor_build_attempt_retained") from None
+    except OSError:
+        raise BuildProblem("native_supervisor_build_attempt_unavailable") from None
+    # The directory entry already guards custody if this write or clear fails.
+    _write_attempt_phase(attempt, "preflight")
     if root.is_symlink():
         raise BuildProblem("native_supervisor_output_invalid")
     if root.exists():
         shutil.rmtree(root)
     root.mkdir(parents=True)
+    return attempt
 
 
 def build(output: Path, cc: Path, *, host: dict[str, str] | None = None) -> dict:
     source = Path(__file__).resolve().with_name("owned_process_supervisor.c")
     builder = Path(__file__).resolve()
     resource_root = output.absolute() / PREFIX
-    # Validate/clear before invoking a compiler: a failed rebuild must not leave
-    # a previously generated binary/manifest available as a fresh result.
-    _clear_resource_tree(resource_root)
+    # Atomic output ownership precedes every destructive clear or launch. Never
+    # clean up on an exception: even --version can have an unknown constructor
+    # outcome, and filesystem housekeeping must not mask that public reason.
+    attempt = _clear_resource_tree(resource_root)
     selected_host = host_identity() if host is None else host
     source_sha = file_digest(source, MAX_BINARY)
     builder_sha = file_digest(builder, MAX_BINARY)
@@ -179,23 +252,26 @@ def build(output: Path, cc: Path, *, host: dict[str, str] | None = None) -> dict
             raise BuildProblem("native_supervisor_compiler_unavailable")
         resolved_cc = cc.resolve(strict=True)
         compiler_sha = file_digest(resolved_cc, 256 * 1024 * 1024)
+        _write_attempt_phase(attempt, "version_probe_pending")
         version = bounded_command([str(cc), "--version"], 10)
+        _write_attempt_phase(attempt, "version_probe_direct_return_observed")
         first_line, version_redacted = public_version_line(version)
-        with tempfile.TemporaryDirectory(prefix=".native-supervisor-build-", dir=resource_root) as temporary:
-            binary = Path(temporary) / "supervisor"
-            argv = [str(cc), *FLAGS, str(source), "-o", str(binary)]
-            # The exact private command is hashed, never persisted or printed.
-            exact_argv = json.dumps(argv, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
-            bounded_command(argv, 60)
-            binary_sha = file_digest(binary, MAX_BINARY)
-            if (file_digest(source, MAX_BINARY) != source_sha or file_digest(builder, MAX_BINARY) != builder_sha or
-                    file_digest(cc.resolve(strict=True), 256 * 1024 * 1024) != compiler_sha):
-                raise BuildProblem("native_supervisor_build_input_changed")
-            binary_size = binary.stat().st_size
-            destination = resource_root / target / "supervisor"
-            destination.parent.mkdir()
-            binary.chmod(0o755)
-            os.replace(binary, destination)
+        binary = attempt / "supervisor"
+        argv = [str(cc), *FLAGS, str(source), "-o", str(binary)]
+        # The exact private command is hashed, never persisted or printed.
+        exact_argv = json.dumps(argv, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
+        _write_attempt_phase(attempt, "compile_pending")
+        bounded_command(argv, 60)
+        _write_attempt_phase(attempt, "compile_direct_return_observed")
+        binary_sha = file_digest(binary, MAX_BINARY)
+        if (file_digest(source, MAX_BINARY) != source_sha or file_digest(builder, MAX_BINARY) != builder_sha or
+                file_digest(cc.resolve(strict=True), 256 * 1024 * 1024) != compiler_sha):
+            raise BuildProblem("native_supervisor_build_input_changed")
+        binary_size = binary.stat().st_size
+        destination = resource_root / target / "supervisor"
+        destination.parent.mkdir()
+        binary.chmod(0o755)
+        os.replace(binary, destination)
         receipt["status"] = "built"
         receipt["reason"] = None
         receipt["compiler"] = {
@@ -219,8 +295,15 @@ def build(output: Path, cc: Path, *, host: dict[str, str] | None = None) -> dict
     if len(encoded_receipt) > MAX_RECEIPT:
         raise BuildProblem("native_supervisor_receipt_limit")
     manifest = f"{PROTOCOL}\n{target}\n{source_sha}\n{binary_sha}\n".encode("utf-8")
-    (resource_root / "build-provenance.json").write_bytes(encoded_receipt)
-    (resource_root / "manifest").write_bytes(manifest)
+    if (resource_root / "build-provenance.json").write_bytes(encoded_receipt) != len(encoded_receipt):
+        raise BuildProblem("native_supervisor_build_publication_failed")
+    if (resource_root / "manifest").write_bytes(manifest) != len(manifest):
+        raise BuildProblem("native_supervisor_build_publication_failed")
+    # Release only after normal, known-success completion. Empty-directory
+    # removal cannot recursively discard unexpected residue. No exception-path
+    # cleanup or descendant-absence claim follows from these direct returns.
+    (attempt / "phase").unlink()
+    attempt.rmdir()
     return receipt
 
 

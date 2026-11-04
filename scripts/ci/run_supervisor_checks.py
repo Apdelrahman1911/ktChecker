@@ -38,6 +38,10 @@ BUILDER = MODULE + "/native/build_supervisor.py"
 PROBE = MODULE + "/native/supervisor_probe.c"
 TEST_FILE = MODULE + "/native/test_supervisor.py"
 TEST_RUNNER = "scripts/ci/supervisor_test_runner.py"
+NATIVE_TEST_FILE_INVENTORIES = (
+    frozenset({"test_supervisor.py"}),
+    frozenset({"test_supervisor.py", "test_live_supervisor.py"}),
+)
 RESOURCES = MODULE + "/build/generated/nativeResources"
 JAR = "provider-runtime-0.1.0-dev.1.jar"
 FLAGS = ["-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-pedantic"]
@@ -155,6 +159,23 @@ def input_digests(root: Path) -> dict:
     return result
 
 
+def native_test_file_inventory(root: Path) -> tuple[str, ...]:
+    """Allow the explicit independent live sibling without enrolling it in v1.
+
+    Each runner selects one exact file and keeps its own closed method/hash
+    inventory. Unknown, empty or nonregular fixture siblings fail closed.
+    """
+    paths = tuple((root / MODULE / "native").glob("test_*.py"))
+    names = frozenset(path.name for path in paths)
+    if names not in NATIVE_TEST_FILE_INVENTORIES:
+        raise ValueError("native fixture file inventory changed")
+    for path in paths:
+        raw = regular_input(path, root)
+        if not 0 < len(raw) <= 1_048_576:
+            raise ValueError("native fixture input outside its byte bound")
+    return tuple(sorted(names))
+
+
 def native_test_inputs(root: Path) -> dict:
     result = input_digests(root)
     for role, path in (("probe", PROBE), ("tests", TEST_FILE), ("runner", TEST_RUNNER)):
@@ -162,9 +183,7 @@ def native_test_inputs(root: Path) -> dict:
         if not 0 < len(raw) <= 1_048_576:
             raise ValueError("native fixture input outside its byte bound")
         result[role] = digest_bytes(raw)
-    actual = {path.name for path in (root / MODULE / "native").glob("test_*.py")}
-    if actual != {"test_supervisor.py"}:
-        raise ValueError("native fixture file inventory changed")
+    native_test_file_inventory(root)
     return result
 
 

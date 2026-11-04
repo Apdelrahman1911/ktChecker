@@ -230,12 +230,53 @@ fun interface PreparedInputObserver {
 }
 
 /**
- * Trusted, pure per-consumer policy over already captured immutable configuration. Called during a
- * short publication transaction: MUST NOT acquire config/source locks, do I/O, or reenter the kernel.
- * Only finding disposition may change. Throwing leaves that consumer's obligation incomplete.
- * Raw execution evidence, coverage failures and other clients' permissions are never rewritten.
+ * Trusted per-consumer policy over already captured immutable configuration. [apply] and [isReady]
+ * run during a short publication transaction: MUST NOT acquire config/source locks, do I/O, or
+ * reenter the kernel. Only finding disposition may change. Throwing from either pure callback is
+ * terminal incomplete. Raw execution evidence, coverage failures and others' permissions never change.
+ *
+ * [evaluatorIdentity] is a trusted implementation/version identity, NOT a policy revision supplied
+ * by a client. Equal identities promise equal evaluator semantics across services and restarts;
+ * captured per-consumer configuration remains independently bound by AnalysisInput. The kernel
+ * snapshots this property once at open. Unknown identities are isolated to that service instance,
+ * so an ordinary SAM remains usable but cannot authorize durable cross-instance policy reuse.
+ * Use [versioned] with an owner-controlled code/version identity for durable integrations. Changing
+ * that identity does not reinterpret or discharge earlier reviews. Explicit replacement/revalidation
+ * of those historical obligations is not implemented; their old results remain auditable.
+ *
+ * A separate bounded recovery lane also runs when workerCount=0. It calls [restoreCaptured] outside
+ * all ledger/config/source locks, then rechecks the exact admission and [isReady] before publication.
+ * Missing preparation remains pending, auditable and quota-charged; it is never repaired by adopting
+ * current configuration or execution authority. Evaluated historical results are never rerun.
  */
 fun interface ResultPolicy {
     fun apply(binding: ClientBinding, input: AnalysisInput, raw: ProviderResult): ProviderResult
-    companion object { val NONE = ResultPolicy { _, _, raw -> raw } }
+    val evaluatorIdentity: String? get() = null
+
+    /** Pure lookup only. False defers publication without calling [apply] or terminalizing it. */
+    fun isReady(binding: ClientBinding, input: AnalysisInput): Boolean = true
+
+    /**
+     * Optional exact-capture restoration, NOT provider preparation or authority acquisition. Verify
+     * the full binding and immutable input against the owner archive; never capture current policy.
+     * Must be bounded, interruption-cooperative and idempotent across concurrent matching services.
+     * Runs on one dedicated lane per service, outside all publication/config/source fences. Failure
+     * retains a pending obligation and a bounded audit marker for a later restoration attempt.
+     */
+    fun restoreCaptured(binding: ClientBinding, input: AnalysisInput) { }
+
+    companion object {
+        fun versioned(identity: String, policy: ResultPolicy): ResultPolicy {
+            identifier(identity, "result policy evaluator identity")
+            return object : ResultPolicy {
+                override val evaluatorIdentity: String = identity
+                override fun isReady(binding: ClientBinding, input: AnalysisInput): Boolean = policy.isReady(binding, input)
+                override fun restoreCaptured(binding: ClientBinding, input: AnalysisInput) = policy.restoreCaptured(binding, input)
+                override fun apply(binding: ClientBinding, input: AnalysisInput, raw: ProviderResult): ProviderResult =
+                    policy.apply(binding, input, raw)
+            }
+        }
+
+        val NONE: ResultPolicy = versioned("ktchecker/result-policy/none/1") { _, _, raw -> raw }
+    }
 }

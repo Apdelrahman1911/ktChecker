@@ -4,7 +4,6 @@ import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.*
 import dev.ktchecker.projectmodel.GradleProjectExport
 import dev.ktchecker.projectmodel.VerifiedProjectModel
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -88,7 +87,7 @@ class OwnerReviewPlanRegistryTest {
         capture.available = false
         assertCode("materialization_unavailable") { registry.resolve(f.binding(), f.request()) }
         capture.available = true
-        Files.writeString(capture.root.resolve("lib/src/commonMain/kotlin/Common.kt"), "fun commonValue() = 999\n")
+        capture.replaceCommonSourceForTest("fun commonValue() = 999\n")
         assertFalse(capture.verifyRegistered())
         assertCode("materialization_unavailable") { registry.resolve(f.binding(), f.request()) }
         val provider = object : AnalysisProvider {

@@ -128,7 +128,19 @@ internal class ParentPlans(
                     if (admission.id == origin.id) originStatus = status
                 }
                 validateRouting(c, parent(c, binding.clientId, origin.id))
-                originStatus!!
+                // A cache hit or unsupported raw result can still await captured policy. Check
+                // the actual whole-batch postcondition, not merely newly queued raw executions.
+                batch.admissions.forEach { admission ->
+                    if (service.pendingReviews(c, admission.binding.clientId) > config.maxPendingPerClient) {
+                        fail("client_queue_full", "Whole parent plan exceeds a required client's pending obligation limit")
+                    }
+                }
+                val accepted = originStatus!!
+                // All deterministic admission checks precede installation. A rejected plan must
+                // close its staging directories, not leave repeatable uncharged archive orphans.
+                // Workers cannot observe these work rows until this transaction commits.
+                missing.forEach { child -> staged.getValue(child.key).install() }
+                accepted
             }
         } finally {
             staged.values.forEach { it.close() }
@@ -292,8 +304,7 @@ internal class ParentPlans(
         val queued = children.distinctBy { it.key }.count { it.slot.state == "pending" && c.count("SELECT COUNT(*) FROM work WHERE work_key=?", it.key) == 0L }
         if (queued > config.maxQueuedWork - c.count("SELECT COUNT(*) FROM work WHERE state='queued'")) fail("queue_full", "Whole parent plan exceeds the durable work queue")
         admissions.forEach { admission ->
-            val pending = c.count("""SELECT COUNT(*) FROM reviews r JOIN work w ON w.work_key=r.work_key
-                WHERE r.client_id=? AND w.state IN ('queued','running')""", admission.binding.clientId)
+            val pending = service.pendingReviews(c, admission.binding.clientId)
             val added = admission.children.count { it.slot.state == "pending" && c.count("SELECT COUNT(*) FROM work WHERE work_key=? AND state='complete'", it.key) == 0L }
             if (added > config.maxPendingPerClient - pending) fail("client_queue_full", "Whole parent plan exceeds a required client's pending obligation limit")
         }
@@ -304,7 +315,6 @@ internal class ParentPlans(
         if (c.count("SELECT COUNT(*) FROM work WHERE work_key=?", child.key) == 0L) {
             val ready = staged ?: fail("archive_missing", "Prepared parent input is unavailable")
             val fairKey = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
-            ready.install()
             c.execute("""INSERT OR IGNORE INTO fair_queues(fair_key,last_served)
                 VALUES(?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", fairKey)
             c.execute("""INSERT INTO work(work_key,input_json,frozen_json,provider_key,fair_key,state,archive_bytes,created_at)
@@ -321,9 +331,9 @@ internal class ParentPlans(
         val sequence = c.count("SELECT next_review FROM clients WHERE client_id=?", binding.clientId)
         val review = UUID.randomUUID().toString()
         val requestJson = canonical(child.request)
-        c.execute("""INSERT INTO reviews(review_id,client_id,patch_id,idempotency_key,request_hash,request_json,input_json,work_key,sequence,created_at)
-            VALUES(?,?,?,?,?,?,?,?,?,?)""", review, binding.clientId, child.request.patchId, child.request.idempotencyKey,
-            Digests.sha256(requestJson), requestJson, canonical(input), child.key, sequence, System.currentTimeMillis())
+        c.execute("""INSERT INTO reviews(review_id,client_id,patch_id,idempotency_key,request_hash,request_json,input_json,work_key,sequence,policy_certificate,created_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?)""", review, binding.clientId, child.request.patchId, child.request.idempotencyKey,
+            Digests.sha256(requestJson), requestJson, canonical(input), child.key, sequence, service.admittedPolicyCertificate, System.currentTimeMillis())
         c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
             SELECT ?,fair_key,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter') FROM work WHERE work_key=?""", binding.clientId, child.key)
         c.execute("UPDATE clients SET next_review=next_review+1,epoch=epoch+1 WHERE client_id=?", binding.clientId)
@@ -336,7 +346,7 @@ internal class ParentPlans(
         c.query("SELECT payload_json FROM work_progress WHERE work_key=? ORDER BY sequence", child.key) {
             ContractJson.decodeFromString<ProviderResult>(it.getString(1))
         }.forEach { partial ->
-            val (classified, issues) = service.classifyResult(binding, input, partial)
+            val (classified, issues) = service.classifyResult(c, binding, review, input, partial)
             service.appendEvent(c, binding, status.copy(state = "running", result = classified, reasons = issues), "progress")
         }
         if (status.result != null) service.appendEvent(c, binding, status, "result")

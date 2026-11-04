@@ -231,7 +231,7 @@ class KernelPlanIntegrationTest {
         }
     }
 
-    @Test fun faultAfterAnInsertedChildRollsBackTheWholePlanAndRetryVerifiesItsArchiveOrphan() {
+    @Test fun faultAfterAnInsertedChildRollsBackTheWholePlanWithoutInstallingArchivesBeforeRetry() {
         val inputs = inputs("rollback")
         val registry = Registry()
         KernelService.open(temp.resolve("ledger"), PlanTestProvider(), config.copy(workerCount = 0), planAuthority = registry).use { service ->
@@ -241,7 +241,7 @@ class KernelPlanIntegrationTest {
             service.plans.afterSlotInsert = { if (it == 1) throw IllegalStateException("injected precommit fault") }
             assertFailsWith<IllegalStateException> { service.submitPlan(client.client, request) }
             assertNoAcceptance(service, client)
-            assertEquals(1L, Files.list(service.root.resolve("inputs")).use { it.count() }, "Only an unreferenced private archive may survive rollback")
+            assertEquals(0L, Files.list(service.root.resolve("inputs")).use { it.count() }, "Pre-publication rejection must close every uninstalled staging directory")
             service.plans.afterSlotInsert = { }
             val accepted = service.submitPlan(client.client, request)
             assertEquals("pending", accepted.state)

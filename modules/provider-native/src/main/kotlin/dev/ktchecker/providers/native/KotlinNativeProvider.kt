@@ -12,6 +12,7 @@ data class NativeRunPlan(
     val mode: String = "gradle",
     val requiredTasks: Set<String> = emptySet(),
     val compilationModel: ExactCompilationModel? = null,
+    val cliSelection: NativeCliSelection? = null,
 )
 
 /** Pure model/argv admission helper; it never substitutes a JVM host for Native execution. */
@@ -111,10 +112,15 @@ class KotlinNativeProvider(
     private val runner: IsolatedProcessRunner = IsolatedProcessRunner(),
 ) : AnalysisProvider {
     private val plan = plan?.let { selected -> selected.copy(compilerArtifacts = selected.compilerArtifacts.toList(), requiredTasks = selected.requiredTasks.toSet(),
-        compilationModel = selected.compilationModel?.let { it.copy(sourceSetByFile = it.sourceSetByFile.toMap()) }) }
+        compilationModel = selected.compilationModel?.let { it.copy(sourceSetByFile = it.sourceSetByFile.toMap()) },
+        cliSelection = selected.cliSelection?.frozenCopy()) }
     override val id = "kotlin-native"
     override val version = "2.4.21"
     override val supportedRuleIds: Set<String> get() = NativeCatalog.byId.keys
+
+    /** Pure admission on the constructor-frozen plan; this neither authorizes nor runs a compiler. */
+    internal fun requireCliSelection(input: AnalysisInput) = requireNativeCliSelection(
+        plan ?: throw ExecutionProblem("native_trusted_plan_unavailable", "An owner-supplied Native plan is required"), input)
 
     override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
         val requested = input.requiredRuleIds.takeIf { it.isNotEmpty() }?.toSet() ?: supportedRuleIds
@@ -145,13 +151,7 @@ class KotlinNativeProvider(
                     requireNativeTaskSelection(activePlan, args, input.context.scope.module)
                 }
                 "native_cli" -> {
-                    val target = if (activePlan.target == "iosArm64") "ios_arm64" else "ios_simulator_arm64"
-                    val index = args.indexOf("-target")
-                    if (index < 0 || args.getOrNull(index + 1) != target ||
-                        "-Xmulti-platform" !in args || "-Xrender-internal-diagnostic-names" !in args ||
-                        args.none { it.startsWith("-Xcommon-sources=") }) {
-                        throw ExecutionProblem("native_cli_target_binding_invalid", "Native common/expect-actual and iOS target arguments are required")
-                    }
+                    requireCliSelection(input)
                 }
                 else -> throw ExecutionProblem("native_execution_mode_unsupported", "No JVM substitution for Native semantics")
             }

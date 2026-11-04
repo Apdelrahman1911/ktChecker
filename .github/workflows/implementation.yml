@@ -105,6 +105,18 @@ jobs:
           --prerequisites build/ci-evidence/supervisor-prerequisites.json
           --python-command ${{ matrix.supervisor_python }}
           ${{ matrix.supervisor_cc_argument }}
+      - name: Retain direct original owned live supervisor controls on every host
+        if: always()
+        # The original in-process harness owns deadlines and custody: no outer
+        # timeout/kill wrapper. macOS/Windows native controls stay unavailable,
+        # not simulated passes. This distinct JSON/XML pair is not generic JUnit
+        # or command-result evidence; the direct exit independently gates CI.
+        run: >-
+          python -B scripts/ci/live_supervisor_test_runner.py
+          --output build/ci-evidence/live-supervisor/live-supervisor-checks.json
+          --junit build/ci-evidence/live-supervisor/live-supervisor-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context
+          ${{ matrix.supervisor_cc_argument }}
       - name: Provision pinned optional provider libraries or record Windows unavailability
         # Only supported POSIX hosts download the five Detekt and three Ktlint pins.
         # Windows remains a build/test/package lane, not a fictitious provider pass.
@@ -113,7 +125,17 @@ jobs:
           --profile ${{ matrix.library_profile }}
           --output build/ci-evidence/library-prerequisites.json
           --environment build/ci-evidence/environment.json
+      - name: Build a fresh owned live probe on Linux without executing it
+        if: runner.os == 'Linux'
+        # Exclusive new private output: no clearing, reuse, probe run or retry.
+        # Only receipt.json is publishable; built bytes are not execution proof.
+        run: >-
+          python3 -B scripts/ci/build_live_probe.py --cc /usr/bin/cc
+          --output "${{ github.workspace }}/build/ci-evidence/live-probe"
       - name: Build and test actual modules; assemble preview distributions
+        env:
+          KTC_RUN_OWNED_LIVE_INTEGRATION: ${{ runner.os == 'Linux' && '1' || '' }}
+          KTC_OWNED_LIVE_PROBE: ${{ runner.os == 'Linux' && format('{0}/build/ci-evidence/live-probe/probe', github.workspace) || '' }}
         run: >-
           python scripts/ci/run_gradle.py
           --output build/ci-evidence/host-build.json --timeout 1200
@@ -121,6 +143,7 @@ jobs:
           --require-task :kernel:test --require-task :project-model:test
           --require-task :provider-architecture:test --require-task :review-controller:test
           --require-task :provider-runtime:buildOwnedProcessSupervisor --require-task :provider-runtime:test
+          --require-task :provider-runtime:buildOwnedLiveProcessSupervisor
           --require-task :provider-detekt:test --require-task :provider-ktlint:test
           --require-task :cli:installDist --require-task :cli:distZip --require-task :cli:distTar
           -- --rerun-tasks --no-build-cache test :cli:installDist :cli:distZip :cli:distTar
@@ -219,6 +242,9 @@ jobs:
             build/ci-evidence/*.json
             build/ci-evidence/python/python-checks.json
             build/ci-evidence/python/python-checks.xml
+            build/ci-evidence/live-supervisor/live-supervisor-checks.json
+            build/ci-evidence/live-supervisor/live-supervisor-checks.xml
+            build/ci-evidence/live-probe/receipt.json
             build/ci-evidence/NOTICE.dependency-report.txt
             build/ci-evidence/NOTICE.distribution-upload-review.txt
           if-no-files-found: error

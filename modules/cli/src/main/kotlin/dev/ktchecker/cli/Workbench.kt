@@ -195,6 +195,28 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     private val modelPlans = OwnerModelPlans(state, snapshots, configs, catalog, modelCompilerInstallation, modelCompiler, modelGrants, codeImage::verify)
     private val loadedPolicies = ConcurrentHashMap<String, ConfigSnapshot>()
     private val records = ConcurrentHashMap<String, PreparedReview>()
+    /** The exact trusted policy object used by this composition, including lazy restart recovery. */
+    internal val capturedResultPolicy: ResultPolicy = ResultPolicy.versioned("ktchecker/workbench-policy/1:${codeImage.digest}", object : ResultPolicy {
+        override fun isReady(binding: ClientBinding, input: AnalysisInput): Boolean =
+            modelPlans.policy(binding, input) != null || loadedPolicies.containsKey(policyKey(binding, input))
+
+        override fun restoreCaptured(binding: ClientBinding, input: AnalysisInput) {
+            codeImage.verify()
+            // Model evidence restores its captured policy during OwnerModelPlans construction;
+            // this path never manufactures the separate live importer/execution authority.
+            if (modelPlans.policy(binding, input) != null) return
+            val prepared = this@Workbench.prepared(input)
+            if (prepared.binding != binding) throw CliProblem("prepared_binding_mismatch", "Captured policy belongs to another exact consumer binding.")
+            validateSnapshot(prepared)
+            cachePolicy(prepared) // Exact archived FrozenConfig/token; never configs.capture(current).
+        }
+
+        override fun apply(binding: ClientBinding, input: AnalysisInput, raw: ProviderResult): ProviderResult {
+            val policy = modelPlans.policy(binding, input) ?: loadedPolicies[policyKey(binding, input)]
+                ?: throw CliProblem("captured_policy_unavailable", "Captured policy was not restored for this consumer.")
+            return configs.apply(policy, input, raw)
+        }
+    })
     val kernel: KernelService = KernelService.open(state.namespace("broker"), coordinator,
         config = KernelConfig(workerCount = options.workerCount, globalParallelism = 2, perWorktreeParallelism = 1),
         snapshotGate = sourceGate(),
@@ -219,11 +241,7 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         },
         planAuthority = modelPlans,
         findingProviders = coordinator.findingProviders,
-        resultPolicy = ResultPolicy { binding, input, raw ->
-            val policy = modelPlans.policy(binding, input) ?: loadedPolicies[policyKey(binding, input)]
-                ?: throw CliProblem("captured_policy_unavailable", "Captured policy was not restored for this consumer.")
-            configs.apply(policy, input, raw)
-        })
+        resultPolicy = capturedResultPolicy)
 
     override fun close() = kernel.close()
 

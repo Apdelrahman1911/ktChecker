@@ -64,7 +64,10 @@ class RuleAliases(rules: Collection<PolicyRule>) {
     }
 }
 
-/** No proof is the safe default. Compiler/provider-owned strings alone are insufficient. */
+/**
+ * No proof is the safe default. Compiler/provider-owned strings alone are insufficient.
+ * A trusted adapter must certify complete primary/related material and evidence identity.
+ */
 fun interface FindingIdentityVerifier {
     fun verify(binding: ConfigBinding, input: AnalysisInput, finding: Finding, canonicalRuleId: String): VerifiedFindingIdentity?
 
@@ -172,11 +175,26 @@ internal class PolicyMatcher(
                 (finding.semanticDigest == null || finding.semanticDigest == identity.materialDigest)
         }
         val evidence = finding.evidence.map { ContractJson.encodeToJsonElement(it) }.sortedBy { Digests.canonical(it) }
+        // Related source locations are material evidence, not just display labels.
+        // Keep ordering insignificant without collapsing distinct/duplicate occurrences.
+        val related = finding.relatedLocations.map { location -> buildJsonObject {
+            put("path", location.path); put("fileDigest", location.fileDigest)
+            put("line", location.line); put("column", location.column)
+            put("endLine", location.endLine); put("endColumn", location.endColumn)
+        } }.sortedBy { Digests.canonical(it) }
+        // Include even an empty related list: legacy anchors never recorded whether
+        // related material existed. All legacy raw acceptances therefore reopen;
+        // retained records are not automatically upgraded into new owner consent.
+        val evidenceDescriptor = buildJsonObject {
+            put("schema", "ktchecker/finding-policy-evidence-2")
+            put("evidence", JsonArray(evidence))
+            put("relatedLocations", JsonArray(related))
+        }
         return FindingAnchor(
             binding, rule.canonicalId, rule.implementationDigest ?: Digests.sha256("unavailable-implementation:${rule.canonicalId}"), finding.providerId, finding.context,
             finding.severity, finding.kind, finding.certainty,
             location.path, location.fileDigest, location.line, location.column, location.endLine, location.endColumn,
-            Digests.sha256(Digests.canonical(JsonArray(evidence))), verified,
+            Digests.sha256(Digests.canonical(evidenceDescriptor)), verified,
         )
     }
 
@@ -194,13 +212,13 @@ internal class PolicyMatcher(
             input.context.configurationDigest == snapshot.policyDigest && finding.context == input.context.scope
     }
 
-    private fun sourceMatches(input: AnalysisInput, finding: Finding): Boolean {
-        val location = finding.location
-        return runCatching { validatePath(location.path); validateRange(location.line, location.column, location.endLine, location.endColumn) }.isSuccess &&
-            Digests.valid(location.fileDigest) &&
-            input.snapshot.files.count { it.path == location.path } == 1 &&
-            input.snapshot.files.any { it.path == location.path && it.digest == location.fileDigest }
-    }
+    private fun sourceMatches(input: AnalysisInput, finding: Finding): Boolean =
+        (listOf(finding.location) + finding.relatedLocations).all { location ->
+            runCatching { validatePath(location.path); validateRange(location.line, location.column, location.endLine, location.endColumn) }.isSuccess &&
+                Digests.valid(location.fileDigest) &&
+                input.snapshot.files.count { it.path == location.path } == 1 &&
+                input.snapshot.files.any { it.path == location.path && it.digest == location.fileDigest }
+        }
 
     private fun match(selector: PolicySelector, scope: SuppressionScope, current: FindingAnchor): String {
         val selected = matchSelector(selector, current)

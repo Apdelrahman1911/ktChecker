@@ -7,6 +7,7 @@ The synthetic installation is expected bytes, not compiled/runtime evidence.
 
 import ast
 from collections import Counter
+from contextlib import contextmanager
 from dataclasses import fields, replace
 import hashlib
 import io
@@ -16,6 +17,7 @@ from pathlib import Path
 import stat
 import struct
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -203,7 +205,10 @@ class DistributionArchiveTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="synthetic-distribution-archives-")
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name).absolute()
+        # Admit only this trusted, newly created fixture root through host temp aliases
+        # (for example on macOS), BEFORE creating any adversarial staged/archive paths.
+        # The verifier itself must never resolve an untrusted input or output path.
+        self.root = Path(self.temporary.name).resolve(strict=True)
         self.installation = self.root / "installation"
         self.installation.mkdir(mode=0o700)
         self.content = dict(FILES)
@@ -275,6 +280,41 @@ class DistributionArchiveTests(unittest.TestCase):
         with patch("sys.stdout", new_callable=io.StringIO) as stdout:
             status = verifier.main(argv)
         return status, json.loads(stdout.getvalue()), output
+
+    def test_fixture_root_admission_does_not_resolve_verifier_input_or_output_aliases(self):
+        physical_base = self.root / "physical-temp-base"
+        physical_base.mkdir(mode=0o700)
+        alias = self.root / "temp-base-alias"
+        os.symlink(physical_base, alias, target_is_directory=True)
+        fixture = DistributionArchiveTests()
+        self.addCleanup(lambda: self.assertTrue(fixture.doCleanups(), "Nested fixture cleanup must complete"))
+        # Exercise the real setUp through a synthetic host-temp alias on every POSIX
+        # host; no nested suite is run and no macOS-specific private path is assumed.
+        with patch.object(tempfile, "gettempdir", return_value=str(alias)):
+            fixture.setUp()
+        aliased_root = Path(fixture.temporary.name)
+        self.assertEqual(alias, aliased_root.parent)
+        self.assertEqual(physical_base / aliased_root.name, fixture.root)
+        self.assertNotEqual(aliased_root, fixture.root)
+        archives = [fixture.zip(), fixture.tar()]
+        fixture.check_valid(*archives)
+        status, result, _ = fixture.cli(*archives)
+        self.assertEqual(0, status)
+        self.assertIs(True, result["output_written"])
+
+        # Canonical fixture enrollment must not become a general verifier bypass:
+        # the original alias remains forbidden for stage, archive, and report paths.
+        rejected = verifier.verify(aliased_root / "installation", archives)
+        self.assertEqual("failed", rejected["state"])
+        self.assertEqual([{"code": "input_link_or_special_file", "phase": "installation"}], rejected["errors"])
+        self.assertNotEqual("unchanged", rejected["input_recheck"])
+        self.assertFalse(rejected["release_qualified"])
+        fixture.reject(aliased_root / archives[0].name, "input_link_or_special_file")
+        status, result, _ = fixture.cli(*archives, output=aliased_root / "aliased-output.json")
+        self.assertEqual(1, status)
+        self.assertIs(False, result["output_written"])
+        self.assertEqual({"code": "input_link_or_special_file", "phase": "new_report"}, result["errors"][-1])
+        self.assertFalse((fixture.root / "aliased-output.json").exists())
 
     def test_valid_stored_zip_and_ustar_pair_matches_actual_bytes(self):
         archives = [self.zip(), self.tar()]
@@ -925,8 +965,46 @@ class DistributionArchiveTests(unittest.TestCase):
                 self.reject(archive, code)
 
     def test_staged_case_alias_is_rejected(self):
-        self.new_file(self.installation / "APP/extra", b"case alias")
-        self.reject(self.zip(), "member_case_or_file_directory_alias")
+        # Case-insensitive filesystems cannot create distinct app/APP siblings.
+        # Inject only the second enumeration spelling, backed by real child metadata,
+        # so the staged walker must still reject the alias on every supported host.
+        (self.installation / "Alias").mkdir(mode=0o700)
+        archive = self.zip()
+        original_scan, original_stat = verifier.os.scandir, verifier.os.stat
+        initial = self.installation.stat()
+        identity = initial.st_dev, initial.st_ino
+        injected = False
+        alias_stats = 0
+
+        def installation_fd(fd):
+            current = os.fstat(fd)
+            return (current.st_dev, current.st_ino) == identity
+
+        @contextmanager
+        def aliased_scan(fd):
+            nonlocal injected
+            with original_scan(fd) as scan:
+                if installation_fd(fd):
+                    children = list(scan) + [SimpleNamespace(name="alias")]
+                    injected = True
+                    yield iter(children)
+                else:
+                    yield scan
+
+        def aliased_stat(path, *args, **kwargs):
+            nonlocal alias_stats
+            fd = kwargs.get("dir_fd")
+            if path == "alias" and fd is not None and installation_fd(fd):
+                alias_stats += 1
+                return original_stat("Alias", *args, **kwargs)
+            return original_stat(path, *args, **kwargs)
+
+        with patch.object(verifier, "platform_available", return_value=True), \
+                patch.object(verifier.os, "scandir", side_effect=aliased_scan), \
+                patch.object(verifier.os, "stat", side_effect=aliased_stat):
+            self.reject(archive, "member_case_or_file_directory_alias")
+        self.assertTrue(injected)
+        self.assertEqual(1, alias_stats)
 
     def test_staged_unsafe_name_is_rejected_without_raw_diagnostic(self):
         self.new_file(self.installation / "escape\x1bprivate", b"private bytes")

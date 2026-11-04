@@ -316,9 +316,13 @@ internal fun supervisorCodeSourceResources(original: Path): SupervisorResources 
 }
 
 private fun supervisorResourceName(name: String) {
-    if (name != SupervisorBundleFormat.MANIFEST && SupervisorBundleFormat.targets.none {
-            name == SupervisorBundleFormat.PREFIX + it + "/supervisor"
-        }) supervisorImageProblem("process_supervisor_bundle_origin_unavailable")
+    val v1 = name == SupervisorBundleFormat.MANIFEST || SupervisorBundleFormat.targets.any {
+        name == SupervisorBundleFormat.PREFIX + it + "/supervisor"
+    }
+    val v2 = name == OwnedLiveSupervisorBundleFormat.MANIFEST || OwnedLiveSupervisorBundleFormat.targets.any {
+        name == OwnedLiveSupervisorBundleFormat.PREFIX + it + "/supervisor"
+    }
+    if (!v1 && !v2) supervisorImageProblem("process_supervisor_bundle_origin_unavailable")
 }
 
 private fun supervisorCodeRoot(original: Path): Path {

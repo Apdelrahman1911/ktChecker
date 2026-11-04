@@ -29,6 +29,11 @@ internal data class SupervisedProcessResult(
     val executionConfirmed: Boolean = false,
 )
 
+/** One production capacity owner shared by one-shot v1 and retained live v2 generations. */
+internal object OwnedSupervisorCapacity {
+    val slots = SupervisorSlots(4)
+}
+
 /**
  * A bundled native helper alone owns its unreaped child leader and group. Java never derives a
  * process group from a PID, signals a group, enumerates descendants, or destroys the helper.
@@ -42,7 +47,7 @@ internal data class SupervisedProcessResult(
  * broker JVM, OS libraries, loaded memory or hostile same-user execution.
  */
 internal object OwnedProcessSupervisor {
-    private val slots = SupervisorSlots(4)
+    private val slots = OwnedSupervisorCapacity.slots
 
     fun run(
         command: List<String>,

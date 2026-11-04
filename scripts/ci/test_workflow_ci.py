@@ -28,6 +28,9 @@ REPORTS = tuple(f"modules/{module}/build/test-results/test/*.xml" for module in 
 STRESS = "modules/kernel/build/reports/stress/kernel-100-patches.json"
 PYTHON_REPORTS = ("build/ci-evidence/python/python-checks.json",
                   "build/ci-evidence/python/python-checks.xml")
+LIVE_REPORTS = ("build/ci-evidence/live-supervisor/live-supervisor-checks.json",
+                "build/ci-evidence/live-supervisor/live-supervisor-checks.xml")
+LIVE_PROBE_RECEIPT = "build/ci-evidence/live-probe/receipt.json"
 
 
 def authored_command(document: str, name: str) -> list[str]:
@@ -158,6 +161,7 @@ class DistributionUploadWorkflowTests(unittest.TestCase):
             "Bind observed Gradle to the selected JVM",
             "Observe exact helper build inputs and compiler or explicit unsupported host",
             "Execute exact tiny native controls or record Windows native unavailability",
+            "Retain direct original owned live supervisor controls on every host",
             "Verify exact genuine library controls or visible Windows opt-out skips",
             "Verify actual host-specific helper receipt and installed doctor bytes", self.inventory_name,
             "Collect actual suites and artifact identities, including failures",
@@ -174,6 +178,7 @@ class DistributionUploadWorkflowTests(unittest.TestCase):
         for task in (":contracts:test", ":audit:test", ":kernel:test", ":project-model:test",
                      ":provider-architecture:test", ":review-controller:test",
                      ":provider-runtime:buildOwnedProcessSupervisor", ":provider-runtime:test",
+                     ":provider-runtime:buildOwnedLiveProcessSupervisor",
                      ":provider-detekt:test", ":provider-ktlint:test", ":cli:installDist", ":cli:distZip", ":cli:distTar"):
             self.assertIn(task, values(build, "--require-task"))
         for task in ("test", ":cli:installDist", ":cli:distZip", ":cli:distTar"):
@@ -185,7 +190,7 @@ class DistributionUploadWorkflowTests(unittest.TestCase):
         document = self.document()
         evidence = self.step(document, "Retain sanitized observed evidence (not terminal transcripts)")
         original = self.step(document, "Retain original controlled-fixture JUnit and kernel stress reports")
-        self.assertEqual(["build/ci-evidence/*.json", *PYTHON_REPORTS,
+        self.assertEqual(["build/ci-evidence/*.json", *PYTHON_REPORTS, *LIVE_REPORTS, LIVE_PROBE_RECEIPT,
                           self.inventory_outputs[2], self.review_outputs[2]],
                          self.artifact_paths(evidence))
         self.assertEqual(["modules/*/build/test-results/**/*.xml", "tests/audit/build/test-results/**/*.xml",
@@ -371,6 +376,180 @@ class PythonEvidenceWorkflowTests(unittest.TestCase):
             changed = document.replace(step, step.replace("if: always()", "if: success()"))
             with self.assertRaises(AssertionError):
                 self.assert_retention(changed, upload)
+
+
+class LiveSupervisorWorkflowTests(unittest.TestCase):
+    """Authored routing/mutation controls only; no native run or qualification."""
+
+    runner_name = "Retain direct original owned live supervisor controls on every host"
+    probe_name = "Build a fresh owned live probe on Linux without executing it"
+    build_name = "Build and test actual modules; assemble preview distributions"
+    upload_name = "Retain sanitized observed evidence (not terminal transcripts)"
+    collector_name = "Collect actual suites and artifact identities, including failures"
+    opt_in = "${{ runner.os == 'Linux' && '1' || '' }}"
+    probe_output = "${{ github.workspace }}/build/ci-evidence/live-probe"
+    probe_path = "${{ runner.os == 'Linux' && format('{0}/build/ci-evidence/live-probe/probe', github.workspace) || '' }}"
+
+    def document(self):
+        return (ci_common.REPO_ROOT / ".github/workflows/implementation.yml").read_text(encoding="utf-8")
+
+    def step(self, document, name):
+        rows = re.findall(r"^      - name: " + re.escape(name) + r"\n([\s\S]*?)(?=^      - name: |\Z)",
+                          document, re.MULTILINE)
+        self.assertEqual(1, len(rows), name)
+        return rows[0]
+
+    def assert_direct_runner(self, document):
+        step = self.step(document, self.runner_name)
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual([
+            "python", "-B", "scripts/ci/live_supervisor_test_runner.py",
+            "--output", LIVE_REPORTS[0], "--junit", LIVE_REPORTS[1],
+            "--host", "${{ matrix.os }}", "--require-ci-context",
+            "${{", "matrix.supervisor_cc_argument", "}}",
+        ], authored_command(document, self.runner_name))
+        # Fixed direct argv also rejects shell timeout/kill/generic-runner wrappers
+        # and masked exits. Do not invent a second deadline or override CI identity.
+        self.assertNotRegex(step, r"(?m)^        (?:continue-on-error|timeout-minutes|env|shell):")
+
+    def assert_probe_build(self, document):
+        step = self.step(document, self.probe_name)
+        self.assertEqual(["runner.os == 'Linux'"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual(["python3", "-B", "scripts/ci/build_live_probe.py", "--cc", "/usr/bin/cc",
+                          "--output", self.probe_output], authored_command(document, self.probe_name))
+        self.assertNotRegex(step, r"(?m)^        (?:continue-on-error|timeout-minutes|env|shell):")
+        self.assertLess(document.index("- name: " + self.probe_name),
+                        document.index("- name: " + self.build_name))
+
+    def assert_host_build(self, document):
+        step = self.step(document, self.build_name)
+        env = re.search(r"^        env:\n((?:          [^\n]+\n)+)", step, re.MULTILINE)
+        self.assertIsNotNone(env)
+        self.assertEqual(["KTC_RUN_OWNED_LIVE_INTEGRATION: " + self.opt_in,
+                          "KTC_OWNED_LIVE_PROBE: " + self.probe_path],
+                         [line.strip() for line in env[1].splitlines()])
+        for key in ("KTC_RUN_OWNED_LIVE_INTEGRATION:", "KTC_OWNED_LIVE_PROBE:"):
+            self.assertEqual(1, document.count(key), "No workflow/job-global or second-step live opt-in")
+        required = values(authored_command(document, self.build_name), "--require-task")
+        for task in (":provider-runtime:buildOwnedProcessSupervisor", ":provider-runtime:test",
+                     ":provider-runtime:buildOwnedLiveProcessSupervisor"):
+            self.assertEqual(1, required.count(task))
+        self.assertNotRegex(step, r"(?m)^        (?:if|continue-on-error):")
+
+    def assert_retention(self, document):
+        step = self.step(document, self.upload_name)
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertNotIn("continue-on-error:", step)
+        pattern = r"^          path: \|\n((?:            [^\n]*\n)+)"
+        paths = re.search(pattern, step, re.MULTILINE)
+        self.assertIsNotNone(paths)
+        expected = ["build/ci-evidence/*.json", *PYTHON_REPORTS, *LIVE_REPORTS, LIVE_PROBE_RECEIPT,
+                    DistributionUploadWorkflowTests.inventory_outputs[2],
+                    DistributionUploadWorkflowTests.review_outputs[2]]
+        self.assertEqual(expected, [line.strip() for line in paths[1].splitlines()])
+        # Inspect all authored upload lists, so another artifact cannot smuggle
+        # the probe, its directory/glob, local phase/failure files or raw traces.
+        allowed = set(expected) | set(DistributionUploadWorkflowTests.inventory_outputs) \
+            | set(DistributionUploadWorkflowTests.review_outputs) | {
+                "modules/*/build/test-results/**/*.xml", "tests/audit/build/test-results/**/*.xml",
+                "modules/kernel/build/reports/stress/*.json",
+                "modules/cli/build/distributions/*.zip", "modules/cli/build/distributions/*.tar",
+            }
+        blocks = re.findall(pattern, document, re.MULTILINE)
+        self.assertEqual(3, len(blocks))
+        published = [line.strip() for block in blocks for line in block.splitlines()]
+        for path in published:
+            self.assertIn(path, allowed)
+        self.assertEqual([*LIVE_REPORTS, LIVE_PROBE_RECEIPT],
+                         [path for path in published if path in (*LIVE_REPORTS, LIVE_PROBE_RECEIPT)])
+
+    def assert_separate_denominators(self, document):
+        command = authored_command(document, self.collector_name)
+        for option in ("--reports", "--require-report"):
+            for path in values(command, option):
+                self.assertTrue(path.startswith(("modules/", "tests/audit/")))
+        self.assertEqual([f"build/ci-evidence/{name}.json" for name in (
+            "gradle-version", "supervisor-prerequisites", "supervisor-controls", "library-prerequisites",
+            "host-build", "library-controls", "dependency-manifest-command", "distribution-smoke",
+            "supervisor-installed-bytes", "package-report",
+        )], values(command, "--command-result"))
+        for path in (*LIVE_REPORTS, LIVE_PROBE_RECEIPT):
+            self.assertNotIn(path, command)
+
+    def assert_mutations_fail(self, document, name, assertion, mutations):
+        step = self.step(document, name)
+        for old, new in mutations:
+            with self.subTest(step=name, mutation=old, replacement=new):
+                changed = step.replace(old, new, 1)
+                self.assertNotEqual(step, changed)
+                with self.assertRaises(AssertionError):
+                    assertion(document.replace(step, changed, 1))
+
+    def test_direct_original_runner_is_always_enabled_on_all_actual_matrix_hosts(self):
+        document = self.document()
+        self.assert_direct_runner(document)
+        self.assertEqual(["ubuntu-24.04", "windows-2025", "macos-26"],
+                         re.findall(r"^          - os: ([^\n]+)$", document, re.MULTILINE))
+
+    def test_fresh_probe_build_and_explicit_live_opt_in_are_linux_only(self):
+        document = self.document()
+        self.assert_probe_build(document)
+        self.assert_host_build(document)
+
+    def test_only_literal_sanitized_live_pair_and_probe_receipt_are_retained(self):
+        self.assert_retention(self.document())
+
+    def test_live_callbacks_and_probe_receipt_never_enter_generic_denominators(self):
+        self.assert_separate_denominators(self.document())
+
+    def test_runner_controls_reject_outer_deadlines_scope_spoofing_and_masked_exits(self):
+        self.assert_mutations_fail(self.document(), self.runner_name, self.assert_direct_runner, (
+            ("if: always()", "if: runner.os == 'Linux'"),
+            ("if: always()", "if: success()"),
+            ("--host \"${{ matrix.os }}\"", "--host ubuntu-24.04"),
+            ("--require-ci-context", "--timeout 480"),
+            ("python -B scripts/ci/live_supervisor_test_runner.py", "timeout 480 python -B scripts/ci/live_supervisor_test_runner.py"),
+            ("python -B scripts/ci/live_supervisor_test_runner.py", "python scripts/ci/run_python_checks.py --start-directory modules/provider-runtime/native"),
+            ("python -B", "python -O -B"),
+            ("if: always()", "if: always()\n        timeout-minutes: 8"),
+            ("if: always()", "if: always()\n        continue-on-error: true"),
+            ("${{ matrix.supervisor_cc_argument }}\n", "${{ matrix.supervisor_cc_argument }} || true\n"),
+        ))
+
+    def test_probe_and_host_build_controls_reject_reuse_cross_host_opt_in_and_missing_task(self):
+        document = self.document()
+        self.assert_mutations_fail(document, self.probe_name, self.assert_probe_build, (
+            ("if: runner.os == 'Linux'", "if: always()"),
+            ("--cc /usr/bin/cc", "--cc cc"),
+            (self.probe_output, "build/ci-evidence/live-probe"),
+            ("python3 -B", "rm -rf build/ci-evidence/live-probe && python3 -B"),
+            ("if: runner.os == 'Linux'", "if: runner.os == 'Linux'\n        continue-on-error: true"),
+        ))
+        self.assert_mutations_fail(document, self.build_name, self.assert_host_build, (
+            (self.opt_in, "'1'"),
+            (self.probe_path, "build/ci-evidence/live-probe/probe"),
+            ("          --require-task :provider-runtime:buildOwnedLiveProcessSupervisor\n", ""),
+        ))
+        global_opt_in = document.replace("\njobs:\n", "\nenv:\n  KTC_RUN_OWNED_LIVE_INTEGRATION: '1'\njobs:\n", 1)
+        self.assertNotEqual(document, global_opt_in)
+        with self.assertRaises(AssertionError):
+            self.assert_host_build(global_opt_in)
+
+    def test_retention_controls_reject_raw_binary_directory_globs_and_local_state_files(self):
+        mutations = [(LIVE_REPORTS[0], "build/ci-evidence/live-supervisor/**"),
+                     (LIVE_REPORTS[1], "build/ci-evidence/raw/live-supervisor/**"),
+                     ("if: always()", "if: success()")]
+        mutations.extend((LIVE_PROBE_RECEIPT, "build/ci-evidence/live-probe/" + suffix)
+                         for suffix in ("probe", "", "*", "**", "phase", "before.json", "failure.json"))
+        self.assert_mutations_fail(self.document(), self.upload_name, self.assert_retention, mutations)
+
+    def test_generic_denominator_controls_reject_live_json_xml_and_broad_globs(self):
+        self.assert_mutations_fail(self.document(), self.collector_name, self.assert_separate_denominators, (
+            ('--reports "modules/*/build/test-results/**/*.xml"', '--reports "build/ci-evidence/**/*.xml"'),
+            ('--reports "modules/*/build/test-results/**/*.xml"', '--reports "' + LIVE_REPORTS[1] + '"'),
+            ("--command-result build/ci-evidence/package-report.json", "--command-result " + LIVE_REPORTS[0]),
+            ("--command-result build/ci-evidence/package-report.json", "--command-result " + LIVE_PROBE_RECEIPT),
+        ))
 
 
 class WindowsCheckoutWorkflowTests(unittest.TestCase):

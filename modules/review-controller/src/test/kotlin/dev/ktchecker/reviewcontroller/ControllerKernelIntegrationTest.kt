@@ -44,7 +44,7 @@ class ControllerKernelIntegrationTest {
         } }.toMap()
 
         // Pure preloaded per-consumer lookup. The queue is test instrumentation, not policy I/O.
-        val policy = ResultPolicy { binding, input, raw ->
+        val policy = ResultPolicy.versioned("synthetic-controller-captured-policy/1") { binding, input, raw ->
             val key = binding to input.analysisKey()
             val identity = requireNotNull(policies[key]) { "No captured policy for this exact consumer/input" }
             check(identity.binding == binding && identity.configurationDigest == input.context.configurationDigest)
@@ -148,7 +148,7 @@ class ControllerKernelIntegrationTest {
         }
         // Accepted source/classpath archives survive loss of original inputs. This synthetic
         // provider consumes no external compiler/runtime; their freezing is not being certified.
-        Files.writeString(capture.root.resolve("lib/src/commonMain/kotlin/Common.kt"), "changed after acceptance\n")
+        capture.replaceCommonSourceForTest("changed after acceptance\n")
         f.artifacts.forEach { Files.writeString(Path.of(it.path), "changed after classpath archival\n") }
         assertFalse(capture.verifyRegistered())
         assertEquals("materialization_unavailable", assertFailsWith<ReviewControllerException> { registry.resolve(f.binding(), f.request()) }.code)

@@ -33,6 +33,8 @@ class KernelService private constructor(
     planAuthority: ReviewPlanAuthority,
     routingAuthority: ReviewPlanRoutingAuthority,
 ) : AutoCloseable {
+    internal val policyEvaluatorIdentity = capturePolicyEvaluatorIdentity(resultPolicy)
+    internal val admittedPolicyCertificate = canonical(PolicyCertificate(policyEvaluatorIdentity, PolicyCertificate.ADMITTED))
     internal val root = dataDir.toAbsolutePath().normalize()
     internal val ledger = Ledger(root, config)
     internal val archive = InputArchive(root.resolve("inputs"), config)
@@ -177,9 +179,9 @@ class KernelService private constructor(
                     val sequence = c.count("SELECT next_review FROM clients WHERE client_id=?", binding.clientId)
                     val reviewId = UUID.randomUUID().toString()
                     c.execute("""INSERT INTO reviews(review_id,client_id,patch_id,idempotency_key,request_hash,request_json,
-                        input_json,work_key,sequence,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                        input_json,work_key,sequence,policy_certificate,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
                         reviewId, binding.clientId, normalized.patchId, normalized.idempotencyKey, requestHash, requestJson,
-                        canonical(normalized.input), key, sequence, System.currentTimeMillis())
+                        canonical(normalized.input), key, sequence, admittedPolicyCertificate, System.currentTimeMillis())
                     c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
                         SELECT ?,fair_key,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter')
                         FROM work WHERE work_key=?""", binding.clientId, key)
@@ -194,7 +196,7 @@ class KernelService private constructor(
                         ContractJson.decodeFromString<ProviderResult>(it.getString(1))
                     }
                     priorProgress.forEach { partial ->
-                        val (classified, issues) = classifyResult(binding, normalized.input, partial)
+                        val (classified, issues) = classifyResult(c, binding, reviewId, normalized.input, partial)
                         appendEvent(c, binding, status.copy(state = if (status.cancelled) "cancelled" else "running",
                             result = classified, reasons = issues), "progress")
                     }
@@ -475,10 +477,12 @@ class KernelService private constructor(
             fail("lineage_finalized", "A final action was already claimed for this client generation")
         }
         if (c.count("SELECT COUNT(*) FROM reviews") >= config.maxRetainedReviews) fail("ledger_full", "Retained review quota is full; no accepted patch was removed")
-        val pending = c.count("""SELECT COUNT(*) FROM reviews r JOIN work w ON w.work_key=r.work_key
-            WHERE r.client_id=? AND w.state IN ('queued','running')""", clientId)
-        if (pending >= config.maxPendingPerClient) fail("client_queue_full", "Client's pending obligation limit is reached")
+        if (pendingReviews(c, clientId) >= config.maxPendingPerClient) fail("client_queue_full", "Client's pending obligation limit is reached")
     }
+
+    internal fun pendingReviews(c: Connection, clientId: String): Long = c.count("""SELECT COUNT(*) FROM reviews r
+        JOIN work w ON w.work_key=r.work_key WHERE r.client_id=?
+        AND (w.state IN ('queued','running') OR r.effective_result_json IS NULL)""", clientId)
 
     private fun idempotent(c: Connection, clientId: String, key: String, hash: String): ReviewStatus? {
         if (c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=? AND idempotency_key=?", clientId, key) != 0L) {
@@ -503,7 +507,10 @@ class KernelService private constructor(
         val result = (effectiveJson ?: rawJson)?.let { ContractJson.decodeFromString<ProviderResult>(it) }
         val validation = ContractJson.decodeFromString<List<String>>(row.getString("validation_json")) +
             ContractJson.decodeFromString<List<String>>(row.getString("policy_validation_json")) +
-            (if (rawJson != null && effectiveJson == null) listOf("policy_evaluation_missing") else emptyList())
+            evaluatorReasons(row.getString("policy_certificate")) +
+            (if (rawJson != null && effectiveJson == null) listOf("policy_evaluation_missing") else emptyList()) +
+            (if (effectiveJson != null && PolicyCertificate.decode(row.getString("policy_certificate"))?.state != PolicyCertificate.EVALUATED)
+                listOf("policy_certificate_invalid") else emptyList())
         val cancelled = row.getInt("cancelled") != 0
         val state = when {
             cancelled -> "cancelled"
@@ -516,7 +523,33 @@ class KernelService private constructor(
             (validation + if (cancelled) listOf("client_cancelled_obligation_retained") else emptyList()).distinct(), cancelled)
     }
 
-    internal fun classifyResult(binding: ClientBinding, input: AnalysisInput, raw: ProviderResult): Pair<ProviderResult, List<String>> {
+    private fun evaluatorReasons(encoded: String?): List<String> {
+        val certificate = PolicyCertificate.decode(encoded) ?: return listOf("policy_evaluator_identity_unknown")
+        return if (certificate.evaluatorIdentity != policyEvaluatorIdentity) listOf("policy_evaluator_mismatch") else emptyList()
+    }
+
+    internal fun classifyResult(c: Connection, binding: ClientBinding, reviewId: String, input: AnalysisInput,
+                                raw: ProviderResult): Pair<ProviderResult, List<String>> {
+        val encoded = c.one("SELECT policy_certificate FROM reviews WHERE review_id=? AND client_id=?", reviewId, binding.clientId) {
+            it.getString(1)
+        }
+        val issues = evaluatorReasons(encoded)
+        // In-flight raw work is shared independently of evaluator identity. A publisher must not
+        // run its callback for a subscription admitted by a different evaluator, even for progress.
+        return if (issues.isEmpty()) evaluateReadyPolicy(binding, input, raw)
+            ?: (raw to listOf("captured_policy_not_ready")) else raw to issues
+    }
+
+    /** Null is recoverable missing preparation; arbitrary pure-callback failures are terminal. */
+    private fun evaluateReadyPolicy(binding: ClientBinding, input: AnalysisInput, raw: ProviderResult): Pair<ProviderResult, List<String>>? = try {
+        if (resultPolicy.isReady(binding, input)) evaluateResultPolicy(binding, input, raw) else null
+    } catch (_: Exception) {
+        raw to listOf("result_policy_unavailable")
+    } catch (_: AssertionError) {
+        raw to listOf("result_policy_unavailable")
+    }
+
+    private fun evaluateResultPolicy(binding: ClientBinding, input: AnalysisInput, raw: ProviderResult): Pair<ProviderResult, List<String>> {
         val rawJson = canonical(raw)
         val issues = mutableListOf<String>()
         val transformed = try {
@@ -532,18 +565,117 @@ class KernelService private constructor(
         } catch (_: Exception) {
             issues += "result_policy_unavailable"
             raw
+        } catch (_: AssertionError) {
+            issues += "result_policy_unavailable"
+            raw
         }
         return transformed to issues
     }
 
-    internal fun applyResultPolicy(c: Connection, binding: ClientBinding, reviewId: String, input: AnalysisInput, raw: ProviderResult) {
-        val (transformed, issues) = classifyResult(binding, input, raw)
+    /** True means a durable change, including a new pending audit marker, not necessarily evaluation. */
+    internal fun applyResultPolicy(c: Connection, binding: ClientBinding, reviewId: String, input: AnalysisInput, raw: ProviderResult): Boolean {
+        if (isStopped()) return false
+        // Never rewrite an evaluated result, adopt a legacy/unknown identity, or stamp this
+        // evaluator onto another evaluator's admission. The same predicate fences the commit.
+        if (c.count("""SELECT COUNT(*) FROM reviews WHERE review_id=? AND client_id=?
+            AND effective_result_json IS NULL AND policy_certificate=?""", reviewId, binding.clientId, admittedPolicyCertificate) != 1L) return false
+        val (transformed, issues) = evaluateReadyPolicy(binding, input, raw)
+            ?: return markPolicyPending(c, binding, reviewId, "captured_policy_not_ready")
         val json = canonical(transformed)
-        val certificate = Digests.sha256(canonical(listOf(canonical(binding), input.analysisKey(),
-            input.context.configurationDigest.orEmpty(), Digests.sha256(canonical(raw)), Digests.sha256(json))))
-        c.execute("UPDATE reviews SET effective_result_json=?,policy_validation_json=?,policy_certificate=? WHERE review_id=? AND client_id=?",
-            json, canonical(issues), certificate, reviewId, binding.clientId)
+        val digest = PolicyCertificate.effectiveDigest(policyEvaluatorIdentity, binding, input, Digests.sha256(canonical(raw)), Digests.sha256(json))
+        val certificate = canonical(PolicyCertificate(policyEvaluatorIdentity, PolicyCertificate.EVALUATED, digest))
+        if (isStopped()) return false
+        return c.execute("""UPDATE reviews SET effective_result_json=?,policy_validation_json=?,policy_certificate=?
+            WHERE review_id=? AND client_id=? AND effective_result_json IS NULL AND policy_certificate=?""",
+            json, canonical(issues), certificate, reviewId, binding.clientId, admittedPolicyCertificate) == 1
     }
+
+    private fun markPolicyPending(c: Connection, binding: ClientBinding, reviewId: String, reason: String): Boolean {
+        if (isStopped()) return false
+        val old = c.one("""SELECT policy_validation_json FROM reviews WHERE review_id=? AND client_id=?
+            AND effective_result_json IS NULL AND policy_certificate=?""", reviewId, binding.clientId, admittedPolicyCertificate) {
+            it.getString(1)
+        } ?: return false
+        // Only two fixed markers can accumulate. Alternating restore failures/not-ready states must
+        // not grow the outbox on every retry; successful evaluation replaces these pending markers.
+        val issues = ContractJson.decodeFromString<List<String>>(old)
+        if (reason in issues || isStopped()) return false
+        return c.execute("""UPDATE reviews SET policy_validation_json=? WHERE review_id=? AND client_id=?
+            AND effective_result_json IS NULL AND policy_certificate=? AND policy_validation_json=?""",
+            canonical((issues + reason).distinct().sorted()), reviewId, binding.clientId, admittedPolicyCertificate, old) == 1
+    }
+
+    /** One bounded pass on a dedicated lane, never under the scheduler heartbeat transaction.
+     * Only IDs are batched; restoration and each raw-result publication have separate lifetimes. */
+    internal fun recoverPolicyEvaluations(): Int {
+        if (isStopped()) return 0
+        val pending = ledger.transaction(::selectPolicyRecovery)
+        for (id in pending) {
+            if (isStopped()) break
+            // The read closes before any adapter restoration I/O or config/source locks begin.
+            val captured = ledger.read { c -> c.one("""SELECT r.work_key,r.input_json,client.binding_json FROM reviews r
+                JOIN work w ON w.work_key=r.work_key JOIN clients client ON client.client_id=r.client_id
+                WHERE r.review_id=? AND w.provider_key=? AND w.state='complete' AND w.result_json IS NOT NULL
+                    AND r.effective_result_json IS NULL AND r.policy_certificate=?""", id, providerKey, admittedPolicyCertificate) {
+                PolicyRecovery(it.getString("work_key"), it.getString("binding_json"), it.getString("input_json"))
+            } } ?: continue
+            val binding = ContractJson.decodeFromString<ClientBinding>(captured.bindingJson)
+            val input = ContractJson.decodeFromString<AnalysisInput>(captured.inputJson)
+            val restored = try {
+                resultPolicy.restoreCaptured(binding, input)
+                true
+            } catch (_: InterruptedException) {
+                if (isStopped()) break
+                false
+            } catch (_: Exception) {
+                false
+            } catch (_: AssertionError) {
+                false
+            }
+            if (isStopped()) break
+            ledger.transaction { c ->
+                if (isStopped()) return@transaction
+                // Re-read and detach after restoration. The adapter cannot mutate an input or bind
+                // a different consumer, evaluator, provider or raw work between the two phases.
+                val raw = c.one("""SELECT w.result_json FROM reviews r JOIN work w ON w.work_key=r.work_key
+                    JOIN clients client ON client.client_id=r.client_id WHERE r.review_id=? AND r.work_key=?
+                        AND r.input_json=? AND client.binding_json=? AND w.provider_key=? AND w.state='complete'
+                        AND w.result_json IS NOT NULL AND r.effective_result_json IS NULL AND r.policy_certificate=?""",
+                    id, captured.workKey, captured.inputJson, captured.bindingJson, providerKey, admittedPolicyCertificate) {
+                    ContractJson.decodeFromString<ProviderResult>(it.getString(1))
+                } ?: return@transaction
+                val exactBinding = ContractJson.decodeFromString<ClientBinding>(captured.bindingJson)
+                val exactInput = ContractJson.decodeFromString<AnalysisInput>(captured.inputJson)
+                val changed = if (restored) applyResultPolicy(c, exactBinding, id, exactInput, raw)
+                    else markPolicyPending(c, exactBinding, id, "captured_policy_restore_unavailable")
+                if (changed) {
+                    appendEvent(c, exactBinding, readStatus(c, id, exactBinding.clientId), "result")
+                    c.execute("UPDATE clients SET epoch=epoch+1 WHERE client_id=?", exactBinding.clientId)
+                }
+            }
+        }
+        return pending.size
+    }
+
+    private fun selectPolicyRecovery(c: Connection): List<String> {
+        if (isStopped()) return emptyList()
+        val key = "policy_recovery_cursor:" + Digests.sha256(canonical(listOf(providerKey, policyEvaluatorIdentity)))
+        val cursor = c.one("SELECT value FROM metadata WHERE key=?", key) { it.getString(1).toLongOrNull() } ?: 0L
+        fun select(after: Boolean, limit: Int): List<Pair<Long, String>> = c.query("""SELECT r.rowid,r.review_id FROM reviews r
+            JOIN work w ON w.work_key=r.work_key WHERE r.rowid ${if (after) ">" else "<="} ?
+                AND w.provider_key=? AND w.state='complete' AND w.result_json IS NOT NULL
+                AND r.effective_result_json IS NULL AND r.policy_certificate=? ORDER BY r.rowid LIMIT ?""",
+            cursor, providerKey, admittedPolicyCertificate, limit) { it.getLong(1) to it.getString(2) }
+        val selected = select(after = true, limit = 32).toMutableList()
+        if (selected.size < 32) selected += select(after = false, limit = 32 - selected.size)
+        if (selected.isEmpty()) c.execute("DELETE FROM metadata WHERE key=?", key)
+        else c.execute("INSERT OR REPLACE INTO metadata(key,value) VALUES(?,?)", key, selected.last().first.toString())
+        // Advance on selection, including not-ready rows, and persist across short-lived services.
+        // A crashed batch remains admitted and is revisited on wrap, never silently discharged.
+        return selected.map { it.second }
+    }
+
+    private data class PolicyRecovery(val workKey: String, val bindingJson: String, val inputJson: String)
 
     internal fun appendEvent(c: Connection, binding: ClientBinding, status: ReviewStatus, kind: String) {
         val payload = canonical(status)
@@ -670,9 +802,10 @@ class KernelService private constructor(
             val rawJson = it.getString("result_json")
             val effectiveJson = it.getString("effective_result_json")
             val raw = rawJson?.let { text -> ContractJson.decodeFromString<ProviderResult>(text) }
-            val policyCertificate = if (raw == null || effectiveJson == null) null else Digests.sha256(canonical(listOf(
-                canonical(binding), input.analysisKey(), input.context.configurationDigest.orEmpty(),
-                Digests.sha256(canonical(raw)), Digests.sha256(effectiveJson))))
+            val certificate = PolicyCertificate.decode(it.getString("policy_certificate"))
+            val policyDigest = if (raw == null || effectiveJson == null || certificate?.state != PolicyCertificate.EVALUATED) null else
+                PolicyCertificate.effectiveDigest(certificate.evaluatorIdentity, binding, input,
+                    Digests.sha256(canonical(raw)), Digests.sha256(effectiveJson))
             val workCertificate = c.one("SELECT * FROM work_certificates WHERE work_key=?", it.getString("work_key")) { cert ->
                 val expected = Digests.sha256(canonical(listOf(cert.getString("input_key"), cert.getString("effective_key"),
                     cert.getString("result_digest"), cert.getString("provider_key"))))
@@ -680,11 +813,14 @@ class KernelService private constructor(
                     rawJson != null && cert.getString("result_digest") == Digests.sha256(rawJson) &&
                     cert.getString("provider_key") == providerKey
             } ?: false
-            ReviewRecord(statusRow(it), input, workCertificate && policyCertificate != null && policyCertificate == it.getString("policy_certificate"))
+            ReviewRecord(statusRow(it), input, workCertificate && certificate?.evaluatorIdentity == policyEvaluatorIdentity &&
+                policyDigest != null && policyDigest == certificate?.digest)
         }
         val reasons = mutableListOf<String>()
         if (records.isEmpty() || latest == null) return listOf("no_accepted_reviews")
         for (record in records) {
+            record.status.reasons.filter { it in setOf("policy_evaluator_identity_unknown", "policy_evaluator_mismatch") }
+                .forEach { reasons += "$it:${record.status.reviewId}" }
             when (record.status.state) {
                 "queued", "running" -> reasons += "review_pending:${record.status.reviewId}"
                 "cancelled" -> reasons += "review_cancelled:${record.status.reviewId}"

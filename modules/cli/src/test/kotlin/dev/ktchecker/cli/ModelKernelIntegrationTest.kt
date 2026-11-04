@@ -55,7 +55,7 @@ class ModelKernelIntegrationTest {
         }
     }
 
-    private fun policy(f: OwnerModelFixtures, c: OwnerModelFixtures.Composition) = ResultPolicy { binding, input, raw ->
+    private fun policy(f: OwnerModelFixtures, c: OwnerModelFixtures.Composition) = ResultPolicy.versioned("synthetic-owner-model-policy/1") { binding, input, raw ->
         f.configs.apply(requireNotNull(c.plans.policy(binding, input)), input, raw)
     }
 

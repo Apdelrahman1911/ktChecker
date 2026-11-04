@@ -108,18 +108,32 @@ does **not** trust `Finding.fingerprint`, a symbol name, excerpt, line similarit
 Git rename heuristic or a supplied `semanticDigest` as identity evidence.
 Without verified facts, an exact finding binds registered namespace, rule and
 implementation, provider, compilation context, severity/kind/certainty, logical
-path, **raw file-byte digest**, range and evidence digest. File/range rule scopes
+path, **raw file-byte digest**, range and evidence digest. Every primary and related
+source location must match exactly one file in the frozen snapshot. The raw
+evidence projection binds each related logical path, raw-byte digest and
+end-exclusive range; order and excerpts are insignificant, but duplicate
+occurrences remain material. File/range rule scopes
 also bind raw bytes. Rule-selecting file/range/symbol acceptances retain the
 original implementation digest, rather than silently adopting an upgraded rule;
 an older narrow record missing that binding remains inactive. Positions use
 1-based lines, 0-based UTF-16 columns and
 end-exclusive ranges; paths remain significant.
 
+The preview raw material projection is now `ktchecker/finding-policy-evidence-2`,
+including an explicit empty related-location list. **All legacy raw exact-finding
+and baseline anchors reopen**, even when the original finding was primary-only:
+old anchors cannot distinguish that history from discarded related evidence.
+Stored records, reasons, expiration, audit and historical evidence remain intact
+and inspectable; no prior consent or receipt is silently migrated. A new narrow
+acceptance requires a current selector and explicit owner action. Deliberate
+rule-scoped project/file/range policies retain their broader scope semantics.
+
 The default `FindingIdentityVerifier` supplies no movement proof. A trusted
 provider adapter may certify a particular immutable snapshot, owner/project/
 worktree/lineage, canonical rule, provider artifact, stable symbol, relevant
 material/body/bindings, distinct evidence occurrence and evidence content.
-Only matching verified symbol **and material/evidence identity** can preserve a
+Only matching verified symbol **and complete primary/related material/evidence
+identity**, independently checked by the trusted adapter, can preserve a
 narrow acceptance across line movement or a rename within that binding.
 Certificate/snapshot IDs can change; the independently verified stable identity
 must not. A changed body/binding, evidence, occurrence, provider artifact or rule
