@@ -30,6 +30,14 @@ launcher. Keep **the whole distribution** together: `lib` contains the engine an
 plugins. Java is not bundled. Archives are unsigned previews; check actual
 commit/SHA-256 evidence rather than treating the file name as provenance.
 
+CI continues building, testing and inventorying packages, but **archive uploads
+default to off**. The repository owner must explicitly set
+`KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED=true`; upload also requires a successful
+`report_distribution.py --require-license-review` gate. Owner licensing and
+complete dependency/NOTICE review remain unresolved, so opt-in alone cannot
+authorize publication. Diagnostic reports remain available on failed runs. This
+license gate inspects `installDist`, not the contents of ZIP/TAR archives.
+
 Archives now include a **host-specific** native owned-child supervisor in the
 provider-runtime JAR. Select the correct OS/architecture artifact; this is not a
 universal native binary. `doctor` reports bounded installed-helper inspection

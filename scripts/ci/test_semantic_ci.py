@@ -1,7 +1,7 @@
 """Synthetic Native wrapper/metadata controls; never execute a JVM or Native compiler."""
 
 import argparse
-from contextlib import redirect_stdout
+from contextlib import ExitStack, redirect_stdout
 import copy
 import gzip
 import hashlib
@@ -13,8 +13,9 @@ import shutil
 import sys
 import tarfile
 import tempfile
+from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import zipfile
 
 try:
@@ -32,7 +33,19 @@ except ImportError:
 IDENTITY = {"commit": "1" * 40, "dirty": False, "working_tree_digest": "sha256:" + "2" * 64}
 RETAINED_JVM = checks.REPO_ROOT / "modules/semantic-facts/evidence/2026-11-04T091649Z-jvm/summary.json"
 RUN = {"id": "123456", "attempt": "1", "job": "ios-native"}
-DEVELOPER = "/Applications/Xcode_26.4.1.app/Contents/Developer"
+# Host-native absolute SYNTHETIC selection only; this is no Apple installation
+# observation. Mocking platform.system() must not change Windows Path semantics.
+DEVELOPER = str(checks.REPO_ROOT / "synthetic-Xcode_26.4.1.app/Contents/Developer")
+
+
+def fixture_symlink(test_case, link, target, *, target_is_directory=False):
+    """Real owned fixture IO only; one known Windows privilege gap is a skip."""
+    try:
+        link.symlink_to(target, target_is_directory=target_is_directory)
+    except OSError as error:
+        if os.name == "nt" and getattr(error, "winerror", None) == 1314:
+            test_case.skipTest("Actual Windows symlink fixture unavailable: ERROR_PRIVILEGE_NOT_HELD; synthetic link rejection still runs")
+        raise
 
 
 def hosted_environment(java_home, data_dir):
@@ -86,6 +99,9 @@ def native_tree(data_dir, name="kotlin-native-prebuilt-macos-aarch64-2.4.21", ve
 
 
 def setup_attempt(root):
+    # Canonicalize only the caller-trusted outer fixture root. Production still
+    # checks every selected descendant/path/identity and rejects traversal.
+    root = root.resolve(strict=True)
     argument = argparse.Namespace(output=root / "build/ci-evidence/ios-semantic.json",
                                   environment=root / "build/ci-evidence/environment.json", target="iosSimulatorArm64", timeout=1,
                                   native_selection=root / "build/ci-evidence/raw/native-provisioning/selection.json",
@@ -241,7 +257,7 @@ class SemanticMetadataTests(unittest.TestCase):
 class NativeDiscoveryTests(unittest.TestCase):
     def test_exact_explicit_mac_aarch64_package_and_manifest_version_required(self):
         with tempfile.TemporaryDirectory() as temporary:
-            data_dir = Path(temporary)
+            data_dir = Path(temporary).resolve(strict=True)
             home = native_tree(data_dir)
             native.validate_home(home, ("iosSimulatorArm64",))
             alias = native_tree(data_dir, "kotlin-native-prebuilt-macos-arm64-2.4.21")
@@ -251,7 +267,7 @@ class NativeDiscoveryTests(unittest.TestCase):
     def test_wrong_arch_old_version_missing_target_and_duplicate_manifest_do_not_pass(self):
         for alteration in ("architecture", "version", "target", "manifest"):
             with tempfile.TemporaryDirectory() as temporary:
-                data_dir = Path(temporary)
+                data_dir = Path(temporary).resolve(strict=True)
                 home = native_tree(data_dir, "kotlin-native-prebuilt-macos-x86_64-2.4.21" if alteration == "architecture" else
                                    "kotlin-native-prebuilt-macos-aarch64-2.4.21", "2.4.20" if alteration == "version" else "2.4.21")
                 if alteration == "target":
@@ -264,7 +280,7 @@ class NativeDiscoveryTests(unittest.TestCase):
 
     def test_native_cached_prerequisites_do_not_equate_configured_sysroot_with_host_xcode(self):
         with tempfile.TemporaryDirectory() as temporary:
-            data_dir = Path(temporary)
+            data_dir = Path(temporary).resolve(strict=True)
             home = native_tree(data_dir)
             (data_dir / "dependencies/synthetic-llvm-19").mkdir(parents=True)
             result = checks.dependency_inventory(home, data_dir, "iosSimulatorArm64", "17E202")
@@ -279,7 +295,7 @@ class NativeDiscoveryTests(unittest.TestCase):
 
     def test_unrecognized_configuration_package_text_is_not_uploaded_or_followed(self):
         with tempfile.TemporaryDirectory() as temporary:
-            data_dir = Path(temporary)
+            data_dir = Path(temporary).resolve(strict=True)
             home = native_tree(data_dir)
             (home / "konan/konan.properties").write_text("llvmHome.macos_arm64 = ../../PRIVATE secret\n")
             result = checks.dependency_inventory(home, data_dir, "iosSimulatorArm64", "17E202")
@@ -316,7 +332,7 @@ class SemanticWrapperTests(unittest.TestCase):
 
     def test_successful_synthetic_wrapper_is_metadata_only_and_independent_of_android_runtime(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             argument, java_home, data_dir, summary = setup_attempt(root)
             result, gradle = self.run_attempt(root, argument, java_home, data_dir, summary)
             gradle.assert_called_once()
@@ -329,9 +345,29 @@ class SemanticWrapperTests(unittest.TestCase):
             self.assertNotIn("PRIVATE", json.dumps(result))
             self.assertNotIn(str(root), json.dumps(result))
 
+    def test_actual_trusted_outer_fixture_alias_enrolls_only_canonical_selected_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            outer = Path(temporary).resolve(strict=True)
+            root = outer / "checkout"
+            root.mkdir()
+            alias = outer / "trusted-outer-alias"
+            fixture_symlink(self, alias, root, target_is_directory=True)
+            argument, java_home, data_dir, summary = setup_attempt(alias)
+            self.assertEqual(root / "synthetic-jdk", java_home)
+            self.assertEqual(root / "build/ci-evidence/raw/native-provisioning/data", data_dir)
+            selection = json.loads(argument.native_selection.read_bytes())
+            self.assertEqual(str(data_dir / native.HOME_NAME), selection["native_home"])
+            self.assertEqual(str(data_dir), selection["konan_data_dir"])
+            self.assertEqual(str(java_home), selection["java_home"])
+            self.assertEqual(str(argument.native_selection.parent / "archive.tar.gz"), selection["archive_path"])
+            result, gradle = self.run_attempt(alias, argument, java_home, data_dir, summary)
+            gradle.assert_called_once()
+            self.assertEqual("passed", result["state"])
+            self.assertFalse(result["tuple_qualified"])
+
     def test_failed_dependency_attempt_preserved_not_fabricated_empty_success(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             argument, java_home, data_dir, summary = setup_attempt(root)
             summary.update(state="failed", cases=[], reasons=["semantic_fixture_driver_failed"])
             summary["executions"] = [dict(summary["executions"][0], exitCode=1)]
@@ -344,7 +380,7 @@ class SemanticWrapperTests(unittest.TestCase):
 
     def test_genuine_unavailable_driver_shape_remains_unavailable_with_no_compiler_claim(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             argument, java_home, data_dir, summary = setup_attempt(root)
             summary.update(state="unavailable", cases=[], executions=[], reasons=["semantic_native_distribution_incomplete"])
             result, _ = self.run_attempt(root, argument, java_home, data_dir, summary, "failed")
@@ -355,7 +391,7 @@ class SemanticWrapperTests(unittest.TestCase):
     def test_missing_summary_or_false_assertion_never_passes(self):
         for summary_present in (False, True):
             with tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 argument, java_home, data_dir, summary = setup_attempt(root)
                 summary["cases"][0]["assertions"]["native_is_not_jvm_substitution"] = False
                 result, _ = self.run_attempt(root, argument, java_home, data_dir, summary, write_summary=summary_present)
@@ -365,7 +401,7 @@ class SemanticWrapperTests(unittest.TestCase):
     def test_unsafe_or_nonfresh_private_output_stops_before_any_gradle_attempt(self):
         for failure in ("outside_build", "traversal", "nonfresh"):
             with tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 argument, java_home, data_dir, summary = setup_attempt(root)
                 if failure == "outside_build":
                     argument.output = root / "outside/ios-semantic.json"
@@ -384,7 +420,7 @@ class SemanticWrapperTests(unittest.TestCase):
 
     def test_wrong_host_or_selected_jvm_digest_stops_before_any_gradle_call(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             argument, java_home, data_dir, summary = setup_attempt(root)
             with patch.object(checks, "source_identity", return_value=IDENTITY), \
                     patch.object(checks.platform, "system", return_value="Windows"), patch.object(checks, "gradle_result") as gradle:
@@ -419,7 +455,7 @@ class NativePrerequisiteDiagnosticsTests(unittest.TestCase):
         }
         for alteration, code in alterations.items():
             with self.subTest(alteration=alteration), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 argument, java_home, data_dir, _ = setup_attempt(root)
                 environment = json.loads(argument.environment.read_text())
                 child_env = hosted_environment(java_home, data_dir)
@@ -457,7 +493,9 @@ class NativePrerequisiteDiagnosticsTests(unittest.TestCase):
                 elif alteration == "java_missing":
                     (java_home / "lib/modules").unlink()
                 elif alteration == "java_unexecutable":
-                    (java_home / "bin/java").chmod(0o644)
+                    # Windows chmod/access cannot emulate removing POSIX
+                    # executable bits. Inject ONLY this selected denial.
+                    denied_access = Mock(return_value=False)
                 elif alteration == "java_changed":
                     environment["java"]["launcher_digest"] = "sha256:" + "f" * 64
                 elif alteration == "java_release":
@@ -474,8 +512,13 @@ class NativePrerequisiteDiagnosticsTests(unittest.TestCase):
                         patch.object(native.platform, "machine", return_value=architecture), \
                         patch.dict(os.environ, child_env, clear=True), \
                         patch.object(native, "run_logged") as launcher, patch.object(native, "verify_archive"), \
-                        patch.object(checks, "gradle_result") as gradle:
+                        patch.object(checks, "gradle_result") as gradle, ExitStack() as stack:
+                    if alteration == "java_unexecutable":
+                        facade = SimpleNamespace(environ=os.environ, X_OK=os.X_OK, access=denied_access)
+                        stack.enter_context(patch.object(native, "os", facade))
                     result = checks.run(argument, root)
+                if alteration == "java_unexecutable":
+                    denied_access.assert_called_once_with(java_home / "bin/java", os.X_OK)
                 self.assertEqual([code], result["errors"])
                 self.assertEqual("unavailable", result["state"])
                 self.assertEqual(0, result["compiler_execution_count"])
@@ -496,7 +539,7 @@ class NativePrerequisiteDiagnosticsTests(unittest.TestCase):
         }
         for alteration, code in alterations.items():
             with self.subTest(alteration=alteration), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 argument, java_home, data_dir, _ = setup_attempt(root)
                 selection = json.loads(argument.native_selection.read_text())
                 receipt = json.loads(argument.native_provisioning.read_text())
@@ -548,7 +591,7 @@ class NativePrerequisiteDiagnosticsTests(unittest.TestCase):
 
     def test_unobserved_sdk_inventory_is_not_invented_as_failure_or_runtime_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             argument, java_home, data_dir, _ = setup_attempt(root)
             value = json.loads(argument.environment.read_text())
             value["xcode"].pop("iphoneos_sdk")
@@ -629,12 +672,30 @@ class NativeArchiveControlsTests(unittest.TestCase):
         self.assertEqual(20000, native.MAX_COMPONENTS)
         self.assertEqual(300, native.EXTRACTION_TIMEOUT_SECONDS)
 
-    def test_synthetic_regular_files_safe_links_and_mode_stripping(self):
+    def test_portable_synthetic_regular_file_and_hard_link_extract_exact_owned_bytes(self):
+        entries = [(native.HOME_NAME + "/lib/regular", tarfile.REGTYPE, b"synthetic bytes"),
+                   (native.HOME_NAME + "/lib/hard", tarfile.LNKTYPE, native.HOME_NAME + "/lib/regular")]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            result = self.extract(root, entries)
+            self.assertEqual(2, result["members"])
+            self.assertEqual(result["members"], result["logical_members"])
+            self.assertEqual(2, result["headers"])
+            self.assertEqual(native.MAX_RAW_HEADERS, result["max_raw_headers"])
+            self.assertEqual(1, result["links"])
+            self.assertEqual(len(b"synthetic bytes"), result["extracted_regular_bytes"])
+            for name in ("regular", "hard"):
+                self.assertEqual(b"synthetic bytes", (root / "staging" / native.HOME_NAME / "lib" / name).read_bytes())
+
+    def test_actual_synthetic_archive_safe_links_target_only_owned_regular_files(self):
         entries = [(native.HOME_NAME + "/lib/regular", tarfile.REGTYPE, b"synthetic bytes"),
                    (native.HOME_NAME + "/lib/symbolic", tarfile.SYMTYPE, "regular"),
                    (native.HOME_NAME + "/lib/hard", tarfile.LNKTYPE, native.HOME_NAME + "/lib/regular")]
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
+            probe = root / "symlink-capability-probe"
+            fixture_symlink(self, probe, root / "missing")
+            probe.unlink()
             result = self.extract(root, entries)
             self.assertEqual(3, result["members"])
             self.assertEqual(result["members"], result["logical_members"])
@@ -643,7 +704,38 @@ class NativeArchiveControlsTests(unittest.TestCase):
             self.assertEqual(2, result["links"])
             self.assertEqual(len(b"synthetic bytes"), result["extracted_regular_bytes"])
             self.assertEqual(b"synthetic bytes", (root / "staging" / native.HOME_NAME / "lib/symbolic").read_bytes())
-            self.assertEqual(0o755, (root / "staging" / native.HOME_NAME / "lib/regular").stat().st_mode & 0o7777)
+
+    @unittest.skipUnless(os.name == "posix", "POSIX mode bits only; native Windows executable/ACL semantics are not asserted")
+    def test_actual_posix_archive_file_modes_strip_special_bits(self):
+        body = b""
+        for name, mode in (("executable", 0o6755), ("nonexecutable", 0o6644)):
+            info = tarfile.TarInfo(native.HOME_NAME + "/" + name)
+            info.mode, info.size = mode, 1
+            body += synthetic_raw_tar_member(info, b"x")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            archive = root / "synthetic.tar.gz"
+            archive.write_bytes(gzip.compress(body + b"\0" * 1024))
+            native.extract_archive(archive, root / "staging")
+            for name, mode in (("executable", 0o755), ("nonexecutable", 0o644)):
+                self.assertEqual(mode, (root / "staging" / native.HOME_NAME / name).stat().st_mode & 0o7777)
+
+    def test_symlink_fixture_skips_only_the_known_native_windows_privilege_gap(self):
+        privilege = OSError("synthetic symlink privilege gap")
+        privilege.winerror = 1314
+        with patch.object(sys.modules[__name__], "os", SimpleNamespace(name="nt")):
+            link = SimpleNamespace(symlink_to=Mock(side_effect=privilege))
+            with self.assertRaises(unittest.SkipTest) as raised:
+                fixture_symlink(self, link, "synthetic target")
+        self.assertIn("ERROR_PRIVILEGE_NOT_HELD", str(raised.exception))
+        for host, error in (("posix", privilege), ("nt", FileExistsError("synthetic collision")),
+                            ("nt", OSError("synthetic unrelated fixture error"))):
+            with self.subTest(host=host, error=type(error).__name__), \
+                    patch.object(sys.modules[__name__], "os", SimpleNamespace(name=host)):
+                link = SimpleNamespace(symlink_to=Mock(side_effect=error))
+                with self.assertRaises(type(error)) as raised:
+                    fixture_symlink(self, link, "synthetic target")
+                self.assertIs(error, raised.exception)
 
     def test_traversal_absolute_wrong_root_special_duplicate_and_case_collision_rejected(self):
         cases = {
@@ -658,7 +750,7 @@ class NativeArchiveControlsTests(unittest.TestCase):
         }
         for case, entries in cases.items():
             with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 with self.assertRaises(native.NativePrerequisiteError) as error:
                     self.extract(root, entries)
                 self.assertNotIn("PRIVATE", str(error.exception))
@@ -677,7 +769,7 @@ class NativeArchiveControlsTests(unittest.TestCase):
         }
         for case, entries in cases.items():
             with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 with self.assertRaises(native.NativePrerequisiteError) as error:
                     self.extract(root, entries)
                 self.assertNotIn("PRIVATE", str(error.exception))
@@ -688,9 +780,9 @@ class NativeArchiveControlsTests(unittest.TestCase):
         for constant, limit in (("MAX_MEMBERS", 2), ("MAX_EXTRACTED_BYTES", 5), ("MAX_FILE_BYTES", 3)):
             with self.subTest(constant=constant), tempfile.TemporaryDirectory() as temporary, patch.object(native, constant, limit):
                 with self.assertRaises(native.NativePrerequisiteError):
-                    self.extract(Path(temporary), entries)
+                    self.extract(Path(temporary).resolve(strict=True), entries)
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             archive = root / "synthetic.tar.gz"
             archive.write_bytes(b"PRIVATE invalid compressed stream")
             with self.assertRaises(native.NativePrerequisiteError) as error:
@@ -700,7 +792,7 @@ class NativeArchiveControlsTests(unittest.TestCase):
     def test_metadata_extension_is_bounded_before_tar_parser_reads_payload(self):
         for kind in native.METADATA_TYPES:
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 info = tarfile.TarInfo("synthetic-extension")
                 info.type, info.size = kind, 65537
                 archive = root / "synthetic.tar.gz"
@@ -726,7 +818,7 @@ class NativeArchiveControlsTests(unittest.TestCase):
                  "pax_schily": synthetic_pax_archive({"SCHILY.filetype": "sparse"})}
         for case, body in cases.items():
             with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 archive = root / "synthetic.tar.gz"
                 archive.write_bytes(body)
                 with patch.object(tarfile.TarInfo, "_proc_sparse", side_effect=AssertionError("GNU sparse parser entered")) as gnu, \
@@ -742,7 +834,7 @@ class NativeArchiveControlsTests(unittest.TestCase):
     def test_effective_pax_size_is_bounded_after_override_before_file_read(self):
         for size in (-1, native.MAX_FILE_BYTES + 1):
             with self.subTest(size=size), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 archive = root / "synthetic.tar.gz"
                 archive.write_bytes(synthetic_pax_archive({"size": str(size)}))
                 with self.assertRaises(native.NativePrerequisiteError) as error:
@@ -764,7 +856,7 @@ class NativeArchiveControlsTests(unittest.TestCase):
         for constant, limit, body, code in cases:
             with self.subTest(constant=constant, body_kind="pax" if limit == 1 else "gnu"), tempfile.TemporaryDirectory() as temporary, \
                     patch.object(native, constant, limit):
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 archive = root / "synthetic.tar.gz"
                 archive.write_bytes(body)
                 with self.assertRaises(native.NativePrerequisiteError) as error:
@@ -788,7 +880,7 @@ class NativeArchiveControlsTests(unittest.TestCase):
         for kind, members in bodies.items():
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary, \
                     patch.object(native, "MAX_MEMBERS", 2), patch.object(native, "MAX_RAW_HEADERS", 3):
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 archive = root / "synthetic.tar.gz"
                 archive.write_bytes(gzip.compress(synthetic_raw_tar_member(directory) + members + b"\0" * 1024))
                 result = native.extract_archive(archive, root / "staging")
@@ -909,14 +1001,14 @@ class NativeArchiveControlsTests(unittest.TestCase):
         for constant, limit, code in (("MAX_TAR_STREAM_BYTES", 1024, "native_archive_stream_byte_bound_exceeded"),
                                        ("MAX_ARCHIVE_BYTES", 16, "native_archive_compressed_byte_bound_exceeded")):
             with self.subTest(constant=constant), tempfile.TemporaryDirectory() as temporary, patch.object(native, constant, limit):
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 archive = root / "synthetic.tar.gz"
                 archive.write_bytes(body)
                 with self.assertRaises(native.NativePrerequisiteError) as error:
                     native.extract_archive(archive, root / "staging")
                 self.assertEqual(code, error.exception.code)
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             archive = root / "synthetic.tar.gz"
             archive.write_bytes(body)
             with patch.object(native.time, "monotonic", side_effect=[0, 301]), self.assertRaises(native.NativePrerequisiteError) as error:
@@ -935,21 +1027,21 @@ class NativeArchiveControlsTests(unittest.TestCase):
         for ordered in (entries, list(reversed(entries))):
             with self.subTest(first=ordered[0][0]), tempfile.TemporaryDirectory() as temporary:
                 with self.assertRaises(native.NativePrerequisiteError) as error:
-                    self.extract(Path(temporary), ordered)
+                    self.extract(Path(temporary).resolve(strict=True), ordered)
                 self.assertEqual("native_archive_case_collision", error.exception.code)
         with tempfile.TemporaryDirectory() as temporary, patch.object(native, "MAX_MEMBERS", 2):
             with self.assertRaises(native.NativePrerequisiteError) as error:
-                self.extract(Path(temporary), entries[:1])
+                self.extract(Path(temporary).resolve(strict=True), entries[:1])
             self.assertEqual("native_archive_namespace_bound_exceeded", error.exception.code)
         with tempfile.TemporaryDirectory() as temporary, patch.object(native, "MAX_PATH_COMPONENTS", 2):
             with self.assertRaises(native.NativePrerequisiteError) as error:
-                self.extract(Path(temporary), entries[:1])
+                self.extract(Path(temporary).resolve(strict=True), entries[:1])
             self.assertEqual("native_archive_path_unsafe", error.exception.code)
 
     def test_size_published_sha1_and_enrolled_sha256_are_independent_checks(self):
         body = b"synthetic archive integrity control"
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "synthetic.tar.gz"
+            path = Path(temporary).resolve(strict=True) / "synthetic.tar.gz"
             path.write_bytes(body)
             for alteration, code in (("size", "native_archive_size_mismatch"), ("sha1", "native_archive_published_sha1_mismatch"),
                                      ("sha256", "native_archive_enrolled_sha256_mismatch"), ("valid", None)):
@@ -979,7 +1071,7 @@ class NativeProvisioningMockTests(unittest.TestCase):
 
     def test_actual_cli_duplicate_invocation_preserves_existing_public_receipt(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             output = root / "build/ci-evidence/native.json"
             with patch.object(native, "REPO_ROOT", root), patch.object(sys, "argv", self.publication_argv(root)), \
                     patch.object(native, "provision", return_value=self.synthetic_publication_result()), redirect_stdout(io.StringIO()):
@@ -994,47 +1086,88 @@ class NativeProvisioningMockTests(unittest.TestCase):
             launcher.assert_not_called()
             observed.assert_not_called()
 
-    def test_actual_cli_destination_collision_and_fixed_temp_aliases_never_clobber(self):
-        for collision in ("fixed_file", "fixed_symlink", "destination_file", "destination_symlink"):
-            with self.subTest(collision=collision), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
-                output = root / "build/ci-evidence/native.json"
-                output.parent.mkdir(parents=True)
-                sentinel = root / "private-sentinel"
-                sentinel.write_bytes(b"PRIVATE retained collision bytes")
-                old_temp = output.with_name(output.name + ".tmp")
-                if collision == "fixed_file":
-                    old_temp.write_bytes(sentinel.read_bytes())
-                elif collision == "fixed_symlink":
-                    old_temp.symlink_to(sentinel)
+    def publication_collision(self, collision):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            output = root / "build/ci-evidence/native.json"
+            output.parent.mkdir(parents=True)
+            sentinel = root / "private-sentinel"
+            sentinel.write_bytes(b"PRIVATE retained collision bytes")
+            old_temp = output.with_name(output.name + ".tmp")
+            if collision == "fixed_file":
+                old_temp.write_bytes(sentinel.read_bytes())
+            elif collision == "fixed_symlink":
+                fixture_symlink(self, old_temp, sentinel)
 
-                def provision(*_):
-                    # Simulate a destination appearing after provision preflight
-                    # but before CLI finalization. No transport/probe is run.
-                    if collision == "destination_file":
-                        output.write_bytes(sentinel.read_bytes())
-                    elif collision == "destination_symlink":
-                        output.symlink_to(sentinel)
-                    return self.synthetic_publication_result()
+            def provision(*_):
+                # Simulate a destination appearing after provision preflight
+                # but before CLI finalization. No transport/probe is run.
+                if collision == "destination_file":
+                    output.write_bytes(sentinel.read_bytes())
+                elif collision == "destination_symlink":
+                    fixture_symlink(self, output, sentinel)
+                return self.synthetic_publication_result()
 
-                with patch.object(native, "REPO_ROOT", root), patch.object(sys, "argv", self.publication_argv(root)), \
-                        patch.object(native, "provision", side_effect=provision), redirect_stdout(io.StringIO()) as stream:
-                    status = native.main()
-                self.assertEqual(b"PRIVATE retained collision bytes", sentinel.read_bytes())
-                if collision.startswith("fixed"):
-                    self.assertEqual(0, status)
-                    self.assertEqual(b"PRIVATE retained collision bytes", old_temp.read_bytes())
-                    self.assertEqual(self.synthetic_publication_result(), json.loads(output.read_bytes()))
-                else:
-                    self.assertEqual(1, status)
-                    self.assertEqual(b"PRIVATE retained collision bytes", output.read_bytes())
-                self.assertFalse(list(output.parent.glob(".native.json.*.pending")))
-                self.assertNotIn("PRIVATE", stream.getvalue())
+            with patch.object(native, "REPO_ROOT", root), patch.object(sys, "argv", self.publication_argv(root)), \
+                    patch.object(native, "provision", side_effect=provision), redirect_stdout(io.StringIO()) as stream:
+                status = native.main()
+            self.assertEqual(b"PRIVATE retained collision bytes", sentinel.read_bytes())
+            if collision.startswith("fixed"):
+                self.assertEqual(0, status)
+                self.assertEqual(b"PRIVATE retained collision bytes", old_temp.read_bytes())
+                self.assertEqual(self.synthetic_publication_result(), json.loads(output.read_bytes()))
+            else:
+                self.assertEqual(1, status)
+                self.assertEqual(b"PRIVATE retained collision bytes", output.read_bytes())
+            self.assertFalse(list(output.parent.glob(".native.json.*.pending")))
+            self.assertNotIn("PRIVATE", stream.getvalue())
+
+    def test_actual_cli_destination_collision_and_fixed_temp_files_never_clobber(self):
+        for collision in ("fixed_file", "destination_file"):
+            with self.subTest(collision=collision):
+                self.publication_collision(collision)
+
+    def test_actual_cli_fixed_temp_symlink_is_untouched(self):
+        self.publication_collision("fixed_symlink")
+
+    def test_actual_cli_racing_destination_symlink_never_clobbers_target(self):
+        self.publication_collision("destination_symlink")
+
+    def test_synthetic_racing_final_symlink_decision_denies_publication_without_host_link_privileges(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            output = root / "build/ci-evidence/native.json"
+            sentinel = root / "private-sentinel"
+            sentinel.write_bytes(b"PRIVATE retained synthetic alias target")
+            raced = [False]
+            real_is_symlink = Path.is_symlink
+            real_publish = native.publish_json_no_clobber
+            value = self.synthetic_publication_result()
+            def publish(path, result):
+                # The unmodified main/build_path guard has already accepted
+                # this canonical path. Model the alias appearing ONLY at the
+                # final no-clobber publication boundary, not before that guard.
+                self.assertEqual(output, path)
+                raced[0] = True
+                return real_publish(path, result)
+            def is_symlink(path):
+                return (raced[0] and path == output) or real_is_symlink(path)
+            with patch.object(native, "REPO_ROOT", root), patch.object(sys, "argv", self.publication_argv(root)), \
+                    patch.object(native, "provision", return_value=value), \
+                    patch.object(native, "publish_json_no_clobber", side_effect=publish) as publication, \
+                    patch.object(Path, "is_symlink", autospec=True, side_effect=is_symlink), redirect_stdout(io.StringIO()) as stream:
+                self.assertEqual(1, native.main())
+            publication.assert_called_once_with(output, value)
+            self.assertTrue(raced[0])
+            self.assertEqual("native_provisioning_output_not_fresh\n", stream.getvalue())
+            self.assertEqual(b"PRIVATE retained synthetic alias target", sentinel.read_bytes())
+            self.assertFalse(output.exists())
+            self.assertFalse(list(output.parent.glob(".native.json.*.pending")))
 
     def test_actual_cli_exclusive_temp_failure_and_final_link_collision_deny_publication(self):
         for phase in ("temporary", "link"):
             with self.subTest(phase=phase), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 output = root / "build/ci-evidence/native.json"
                 output.parent.mkdir(parents=True)
                 sentinel = output.with_name(output.name + ".tmp")
@@ -1133,7 +1266,7 @@ class NativeProvisioningMockTests(unittest.TestCase):
 
     def test_only_mocked_acquisition_and_version_probe_enroll_no_target_or_rule_pass(self):
         with tempfile.TemporaryDirectory() as temporary:
-            result, calls, argument = self.run_provisioning(Path(temporary))
+            result, calls, argument = self.run_provisioning(Path(temporary).resolve(strict=True))
             self.assertEqual("passed", result["state"])
             self.assertEqual(2, len(calls))
             self.assertTrue(argument.native_selection.is_file())
@@ -1148,7 +1281,7 @@ class NativeProvisioningMockTests(unittest.TestCase):
                                          ("timeout", -15, "native_archive_transport_timeout"),
                                          ("completed", 22, "native_archive_transport_failed")):
             with self.subTest(state=state), tempfile.TemporaryDirectory() as temporary:
-                result, calls, argument = self.run_provisioning(Path(temporary), transport_state=state, transport_exit=exit_code)
+                result, calls, argument = self.run_provisioning(Path(temporary).resolve(strict=True), transport_state=state, transport_exit=exit_code)
                 self.assertEqual("failed", result["state"])
                 self.assertEqual([reason], result["errors"])
                 self.assertEqual(1, len(calls))
@@ -1163,7 +1296,7 @@ class NativeProvisioningMockTests(unittest.TestCase):
                  ("completed", 0, "kotlinc-native 2.4.21", True, "native_selected_inputs_changed_during_probe"))
         for state, exit_code, text, changed, reason in cases:
             with self.subTest(reason=reason), tempfile.TemporaryDirectory() as temporary:
-                result, calls, argument = self.run_provisioning(Path(temporary), version_state=state, version_exit=exit_code,
+                result, calls, argument = self.run_provisioning(Path(temporary).resolve(strict=True), version_state=state, version_exit=exit_code,
                                                               version_text=text, input_change=changed)
                 self.assertEqual("failed", result["state"])
                 self.assertEqual([reason], result["errors"])
@@ -1172,7 +1305,7 @@ class NativeProvisioningMockTests(unittest.TestCase):
 
     def test_nonfresh_output_stops_before_any_transport_or_version_probe(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             argument, _, _, _ = setup_attempt(root)
             args = argparse.Namespace(output=argument.native_provisioning, selection=argument.native_selection,
                                       environment=argument.environment, targets=list(native.TARGETS))
@@ -1192,7 +1325,7 @@ class NativeExplicitConsumerTests(unittest.TestCase):
     def test_platform_and_provider_use_the_same_home_and_cannot_inherit_ambient_discovery(self):
         for kind in ("platform", "provider"):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 argument, java_home, data_dir, _ = setup_attempt(root)
                 fixture = root / "fixtures/kmp"
                 fixture.mkdir(parents=True)

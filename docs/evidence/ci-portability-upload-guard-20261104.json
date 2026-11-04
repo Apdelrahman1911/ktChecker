@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "kind": "local_synthetic_ci_controls_not_hosted_qualification",
+  "observed_at": "2026-11-04T17:33:02.690797+00:00",
+  "base_commit": "d3272b4b52bd61c83f97c9a9dfbd2710803ad6f7",
+  "dirty_source_tuple": true,
+  "source_changes": [
+    {
+      "path": ".github/workflows/implementation.yml",
+      "bytes": 13659,
+      "sha256": "cee82ce15d346ec921a43d6a4259ac77e5bc5511cdc247dfb02fc9b13d88a9f4"
+    },
+    {
+      "path": "scripts/ci/test_ios_inventory_ci.py",
+      "bytes": 63707,
+      "sha256": "3b9f23e2a3e488bda499c4e348b096a5068040233e150ce2ea68c39434ec8852"
+    },
+    {
+      "path": "scripts/ci/test_semantic_ci.py",
+      "bytes": 91896,
+      "sha256": "2195b7ad39d8391c25156f3f44baf08a1c4ccc9c6ca54173142509f70a1a4140"
+    },
+    {
+      "path": "scripts/ci/test_workflow_ci.py",
+      "bytes": 20853,
+      "sha256": "4a2946299b3f93652c6097872ad1cb9d3d950db64389bfdb996ab41bd6bd4d0b"
+    }
+  ],
+  "os": "Linux",
+  "python_major_minor": "3.12",
+  "independent_source_review": {
+    "portability": "source and retained author evidence clear; original v1 fixture failure preserved",
+    "archive_upload_guard": "source clear; retained author normal/optimized controls inspected"
+  },
+  "root_executions": [
+    {
+      "mode": "normal",
+      "state": "completed",
+      "return_code": 0,
+      "test_methods": 149,
+      "passed_methods": 148,
+      "skipped_methods": 1,
+      "failures": 0,
+      "errors": 0,
+      "elapsed_seconds": 1.603,
+      "log_sha256": "sha256:a8e07a4ff51697db6a2389572aa6c13f5e3a40032e75066671cf6c98ecfc3cad"
+    },
+    {
+      "mode": "optimized",
+      "state": "completed",
+      "return_code": 0,
+      "test_methods": 149,
+      "passed_methods": 148,
+      "skipped_methods": 1,
+      "failures": 0,
+      "errors": 0,
+      "elapsed_seconds": 1.805,
+      "log_sha256": "sha256:f95106d613e8cce790e654c79ab5abe449b7d999400325157cb179e11d27a678"
+    }
+  ],
+  "scope": [
+    "Canonical host-native temporary paths and scoped synthetic POSIX facades; no production platform-availability changes.",
+    "V1 newly authored symlink control failed at an earlier guard; v2 targets the intended final publication boundary without weakening its exact rejection.",
+    "Archive uploads default off; explicit owner opt-in still requires strict license-review success.",
+    "Original build, test, inventory and always-retained diagnostics remain enabled."
+  ],
+  "limitations": [
+    "Linux synthetic controls are not Windows/macOS, Xcode, iOS, hosted expression or actual archive execution evidence.",
+    "Original hosted Python-harness failure causes remain unknown.",
+    "Strict distribution report inspects installDist, not ZIP/TAR contents.",
+    "Owner code license and complete dependency/NOTICE/shaded review remain unresolved.",
+    "No archive publication or release qualification authorized."
+  ],
+  "retained_local_originals": {
+    "invocation_sha256": "4e5714ed820338c31805ade2daaae4084f5ed4a9334e32e2c1ac1b39821aea04",
+    "outcome_sha256": "1f0d743327610b2fc7c4706d2ce7d0116ba4bc0cad61661d7a6cc2d000d36120",
+    "source_pins_unchanged": true,
+    "raw_logs_published": false
+  },
+  "qualified": false
+}

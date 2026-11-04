@@ -40,6 +40,16 @@ TEXT = {"xcode_version": "Xcode 26.4.1\nBuild version 17E202\n",
 MISSING = object()
 
 
+def fixture_symlink(test_case, link, target, *, target_is_directory=False):
+    """Real owned fixture IO only; one known Windows privilege gap is a skip."""
+    try:
+        link.symlink_to(target, target_is_directory=target_is_directory)
+    except OSError as error:
+        if os.name == "nt" and getattr(error, "winerror", None) == 1314:
+            test_case.skipTest("Actual Windows symlink fixture unavailable: ERROR_PRIVILEGE_NOT_HELD; synthetic link rejection still runs")
+        raise
+
+
 def runtime(identifier=RUNTIME, version="26.4", available=True, **extra):
     return {"identifier": identifier, "version": version, "isAvailable": available, **extra}
 
@@ -567,8 +577,10 @@ class BoundedProbeTests(unittest.TestCase):
         reads = []
         buffers = {101: bytearray(stdout), 102: bytearray(stderr)}
         blocked = [False]
+        host_os_name = os.name
 
         def read(fd, size):
+            self.assertEqual(host_os_name, os.name)
             reads.append((fd, size))
             if stream_error:
                 raise OSError(PRIVATE)
@@ -622,16 +634,22 @@ class BoundedProbeTests(unittest.TestCase):
                 clock[0] = 31.0
             return clock[0]
 
+        # Fake POSIX process/pipe decisions on every host, not Apple execution.
+        # The imported JSON function uses environment.os, not inventory.os.
+        # Replace those module references; never mutate the real os.name or
+        # depend on Windows exposing os.killpg for a no-group-signal control.
+        facade = SimpleNamespace(name="posix", set_blocking=mock.Mock(),
+                                 read=mock.Mock(side_effect=read), killpg=mock.Mock())
         with ExitStack() as stack:
+            stack.enter_context(mock.patch.object(inventory, "os", facade))
+            stack.enter_context(mock.patch.object(environment, "os", facade))
             popen = stack.enter_context(mock.patch.object(inventory.subprocess, "Popen", side_effect=start_error,
                                                         return_value=process))
             stack.enter_context(mock.patch.object(inventory.selectors, "DefaultSelector", Selector))
-            stack.enter_context(mock.patch.object(inventory.os, "set_blocking"))
-            stack.enter_context(mock.patch.object(inventory.os, "read", side_effect=read))
             stack.enter_context(mock.patch.object(inventory.time, "monotonic", side_effect=monotonic))
-            group_signal = stack.enter_context(mock.patch.object(inventory.os, "killpg"))
             metadata, value = inventory.probe_json(list(inventory.JSON_PROBES[kind])) if json_probe else inventory.probe_text(kind)
-        return metadata, value, process, popen, reads, group_signal
+        self.assertEqual(host_os_name, os.name)
+        return metadata, value, process, popen, reads, facade.killpg
 
     def test_allowlisted_text_probes_use_argv_no_shell_or_stdin(self):
         for kind, argv in inventory.TEXT_PROBES.items():
@@ -649,11 +667,31 @@ class BoundedProbeTests(unittest.TestCase):
         self.assertEqual(raised.exception.code, "ios_inventory_probe_not_allowlisted")
 
     def test_non_posix_probe_does_not_launch(self):
-        with mock.patch.object(inventory.os, "name", "nt"), mock.patch.object(inventory.subprocess, "Popen") as popen:
-            metadata, value = inventory.probe_text("iphoneos_sdk")
-        popen.assert_not_called()
-        self.assertEqual(metadata["reason"], "pipe_probe_unavailable")
-        self.assertIsNone(value)
+        # Synthetic non-POSIX branch coverage, independent of the actual host.
+        facade = SimpleNamespace(name="nt", read=mock.Mock(), set_blocking=mock.Mock(), killpg=mock.Mock())
+        for json_probe in (False, True):
+            with self.subTest(json_probe=json_probe), mock.patch.object(inventory, "os", facade), \
+                    mock.patch.object(environment, "os", facade), mock.patch.object(inventory.subprocess, "Popen") as popen:
+                metadata, value = inventory.probe_json(list(inventory.JSON_PROBES["runtimes"])) if json_probe else inventory.probe_text("iphoneos_sdk")
+            popen.assert_not_called()
+            self.assertEqual(metadata["reason"], "pipe_probe_unavailable")
+            self.assertEqual(metadata["cleanup_state"], "not_started")
+            self.assertIsNone(value)
+        facade.read.assert_not_called()
+        facade.set_blocking.assert_not_called()
+        facade.killpg.assert_not_called()
+
+    @unittest.skipUnless(os.name != "posix", "Actual non-POSIX no-launch control requires a native non-POSIX host")
+    def test_actual_non_posix_host_refuses_apple_text_and_json_probes(self):
+        for json_probe in (False, True):
+            with self.subTest(json_probe=json_probe), mock.patch.object(inventory.subprocess, "Popen") as popen:
+                metadata, value = inventory.probe_json(list(inventory.JSON_PROBES["runtimes"])) if json_probe else inventory.probe_text("iphoneos_sdk")
+            popen.assert_not_called()
+            self.assertEqual(metadata["reason"], "pipe_probe_unavailable")
+            self.assertEqual(metadata["cleanup_state"], "not_started")
+            self.assertEqual(metadata["stdout_bytes_observed"], 0)
+            self.assertEqual(metadata["stderr_bytes_observed"], 0)
+            self.assertIsNone(value)
 
     def test_start_failure_is_fixed_and_not_raw(self):
         metadata, value, _, _, _, _ = self.pipe(start_error=OSError(PRIVATE))
@@ -804,35 +842,57 @@ class PublicationTests(unittest.TestCase):
 
     def test_output_path_is_only_a_fresh_bounded_ci_evidence_json_name(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             for name in ("ios-inventory.json", "x.json", "X_-19.json", "x" * 80 + ".json"):
                 path = inventory.output_path(Path("build/ci-evidence") / name, root)
                 self.assertEqual(path, root / "build/ci-evidence" / name)
                 self.assertEqual(inventory.output_path(path, root), path)
 
+    def test_relative_output_uses_only_the_canonical_trusted_outer_fixture_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            # A synthetic trusted outer spelling, not descendant symlink IO.
+            outer = SimpleNamespace(resolve=mock.Mock(return_value=root))
+            path = inventory.output_path(Path("build/ci-evidence/x.json"), outer)
+            outer.resolve.assert_called_once_with(strict=True)
+            self.assertEqual(root / "build/ci-evidence/x.json", path)
+
     def test_output_path_rejects_outside_nested_parent_and_unbounded_names(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             for name in ("outside.json", "build/ci-evidence/x.txt", "build/ci-evidence/.x.json", "build/ci-evidence/x/y.json",
                          "build/ci-evidence/../ci-evidence/x.json", "build/ci-evidence/" + "x" * 81 + ".json", "/tmp/outside.json"):
                 with self.assertRaises(inventory.InventoryError) as raised:
                     inventory.output_path(Path(name), root)
                 self.assertEqual(raised.exception.code, "ios_inventory_output_path_invalid")
 
-    def test_output_path_rejects_symlink_parents_and_broken_final_symlink(self):
+    def test_synthetic_output_path_symlink_decisions_are_rejected_without_host_link_privileges(self):
+        real_is_symlink = Path.is_symlink
+        for parent in ("build", "build/ci-evidence", "build/ci-evidence/ios-inventory.json"):
+            with self.subTest(parent=parent), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve(strict=True)
+                target = root / parent
+                def is_symlink(path):
+                    return path == target or real_is_symlink(path)
+                with mock.patch.object(Path, "is_symlink", autospec=True, side_effect=is_symlink), \
+                        self.assertRaises(inventory.InventoryError) as raised:
+                    inventory.output_path(Path("build/ci-evidence/ios-inventory.json"), root)
+                self.assertIn(raised.exception.code, {"ios_inventory_output_path_invalid", "ios_inventory_output_not_fresh"})
+
+    def test_actual_output_path_rejects_symlink_parents_and_broken_final_symlink(self):
         for parent in ("build", "build/ci-evidence", "build/ci-evidence/ios-inventory.json"):
             with tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
+                root = Path(temporary).resolve(strict=True)
                 target = root / parent
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.symlink_to(root / "missing", target_is_directory=parent != "build/ci-evidence/ios-inventory.json")
+                fixture_symlink(self, target, root / "missing", target_is_directory=parent != "build/ci-evidence/ios-inventory.json")
                 with self.assertRaises(inventory.InventoryError) as raised:
                     inventory.output_path(Path("build/ci-evidence/ios-inventory.json"), root)
                 self.assertIn(raised.exception.code, {"ios_inventory_output_path_invalid", "ios_inventory_output_not_fresh"})
 
     def test_existing_file_is_never_replaced_or_read_as_observed_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "build/ci-evidence/ios-inventory.json"
+            path = Path(temporary).resolve(strict=True) / "build/ci-evidence/ios-inventory.json"
             path.parent.mkdir(parents=True)
             path.write_bytes(PRIVATE.encode())
             with self.assertRaises(inventory.InventoryError) as raised:
@@ -853,7 +913,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_cli_complete_tuple_unavailable_publishes_and_returns_success_without_qualification(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             value = self.result()
             code, terminal, observer = self.main_case([], value, root)
             self.assertEqual(code, 0)
@@ -863,7 +923,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_cli_incomplete_inventory_publishes_then_returns_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             value = self.result(state="unavailable", completion="incomplete", tuple_state="unobserved")
             code, terminal, _ = self.main_case(["--output", "build/ci-evidence/diagnostic.json"], value, root)
             self.assertEqual(code, 1)
@@ -872,7 +932,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_cli_collision_does_not_observe_or_expose_the_existing_file(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary).resolve(strict=True)
             path = root / "build/ci-evidence/ios-inventory.json"
             path.parent.mkdir(parents=True)
             path.write_text(PRIVATE)
@@ -884,7 +944,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_receipt_byte_bound_rejects_before_creating_any_directory_or_file(self):
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "build/ci-evidence/x.json"
+            path = Path(temporary).resolve(strict=True) / "build/ci-evidence/x.json"
             with self.assertRaises(inventory.InventoryError) as raised:
                 inventory.publish(path, {"private": "x" * 65536})
             self.assertEqual(raised.exception.code, "ios_inventory_receipt_bound_exceeded")
@@ -892,7 +952,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_encoding_failures_are_fixed_and_do_not_publish(self):
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "build/ci-evidence/x.json"
+            path = Path(temporary).resolve(strict=True) / "build/ci-evidence/x.json"
             for value in ({"private": float("nan")}, {"private": object()}):
                 with self.assertRaises(inventory.InventoryError) as raised:
                     inventory.publish(path, value)
@@ -901,7 +961,7 @@ class PublicationTests(unittest.TestCase):
 
     def test_racing_link_collision_preserves_winner_and_removes_private_pending_file(self):
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "build/ci-evidence/x.json"
+            path = Path(temporary).resolve(strict=True) / "build/ci-evidence/x.json"
             original = os.link
             def collision(source, target):
                 path.write_bytes(PRIVATE.encode())
@@ -914,21 +974,44 @@ class PublicationTests(unittest.TestCase):
 
     def test_link_error_is_fixed_and_leaves_no_partial_or_pending_receipt(self):
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "build/ci-evidence/x.json"
+            path = Path(temporary).resolve(strict=True) / "build/ci-evidence/x.json"
             with mock.patch.object(inventory.os, "link", side_effect=OSError(PRIVATE)), self.assertRaises(inventory.InventoryError) as raised:
                 inventory.publish(path, self.result())
             self.assertEqual(str(raised.exception), "ios_inventory_publication_failed")
             self.assertFalse(path.exists())
             self.assertEqual(list(path.parent.iterdir()), [])
 
-    def test_successful_publication_is_exclusive_restrictive_and_has_no_pending_sibling(self):
+    def test_successful_publication_is_exclusive_and_has_no_pending_sibling(self):
         with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "build/ci-evidence/x.json"
+            path = Path(temporary).resolve(strict=True) / "build/ci-evidence/x.json"
             value = self.result()
             inventory.publish(path, value)
             self.assertEqual(json.loads(path.read_text()), value)
-            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             self.assertEqual(list(path.parent.iterdir()), [path])
+
+    @unittest.skipUnless(os.name == "posix", "POSIX mode bits only; native Windows ACL privacy is not asserted")
+    def test_actual_posix_publication_mode_is_restrictive(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary).resolve(strict=True) / "build/ci-evidence/x.json"
+            inventory.publish(path, self.result())
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
+    def test_symlink_fixture_skips_only_the_known_native_windows_privilege_gap(self):
+        privilege = OSError("synthetic symlink privilege gap")
+        privilege.winerror = 1314
+        with mock.patch.object(sys.modules[__name__], "os", SimpleNamespace(name="nt")):
+            link = SimpleNamespace(symlink_to=mock.Mock(side_effect=privilege))
+            with self.assertRaises(unittest.SkipTest) as raised:
+                fixture_symlink(self, link, "synthetic target")
+        self.assertIn("ERROR_PRIVILEGE_NOT_HELD", str(raised.exception))
+        for host, error in (("posix", privilege), ("nt", FileExistsError("synthetic collision")),
+                            ("nt", OSError("synthetic unrelated fixture error"))):
+            with self.subTest(host=host, error=type(error).__name__), \
+                    mock.patch.object(sys.modules[__name__], "os", SimpleNamespace(name=host)):
+                link = SimpleNamespace(symlink_to=mock.Mock(side_effect=error))
+                with self.assertRaises(type(error)) as raised:
+                    fixture_symlink(self, link, "synthetic target")
+                self.assertIs(error, raised.exception)
 
 
 if __name__ == "__main__":

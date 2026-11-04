@@ -159,6 +159,18 @@ jobs:
           --output build/ci-evidence/package-report.json
           --sbom build/ci-evidence/distribution.cdx.json
           --notice build/ci-evidence/NOTICE.dependency-report.txt
+      - name: Require reviewed licenses before owner-approved preview distribution upload
+        id: distribution_upload_license_review
+        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true'
+        # Owner opt-in never bypasses unresolved owner/dependency/shaded/NOTICE review.
+        # Distinct outputs preserve the unconditional preview inventory evidence.
+        run: >-
+          python scripts/ci/report_distribution.py
+          --dependencies build/ci-evidence/raw/distribution-dependencies.json
+          --output build/ci-evidence/distribution-upload-review.json
+          --sbom build/ci-evidence/distribution-upload-review.cdx.json
+          --notice build/ci-evidence/NOTICE.distribution-upload-review.txt
+          --require-license-review
       - name: Collect actual suites and artifact identities, including failures
         if: always()
         env:
@@ -200,6 +212,7 @@ jobs:
           path: |
             build/ci-evidence/*.json
             build/ci-evidence/NOTICE.dependency-report.txt
+            build/ci-evidence/NOTICE.distribution-upload-review.txt
           if-no-files-found: error
           retention-days: 14
       - name: Retain original controlled-fixture JUnit and kernel stress reports
@@ -215,7 +228,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Retain the actual tested unsigned preview distribution
-        if: success()
+        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true' && steps.distribution_upload_license_review.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: unsigned-preview-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -225,5 +238,8 @@ jobs:
             build/ci-evidence/package-report.json
             build/ci-evidence/distribution.cdx.json
             build/ci-evidence/NOTICE.dependency-report.txt
+            build/ci-evidence/distribution-upload-review.json
+            build/ci-evidence/distribution-upload-review.cdx.json
+            build/ci-evidence/NOTICE.distribution-upload-review.txt
           if-no-files-found: error
           retention-days: 14
