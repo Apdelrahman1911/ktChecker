@@ -36,6 +36,17 @@ compiler daemons.
 
 ## Executed implementation evidence
 
+### Latest bounded integration receipts
+
+- The newer [sanitized actual-host summary](evidence/actual-host-supervised-20261104.json)
+  records three application requests, three matching public responses and nine
+  projected model contexts. Six full original event payloads are reconstructable;
+  three full progress originals and the initial barrier's complete serialized
+  request bytes are missing from retained evidence. The selected model was
+  `gpt-6-astra`, without fallback. The final guarded action remained denied; this
+  independently audited installed-image synthetic-project delivery experiment
+  does not establish general-host, full-project or release qualification.
+
 - The lead's coordinated Gradle 9.6.1 / Java 21 run executed **all 58 independent
   Kotlin tests** successfully. The auditor independently read all six XML reports
   in `tests/audit/build/test-results/test/`: config nine at
