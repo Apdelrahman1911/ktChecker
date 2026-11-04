@@ -176,6 +176,8 @@ jobs:
     timeout-minutes: 90
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.4.1.app/Contents/Developer
+      KONAN_DATA_DIR: ${{ github.workspace }}/build/ci-evidence/raw/native-provisioning/data
+      KONAN_USE_INTERNAL_SERVER: '0'
     steps:
       - name: Check out candidate (no persisted credentials)
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -199,6 +201,8 @@ jobs:
       - name: Provision SDK needed to configure the full KMP project
         run: python scripts/ci/provision_android.py --output build/ci-evidence/sdk.json
       - name: Execute pinned wrapper version
+        # Independent FIR preflight must still observe Gradle after SDK failure.
+        if: ${{ !cancelled() }}
         run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
       - name: Verify selected Xcode version/build and record actual SDK/runtime inventory
         if: always()
@@ -207,19 +211,42 @@ jobs:
           --require-java-major 25
           --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
           --require-xcode 26.4.1 --require-xcode-build 17E202
+      - name: Enroll exact checksum-pinned Native 2.4.21 on this hosted Mac
+        # Availability only; no no-source bootstrap or target-pass claim.
+        # SDK/simulator failures must not suppress explicit Native diagnostics.
+        if: ${{ !cancelled() }}
+        timeout-minutes: 20
+        run: >-
+          python scripts/ci/provision_native.py
+          --targets iosArm64 iosSimulatorArm64
+          --environment build/ci-evidence/environment.json
+          --selection build/ci-evidence/raw/native-provisioning/selection.json
+          --output build/ci-evidence/native.json
       - name: Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals
-        run: python scripts/ci/run_platform_checks.py --profile ios --timeout 1200 --output build/ci-evidence/ios.json
+        run: >-
+          python scripts/ci/run_platform_checks.py --profile ios --timeout 1200
+          --environment build/ci-evidence/environment.json
+          --native-selection build/ci-evidence/raw/native-provisioning/selection.json
+          --native-provisioning build/ci-evidence/native.json
+          --output build/ci-evidence/ios.json
       - name: Exercise actual Native adapter against immutable common/iOS captures
-        run: python scripts/ci/run_provider_checks.py --profile ios --timeout 1200 --output build/ci-evidence/ios-provider.json
-      - name: Execute Native FIR library feasibility with the existing exact distribution
+        run: >-
+          python scripts/ci/run_provider_checks.py --profile ios --timeout 1200
+          --environment build/ci-evidence/environment.json
+          --native-selection build/ci-evidence/raw/native-provisioning/selection.json
+          --native-provisioning build/ci-evidence/native.json
+          --output build/ci-evidence/ios-provider.json
+      - name: Execute independent offline Native FIR library feasibility with explicit enrollment
         # This independent ABI/library gate needs neither Android nor simulator
-        # runtime availability. It never downloads a duplicate Native toolchain.
-        # Failed earlier target controls do not suppress its structured attempt.
+        # runtime availability. It never downloads a distribution/dependency.
+        # Failed provisioning/target controls do not suppress structured errors.
         if: ${{ !cancelled() }}
         run: >-
           python scripts/ci/run_semantic_checks.py
           --target iosSimulatorArm64 --timeout 1800
           --environment build/ci-evidence/environment.json
+          --native-selection build/ci-evidence/raw/native-provisioning/selection.json
+          --native-provisioning build/ci-evidence/native.json
           --output build/ci-evidence/ios-semantic.json
       - name: Collect exact simulator reports, linked frameworks and provider outcomes
         if: always()
@@ -234,6 +261,7 @@ jobs:
           --require-artifact "fixtures/kmp/build/bin/iosSimulatorArm64/debugFramework/*.framework"
           --command-result build/ci-evidence/sdk.json
           --command-result build/ci-evidence/gradle-version.json
+          --command-result build/ci-evidence/native.json
           --command-result build/ci-evidence/ios.json
           --command-result build/ci-evidence/ios-provider.json
           --command-result build/ci-evidence/ios-semantic.json

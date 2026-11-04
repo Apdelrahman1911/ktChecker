@@ -10,11 +10,13 @@ import re
 import xml.etree.ElementTree as ET
 
 if __package__:
+    from . import provision_native as native
     from .ci_common import REPO_ROOT, digest_bytes, gradle_result, source_identity, utc_now, write_json
     from .collect_evidence import artifact, junit_report
     from .provision_android import installed_packages
     from .record_environment import observe_xcode, probe, probe_simctl_inventory, validate_simctl_inventory
 else:
+    import provision_native as native
     from ci_common import REPO_ROOT, digest_bytes, gradle_result, source_identity, utc_now, write_json
     from collect_evidence import artifact, junit_report
     from provision_android import installed_packages
@@ -147,6 +149,22 @@ def execute(args: argparse.Namespace) -> dict:
               "qualification": "Small explicit target/diagnostic controls only; not all rule contexts or field precision",
               "provider_adapter_integration": "separate provider harness job step; not implied by direct Gradle tasks",
               "android_device_execution": "not performed", "actual_codex_host_observation": "not performed"}
+    home = None
+    if args.profile == "ios" and prerequisites["state"] == "passed":
+        try:
+            _, java_home, selected_xcode = native.observed_prerequisites(args.environment, REPO_ROOT, result["source"])
+            home, _, reference = native.consume_selection(args.native_selection, args.native_provisioning, "iosSimulatorArm64",
+                                                         REPO_ROOT, result["source"], java_home, selected_xcode)
+            # The same explicit enrollment must include the real device target.
+            if "iosArm64" not in reference["selected_targets"]:
+                native.fail("native_selection_target_mismatch")
+            prerequisites["native_selection"] = reference
+        except native.NativePrerequisiteError as error:
+            prerequisites["errors"].append(error.code)
+            prerequisites["state"] = "unavailable"
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            prerequisites["errors"].append("native_platform_selection_unclassified_failure")
+            prerequisites["state"] = "unavailable"
     if prerequisites["state"] != "passed":
         result.update(state="unavailable", errors=prerequisites["errors"])
         write_json(args.output, result)
@@ -154,6 +172,7 @@ def execute(args: argparse.Namespace) -> dict:
     build = fixture / "build"
     shared = ["-p", str(fixture), "--rerun-tasks", "--no-build-cache"]
     if args.profile == "ios":
+        shared.append(f"-Pkotlin.native.home={home}")
         shared.append(f"-PfixtureSimulatorDevice={prerequisites['simulator']['udid']}")
 
     def stage(name: str, tasks: list[str], *, negative: str | None = None,
@@ -231,6 +250,14 @@ def execute(args: argparse.Namespace) -> dict:
     result["fixture_source_after_execution"] = after
     if after["working_tree_digest"] != fixture_source["working_tree_digest"]:
         result["errors"].append("Fixture inputs changed during execution; results cannot bind one immutable identity")
+    if home is not None:
+        try:
+            native.consume_selection(args.native_selection, args.native_provisioning, "iosSimulatorArm64",
+                                     REPO_ROOT, result["source"], java_home, selected_xcode)
+        except native.NativePrerequisiteError as error:
+            result["errors"].append(error.code)
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            result["errors"].append("native_platform_selection_unclassified_failure")
     result["finished_at"] = utc_now()
     result["state"] = "passed" if not result["errors"] and result["stages"] else "failed"
     write_json(args.output, result)
@@ -242,6 +269,9 @@ def main() -> int:
     parser.add_argument("--profile", choices=("desktop", "android", "ios"), required=True)
     parser.add_argument("--fixture", type=Path, default=REPO_ROOT / "fixtures/kmp")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--environment", type=Path, default=REPO_ROOT / "build/ci-evidence/environment.json")
+    parser.add_argument("--native-selection", type=Path, default=REPO_ROOT / "build/ci-evidence/raw/native-provisioning/selection.json")
+    parser.add_argument("--native-provisioning", type=Path, default=REPO_ROOT / "build/ci-evidence/native.json")
     parser.add_argument("--timeout", type=int, default=1200)
     args = parser.parse_args()
     if not 1 <= args.timeout <= 2400:

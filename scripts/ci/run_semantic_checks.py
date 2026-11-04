@@ -16,9 +16,11 @@ import sys
 import zipfile
 
 if __package__:
+    from . import provision_native as native
     from .ci_common import REPO_ROOT, digest_bytes, digest_file, gradle_result, source_identity, utc_now, write_json
     from .run_library_checks import regular_input, root_relative, safe_command, strict_json
 else:
+    import provision_native as native
     from ci_common import REPO_ROOT, digest_bytes, digest_file, gradle_result, source_identity, utc_now, write_json
     from run_library_checks import regular_input, root_relative, safe_command, strict_json
 
@@ -297,39 +299,6 @@ def validate_summary(value: object, mode: str, target: str, commit: str, project
     return sorted(set(errors))
 
 
-def native_home(data_dir: Path, target: str) -> Path:
-    if not data_dir.is_absolute() or not data_dir.is_dir() or data_dir.is_symlink():
-        raise ValueError("Native data directory unavailable")
-    entries = list(data_dir.iterdir())
-    if len(entries) > 200:
-        raise ValueError("Native home discovery exceeds its bound")
-    candidates = [path for path in entries if path.name in {"kotlin-native-prebuilt-macos-aarch64-2.4.21", "kotlin-native-prebuilt-macos-arm64-2.4.21"}
-                  and path.is_dir() and not path.is_symlink()]
-    if len(candidates) != 1:
-        raise ValueError("select exactly one already provisioned Native macOS arm64 2.4.21 home")
-    home = candidates[0].resolve()
-    for relative in ("bin", "tools", "konan", "klib/common", f"klib/platform/{TARGETS[target]}"):
-        directory = home / relative
-        if not directory.is_dir() or any(parent.is_symlink() for parent in [directory, *directory.parents] if parent.is_relative_to(home)):
-            raise ValueError("selected Native target distribution incomplete")
-    compiler = selected_file(home, "konan/lib/kotlin-native-compiler-embeddable.jar")
-    if compiler.stat().st_size > 200 * 1024 * 1024:
-        raise ValueError("Native compiler JAR oversized")
-    with zipfile.ZipFile(compiler) as jar:
-        if len(jar.infolist()) > 100_000 or jar.namelist().count("META-INF/MANIFEST.MF") != 1:
-            raise ValueError("Native compiler manifest ambiguous")
-        info = jar.getinfo("META-INF/MANIFEST.MF")
-        if info.file_size > 65536:
-            raise ValueError("Native compiler manifest oversized")
-        text = jar.read(info).decode("utf-8")
-    if re.findall(r"^Implementation-Version: ([^\r\n]*)\r?$", text, re.MULTILINE) != ["2.4.21"]:
-        raise ValueError("selected Native compiler is not exact 2.4.21")
-    selected_file(home, "tools/env_blacklist")
-    if not os.access(selected_file(home, "bin/konanc"), os.X_OK):
-        raise ValueError("Native compiler launcher unavailable")
-    return home
-
-
 def dependency_inventory(home: Path, data_dir: Path, target: str, host_build: str) -> dict:
     path = selected_file(home, "konan/konan.properties")
     if path.stat().st_size > 1024 * 1024:
@@ -340,7 +309,9 @@ def dependency_inventory(home: Path, data_dir: Path, target: str, host_build: st
         if separator and not line.lstrip().startswith(("#", "!")):
             properties[key.strip()] = value.strip()
     result = {"konan_properties_digest": digest_file(path), "autodownload_disabled": True,
-              "external_dependency_closure_qualified": False, "dependencies": []}
+              "external_dependency_closure_qualified": False, "dependencies": [],
+              "configuration_scope": "raw_internal_configuration_not_effective_local_xcode_sdk",
+              "effective_apple_selection": "public_local_xcode", "cache_entries_required_for_library_gate": False}
     for kind, key in (("target_sysroot", f"targetSysRoot.{TARGETS[target]}"), ("llvm", "llvmHome.macos_arm64"), ("libffi", "libffiDir.macos_arm64")):
         value = properties.get(key, "")
         for _ in range(8):
@@ -391,30 +362,18 @@ def run(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
               "tuple_qualified": False, "custom_rules_qualified": False, "release_qualified": False,
               "raw_logs_uploaded": False, "limitations": LIMITATIONS}
     try:
-        environment = strict_json(regular_input(args.environment, root))
-        java = environment.get("java", {})
-        xcode = environment.get("xcode", {})
-        if platform.system() != "Darwin" or platform.machine() not in {"arm64", "aarch64"} \
-                or environment.get("source", {}).get("working_tree_digest") != source["working_tree_digest"] \
-                or environment.get("host", {}).get("os") != "Darwin" or environment.get("host", {}).get("arch") not in {"arm64", "aarch64"} \
-                or type(java.get("major")) is not int or java["major"] != 25 \
-                or xcode.get("state") != "observed" or xcode.get("version") != "26.4.1" or xcode.get("build") != "17E202" \
-                or environment.get("gradle", {}).get("state") != "pinned":
-            raise ValueError("actual Apple/JDK25/Xcode prerequisites unavailable")
-        java_home = Path(os.environ.get("JAVA_HOME", "")).resolve(strict=True)
-        java_path, java_release = selected_file(java_home, "bin/java"), selected_file(java_home, "release")
-        if Path(java.get("path", "")).resolve() != java_path or digest_file(java_path) != java.get("launcher_digest") \
-                or digest_file(java_release) != java.get("release_file_digest"):
-            raise ValueError("selected project JVM differs from observed environment")
-        data_dir = Path(os.environ.get("KONAN_DATA_DIR", str(Path.home() / ".konan")))
-        home = native_home(data_dir, args.target)
+        environment, java_home, selected_xcode = native.observed_prerequisites(args.environment, root, source)
+        java = environment["java"]
+        home, data_dir, reference = native.consume_selection(args.native_selection, args.native_provisioning, args.target,
+                                                            root, source, java_home, selected_xcode)
         result.update(native_distribution=home.name, compiler_version="2.4.21",
-                      selected_xcode={"version": "26.4.1", "build": "17E202", **{key: xcode[key] if isinstance(xcode.get(key), str)
-                          and re.fullmatch(r"[0-9]{1,3}(?:\.[0-9]{1,3}){0,2}", xcode[key]) else None
-                          for key in ("iphoneos_sdk", "iphonesimulator_sdk")}},
+                      selected_xcode=selected_xcode, native_provisioning=reference,
                       native_prerequisites=dependency_inventory(home, data_dir, args.target, "17E202"))
+    except native.NativePrerequisiteError as error:
+        result["errors"].append(error.code)
+        return result
     except (OSError, ValueError, KeyError, TypeError, AttributeError, RuntimeError, zipfile.BadZipFile):
-        result["errors"].append("native_semantic_prerequisites_unavailable")
+        result["errors"].append("native_semantic_prerequisite_unclassified_failure")
         return result
     private = args.output.parent / "raw" / "native-semantic-driver"
     try:
@@ -461,10 +420,14 @@ def run(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
         if not result["driver_summary_metadata_valid"] and result["driver_summary"] is not None:
             result["driver_summary"]["state"] = "invalid"
         if result["driver_summary"] is not None:
-            result["compiler_execution_count"] = len(result["driver_summary"]["executions"])
+            result["compiler_execution_count"] = sum(row["status"] in {"executed", "failed", "timeout", "cancelled"}
+                                                     for row in result["driver_summary"]["executions"])
             if summary.get("state") == "unavailable":
                 result["state"] = "unavailable"
         verify_selected_artifacts(summary, home, java_home, root)
+        native.consume_selection(args.native_selection, args.native_provisioning, args.target, root, source, java_home, selected_xcode)
+    except native.NativePrerequisiteError as error:
+        result["errors"].append(error.code)
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         result["errors"].append("native_semantic_driver_evidence_invalid_or_missing")
     if command.get("state") != "passed":
@@ -481,6 +444,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--environment", type=Path, default=REPO_ROOT / "build/ci-evidence/environment.json")
+    parser.add_argument("--native-selection", type=Path, default=REPO_ROOT / "build/ci-evidence/raw/native-provisioning/selection.json")
+    parser.add_argument("--native-provisioning", type=Path, default=REPO_ROOT / "build/ci-evidence/native.json")
     parser.add_argument("--target", choices=tuple(TARGETS), default="iosSimulatorArm64")
     parser.add_argument("--timeout", type=int, default=1800)
     args = parser.parse_args()

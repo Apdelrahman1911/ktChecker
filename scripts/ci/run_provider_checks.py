@@ -8,9 +8,11 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 
 if __package__:
+    from . import provision_native as native
     from .ci_common import REPO_ROOT, digest_bytes, digest_file, gradle_result, source_identity, utc_now, write_json
     from .run_platform_checks import preflight
 else:
+    import provision_native as native
     from ci_common import REPO_ROOT, digest_bytes, digest_file, gradle_result, source_identity, utc_now, write_json
     from run_platform_checks import preflight
 
@@ -298,6 +300,21 @@ def execute(args: argparse.Namespace) -> dict:
               "prerequisites": prerequisites,
               "qualification": "Small immutable fixture adapter controls; honest incomplete coverage is not rule qualification",
               "actual_codex_host_observation": "not performed"}
+    home = None
+    if args.profile == "ios" and prerequisites["state"] == "passed":
+        try:
+            _, java_home, selected_xcode = native.observed_prerequisites(args.environment, REPO_ROOT, result["source"])
+            home, _, reference = native.consume_selection(args.native_selection, args.native_provisioning, "iosSimulatorArm64",
+                                                         REPO_ROOT, result["source"], java_home, selected_xcode)
+            if "iosArm64" not in reference["selected_targets"]:
+                native.fail("native_selection_target_mismatch")
+            prerequisites["native_selection"] = reference
+        except native.NativePrerequisiteError as error:
+            prerequisites["errors"].append(error.code)
+            prerequisites["state"] = "unavailable"
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            prerequisites["errors"].append("native_provider_selection_unclassified_failure")
+            prerequisites["state"] = "unavailable"
     write_json(args.output, result)
     if prerequisites["state"] != "passed":
         result.update(state="unavailable", errors=prerequisites["errors"], finished_at=utc_now())
@@ -326,6 +343,8 @@ def execute(args: argparse.Namespace) -> dict:
                 # check these exact paths and fail closed if AGP differs.
                 arguments.extend([f"-PplatformLintAnalysisTask={LINT_TASK_PATHS[0]}",
                                   f"-PplatformLintReportTask={LINT_TASK_PATHS[1]}"])
+            else:
+                arguments.append(f"-PplatformNativeHome={home}")
             stage, _ = gradle_result(arguments, log_base=args.output.parent / "raw" / name,
                                      timeout=args.timeout, require_tasks=(task,))
             stage.update(name=name, target=target, case=case)
@@ -348,6 +367,14 @@ def execute(args: argparse.Namespace) -> dict:
             result["errors"].extend(f"{name}: {error}" for error in stage["errors"])
             write_json(args.output, result)
             print(f"Platform provider {target}/{case}: {stage['state']}", flush=True)
+    if home is not None:
+        try:
+            native.consume_selection(args.native_selection, args.native_provisioning, "iosSimulatorArm64",
+                                     REPO_ROOT, result["source"], java_home, selected_xcode)
+        except native.NativePrerequisiteError as error:
+            result["errors"].append(error.code)
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            result["errors"].append("native_provider_selection_unclassified_failure")
     result["finished_at"] = utc_now()
     result["state"] = "passed" if not result["errors"] else "failed"
     write_json(args.output, result)
@@ -358,6 +385,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", choices=("android", "ios"), required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--environment", type=Path, default=REPO_ROOT / "build/ci-evidence/environment.json")
+    parser.add_argument("--native-selection", type=Path, default=REPO_ROOT / "build/ci-evidence/raw/native-provisioning/selection.json")
+    parser.add_argument("--native-provisioning", type=Path, default=REPO_ROOT / "build/ci-evidence/native.json")
     parser.add_argument("--timeout", type=int, default=1200)
     args = parser.parse_args()
     if not 1 <= args.timeout <= 2400:
