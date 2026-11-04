@@ -1,0 +1,47 @@
+name: Planning evidence and registry
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plan-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  planning-integrity:
+    name: Planning integrity (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Check out reviewed revision
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up validation runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Test validation failure paths
+        run: python -m unittest discover -s scripts -p "test_*.py" -v
+      - name: Validate rule metadata and generated indexes
+        run: python scripts/validate_plan.py
+      - name: Install hash-locked planning schema dependencies
+        run: python -m pip install --disable-pip-version-check --require-hashes -r scripts/requirements-plan.txt
+      - name: Validate synthetic application contracts and rejected states
+        run: python scripts/validate_contract_examples.py docs/protocol.md
+      - name: Check committed patch whitespace
+        env:
+          KT_PR_BASE: ${{ github.event.pull_request.base.sha }}
+          KT_PUSH_BASE: ${{ github.event.before }}
+        run: python scripts/check_whitespace.py

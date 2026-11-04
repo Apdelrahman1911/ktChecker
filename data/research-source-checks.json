@@ -1,0 +1,47 @@
+[
+  {
+    "id": "mcp-versioning",
+    "url": "https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning.md",
+    "resolved_url": "https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning.md",
+    "status": 200,
+    "accessed_utc": "2026-11-04T05:53:46.833417+00:00",
+    "bytes": 8763,
+    "sha256": "41fff387e09db6ce368347f96cd0b965fd43ceaa1d5f148c69ce52b5989d83b7"
+  },
+  {
+    "id": "mcp-kotlin-types",
+    "url": "https://raw.githubusercontent.com/modelcontextprotocol/kotlin-sdk/0.16.0/kotlin-sdk-core/src/commonMain/kotlin/io/modelcontextprotocol/kotlin/sdk/types/common.kt",
+    "resolved_url": "https://raw.githubusercontent.com/modelcontextprotocol/kotlin-sdk/0.16.0/kotlin-sdk-core/src/commonMain/kotlin/io/modelcontextprotocol/kotlin/sdk/types/common.kt",
+    "status": 200,
+    "accessed_utc": "2026-11-04T05:53:46.864401+00:00",
+    "bytes": 6616,
+    "sha256": "083cb63ebcb5c34fe4d60cb400095305e3ce252a4a53d567c94073503edb2c12"
+  },
+  {
+    "id": "mcp-typescript-readme",
+    "url": "https://raw.githubusercontent.com/modelcontextprotocol/typescript-sdk/v2.4.0/README.md",
+    "resolved_url": "https://raw.githubusercontent.com/modelcontextprotocol/typescript-sdk/v2.4.0/README.md",
+    "status": 200,
+    "accessed_utc": "2026-11-04T05:53:46.864149+00:00",
+    "bytes": 8317,
+    "sha256": "d776beb7f1d0194da22e7d82cc84d869bd4ae805ba5d8283b69f57dec5b64dd6"
+  },
+  {
+    "id": "github-actions-security",
+    "url": "https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions",
+    "resolved_url": "https://docs.github.com/en/actions/reference/security/secure-use",
+    "status": 200,
+    "accessed_utc": "2026-11-04T05:53:47.921453+00:00",
+    "bytes": 466560,
+    "sha256": "ded5f3a3aa0ee83d2ac4bbf0855f89a19e0ebd3ca9f5a136f62a5e4cd4e1b442"
+  },
+  {
+    "id": "github-hosted-runners",
+    "url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+    "resolved_url": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+    "status": 200,
+    "accessed_utc": "2026-11-04T05:53:48.499626+00:00",
+    "bytes": 436399,
+    "sha256": "1d99995d4a7b2b26190fd38919b1517835fb786d10d8cbf3cb694db78a223168"
+  }
+]

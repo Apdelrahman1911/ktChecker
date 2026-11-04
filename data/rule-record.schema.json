@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Apdelrahman1911/ktChecker/blob/main/data/rule-record.schema.json",
+  "title": "ktChecker planned rule record",
+  "type": "object",
+  "required": [
+    "applicability",
+    "category",
+    "certainty",
+    "cost",
+    "default_activation",
+    "depth",
+    "disposition_reason",
+    "id",
+    "implementation",
+    "kind",
+    "limitations",
+    "platforms",
+    "problem",
+    "provider",
+    "rationale",
+    "severity",
+    "sources",
+    "status",
+    "validation",
+    "version_scope"
+  ],
+  "properties": {
+    "applicability": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1
+    },
+    "certainty": {
+      "type": "string",
+      "enum": [
+        "high",
+        "intent_dependent",
+        "low",
+        "medium"
+      ]
+    },
+    "cost": {
+      "type": "string",
+      "enum": [
+        "fast",
+        "medium",
+        "slow"
+      ]
+    },
+    "default_activation": {
+      "type": "string",
+      "enum": [
+        "advisory",
+        "enabled_when_validated",
+        "excluded",
+        "opt_in"
+      ]
+    },
+    "depth": {
+      "type": "string",
+      "enum": [
+        "build",
+        "graph",
+        "runtime",
+        "semantic",
+        "syntax"
+      ]
+    },
+    "disposition_reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^ktc\\.[A-Za-z0-9][A-Za-z0-9_.-]*$"
+    },
+    "implementation": {
+      "type": "string",
+      "enum": [
+        "adapted",
+        "custom",
+        "existing"
+      ]
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "correctness",
+        "policy",
+        "probable_defect",
+        "style"
+      ]
+    },
+    "limitations": {
+      "type": "string",
+      "minLength": 1
+    },
+    "platforms": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "android",
+          "common",
+          "desktop",
+          "ios",
+          "jvm"
+        ]
+      }
+    },
+    "problem": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "error",
+        "info",
+        "warning"
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "implemented",
+        "planned",
+        "tested",
+        "validated"
+      ]
+    },
+    "validation": {
+      "type": "object",
+      "required": [
+        "boundary",
+        "negative",
+        "platform_version",
+        "positive",
+        "regression",
+        "suppression"
+      ],
+      "properties": {
+        "boundary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "negative": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "positive": {
+          "type": "string",
+          "minLength": 1
+        },
+        "regression": {
+          "type": "string",
+          "minLength": 1
+        },
+        "suppression": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "version_scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "upstream_id": {
+      "type": "string"
+    },
+    "runtime_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Repository-relative evidence artifacts; existence is a structural guard only, not proof of truth or sufficient validation."
+    }
+  },
+  "additionalProperties": true,
+  "description": "Planning metadata, not a runtime applicability manifest. Candidate support and intended activation are not tested coverage. See docs/rules/README.md."
+}

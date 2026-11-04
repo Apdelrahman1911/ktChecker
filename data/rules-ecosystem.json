@@ -1,0 +1,956 @@
+[
+  {
+    "id": "ktc.okio.close_owned_resource",
+    "category": "library/okio",
+    "problem": "An owned file Source, Sink, or FileHandle escapes a function exit without closing or transferring ownership.",
+    "rationale": "Okio Source and Sink explicitly require close; Sink.close emits buffered data and releases resources. FileHandle has its own lifetime, so closing one derived stream is not a general substitute for closing its owning handle.",
+    "sources": [
+      "https://raw.githubusercontent.com/square/okio/parent-3.18.2/okio/src/commonMain/kotlin/okio/Source.kt",
+      "https://raw.githubusercontent.com/square/okio/parent-3.18.2/okio/src/commonMain/kotlin/okio/Sink.kt",
+      "https://raw.githubusercontent.com/square/okio/parent-3.18.2/okio/src/commonMain/kotlin/okio/FileHandle.kt",
+      "https://raw.githubusercontent.com/square/okio/parent-3.18.2/okio/src/commonMain/kotlin/okio/FileSystem.kt",
+      "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.18.2/okio-3.18.2.module"
+    ],
+    "applicability": "Resolve okio.FileSystem.source, sink, appendingSink, openReadOnly, and openReadWrite and the owned returned value; follow okio.buffer wrapper ownership and proven local aliases. Require a certified bounded ownership contract and complete feasible normal/exceptional exit model proving that a locally owned file resource remains open on a specific exit. Recognize close/use and modeled ownership transfers; absent lexical close is not proof. FileSystem implementation and target support must be resolved; the name Source or Sink alone is insufficient.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Okio 3.x candidate adapters; reference release 3.18.2. Match the exact version API/target metadata before activation. Older JVM-only Okio is not silently classified as common.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "slow",
+    "severity": "warning",
+    "kind": "probable_defect",
+    "certainty": "high",
+    "limitations": "Borrowed parameters, returned handles, Buffer/ByteString in-memory values, custom resources with unknown ownership, and unknown callees are excluded. Cross-function ownership requires declared/analyzed contracts. A derived FileHandle stream can outlive a close request on the handle until the stream is also closed; the analysis must model both lifetimes.",
+    "validation": {
+      "positive": "Proposed: FileSystem.SYSTEM.sink(path).buffer() writes bytes and exits through a throwing operation with no close; an owned openReadOnly handle also exits unclosed.",
+      "negative": "Proposed: the same sink is wrapped in use with throwing writes; a source is returned with explicit ownership transfer; a Buffer is read without close.",
+      "boundary": "Proposed: close the derived FileHandle source and the handle independently; close only the derived source must not be mistaken for closing its handle. Do not report a caller-owned Source parameter.",
+      "platform_version": "Proposed: compile JVM, Android, and supported Native filesystem fixtures against exact released Okio versions; custom filesystem/unsupported targets produce coverage gaps, not fallback matches.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: compare diagnostics on exceptional versus normal exits and wrapper aliases; ensure a generic resource-lifetime provider and the OkHttp adapter do not emit duplicate findings for the same handle."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.datastore.same_file_multiple_instances",
+    "category": "library/datastore",
+    "problem": "Two simultaneously active DataStore instances in the same process use the same proven storage file.",
+    "rationale": "The official DataStore contract prohibits more than one active instance per file per process; reading or updating can throw IllegalStateException. MultiProcessDataStore does not make multiple instances within one process valid.",
+    "sources": [
+      "https://developer.android.com/topic/libraries/architecture/datastore",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core-okio/1.3.0/datastore-core-okio-1.3.0-sources.jar",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core/1.3.0/datastore-core-1.3.0.module",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-core/1.3.0/datastore-preferences-core-1.3.0.module"
+    ],
+    "applicability": "Resolve androidx.datastore.core.DataStoreFactory.create and androidx.datastore.preferences.core.PreferenceDataStoreFactory factory calls, Android delegate factories where present, and actual Storage/produceFile callbacks. Require proven same canonical file on the same FileSystem, same process identity, and overlapping active storage connections/reachable open use under live scopes (including analyzed DI lifetimes); two unused factory results or textually equal path strings alone do not suffice.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "DataStore 1.0-1.3 contract candidates; KMP source/targets only from 1.1.0. Reference stable release 1.3.0 (2026-10-21). Preferences KMP documented; custom Storage and web storage require separate version/target models.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "slow",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Aliases, symlinks, environment-dependent directories, dynamically produced filenames, unknown DI scopes, or unavailable process identity prevent a definite finding. Distinct processes using correctly configured multiprocess storage are valid. Browser storage is not a file and is excluded from this filesystem rule.",
+    "validation": {
+      "positive": "Proposed: two persistent factory results share one literal absolute canonical path and same modeled FileSystem/process; both have live scopes and data is read from each.",
+      "negative": "Proposed: a singleton factory result is injected twice; distinct canonical paths are used; the first scope is fully cancelled/joined before the second storage opens.",
+      "boundary": "Proposed: equal basenames under distinct filesDir roots, separate processes with MultiProcess storage, unknown symlink relations, and a getter that might be called once stay unreported unless overlapping use is proved.",
+      "platform_version": "Proposed: test Android delegates, JVM FileStorage, and KMP Preferences OkioStorage separately at exact 1.1.x/1.2.x/1.3.0 versions; skip WebLocalStorage and unsupported targets.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: record canonical file/process/scope evidence and deduplicate storage factory/delegate views of one creation site."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.datastore.mutate_persisted_snapshot",
+    "category": "library/datastore",
+    "problem": "A DataStore snapshot or its proven mutable alias is changed in place.",
+    "rationale": "DataStore<T> requires immutable values. Mutating previously observed data invalidates consistency and can bypass equality-based persistence or trigger mutation checks. Returning the same mutated object from updateData does not make the operation valid.",
+    "sources": [
+      "https://developer.android.com/topic/libraries/architecture/datastore",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core/1.3.0/datastore-core-1.3.0-sources.jar",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core/1.3.0/datastore-core-1.3.0.module",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-core/1.3.0/datastore-preferences-core-1.3.0.module",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-core/1.3.0/datastore-preferences-core-1.3.0-sources.jar"
+    ],
+    "applicability": "Resolve androidx.datastore.core.DataStore<T>.data and updateData; trace the emitted value or transform input and proven field/collection aliases to actual mutation operations (setter or resolved mutating collection method). Require a modeled mutable snapshot identity, not merely a mutable type declaration. KMP activation is limited to released supported Storage/Preferences APIs.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "DataStore 1.x immutability contract candidates; reference 1.3.0. KMP Preferences supported from 1.1.0; generic non-Preferences KMP serializers are not guaranteed by the current setup page and need explicit released API/platform verification.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "warning",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Preferences.edit intentionally receives MutablePreferences and is excluded; immutable copy/toMutablePreferences operations do not mutate an observed snapshot. Mutable implementation details, unknown aliases, or class naming alone cannot justify a finding.",
+    "validation": {
+      "positive": "Proposed: updateData { current -> current.items.add(item); current } where items is a proven mutable collection belonging to the persisted snapshot; also mutate data.first() through an alias.",
+      "negative": "Proposed: updateData returns current.copy(items = current.items + item); Preferences.edit changes its provided MutablePreferences transaction value.",
+      "boundary": "Proposed: a deep copy containing new mutable collections may be mutated before being persisted; a shallow copy still aliasing the old snapshot collection is checked only with proof of that alias.",
+      "platform_version": "Proposed: typed JVM/Android serializers and documented KMP Preferences fixtures; demonstrate intentional MutablePreferences edit behavior at 1.1.x and 1.3.0.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: mutation and copy fixture pairs check object identity as well as equality and show no blanket ban on var or MutableList."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.datastore.nested_update_same_instance",
+    "category": "library/datastore",
+    "problem": "An updateData transaction invokes updateData again on the same DataStore while the parent transaction is active.",
+    "rationale": "Current DataStore explicitly rejects nested updates on the same instance because parent changes are not visible to the nested call. Older releases could deadlock; nesting different instances is explicitly permitted by the implementation.",
+    "sources": [
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core/1.3.0/datastore-core-1.3.0-sources.jar",
+      "https://developer.android.com/jetpack/androidx/releases/datastore#1.1.0-beta02",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core/1.3.0/datastore-core-1.3.0.module",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-core/1.3.0/datastore-preferences-core-1.3.0.module"
+    ],
+    "applicability": "Resolve androidx.datastore.core.DataStore.updateData and Preferences.edit forwarding to it; require proven same receiver identity and an inner call executing within the inherited active update coroutine context. Follow analyzed inline/suspend helpers and A-to-B-to-A nested calls, with exact implementation contract/version.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "DataStore 1.1.0-beta02 introduced the nested-update detection fix; plan rejection-contract adapters for stable 1.1.x-1.3.0. Older 1.0.x deadlock behavior requires separate fixtures, not a claim of the same exception.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "A transaction on a different instance is legal. An independently scheduled operation outside the parent transaction or with an unknown context cannot be asserted to trigger this same-instance guard. Do not confuse lexical nesting with execution/context identity.",
+    "validation": {
+      "positive": "Proposed: store.updateData { current -> aliasOfStore.updateData { it }; current }; direct Preferences.edit calling store.edit again.",
+      "negative": "Proposed: firstStore.updateData { secondStore.updateData { it }; it }; a subsequent update after the first call completes.",
+      "boundary": "Proposed: A.updateData -> B.updateData -> A.updateData is rejected; a lambda constructed in a transaction but invoked later is not treated as an active nested update.",
+      "platform_version": "Proposed: exact 1.1.x/1.2.x/1.3.0 Android, JVM, and supported KMP Preferences fixtures; separately observe the old 1.0.x behavior before describing its diagnostic.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: interprocedural alias/context fixtures distinguish active nesting from deferred work and legal different-instance nesting."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.datastore.single_process_storage_shared_across_processes",
+    "category": "library/datastore",
+    "problem": "One proven DataStore file is accessed from different Android processes using a SingleProcess coordinator in at least one process.",
+    "rationale": "The DataStore guide requires MultiProcessDataStore for access across processes and prohibits mixing single-process and multiprocess storage for one file. SingleProcess coordination cannot provide the documented cross-process consistency.",
+    "sources": [
+      "https://developer.android.com/topic/libraries/architecture/datastore",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core-okio/1.3.0/datastore-core-okio-1.3.0-sources.jar",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core/1.3.0/datastore-core-1.3.0.module",
+      "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-core/1.3.0/datastore-preferences-core-1.3.0.module"
+    ],
+    "applicability": "For Android targets only, combine merged manifest android:process values with proven reachable factory/storage instances and the same canonical file. Resolve androidx.datastore.core.DataStoreFactory versus MultiProcessDataStoreFactory or the actual createSingleProcessCoordinator/createMultiProcessCoordinator passed to Storage. Report only when a shared file and at least one SingleProcess coordinator are proved across distinct processes.",
+    "platforms": [
+      "android"
+    ],
+    "version_scope": "DataStore multiprocess factory/coordinator adapters for stable 1.1.x-1.3.0; reference 1.3.0. Exact resolved factories and Android merged manifest are required.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "build",
+    "cost": "slow",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "No generic JVM/Native/browser process inference is claimed. A manifest process declaration alone does not prove that it reaches this DataStore. Unknown dynamic paths, exported IPC that only delegates storage to one process, and custom coordinator semantics are excluded.",
+    "validation": {
+      "positive": "Proposed: application and a service in :remote each reach a factory for one canonical filesDir/settings file, and both use the single-process default; mixed single/multiprocess variants also report.",
+      "negative": "Proposed: both proven process owners use MultiProcessDataStoreFactory; the service calls a one-process storage owner through IPC; different process files are used.",
+      "boundary": "Proposed: a declared remote service that never reaches storage does not report; unknown runtime process checks remain a coverage gap.",
+      "platform_version": "Proposed: build actual merged manifests and DataStore 1.1.x/1.3.0 Android fixtures, including flavor-specific process declarations.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: distinguish this cross-process defect from same-process duplicate instances; the same-file rule retains ownership of the latter."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.paging.jumping_requires_item_counts",
+    "category": "library/paging",
+    "problem": "A PagingSource that declares jumpingSupported=true returns a Page with undefined itemsBefore or itemsAfter.",
+    "rationale": "PagingSource documents that both item counts must be implemented when jumping is enabled so Paging can determine the boundaries within which it can jump. The default COUNT_UNDEFINED values do not satisfy that contract.",
+    "sources": [
+      "https://dl.google.com/dl/android/maven2/androidx/paging/paging-common/3.5.3/paging-common-3.5.3-sources.jar",
+      "https://developer.android.com/jetpack/androidx/releases/paging",
+      "https://dl.google.com/dl/android/maven2/androidx/paging/paging-common/3.5.3/paging-common-3.5.3.module"
+    ],
+    "applicability": "Resolve an actual subclass/override of androidx.paging.PagingSource.jumpingSupported with a proven true value and its load paths returning androidx.paging.PagingSource.LoadResult.Page. Flag omitted or proven COUNT_UNDEFINED itemsBefore/itemsAfter on a reachable returned Page, honoring the exact constructor defaults of the resolved library version.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Paging 3.x contract adapters; common/jvm/iOS paging-common only from 3.3.0; reference current stable 3.5.3 (2026-10-12). Each target requires published-variant evidence; paging-runtime and Android-only companion artifacts are not treated as KMP.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "warning",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "A false or unknown jumpingSupported value is not flagged by this rule. Unknown helper-produced counts/Pages and unsupported subclass bodies are coverage gaps. Placeholder preference alone is not proof of jumping support.",
+    "validation": {
+      "positive": "Proposed: a subclass has override val jumpingSupported = true and returns Page(data, prevKey, nextKey) without either count.",
+      "negative": "Proposed: jumpingSupported=true and both counts are nonnegative; default false with omitted counts.",
+      "boundary": "Proposed: one count is COUNT_UNDEFINED and the other zero; ensure zero is valid and unknown runtime count does not become a false positive.",
+      "platform_version": "Proposed: compile Android-only older Paging 3.x fixtures and exact 3.3.x/3.5.3 published common/JVM/iOS variants, with no claim for paging-runtime on iOS.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: inherited overriding properties, named/reordered arguments, helper returns, and COUNT_UNDEFINED aliases retain the same evidence."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.paging.reused_load_key_without_support",
+    "category": "library/paging",
+    "problem": "An Append or Prepend load returns its same input key as the next key in that direction while keyReuseSupported=false.",
+    "rationale": "PageFetcherSnapshot explicitly checks this common infinite-loop error and throws unless key reuse is explicitly enabled. Returning params.key as nextKey on Append (or prevKey on Prepend) is invalid under the default contract.",
+    "sources": [
+      "https://dl.google.com/dl/android/maven2/androidx/paging/paging-common/3.5.3/paging-common-3.5.3-sources.jar",
+      "https://dl.google.com/dl/android/maven2/androidx/paging/paging-common/3.5.3/paging-common-3.5.3.module"
+    ],
+    "applicability": "Resolve androidx.paging.PagingSource.load, LoadParams.Append/Prepend discrimination, and a returned LoadResult.Page. Require a proven equal input/directional output key on that path and a proven false/default keyReuseSupported property. Model actual Key equality only where equality is statically proved, rather than assuming increment conventions or key names.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Paging 3.x adapters for the explicit key-reuse guard; common/JVM/iOS API support from paging-common 3.3.0. Reference 3.5.3; exact version/target fixtures required.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Refresh keys are not checked by this directional guard. Intentional key reuse with keyReuseSupported=true is legal. Custom equals, opaque tokens, unknown helper results, and dynamic override values prevent a definite finding.",
+    "validation": {
+      "positive": "Proposed: on an Append path, return Page(data, prevKey=null, nextKey=params.key) with the default false keyReuseSupported; symmetric Prepend case.",
+      "negative": "Proposed: the directional key changes or is null; an intentional token-reuse source overrides keyReuseSupported=true.",
+      "boundary": "Proposed: equal Refresh nextKey is not flagged solely by this Append/Prepend rule; custom key equality and unknown runtime flags remain unresolved.",
+      "platform_version": "Proposed: exact Android older 3.x and published common/JVM/iOS 3.3.x/3.5.3 variants exercise both directional guard branches.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: path discrimination and named argument mapping prevent reporting a harmless prevKey on an Append path."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.arrow.raise_used_after_scope",
+    "category": "library/arrow",
+    "problem": "An Arrow Raise receiver captured from an eager builder is used after that builder has completed.",
+    "rationale": "Arrow marks a Raise scope inactive when folding completes; raise/bind on the leaked receiver then throws RaiseLeakedException rather than producing a typed error. Returning a deferred closure is not itself proof of a defect until its later use or an invalid escape contract is established.",
+    "sources": [
+      "https://raw.githubusercontent.com/arrow-kt/arrow/2.3.0.1/arrow-libs/core/arrow-core/src/commonMain/kotlin/arrow/core/raise/Fold.kt",
+      "https://arrow-kt.io/learn/typed-errors/working-with-typed-errors/",
+      "https://repo.maven.apache.org/maven2/io/arrow-kt/arrow-core/2.3.0.1/arrow-core-2.3.0.1.module"
+    ],
+    "applicability": "Resolve arrow.core.raise.either, nullable, result, or the actual eager fold builder and the captured arrow.core.raise.Raise receiver. Require a certified bounded execution/lifetime trace showing an invocation of raise or a Raise.bind extension against that receiver after its owning builder completes; symbol resolution must distinguish nested independent builders and lazy Effect values.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Arrow Core Raise API adapters for 1.2/2.x where released contracts match; reference tagged 2.3.0.1 (2026-10-27). Legacy continuations/effect builders and context-receiver versus context-parameter syntax require separate adapters.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "slow",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Merely returning a closure that is never invoked is not a proved misuse. Opaque callbacks/dispatchers, aliases without lifetime proof, lazy Effect construction, and deliberately expected-failure tests require exclusion or explicit policy handling. The rule must track the originating Raise token, not an arbitrary Either type.",
+    "validation": {
+      "positive": "Proposed: an either builder returns a closure capturing its Raise receiver; a following statement invokes the closure after the builder completed and the closure calls raise.",
+      "negative": "Proposed: a captured helper executes synchronously within the active either block; a returned closure creates its own fresh either builder before binding.",
+      "boundary": "Proposed: nested builders retain distinct Raise receivers; a deferred Effect executed in its own fold is valid; a never-invoked returned closure is not reported as a proved late invocation.",
+      "platform_version": "Proposed: release-specific eager builders on published JVM, Android, iOS/Native and common targets; legacy Arrow APIs produce an unsupported-adapter gap.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: token-identity and deferred-versus-eager fixtures prove lifetime ordering without class-name assumptions."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.arrow.swallowed_typed_raise",
+    "category": "library/arrow",
+    "problem": "A broad exception catcher inside an Arrow Raise scope consumes Arrow short-circuiting and continues with a success or fallback result.",
+    "rationale": "Arrow uses RaiseCancellationException to implement typed short-circuiting. Its source explicitly says swallowing CancellationException consumes Raise and leads to unexpected behavior, and recommends Either.catch or arrow.core.raise.catch to rethrow cancellation automatically. This also matters in synchronous either computations, independently of coroutine suspension.",
+    "sources": [
+      "https://raw.githubusercontent.com/arrow-kt/arrow/2.3.0.1/arrow-libs/core/arrow-core/src/commonMain/kotlin/arrow/core/raise/Fold.kt",
+      "https://raw.githubusercontent.com/arrow-kt/arrow/2.3.0.1/arrow-libs/core/arrow-core/src/commonMain/kotlin/arrow/core/raise/Raise.kt",
+      "https://repo.maven.apache.org/maven2/io/arrow-kt/arrow-core/2.3.0.1/arrow-core-2.3.0.1.module"
+    ],
+    "applicability": "Resolve an active arrow.core.raise.Raise builder/receiver, a reachable raise/bind operation that may short-circuit that receiver, and kotlin.runCatching or a catch type that actually includes its resolved RaiseCancellationException. Require a proven handler path that consumes that exception without equivalent rethrow and continues inside the builder. Arrow cancellation-transparent catch functions are explicitly exempt.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Arrow Raise 1.2/2.x adapters where short-circuiting uses the released cancellation contract; reference tagged 2.3.0.1. Exact Arrow and Kotlin exception type hierarchies must be available.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "warning",
+    "kind": "probable_defect",
+    "certainty": "intent_dependent",
+    "limitations": "No finding for a narrow IOException/SQLException handler, broad handlers that rethrow cancellation, getOrThrow propagation, or unknown helper behavior. A Raise operation in a separate builder is not automatically attributed to the outer one. Deliberate local recovery or expected-failure tests can be intentional; recommend Arrow recover/fold/cancellation-transparent catch without asserting all fallback results are defects. Deduplicate with the generic cancellation provider when the same catcher is already diagnosed.",
+    "validation": {
+      "positive": "Proposed: either { runCatching { Either.Left(error).bind() }.getOrNull() } consumes a reachable typed raise and returns success.",
+      "negative": "Proposed: use arrow.core.raise.catch or Either.catch; explicitly rethrow CancellationException; runCatching(...).getOrThrow() lets the same short-circuit reach the owning builder.",
+      "boundary": "Proposed: a handler catches only IOException and a runCatching block with no reachable Raise operation are not flagged; nested scope identity is preserved. Include intentional local recovery, expected-failure tests, and transparent recover/fold scope alternatives.",
+      "platform_version": "Proposed: synchronous and suspend either fixtures across exact Arrow/Kotlin versions and published targets; include the platform-specific RaiseCancellationException representation.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: observe intended Either.Left versus accidental Either.Right outcomes in release integration fixtures and emit one finding when generic coroutine cancellation analysis overlaps."
+    },
+    "status": "planned",
+    "default_activation": "advisory",
+    "disposition_reason": "Typed short-circuit consumption is proved, but intended propagation versus deliberate recovery is not. Keep advisory or use an independently reviewed empirical lane; a proof lane requires an explicit propagation contract. Fixture pairs alone do not qualify defaults."
+  },
+  {
+    "id": "ktc.arrow.manual_allocation_release_lost",
+    "category": "library/arrow",
+    "problem": "The release handler returned by Resource.allocate is discarded or is not invoked on a proven function exit.",
+    "rationale": "Arrow documents allocate as delicate: its acquired value is no longer protected by Resource guarantees and the returned release handler must always be called. Ignoring the second Pair element, or releasing only on a normal path, loses that explicit ownership obligation.",
+    "sources": [
+      "https://raw.githubusercontent.com/arrow-kt/arrow/2.3.0.1/arrow-libs/fx/arrow-fx-coroutines/src/commonMain/kotlin/arrow/fx/coroutines/Resource.kt",
+      "https://arrow-kt.io/learn/coroutines/resource-safety/",
+      "https://repo.maven.apache.org/maven2/io/arrow-kt/arrow-core/2.3.0.1/arrow-core-2.3.0.1.module",
+      "https://repo.maven.apache.org/maven2/io/arrow-kt/arrow-fx-coroutines/2.3.0.1/arrow-fx-coroutines-2.3.0.1.module"
+    ],
+    "applicability": "Resolve arrow.fx.coroutines.Resource.allocate with the actual return Pair<A, suspend (ExitCase) -> Unit> for the resolved version. Track the release handler and bounded exceptional/control-flow exits, honoring proven transfer of both acquired value and release obligation. Require a known installed release obligation in the analyzed Resource; an arbitrary suspend lambda name or any Pair is insufficient.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Arrow FX Coroutines Resource allocate API adapters for supported 1.x/2.x releases; reference tagged 2.3.0.1. Match allocate versus differently named legacy allocated APIs rather than extrapolating.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "slow",
+    "severity": "warning",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Returning/transferring the complete pair or a modeled owner with the handler is valid. Resources with no installed finalizer, intentionally manual interop owners, unknown resource composition, and unknown callbacks require coverage gaps or declared contracts. Do not rewrite release ExitCase semantics automatically.",
+    "validation": {
+      "positive": "Proposed: val (value, _) = resourceWithKnownCloseFinalizer.allocate(); use value; return. Also release only after work that may throw, leaving the exceptional path unreleased.",
+      "negative": "Proposed: Resource.use/resourceScope covers all exits; a complete pair is transferred to a modeled lifecycle owner that invokes release; a proper try/finally invokes it for every exit.",
+      "boundary": "Proposed: allocate on a resource with no registered finalizer is not presented as a proved resource leak; transferring value without handler is distinct from transferring both.",
+      "platform_version": "Proposed: exact released Arrow FX modules and JVM/Android/Native coroutine cancellation paths, validating handler behavior and ExitCase propagation.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: shared ownership engine maps a finalizer obligation to one finding, including destructuring underscore, Pair.first-only use, aliases, and exceptional exits."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.decompose.duplicate_child_stack_key",
+    "category": "library/decompose",
+    "problem": "Two child stacks in one hosting ComponentContext are created with the same navigation key.",
+    "rationale": "Decompose explicitly requires child-stack keys to be unique within their hosting component and throws for collisions. The default key is the same for each call, so two independent stacks with omitted keys can violate the contract.",
+    "sources": [
+      "https://arkivanov.github.io/Decompose/navigation/stack/overview/",
+      "https://raw.githubusercontent.com/arkivanov/Decompose/3.5.0/decompose/src/commonMain/kotlin/com/arkivanov/decompose/router/stack/ChildStackFactory.kt",
+      "https://repo.maven.apache.org/maven2/com/arkivanov/decompose/decompose/3.5.0/decompose-3.5.0.module"
+    ],
+    "applicability": "Enable only for declared/resolved com.arkivanov.decompose APIs. Resolve childStack overloads, their exact default key, and the actual hosting ComponentContext/StateKeeper/InstanceKeeper identity. Require both independent registrations to execute in the same owner lifetime with a proven equal constant key and no modeled cleanup between them.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Decompose 2.x/3.x childStack adapters; reference tagged 3.5.0 (2026-03-15). Verify overload defaults and host registration semantics at the resolved version and published target.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Equal keys in different hosting components are legal. Mutually exclusive branches, unknown host aliases, factories called once versus repeatedly, wrappers that allocate child contexts, and opaque dynamic keys are not proved collisions. Essenty duplicate-registration diagnostics for the same cause are secondary evidence, not a second finding.",
+    "validation": {
+      "positive": "Proposed: a single hosting component initializes topStack and bottomStack with childStack calls on the same context, both omitting the default key or both key=\"Stack\".",
+      "negative": "Proposed: one host gives each stack a distinct key; two child components independently use the same default key.",
+      "boundary": "Proposed: only one branch registers a stack; child contexts with distinct state keepers do not collide despite being rooted in the same component.",
+      "platform_version": "Proposed: resolve exact 2.x/3.5.0 overload defaults in common/JVM/Android/iOS supported artifacts and verify the underlying registry collision behavior.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: constructor delegation and context aliases retain owner identity; deduplicate with the underlying Essenty registration finding."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.decompose.duplicate_stack_configuration",
+    "category": "library/decompose",
+    "problem": "A child stack receives duplicate equal configurations while duplicate configurations are disabled.",
+    "rationale": "Decompose prohibits equal configurations in child stacks by default, but has an explicit global setting that permits duplicates. The restriction is a runtime contract, not a rule to prefer one navigation architecture or always forbid repeated destinations.",
+    "sources": [
+      "https://raw.githubusercontent.com/arkivanov/Decompose/3.5.0/decompose/src/commonMain/kotlin/com/arkivanov/decompose/router/stack/ChildStackFactory.kt",
+      "https://raw.githubusercontent.com/arkivanov/Decompose/3.5.0/decompose/src/commonMain/kotlin/com/arkivanov/decompose/DecomposeSettings.kt",
+      "https://arkivanov.github.io/Decompose/navigation/stack/overview/",
+      "https://repo.maven.apache.org/maven2/com/arkivanov/decompose/decompose/3.5.0/decompose-3.5.0.module"
+    ],
+    "applicability": "Resolve com.arkivanov.decompose.router.stack.childStack initialStack or analyzed stack mutation operations, actual configuration equality, and a certified configuration state at that call. Require proven duplicate values and duplicateConfigurationsEnabled=false through DecomposeSettings in 3.5.0+ or the version-specific DecomposeExperimentFlags API. Default absence is usable only in a certified closed-world initialization model; unknown external mutations disable the finding.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Decompose 3.x version-specific flag adapters; stable setting API from 3.5.0-alpha01, reference release 3.5.0. Older flag/default behavior must be verified; do not generalize to Child Items, which has different duplicate support.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "slow",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Repeated configuration classes with different values are not duplicates. Duplicates enabled by settings are legal. Unknown equals implementations, saved-state restoration, external settings writes, navigation state evolution, or settings initialization order prevent a definite finding.",
+    "validation": {
+      "positive": "Proposed: with a proven false setting, initialize childStack with listOf(Config.Home, Config.Home) where Home is one singleton configuration.",
+      "negative": "Proposed: duplicateConfigurationsEnabled=true; Config.Detail(id=1) and Config.Detail(id=2) with verified data-class equality; distinct configurations.",
+      "boundary": "Proposed: same class with distinct keys is legal; a settings write through an unresolved dependency yields a coverage gap instead of assuming the default.",
+      "platform_version": "Proposed: exact pre-3.5 experiment flag and 3.5.0 setting fixtures on published targets, including initialization ordering and permitted duplicate mode.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: only equality proof and effective settings produce a finding; preserve mode-dependent boundaries across upgrades."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.decompose.root_context_recreated_in_composition",
+    "category": "library/decompose",
+    "problem": "An adopted Decompose root context is freshly constructed on every direct Composable execution.",
+    "rationale": "Decompose advises creating root components and contexts on the UI thread outside Compose. If creation in a Composable cannot be avoided, its guide explicitly requires remember to avoid recreating the root/context on each composition. Whether a preview or deliberately transient context needs long-term retention is an intent-dependent decision.",
+    "sources": [
+      "https://arkivanov.github.io/Decompose/component/overview/",
+      "https://raw.githubusercontent.com/arkivanov/Decompose/3.5.0/decompose/src/commonMain/kotlin/com/arkivanov/decompose/DefaultComponentContext.kt",
+      "https://repo.maven.apache.org/maven2/com/arkivanov/decompose/decompose/3.5.0/decompose-3.5.0.module"
+    ],
+    "applicability": "For projects with resolved Decompose usage, resolve a direct DefaultComponentContext constructor or a modeled root context factory within an androidx.compose.runtime.Composable execution region. Require a proven fresh result per invocation and no enclosing remember/rememberSaveable or declared stable owner; do not identify components by a class-name suffix.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Decompose 2.x/3.x plus supported Jetpack/JetBrains Compose versions; reference Decompose 3.5.0. Root context factory and Compose retention semantics must be verified for exact dependencies.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "semantic",
+    "cost": "medium",
+    "severity": "warning",
+    "kind": "probable_defect",
+    "certainty": "intent_dependent",
+    "limitations": "Advisory guidance cannot prove a particular recomposition, wrong thread, or lifecycle failure. Previews, intentional transient contexts, stable external factories, and custom lifecycle ownership are valid alternatives. remember addresses recreation but does not prove UI-thread safety; no automatic rewrite is proposed.",
+    "validation": {
+      "positive": "Proposed: a runtime root Composable calls DefaultComponentContext(...) directly and passes the new result to a root component on every execution.",
+      "negative": "Proposed: a root context is created in Activity.onCreate or on the actual desktop UI thread before composition; a context is retained with remember.",
+      "boundary": "Proposed: previews and a declared intentional short-lived owner can suppress or opt out; a custom singleton factory cannot be assumed fresh.",
+      "platform_version": "Proposed: Android and desktop Compose plus supported common/iOS extension artifacts; no inference that every Composable executes on the UI thread.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: Compose generic stable-owner checks and this library advisory produce one actionable recommendation per creation site."
+    },
+    "status": "planned",
+    "default_activation": "advisory",
+    "disposition_reason": "Upstream lifecycle recommendation with valid intentional alternatives. Keep advisory; default proof-or-empirical promotion is a separate decision and integration fixtures alone do not qualify it."
+  },
+  {
+    "id": "ktc.essenty.duplicate_state_keeper_registration",
+    "category": "library/essenty",
+    "problem": "A StateKeeper supplier is registered twice for the same key in one owner without unregistering it.",
+    "rationale": "Essenty DefaultStateKeeperDispatcher checks that a key is not already registered before register and throws on a collision. State restore consume(key) is a different operation and does not unregister a supplier.",
+    "sources": [
+      "https://raw.githubusercontent.com/arkivanov/Essenty/2.7.1/state-keeper/src/commonMain/kotlin/com/arkivanov/essenty/statekeeper/DefaultStateKeeperDispatcher.kt",
+      "https://raw.githubusercontent.com/arkivanov/Essenty/2.7.1/state-keeper/src/commonMain/kotlin/com/arkivanov/essenty/statekeeper/StateKeeper.kt",
+      "https://repo.maven.apache.org/maven2/com/arkivanov/essenty/state-keeper/2.7.1/state-keeper-2.7.1.module"
+    ],
+    "applicability": "Resolve com.arkivanov.essenty.statekeeper.StateKeeper.register and the actual dispatcher implementation or a declared equivalent contract. Require same receiver identity, equal constant keys, and two reachable active registrations with no unregister between them. Library adoption and the concrete behavior must be established; a method named register is insufficient.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Essenty StateKeeper 2.x version adapters; reference tagged 2.7.1 (2026-10-30). Older Serializable/KSerializer API changes and custom dispatcher contracts require separate evidence.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "A custom StateKeeper may implement replacement semantics and must not inherit the default-dispatcher exception contract. Different owners, exclusive branches, prior unregister, and dynamic keys are excluded. A childStack collision already attributed to Decompose receives one primary finding.",
+    "validation": {
+      "positive": "Proposed: on one known default dispatcher, register(\"state\", serializer, supplier) executes twice in sequence with no intervening unregister.",
+      "negative": "Proposed: distinct keys, different dispatchers, or unregister followed by re-register; consume restored data and then register once.",
+      "boundary": "Proposed: consume(key) between two supplier registrations does not remove the supplier; a guarded isRegistered branch only registers when absent and is valid.",
+      "platform_version": "Proposed: exact Essenty 2.x supported common/JVM/Android/iOS dispatchers; a custom implementation without the default contract remains outside the rule.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: alias/control-flow and supplier-versus-saved-value state fixtures distinguish registration from restoration."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.okhttp.close_owned_response_body",
+    "category": "library/okhttp",
+    "problem": "A response obtained from execute or onResponse is abandoned with its owned body still open.",
+    "rationale": "OkHttp explicitly requires closing the body from Call.execute and Callback.onResponse. Closing Response, its body/source/stream, or fully consuming via string/bytes are documented completion paths; failing to close a live/cached response can leak a socket or file.",
+    "sources": [
+      "https://raw.githubusercontent.com/square/okhttp/parent-5.5.1/okhttp/src/commonJvmAndroid/kotlin/okhttp3/ResponseBody.kt",
+      "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp/5.5.1/okhttp-5.5.1.module"
+    ],
+    "applicability": "Resolve okhttp3.Call.execute or the actual okhttp3.Callback.onResponse override and a live/cached owned response/body from a modeled OkHttp implementation. Require certified bounded ownership and complete feasible exit analysis proving no close, documented consuming close, or modeled ownership transfer on that exit. Desktop means a JVM target only; do not apply to native/common KMP transport APIs.",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "OkHttp 3.x/4.x/5.x ownership adapters; exact reference parent-5.5.1. Use the resolved version consuming-method summaries and Android/JVM variants; no Native/iOS implementation is inferred from common metadata.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "slow",
+    "severity": "warning",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Known string/bytes/byteString consuming methods close the source; body/source/stream aliases must share one obligation. A callback response is owned by documented callback contract, unlike a generic borrowed parameter. Transferring consumption to a modeled thread/owner is valid; synthetic Buffer bodies and unknown consumers require different models.",
+    "validation": {
+      "positive": "Proposed: execute().code is read and the response is discarded; onResponse reads headers and returns without close on a live response; an exceptional branch abandons the body.",
+      "negative": "Proposed: response.use covers throwing code; body.string()/bytes() consumes and closes the live body; body ownership is explicitly transferred to a modeled consuming worker.",
+      "boundary": "Proposed: track body.source and charStream aliases as the same response lifetime; do not report an in-memory synthetic response as a proved socket/file leak.",
+      "platform_version": "Proposed: exact 3.x/4.x/5.5.1 JVM/Android variants, including Callback ownership and nullable/nonnullable body API differences; Native sources stay unsupported.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: one resource finding covers Response/ResponseBody/Okio stream aliases; distinguish unclosed ownership from a separately proved second read after close."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.okhttp.response_body_consumed_twice",
+    "category": "library/okhttp",
+    "problem": "One proven one-shot ResponseBody is consumed again after a complete consumption.",
+    "rationale": "OkHttp ResponseBody is documented as one-shot and can be consumed only once. Calling string/bytes repeatedly on the same live body does not reread the HTTP response; it can fail because the source has already been closed.",
+    "sources": [
+      "https://raw.githubusercontent.com/square/okhttp/parent-5.5.1/okhttp/src/commonJvmAndroid/kotlin/okhttp3/ResponseBody.kt",
+      "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp/5.5.1/okhttp-5.5.1.module"
+    ],
+    "applicability": "Resolve a known one-shot okhttp3.ResponseBody from an actual OkHttp response and ordered calls to its version-specific whole-body consumers string, bytes, or byteString on proven aliases. Require that the first call completed or otherwise demonstrably closed the source and a later whole-body consumption is reachable on that same body identity.",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "OkHttp 3.x/4.x/5.x one-shot adapters; reference parent-5.5.1. Exact consumer APIs differ by release and must be modeled. Applies only to concrete Android/JVM artifacts.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Partial stream reads followed by reading the remainder are not a second full-body consumption. A cached String/ByteArray, peekBody/peek source with an independent lifetime, a new ResponseBody, and custom replayable implementations are valid alternatives; unknown custom source() semantics disable proof.",
+    "validation": {
+      "positive": "Proposed: val body = response.body; log(body.string()); parse(body.string()) against one known live body.",
+      "negative": "Proposed: read body.string once and reuse the resulting String; a second independent response body is read once; a modeled peek is used before the real consumption.",
+      "boundary": "Proposed: partial byteStream read followed by reading the remainder is not blanket flagged; distinct aliases to the same body still produce one ordered-use finding.",
+      "platform_version": "Proposed: released whole-body consumers and closure semantics on exact JVM/Android OkHttp versions, with no native/common symbol-name approximation.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: alias, exception-path, independent peek, and cached-value fixtures separate one-shot resource reuse from repeated value use."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.okhttp.call_executed_twice",
+    "category": "library/okhttp",
+    "problem": "One Call instance is executed or enqueued more than once.",
+    "rationale": "OkHttp Call represents one request/response pair and explicitly throws IllegalStateException when execute/enqueue is called again. clone creates a new executable Call; retrying a request does not reset the original Call instance.",
+    "sources": [
+      "https://raw.githubusercontent.com/square/okhttp/parent-5.5.1/okhttp/src/commonJvmAndroid/kotlin/okhttp3/Call.kt",
+      "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp/5.5.1/okhttp-5.5.1.module"
+    ],
+    "applicability": "Resolve okhttp3.Call.execute/enqueue and a modeled standard Call implementation or declared same one-shot contract. Require proven same receiver identity and a reachable ordered second execution attempt after the first has marked that Call executed; follow local aliases and modeled interprocedural wrappers. Version and actual Android/JVM target must resolve.",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "OkHttp 3.x/4.x/5.x Call one-shot adapters; reference parent-5.5.1. Custom Call implementations require explicit behavioral contracts.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Distinct client.newCall results and clone results are independent. Retry loops that construct a new Call each iteration are valid. Unknown custom Call implementations or unproven invocation counts are coverage gaps; expected-failure test constructs must be recognized/configurable.",
+    "validation": {
+      "positive": "Proposed: call.execute() followed by aliasOfCall.execute(); call.enqueue(callback) followed by call.execute().",
+      "negative": "Proposed: call.clone().execute after original.execute; retry helper invokes client.newCall(request) on each attempt; exclusive branches each execute once.",
+      "boundary": "Proposed: a failure from the first network execution still leaves the Call executed; loops require a proved second iteration and receiver identity, not merely a loop-shaped syntax.",
+      "platform_version": "Proposed: exact JVM/Android Call contracts in 3.x/4.x/5.5.1; fake custom Call implementations remain outside proof unless declared one-shot.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: clone/newCall aliases and execution-state fixtures prevent treating automatic HTTP retry inside OkHttp as an application-level second execute."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.okhttp.network_interceptor_proceed_count",
+    "category": "library/okhttp",
+    "problem": "A registered network interceptor returns a response without proceeding, or attempts to proceed more than once on the same chain.",
+    "rationale": "RealInterceptorChain checks that network interceptors call proceed exactly once: a second invocation attempt on the same network chain throws immediately, and a normally returning interceptor that never proceeds fails the enclosing check. Application interceptors explicitly may short-circuit or retry, so those legal behaviors must not inherit the network-interceptor restriction.",
+    "sources": [
+      "https://raw.githubusercontent.com/square/okhttp/parent-5.5.1/okhttp/src/commonJvmAndroid/kotlin/okhttp3/internal/http/RealInterceptorChain.kt",
+      "https://raw.githubusercontent.com/square/okhttp/master/docs/features/interceptors.md",
+      "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp/5.5.1/okhttp-5.5.1.module"
+    ],
+    "applicability": "Resolve okhttp3.OkHttpClient.Builder.addNetworkInterceptor or a proved entry in networkInterceptors and its actual okhttp3.Interceptor implementation. Follow Chain aliases and modeled wrappers under a certified bounded execution contract. Prove either a reachable normal return with zero proceed calls, or a reachable second proceed invocation attempt after the first marked that same network chain used. Do not require the second call to return normally: its runtime guard is the failure being diagnosed. Unknown registration category disables this rule; addInterceptor is an application interceptor.",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "OkHttp 3.x/4.x/5.x network-interceptor contract adapters; reference parent-5.5.1. Match the exact interceptor chain contract and concrete Android/JVM artifact.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "slow",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Ordinary exception exits before proceeding need not produce a response and are not zero-call violations. A proved second invocation attempt is independently invalid even though it throws. Application interceptors may call zero/multiple proceed times, provided their independent response-ownership obligations are respected. Unknown loops/helpers or category changes through DI do not establish cardinality.",
+    "validation": {
+      "positive": "Proposed: an interceptor registered via addNetworkInterceptor returns a synthetic response without proceed; another closes the first response and attempts a second proceed on the same chain, observing the immediate runtime guard.",
+      "negative": "Proposed: a network interceptor calls proceed once; an application interceptor registered via addInterceptor short-circuits or safely retries.",
+      "boundary": "Proposed: an intercept path that throws IOException before proceeding is not a zero-call violation; a second proceed attempt that throws is not incorrectly excluded as an ordinary exception exit. One class installed in both categories is diagnosed only for its proved network use.",
+      "platform_version": "Proposed: exact JVM/Android source/version chain checks, including the network-only exchange guard; unsupported runtime/registration models yield a gap.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: application-versus-network installation fixtures distinguish normal-return zero-call obligations from the immediate second-attempt guard, with no blanket exactly-once rule for every Interceptor."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.retrofit.invalid_request_body_encoding",
+    "category": "library/retrofit",
+    "problem": "A Retrofit service method combines request-body and encoding annotations in a combination the runtime parser rejects.",
+    "rationale": "Retrofit validates these declaration contracts at service parsing rather than Kotlin compilation: non-body methods cannot use ordinary @Body, @Field requires form encoding, @Part requires multipart encoding, and form/multipart cannot be combined or contain ordinary @Body.",
+    "sources": [
+      "https://raw.githubusercontent.com/lysine-dev/retrofit/3.0.0/retrofit/src/main/java/retrofit2/RequestFactory.java"
+    ],
+    "applicability": "Resolve actual retrofit2.http annotations on a service interface used/declared for a modeled retrofit2.Retrofit.create service. Mirror the released RequestFactory rules for the resolved HTTP annotation, @HTTP.hasBody, @FormUrlEncoded, @Multipart, @Body, @Field/@FieldMap, and @Part/@PartMap. Report only a specific parser-rejected combination; recognize inherited/default methods and exact symbols.",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Retrofit 2.x/3.x parser adapters; reference tagged 3.0.0 (2025-05-15). Current repository ownership is lysine-dev/retrofit. Platform is Android/JVM, including JVM desktop; Ktorfit annotations are separate symbols.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "semantic",
+    "cost": "fast",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "@HTTP(method=\"GET\", hasBody=true) is an explicit supported body contract and must not be treated like @GET. Custom preprocessed/generated declarations and deliberately invalid test service interfaces need explicit model/expected-failure handling. Converter selection is not part of this annotation-combination rule.",
+    "validation": {
+      "positive": "Proposed: @GET service method has @Body; @Field is used without @FormUrlEncoded; @Multipart and @FormUrlEncoded are both present; @Body is mixed with @Multipart.",
+      "negative": "Proposed: @POST with @Body; @FormUrlEncoded @POST with @Field; @Multipart @POST with @Part; explicit @HTTP(hasBody=true) with an ordinary body.",
+      "boundary": "Proposed: aliases/imports named Body or Part from another library do not match; named hasBody=true is recognized regardless of HTTP verb text.",
+      "platform_version": "Proposed: exact released Retrofit 2.x and 3.0.0 RequestFactory parsing on JVM/Android, including generic inherited interfaces and Kotlin default methods.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: differential parser integration fixtures confirm acceptance/rejection and preserve valid encoding alternatives across adapter upgrades."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.retrofit.invalid_url_parameter_binding",
+    "category": "library/retrofit",
+    "problem": "A Retrofit service URL template and its @Path/@Url/@Query declarations violate the runtime parser contract.",
+    "rationale": "RequestFactory rejects @Path names absent from the URL template, replacement blocks in the query string, combining @Url with an annotation URL/@Path, and certain URL/path parameters placed after query parameters. These failures are statically knowable from resolved annotations and constants.",
+    "sources": [
+      "https://raw.githubusercontent.com/lysine-dev/retrofit/3.0.0/retrofit/src/main/java/retrofit2/RequestFactory.java"
+    ],
+    "applicability": "Resolve retrofit2.http HTTP method URL constants and @Path, @Url, @Query, @QueryName, and @QueryMap parameters in a modeled Retrofit service. Apply only the exact resolved release RequestFactory template/binding/order checks; do not treat a missing @Path for every URL token as automatically invalid unless upstream rejects that case.",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Retrofit 2.x/3.x URL-binding adapters; reference tagged 3.0.0. Gate query-name/parameter order support by released API. Android/JVM only; do not apply to Ktorfit by annotation spelling.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "semantic",
+    "cost": "fast",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Valid full URLs, leading-slash endpoints, and dynamic @Url are intentional supported APIs. URL/base-path routing intent is not established by this rule. Unknown annotation constants, generated services, unrelated annotation types, and unmodeled inherited declarations remain gaps.",
+    "validation": {
+      "positive": "Proposed: @GET(\"users/{id}\") method declares @Path(\"missing\"); @GET(\"users?q={q}\") declares @Path(\"q\"); @Url is combined with @GET(\"fixed/path\") or @Path.",
+      "negative": "Proposed: @GET(\"users/{id}\") with matching @Path(\"id\") and separate @Query(\"q\"); @GET with an early @Url parameter followed by query parameters.",
+      "boundary": "Proposed: a token without a corresponding @Path is checked against the real parser rather than invented completeness requirements; full URL and leading slash remain legal.",
+      "platform_version": "Proposed: differential released 2.x/3.0.0 parser fixtures with exact annotations, method inheritance, and declaration parameter order on JVM/Android.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: parser-equivalent URL token parsing and parameter mapping distinguish malformed declaration contracts from an intentional absolute endpoint."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.retrofit.suspend_service_returns_call",
+    "category": "library/retrofit",
+    "problem": "A Kotlin suspend Retrofit HTTP service method directly returns retrofit2.Call<T>.",
+    "rationale": "The released HttpServiceMethod parser explicitly rejects suspend methods returning Call because suspend service methods already perform asynchronous execution. This is a declaration error, not a preference against valid non-suspend Call APIs.",
+    "sources": [
+      "https://raw.githubusercontent.com/lysine-dev/retrofit/3.0.0/retrofit/src/main/java/retrofit2/HttpServiceMethod.java"
+    ],
+    "applicability": "Resolve a Kotlin suspend HTTP service method consumed by a modeled retrofit2.Retrofit service and its actual direct return type retrofit2.Call<T> (including aliases). Match the released suspend-service parser contract; do not confuse okhttp3.Call, other Call types, nested value types, or ordinary repository methods.",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Retrofit versions with the explicit suspend-return Call guard; reference tagged 3.0.0. Older 2.x releases need a checked guard/version fixture before activation. Android/JVM only.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "semantic",
+    "cost": "fast",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Non-suspend Call<T> services are valid, as are suspend body types and retrofit2.Response<T>. Custom annotations/frameworks and intentionally parser-failing test declarations are outside the default declaration contract.",
+    "validation": {
+      "positive": "Proposed: @GET(\"users\") suspend fun users(): retrofit2.Call<List<User>> on an actual Retrofit service interface.",
+      "negative": "Proposed: non-suspend fun users(): Call<List<User>>; suspend fun users(): List<User>; suspend fun users(): retrofit2.Response<List<User>>.",
+      "boundary": "Proposed: a suspend repository helper returning a Call factory value without being a Retrofit HTTP service is not flagged; typealias Call resolves to the real class.",
+      "platform_version": "Proposed: inspect/execute parser behavior in exact 2.x candidate releases and 3.0.0 Kotlin/JVM/Android builds; unsupported older versions remain a gap.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: direct versus nested Call return types and suspend metadata fixtures prevent mistaking normal networking wrappers for invalid service methods."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.retrofit.base_url_path_requires_slash",
+    "category": "library/retrofit",
+    "problem": "A constant Retrofit base URL has a final nonempty path segment, which Builder.baseUrl rejects.",
+    "rationale": "Retrofit requires the base URL path to end in a slash and enforces this through the parsed HttpUrl path segments. A raw string suffix check is wrong because a legal trailing-path slash can be followed by a query or fragment.",
+    "sources": [
+      "https://raw.githubusercontent.com/lysine-dev/retrofit/3.0.0/retrofit/src/main/java/retrofit2/Retrofit.java"
+    ],
+    "applicability": "Resolve retrofit2.Retrofit.Builder.baseUrl(String/URL/okhttp3.HttpUrl) and a statically known parsed URL using the exact resolved OkHttp HttpUrl normalization. Report only if the final parsed path segment is nonempty under the released builder contract. Do not infer validity by text ending with \"/\".",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Retrofit 2.x/3.x baseUrl adapters; reference tagged 3.0.0 with the actual resolved OkHttp HttpUrl parser version. Android/JVM only.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "semantic",
+    "cost": "fast",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Unknown runtime URLs and custom wrappers require data-flow/model evidence. A leading slash in a service endpoint is allowed and is not a malformed base URL; it has separate intentional routing semantics. Query/fragment text after a path slash must not cause a false diagnostic.",
+    "validation": {
+      "positive": "Proposed: Retrofit.Builder().baseUrl(\"https://example.test/api\") rejects the nonempty final path segment.",
+      "negative": "Proposed: baseUrl(\"https://example.test/api/\"); a normalized root URL; baseUrl(\"https://example.test/api/?tenant=one\") remains valid.",
+      "boundary": "Proposed: URL dot-segment/percent-encoding normalization and query/fragment handling are compared with the exact HttpUrl implementation; unknown base URL variables remain unresolved.",
+      "platform_version": "Proposed: release-specific Retrofit and OkHttp parser integration on JVM/Android, including legal nonempty query/fragment following the slash.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: demonstrate that the diagnostic uses parsed path semantics and not an endsWith or library-name regex."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.logging.slf4j_missing_placeholder_arguments",
+    "category": "library/logging",
+    "problem": "A resolved SLF4J parameterized log call has more unescaped {} anchors than proven formatting arguments.",
+    "rationale": "SLF4J formatting leaves unmatched anchors unsubstituted. Exact overload and trailing Throwable normalization matter: a Throwable may be an exception argument rather than a formatting argument. Extra arguments may be meaningful to structured backends and are not rejected by this candidate.",
+    "sources": [
+      "https://www.slf4j.org/manual.html",
+      "https://raw.githubusercontent.com/qos-ch/slf4j/v_2.0.20/slf4j-api/src/main/java/org/slf4j/helpers/MessageFormatter.java",
+      "https://raw.githubusercontent.com/qos-ch/slf4j/v_2.0.20/slf4j-api/src/main/java/org/slf4j/helpers/AbstractLogger.java"
+    ],
+    "applicability": "Resolve actual org.slf4j.Logger trace/debug/info/warn/error parameterized overloads (including Marker variants), a constant message pattern, and a statically known formatting argument list. Apply exact MessageFormatter escape rules and overload-specific Throwable extraction for the resolved release/backend contract. Require at least one parameterized argument; plain message logging is not forced to escape literal braces.",
+    "platforms": [
+      "android",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "SLF4J 1.7/2.0 traditional-call adapters; reference tagged v_2.0.20 (2026-09-22). The 2.1 alpha and fluent LoggingEventBuilder need separate adapters; do not infer runtime API from Maven metadata latest tags.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "semantic",
+    "cost": "fast",
+    "severity": "warning",
+    "kind": "probable_defect",
+    "certainty": "intent_dependent",
+    "limitations": "Advisory because literal anchors or custom/structured backend semantics may be intentional. Unknown vararg/spread lengths, dynamic Throwable types, custom Logger implementations, and fluent builders are not definitively counted. Do not apply SLF4J placeholders or Throwable rules to Kermit/Napier.",
+    "validation": {
+      "positive": "Proposed: logger.info(\"user {} state {}\", userId) leaves one anchor; logger.warn(\"user {} failed {}\", userId, exception) requires exact two-argument Throwable extraction.",
+      "negative": "Proposed: matching anchors/arguments; a correct exception as trailing Throwable after all anchors are filled; escaped literal braces; intentional extra structured argument is not flagged.",
+      "boundary": "Proposed: single-object versus two-object/vararg overloads, backslash and double-backslash escapes, markers, unknown spread arrays, and literal braces in plain message overloads.",
+      "platform_version": "Proposed: exact SLF4J 1.7 and 2.0.20 formatting/backends on JVM/Android; Kotlin common/iOS logging and unmodeled 2.1/fluent calls stay outside this adapter.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: formatting differential tests and intentionally structured logging cases; verify no inherited placeholder policy for Kermit or Napier."
+    },
+    "status": "planned",
+    "default_activation": "advisory",
+    "disposition_reason": "Concrete formatting behavior with valid literal/structured logging intent. Keep advisory until an independently reviewed empirical/proof eligibility lane supports any narrower default; fixture counts alone do not justify promotion."
+  },
+  {
+    "id": "ktc.paging.factory_reuses_source",
+    "category": "library/paging",
+    "problem": "A Pager pagingSourceFactory deterministically returns the same PagingSource instance for successive generations.",
+    "rationale": "PageFetcher checks that a new paging source is not the current one and explicitly requires the factory to return a new instance. Capturing a previously created source in the factory violates regeneration on refresh or invalidation.",
+    "sources": [
+      "https://dl.google.com/dl/android/maven2/androidx/paging/paging-common/3.5.3/paging-common-3.5.3-sources.jar",
+      "https://dl.google.com/dl/android/maven2/androidx/paging/paging-common/3.5.3/paging-common-3.5.3.module"
+    ],
+    "applicability": "Resolve androidx.paging.Pager pagingSourceFactory and prove the factory result identity is constant across calls under a certified factory contract, such as a captured preconstructed source returned unconditionally. Resolve the actual PageFetcher identity-check contract at the dependency version. A provider whose name resembles a singleton is insufficient.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Paging 3.x factory contract adapters; reference released paging-common 3.5.3 source archive. Common/JVM/iOS support starts at 3.3.0; exact current target variants must be resolved.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "medium",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "A factory constructing a new source each time or invoking a verified fresh DAO pagingSource method is valid. Cached factories that actually rotate instances require modeling; unknown helper freshness is a gap. A deliberate expected-failure test or contract explicitly restricted to one generation requires separate handling.",
+    "validation": {
+      "positive": "Proposed: val shared = MyPagingSource(); Pager(config) { shared } returns one proven instance for every generation, and an analyzed refresh/invalidation requests another generation.",
+      "negative": "Proposed: Pager(config) { MyPagingSource() }; a modeled DAO method returns a fresh source on each factory call.",
+      "boundary": "Proposed: a factory with an opaque provider is not labeled reusable; a new Pager object is not confused with a new PagingSource result; certify regeneration reachability before describing a runtime failure.",
+      "platform_version": "Proposed: exact published 3.x PageFetcher identity checks in Android older releases and common/JVM/iOS 3.3.x/3.5.3 artifacts.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: captured-object versus fresh-constructor and provider-freshness fixtures retain identity evidence through inline wrappers."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  },
+  {
+    "id": "ktc.voyager.transition_screen_key_collision",
+    "category": "library/voyager",
+    "problem": "Two distinct simultaneously composed Voyager transition screens use the same SaveableStateHolder key.",
+    "rationale": "Voyager 1.0.1 ScreenTransition composes animated screen states through Navigator.saveableState(\"transition\", screen). Navigator derives the holder key as \"${screen.key}:transition\". The released Compose SaveableStateHolder implementation rejects two active providers for one key; repeated screen classes alone do not establish such an overlap.",
+    "sources": [
+      "https://voyager.adriel.cafe/transitions-api/",
+      "https://raw.githubusercontent.com/adrielcafe/voyager/1.0.1/voyager-transitions/src/commonMain/kotlin/cafe/adriel/voyager/transitions/ScreenTransition.kt",
+      "https://raw.githubusercontent.com/adrielcafe/voyager/1.0.1/voyager-navigator/src/commonMain/kotlin/cafe/adriel/voyager/navigator/Navigator.kt",
+      "https://raw.githubusercontent.com/adrielcafe/voyager/1.0.1/voyager-core/src/commonMain/kotlin/cafe/adriel/voyager/core/screen/ScreenKey.kt",
+      "https://repo.maven.apache.org/maven2/cafe/adriel/voyager/voyager-transitions/1.0.1/voyager-transitions-1.0.1.module",
+      "https://repo.maven.apache.org/maven2/cafe/adriel/voyager/voyager-navigator/1.0.1/voyager-navigator-1.0.1.module",
+      "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-saveable/1.5.0/runtime-saveable-1.5.0-sources.jar",
+      "https://repo.maven.apache.org/maven2/org/jetbrains/compose/runtime/runtime-saveable-desktop/1.5.1/runtime-saveable-desktop-1.5.1-sources.jar"
+    ],
+    "applicability": "For declared/resolved cafe.adriel.voyager APIs, resolve ScreenTransition (or a certified forwarding transition), actual Navigator/SaveableStateHolder identity, and computed stable screen keys. Require a certified bounded transition/composition contract proving that two distinct non-coalesced screen states create simultaneously active providers with equal computed holder keys and no disposal between registrations. Resolve AnimatedContent equality/content-key behavior and exact Compose/Voyager versions; stack membership or repeated screen class names cannot prove the condition.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "version_scope": "Reference Voyager stable 1.0.1 (2024-12-19), AndroidX runtime-saveable 1.5.0 and JetBrains runtime-saveable-desktop 1.5.1 released duplicate-active-key sources. This is not a verified supported compatibility tuple. Current 1.1 betas, updated transition APIs, and every actual Android/iOS/JVM/JS/Native runtime combination need separate contract/integration evidence before activation.",
+    "implementation": "custom",
+    "provider": "ktChecker",
+    "depth": "graph",
+    "cost": "slow",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "limitations": "Unknown animation overlap, dynamic screen keys/equality, opaque custom transitions, custom SaveableStateHolder implementations, and unverified lifecycle disposal make this rule unavailable. Sequential reuse after disposal and independent holders are valid; nested Navigators can share a holder and must not be presumed independent. Stable per-instance unique keys are legal. Do not recommend a fresh random key on every property read, mandate a navigation architecture, or emit an additional generic Compose duplicate-key finding for the same cause.",
+    "validation": {
+      "positive": "Proposed: a supported nonzero transition moves from one distinct screen instance to another, both with stable key=\"same\", while both content providers remain active on the same holder; an executed integration fixture observes the released duplicate-key guard.",
+      "negative": "Proposed: each distinct screen retains override val key = uniqueScreenKey; sequential reuse after the first provider is disposed; screens use independently proved holders.",
+      "boundary": "Proposed: equal AnimatedContent states coalescing to one content provider, zero-overlap transitions, dynamic keys, and nested holders require exact runtime facts. Two same-class screens with distinct retained keys do not report.",
+      "platform_version": "Proposed: released Voyager 1.0.1 Android/JVM transition and runtime-saveable fixtures, plus independently verified supported iOS/Compose Multiplatform combinations. A published target or tagged build catalog alone does not certify the runtime compatibility tuple.",
+      "suppression": "Proposed: recognize this stable rule ID in source and configured baselines; verify suppression is scoped to the finding and is preserved in machine-readable evidence. No suppression implementation is present.",
+      "regression": "Proposed: state equality, provider lifetime and holder identity evidence are preserved; deliberate repeated-destination navigation remains valid with distinct stable keys. Verify one primary finding shared with the generic Compose holder contract."
+    },
+    "status": "planned",
+    "default_activation": "enabled_when_validated",
+    "disposition_reason": "Concrete upstream contract candidate. Default eligibility requires the independent proof-or-empirical precision gate defined in docs/validation-ci.md, released-version/source-set applicability evidence, and integration fixtures; proposed fixtures alone do not establish default eligibility. Cost is an engineering estimate, not a benchmark."
+  }
+]
