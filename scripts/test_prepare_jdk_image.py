@@ -19,7 +19,7 @@ import prepare_jdk_image as image
 class PreparedJdkImageTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="ktchecker-prep-unit-")
-        self.base = Path(self.temporary.name)
+        self.base = Path(self.temporary.name).resolve(strict=True)
         self.source = self.base / "source"
         self.source.mkdir()
         self.destination = self.base / "prepared"

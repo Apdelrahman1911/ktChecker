@@ -9,8 +9,9 @@ import signal
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 try:
     from . import ci_common, collect_evidence, record_environment, run_platform_checks, run_provider_checks, smoke_distribution
@@ -410,6 +411,367 @@ class SmokeAndEnvironmentTests(unittest.TestCase):
             result = record_environment.record(args)
         self.assertEqual("failed", result["state"])
 
+    def test_xcode_inventory_uses_structured_probe_and_projects_only_known_fields(self):
+        runtime = {"identifier": "com.apple.CoreSimulator.SimRuntime.iOS-26-4", "version": "26.4",
+                   "isAvailable": True, "name": "iOS 26.4", "buildversion": "fixture-build",
+                   "unknown_private_field": "private-inventory-content"}
+        metadata = {"state": "passed", "reason": None}
+        with patch.object(record_environment.platform, "system", return_value="Darwin"), \
+             patch.object(record_environment, "probe", side_effect=[(0, "Xcode 26.4.1\nBuild version 17E202\n"),
+                                                                    (0, "26.4\n"), (0, "26.4\n")]) as version_probe, \
+             patch.object(record_environment, "probe_simctl_inventory", return_value=(metadata, {"runtimes": [runtime]})) as inventory_probe:
+            result = record_environment.observe_xcode()
+        inventory_probe.assert_called_once_with("runtimes")
+        self.assertEqual(3, version_probe.call_count)
+        self.assertEqual(metadata, result["simulator_runtime_inventory"])
+        self.assertEqual("fixture-build", result["available_simulator_runtimes"][0]["buildversion"])
+        self.assertNotIn("private-inventory-content", json.dumps(result))
+        self.assertNotIn("isAvailable", result["available_simulator_runtimes"][0])
+
+    def test_xcode_inventory_failure_is_explicit_without_decoder_or_stderr_text(self):
+        metadata = {"state": "unavailable", "reason": "stdout_overflow"}
+        with patch.object(record_environment.platform, "system", return_value="Darwin"), \
+             patch.object(record_environment, "probe", side_effect=[(0, "Xcode 26.4.1\nBuild version 17E202\n"),
+                                                                    (0, "26.4\n"), (0, "26.4\n")]), \
+             patch.object(record_environment, "probe_simctl_inventory", return_value=(metadata, None)):
+            result = record_environment.observe_xcode()
+        self.assertEqual("observed", result["state"])
+        self.assertEqual([], result["available_simulator_runtimes"])
+        self.assertEqual(metadata, result["simulator_runtime_inventory"])
+
+    def test_xcode_can_defer_inventory_until_platform_preflight_has_checked_pins(self):
+        with patch.object(record_environment.platform, "system", return_value="Darwin"), \
+             patch.object(record_environment, "probe", side_effect=[(0, "Xcode 26.4.1\nBuild version 17E202\n"),
+                                                                    (0, "26.4\n"), (0, "26.4\n")]), \
+             patch.object(record_environment, "probe_simctl_inventory") as inventory_probe:
+            result = record_environment.observe_xcode(include_simulator_inventory=False)
+        inventory_probe.assert_not_called()
+        self.assertNotIn("available_simulator_runtimes", result)
+        self.assertEqual("26.4.1", result["version"])
+
+    def test_nonzero_xcode_version_probe_cannot_publish_matching_pin_as_observed(self):
+        with patch.object(record_environment.platform, "system", return_value="Darwin"), \
+             patch.object(record_environment, "probe", side_effect=[(1, "Xcode 26.4.1\nBuild version 17E202\n"),
+                                                                    (0, "26.4\n"), (0, "26.4\n")]), \
+             patch.object(record_environment, "probe_simctl_inventory") as inventory_probe:
+            result = record_environment.observe_xcode(include_simulator_inventory=False)
+        self.assertEqual("unavailable", result["state"])
+        self.assertIsNone(result["version"])
+        self.assertIsNone(result["build"])
+        inventory_probe.assert_not_called()
+
+    def test_required_xcode_pins_reject_unavailable_observation_even_matching_values(self):
+        for version, build in (("26.4.1", None), (None, "17E202"), ("26.4.1", "17E202")):
+            args = argparse.Namespace(gradle_result=None, require_java_major=21, require_gradle=None,
+                                      require_xcode=version, require_xcode_build=build)
+            with self.subTest(version=version, build=build), \
+                 tempfile.TemporaryDirectory() as temporary, \
+                 patch.object(record_environment, "source_identity", return_value=IDENTITY), \
+                 patch.object(record_environment, "wrapper_profile", return_value={"state": "pinned"}), \
+                 patch.object(record_environment.shutil, "which", side_effect=lambda command: str(Path(temporary) / "absent-java") if command == "java" else None), \
+                 patch.object(record_environment, "probe", return_value=(0, 'openjdk version "21.0.12"\n')), \
+                 patch.object(record_environment, "observe_xcode", return_value={"state": "unavailable", "version": "26.4.1", "build": "17E202"}), \
+                 patch.dict(os.environ, {}, clear=True):
+                result = record_environment.record(args)
+            self.assertEqual("failed", result["state"])
+            expected_errors = []
+            if version:
+                expected_errors.append(f"Observed Xcode 26.4.1; required {version}")
+            if build:
+                expected_errors.append(f"Observed Xcode build 17E202; required {build}")
+            self.assertEqual(expected_errors, result["errors"])
+
+    def test_required_xcode_pins_keep_optional_inventory_failure_independent(self):
+        args = argparse.Namespace(gradle_result=None, require_java_major=21, require_gradle=None,
+                                  require_xcode="26.4.1", require_xcode_build="17E202")
+        xcode = {"state": "observed", "version": "26.4.1", "build": "17E202",
+                 "simulator_runtime_inventory": {"state": "unavailable", "reason": "stderr_output"},
+                 "available_simulator_runtimes": []}
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(record_environment, "source_identity", return_value=IDENTITY), \
+             patch.object(record_environment, "wrapper_profile", return_value={"state": "pinned"}), \
+             patch.object(record_environment.shutil, "which", side_effect=lambda command: str(Path(temporary) / "absent-java") if command == "java" else None), \
+             patch.object(record_environment, "probe", return_value=(0, 'openjdk version "21.0.12"\n')), \
+             patch.object(record_environment, "observe_xcode", return_value=xcode), \
+             patch.dict(os.environ, {}, clear=True):
+            result = record_environment.record(args)
+        self.assertEqual("passed", result["state"])
+        self.assertEqual([], result["errors"])
+        self.assertEqual("unavailable", result["xcode"]["simulator_runtime_inventory"]["state"])
+
+
+class StructuredJsonProbeTests(unittest.TestCase):
+    """Synthetic pipe/child observations only; no Apple or other child is run."""
+
+    def invoke(self, stdout=b"{}", stderr=b"", *, return_code=0, poll_code=0,
+               wait_effect=None, clock=None, max_stdout_bytes=record_environment.SIMCTL_JSON_MAX_BYTES):
+        process = Mock()
+        process.stdout = Mock()
+        process.stderr = Mock()
+        process.stdout.fileno.return_value = 10
+        process.stderr.fileno.return_value = 11
+        process.poll.return_value = poll_code
+        process.wait.return_value = return_code
+        process.wait.side_effect = wait_effect
+        selector = MagicMock()
+        selector.__enter__.return_value = selector
+        active = {}
+
+        def register(stream, events, name):
+            key = SimpleNamespace(fd=stream.fileno(), fileobj=stream, data=name)
+            active[key.fd] = key
+            return key
+
+        selector.register.side_effect = register
+        selector.unregister.side_effect = lambda stream: active.pop(stream.fileno())
+        selector.get_map.side_effect = lambda: active
+        selector.select.side_effect = lambda timeout: [(key, 1) for key in list(active.values())]
+        buffers = {10: bytearray(stdout), 11: bytearray(stderr)}
+        read_sizes = []
+
+        def read(fd, size):
+            read_sizes.append((fd, size))
+            chunk = bytes(buffers[fd][:size])
+            del buffers[fd][:size]
+            return chunk
+
+        with patch.object(record_environment.subprocess, "Popen", return_value=process) as launch, \
+             patch.object(record_environment.os, "name", "posix"), \
+             patch.object(record_environment.selectors, "DefaultSelector", return_value=selector), \
+             patch.object(record_environment.os, "set_blocking") as set_blocking, \
+             patch.object(record_environment.os, "read", side_effect=read), \
+             patch.object(record_environment.time, "monotonic", side_effect=clock or (lambda: 100.0)), \
+             patch.object(record_environment.os, "killpg", create=True) as group_signal:
+            metadata, value = record_environment.probe_json(["synthetic-json-probe"], max_stdout_bytes=max_stdout_bytes)
+        group_signal.assert_not_called()
+        self.assertEqual([(10, False), (11, False)], [call.args for call in set_blocking.call_args_list])
+        process.stdout.close.assert_called_once_with()
+        process.stderr.close.assert_called_once_with()
+        return metadata, value, process, launch, read_sizes
+
+    def test_complete_json_larger_than_old_clipped_prefix_is_accepted(self):
+        raw = json.dumps({"private_padding": "x" * 70000}).encode("utf-8")
+        metadata, value, process, launch, read_sizes = self.invoke(raw)
+        self.assertGreater(len(raw), 65536)
+        self.assertEqual("passed", metadata["state"])
+        self.assertEqual(len(raw), metadata["stdout_bytes_observed"])
+        self.assertEqual(70000, len(value["private_padding"]))
+        self.assertTrue(metadata["stdout_complete"] and metadata["stderr_complete"])
+        self.assertFalse(metadata["raw_output_retained"])
+        self.assertNotIn("private_padding", json.dumps(metadata))
+        self.assertEqual("stdout", metadata["json_stream"])
+        process.kill.assert_not_called()
+        self.assertFalse(launch.call_args.kwargs["shell"])
+        self.assertEqual(subprocess.PIPE, launch.call_args.kwargs["stdout"])
+        self.assertEqual(subprocess.PIPE, launch.call_args.kwargs["stderr"])
+        self.assertTrue(all(size <= 16384 for _, size in read_sizes))
+
+    def test_overflow_never_parses_even_a_valid_json_prefix(self):
+        with patch.object(record_environment, "_parse_probe_json") as parse:
+            metadata, value, process, _, read_sizes = self.invoke(b"{}" + b" " * 30, max_stdout_bytes=8)
+        parse.assert_not_called()
+        self.assertEqual("stdout_overflow", metadata["reason"])
+        self.assertEqual(9, metadata["stdout_bytes_observed"])
+        self.assertIsNone(value)
+        self.assertFalse(metadata["stdout_complete"])
+        process.kill.assert_not_called()  # Direct-child completion was observed.
+        self.assertTrue(all(size <= 9 for fd, size in read_sizes if fd == 10))
+
+    def test_exact_stdout_bound_is_accepted_only_after_eof(self):
+        metadata, value, _, _, read_sizes = self.invoke(b'{"x":1}', max_stdout_bytes=7)
+        self.assertEqual("passed", metadata["state"])
+        self.assertEqual({"x": 1}, value)
+        self.assertIn((10, 1), read_sizes)
+        self.assertTrue(metadata["stdout_complete"])
+
+    def test_stderr_is_separate_unavailable_and_never_decoder_input(self):
+        with patch.object(record_environment, "_parse_probe_json") as parse:
+            metadata, value, process, _, _ = self.invoke(b"{}", b"private-stderr-text")
+        parse.assert_not_called()
+        self.assertEqual("stderr_output", metadata["reason"])
+        self.assertEqual(len(b"private-stderr-text"), metadata["stderr_bytes_observed"])
+        self.assertNotIn("private-stderr-text", json.dumps(metadata))
+        self.assertIsNone(value)
+        process.kill.assert_not_called()
+
+    def test_stderr_observation_is_bounded_and_running_child_cleanup_is_direct_only(self):
+        metadata, value, process, _, read_sizes = self.invoke(b"{}", b"x" * 10000, poll_code=None)
+        self.assertEqual("stderr_output", metadata["reason"])
+        self.assertEqual(4096, metadata["stderr_bytes_observed"])
+        self.assertTrue(metadata["terminated_by_probe"])
+        self.assertEqual("direct_child_reaped", metadata["cleanup_state"])
+        process.kill.assert_called_once_with()
+        process.wait.assert_called_once_with(timeout=record_environment.PROBE_CLEANUP_SECONDS)
+        self.assertIsNone(value)
+        self.assertTrue(all(size == 4096 for fd, size in read_sizes if fd == 11))
+
+    def test_nonzero_exit_is_not_a_json_or_stderr_failure(self):
+        metadata, value, process, _, _ = self.invoke(b"{}", return_code=7)
+        self.assertEqual("nonzero_exit", metadata["reason"])
+        self.assertEqual(7, metadata["return_code"])
+        self.assertEqual(0, metadata["stderr_bytes_observed"])
+        self.assertIsNone(value)
+        process.kill.assert_not_called()
+
+    def test_timeout_and_cleanup_wait_are_bounded(self):
+        readings = iter((100.0, 131.0))
+        metadata, value, process, _, _ = self.invoke(poll_code=None, clock=lambda: next(readings, 131.0))
+        self.assertEqual("timeout", metadata["reason"])
+        self.assertIsNone(value)
+        process.kill.assert_called_once_with()
+        process.wait.assert_called_once_with(timeout=2)
+
+    def test_timeout_after_leader_completion_never_signals_reaped_child(self):
+        readings = iter((100.0, 131.0))
+        metadata, value, process, _, _ = self.invoke(clock=lambda: next(readings, 131.0))
+        self.assertEqual("timeout", metadata["reason"])
+        self.assertEqual(0, metadata["return_code"])
+        self.assertFalse(metadata["terminated_by_probe"])
+        process.kill.assert_not_called()
+        self.assertIsNone(value)
+
+    def test_unverified_direct_child_cleanup_cannot_pass(self):
+        metadata, value, process, _, _ = self.invoke(b"{}", b"stderr", poll_code=None,
+                                                     wait_effect=subprocess.TimeoutExpired("synthetic-json-probe", 2))
+        self.assertEqual("stderr_output", metadata["reason"])
+        self.assertEqual("direct_child_cleanup_unverified", metadata["cleanup_state"])
+        self.assertEqual("unavailable", metadata["state"])
+        process.kill.assert_called_once_with()
+        self.assertIsNone(value)
+
+    def test_missing_executable_is_explicit_and_does_not_echo_exception_text(self):
+        with patch.object(record_environment.os, "name", "posix"), \
+             patch.object(record_environment.subprocess, "Popen", side_effect=FileNotFoundError("private-exception-text")):
+            metadata, value = record_environment.probe_json(["synthetic-json-probe"])
+        self.assertEqual("start_failure", metadata["reason"])
+        self.assertEqual("not_started", metadata["cleanup_state"])
+        self.assertNotIn("private-exception-text", json.dumps(metadata))
+        self.assertIsNone(value)
+
+    def test_non_posix_probe_is_unavailable_without_launch_or_pipe_access(self):
+        with patch.object(record_environment.os, "name", "nt"), \
+             patch.object(record_environment.subprocess, "Popen") as launch, \
+             patch.object(record_environment.os, "set_blocking") as set_blocking, \
+             patch.object(record_environment.os, "read") as read:
+            metadata, value = record_environment.probe_json(["synthetic-json-probe"])
+        self.assertEqual("unavailable", metadata["state"])
+        self.assertEqual("pipe_probe_unavailable", metadata["reason"])
+        self.assertEqual("not_started", metadata["cleanup_state"])
+        self.assertEqual(0, metadata["stdout_bytes_observed"])
+        self.assertEqual(0, metadata["stderr_bytes_observed"])
+        self.assertIsNone(value)
+        launch.assert_not_called()
+        set_blocking.assert_not_called()
+        read.assert_not_called()
+
+    def test_invalid_limits_fail_before_launch(self):
+        with patch.object(record_environment.subprocess, "Popen") as launch:
+            for timeout in (0, 31, True, 1.5):
+                with self.subTest(timeout=timeout), self.assertRaises(ValueError):
+                    record_environment.probe_json(["synthetic-json-probe"], timeout=timeout)
+            for limit in (0, record_environment.SIMCTL_JSON_MAX_BYTES + 1, True, 1.5):
+                with self.subTest(limit=limit), self.assertRaises(ValueError):
+                    record_environment.probe_json(["synthetic-json-probe"], max_stdout_bytes=limit)
+        launch.assert_not_called()
+
+    def test_invalid_utf8_malformed_duplicate_and_nonfinite_json_are_distinct(self):
+        samples = ((b'{"x":"\xff"}', "invalid_utf8"), (b'{"x":', "malformed_json"),
+                   (b'{"x":1,"x":2}', "duplicate_json_keys"), (b'{"x":NaN}', "nonfinite_json"),
+                   (b'{"x":Infinity}', "nonfinite_json"), (b'{"x":1e999}', "nonfinite_json"),
+                   (b'[]', "json_not_object"))
+        for raw, reason in samples:
+            with self.subTest(reason=reason):
+                metadata, value, _, _, _ = self.invoke(raw)
+                self.assertEqual(reason, metadata["reason"])
+                self.assertIsNone(value)
+                self.assertNotIn(raw.decode("utf-8", "replace"), json.dumps(metadata))
+
+    def test_depth_and_token_limits_are_checked_before_decoder_allocation(self):
+        samples = ((b'{"x":' + b'[' * 33 + b'0' + b']' * 33 + b'}', "json_depth_limit"),
+                   (json.dumps({"x": [0] * (record_environment.JSON_MAX_TOKENS + 1)}).encode(), "json_token_limit"))
+        for raw, reason in samples:
+            with self.subTest(reason=reason), patch.object(record_environment.json, "loads") as loads:
+                metadata, value, _, _, _ = self.invoke(raw)
+                loads.assert_not_called()
+                self.assertEqual(reason, metadata["reason"])
+                self.assertIsNone(value)
+
+    def test_json_string_punctuation_and_escapes_do_not_create_false_depth(self):
+        expected = {"x": '[{,:}\\\"' * 50}
+        metadata, value, _, _, _ = self.invoke(json.dumps(expected).encode())
+        self.assertEqual("passed", metadata["state"])
+        self.assertEqual(expected, value)
+
+    def test_inventory_wrapper_uses_only_fixed_argv_and_validates_schema(self):
+        samples = (("runtimes", {"runtimes": []}, ["list", "runtimes", "--json"]),
+                   ("devices", {"devices": {}}, ["list", "devices", "available", "--json"]))
+        for kind, inventory, suffix in samples:
+            with self.subTest(kind=kind), \
+                 patch.object(record_environment, "probe_json", return_value=({"state": "passed", "reason": None}, inventory)) as probe:
+                metadata, value = record_environment.probe_simctl_inventory(kind)
+            probe.assert_called_once_with(["/usr/bin/xcrun", "simctl", *suffix])
+            self.assertEqual(kind, metadata["inventory_kind"])
+            self.assertEqual("passed", metadata["state"])
+            self.assertEqual(inventory, value)
+        with patch.object(record_environment, "probe_json") as probe, self.assertRaises(ValueError):
+            record_environment.probe_simctl_inventory("untrusted-kind")
+        probe.assert_not_called()
+
+    def test_malformed_inventory_shape_is_unavailable_not_an_attribute_error(self):
+        samples = (("runtimes", {}), ("runtimes", {"runtimes": [None]}),
+                   ("runtimes", {"runtimes": [{"identifier": "runtime", "version": "26.4", "isAvailable": "true"}]}),
+                   ("devices", {"devices": []}), ("devices", {"devices": {"runtime": [0]}}))
+        for kind, inventory in samples:
+            with self.subTest(kind=kind), \
+                 patch.object(record_environment, "probe_json", return_value=({"state": "passed", "reason": None}, inventory)):
+                metadata, value = record_environment.probe_simctl_inventory(kind)
+            self.assertEqual("invalid_inventory_schema", metadata["reason"])
+            self.assertEqual("unavailable", metadata["state"])
+            self.assertIsNone(value)
+
+
+class FixtureDslSourceTests(unittest.TestCase):
+    """Authored source guards only, not Kotlin compilation or AGP execution."""
+
+    def test_fixture_uses_supported_compiler_receiver_and_named_custom_source_set(self):
+        source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
+        self.assertIn("compilerOptions.jvmTarget.set(JvmTarget.JVM_17)", source)
+        self.assertNotIn("compilerOptions.configure", source)
+        self.assertIn('getByName("desktopTest").dependencies', source)
+        self.assertNotIn("desktopTest.dependencies", source)
+
+    def test_lint_report_uses_explicit_variant_artifact_not_removed_dsl_or_default_name(self):
+        source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
+        self.assertIn("extensions.configure<KotlinMultiplatformAndroidComponentsExtension>", source)
+        self.assertIn("variant.artifacts.get(SingleArtifact.LINT_XML_REPORT)", source)
+        self.assertIn('variant.computeTaskName("lintReport", "")', source)
+        self.assertIn("checkDependencies = false", source)
+        for removed in ("xmlReport =", "xmlOutput =", "htmlReport =", "textReport ="):
+            self.assertNotIn(removed, source)
+
+    def test_negative_report_finalizer_has_no_failed_producer_dependency_and_requires_fresh_file(self):
+        source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
+        finalizer = source.split('tasks.register("retainFixtureLintReport")', 1)[1].split("tasks.matching", 1)[0]
+        producer = source.split("tasks.matching { task -> task.name == reportTaskName }", 1)[1].split("tasks.withType<Test>", 1)[0]
+        self.assertNotIn("inputs.file", finalizer)
+        self.assertNotIn("dependsOn(", finalizer)
+        self.assertIn("check(reportPrepared)", finalizer)
+        self.assertIn("Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS)", finalizer)
+        self.assertIn("Files.size(source) in 1L..(8L * 1024 * 1024)", finalizer)
+        self.assertIn("Files.deleteIfExists(destination)", finalizer)
+        self.assertIn("Files.deleteIfExists(source)", producer)
+        self.assertIn("StandardCopyOption.ATOMIC_MOVE", finalizer)
+        self.assertIn("reportPrepared = true", producer)
+        self.assertIn("finalizedBy(retainReport)", producer)
+
+    def test_task_predicates_bind_each_task_not_the_project_name(self):
+        source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
+        self.assertIn("tasks.matching { task -> task.name == reportTaskName }", source)
+        host_predicate = source.split("val androidHostTests", 1)[1].split("tasks.register", 1)[0]
+        self.assertIn("matching { task ->", host_predicate)
+        self.assertIn('task.name.contains("android", ignoreCase = true)', host_predicate)
+        self.assertNotIn("matching { name", source)
+
 
 class SimulatorTests(unittest.TestCase):
     def inventory(self, version="26.4", available=True):
@@ -455,6 +817,79 @@ class SimulatorTests(unittest.TestCase):
             self.assertEqual(25, result["required_project_java_major"])
             self.assertEqual(21, result["engine_broker_java_major"])
             self.assertEqual(str(Path("/public/project-jdk") / "bin" / ("java.exe" if os.name == "nt" else "java")), probe.call_args.args[0][0])
+
+    def ios_preflight(self, inventory_side_effect, *, xcode=None):
+        if xcode is None:
+            xcode = {"state": "observed", "version": "26.4.1", "build": "17E202",
+                     "iphoneos_sdk": "26.4", "iphonesimulator_sdk": "26.4"}
+        with patch.object(run_platform_checks.platform, "system", return_value="Darwin"), \
+             patch.object(run_platform_checks.platform, "machine", return_value="arm64"), \
+             patch.object(run_platform_checks, "probe", return_value=(0, 'openjdk version "25.0.1"\n')) as version_probe, \
+             patch.object(run_platform_checks, "installed_packages", return_value=[{"installed": True}]), \
+             patch.object(run_platform_checks, "observe_xcode", return_value=xcode) as observe, \
+             patch.object(run_platform_checks, "probe_simctl_inventory", side_effect=inventory_side_effect) as inventory_probe, \
+             patch.dict(os.environ, {"ANDROID_HOME": "/public/sdk", "JAVA_HOME": "/public/project-jdk"}, clear=True):
+            result = run_platform_checks.preflight("ios")
+        observe.assert_called_once_with(include_simulator_inventory=False)
+        version_probe.assert_called_once()
+        return result, inventory_probe
+
+    def test_ios_preflight_rejects_unavailable_xcode_even_matching_pins(self):
+        xcode = {"state": "unavailable", "version": "26.4.1", "build": "17E202",
+                 "iphoneos_sdk": "26.4", "iphonesimulator_sdk": "26.4"}
+        result, probe = self.ios_preflight([], xcode=xcode)
+        self.assertEqual("unavailable", result["state"])
+        self.assertNotIn("simulator", result)
+        self.assertEqual(["Select Xcode 26.4.1, build 17E202 explicitly; runner defaults are not evidence"], result["errors"])
+        probe.assert_not_called()
+
+    def test_ios_preflight_uses_complete_structured_inventories_once_after_pins(self):
+        runtimes, devices = self.inventory()
+        runtimes["private_inventory_content"] = "not-public"
+        metadata = {"state": "passed", "reason": None}
+        result, probe = self.ios_preflight([(metadata, runtimes), (metadata, devices)])
+        self.assertEqual("passed", result["state"])
+        self.assertEqual("12345678-1234-1234-1234-123456789abc", result["simulator"]["udid"])
+        self.assertEqual([("runtimes",), ("devices",)], [call.args for call in probe.call_args_list])
+        self.assertEqual({"runtimes", "devices"}, set(result["simulator_inventory"]))
+        self.assertNotIn("not-public", json.dumps(result))
+
+    def test_runtime_probe_failure_stays_unavailable_without_devices_or_selection(self):
+        for reason in ("stdout_overflow", "stderr_output", "timeout", "start_failure", "nonzero_exit", "malformed_json"):
+            with self.subTest(reason=reason):
+                metadata = {"state": "unavailable", "reason": reason}
+                result, probe = self.ios_preflight([(metadata, None)])
+                self.assertEqual("unavailable", result["state"])
+                self.assertNotIn("simulator", result)
+                probe.assert_called_once_with("runtimes")
+                self.assertEqual([f"simctl runtimes prerequisite unavailable: {reason}"], result["errors"])
+
+    def test_device_probe_failure_stays_unavailable_without_raw_json_error(self):
+        runtimes, _ = self.inventory()
+        result, probe = self.ios_preflight([({"state": "passed", "reason": None}, runtimes),
+                                            ({"state": "unavailable", "reason": "invalid_utf8"}, None)])
+        self.assertEqual("unavailable", result["state"])
+        self.assertEqual(2, probe.call_count)
+        self.assertNotIn("simulator", result)
+        self.assertEqual(["simctl devices prerequisite unavailable: invalid_utf8"], result["errors"])
+
+    def test_valid_inventory_without_pinned_runtime_is_not_execution_success(self):
+        runtimes, devices = self.inventory(version="26.5")
+        metadata = {"state": "passed", "reason": None}
+        result, _ = self.ios_preflight([(metadata, runtimes), (metadata, devices)])
+        self.assertEqual("unavailable", result["state"])
+        self.assertNotIn("simulator", result)
+        self.assertEqual(["No available iPhone 17 in the pinned iOS 26.4 simulator runtime"], result["errors"])
+
+    def test_malformed_or_injected_runtime_identity_cannot_be_selected(self):
+        with self.assertRaisesRegex(ValueError, "Invalid simctl inventory schema"):
+            run_platform_checks.select_simulator({"runtimes": [0]}, {"devices": {}})
+        runtimes, devices = self.inventory()
+        identifier = "untrusted-prefix.com.apple.CoreSimulator.SimRuntime.iOS-26-4"
+        runtimes["runtimes"][0]["identifier"] = identifier
+        devices["devices"] = {identifier: next(iter(devices["devices"].values()))}
+        with self.assertRaisesRegex(ValueError, "No available iPhone 17"):
+            run_platform_checks.select_simulator(runtimes, devices)
 
 
 class ProviderEvidenceTests(unittest.TestCase):

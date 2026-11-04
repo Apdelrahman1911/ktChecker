@@ -116,7 +116,7 @@ class LibraryPolicyTests(unittest.TestCase):
 
     def test_trusted_outer_root_alias_never_allows_traversal_or_descendant_symlinks(self):
         with tempfile.TemporaryDirectory() as temporary:
-            parent = Path(temporary)
+            parent = Path(temporary).resolve(strict=True)
             root = parent / "actual-root"
             root.mkdir()
             path = root / "public.json"

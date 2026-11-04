@@ -72,6 +72,27 @@ class ImplementationWorkflowTests(unittest.TestCase):
         self.assertIn("modules/kernel/build/reports/stress/*.json", document)
 
 
+class WindowsCheckoutWorkflowTests(unittest.TestCase):
+    def test_explicit_windows_long_paths_step_precedes_checkout(self):
+        # Authored wiring only: this does not demonstrate hosted Windows checkout
+        # or support by any downstream tool for paths beyond legacy MAX_PATH.
+        for filename in ("implementation.yml", "bridges-validation.yml", "plan-validation.yml"):
+            with self.subTest(workflow=filename):
+                document = (ci_common.REPO_ROOT / ".github/workflows" / filename).read_text(encoding="utf-8")
+                step = re.search(
+                    r"^      - name: Enable Windows long paths before checkout\n"
+                    r"([\s\S]*?)(?=^      - name: |\Z)", document, re.MULTILINE)
+                self.assertIsNotNone(step)
+                self.assertRegex(step[1], r"(?m)^        if: runner\.os == 'Windows'$")
+                self.assertRegex(step[1], r"(?m)^        shell: pwsh$")
+                self.assertRegex(step[1], r"(?m)^        run: git config --global core\.longpaths true$")
+                self.assertNotIn("continue-on-error:", step[1])
+                checkout = re.search(r"^        uses: actions/checkout@", document, re.MULTILINE)
+                self.assertIsNotNone(checkout)
+                self.assertLess(step.end(), checkout.start())
+                self.assertEqual(1, document.count("git config --global core.longpaths true"))
+
+
 class RequiredContextCollectorTests(unittest.TestCase):
     def fixture(self, root: Path):
         environment = root / "environment.json"

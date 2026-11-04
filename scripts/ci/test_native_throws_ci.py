@@ -34,6 +34,34 @@ IDENTITY = {"commit": "1" * 40, "dirty": False, "file_count": 100,
             "unsupported_directories": 0}
 CONTEXT = {"run_id": "1234", "run_attempt": "1", "job": "synthetic_native_controls"}
 PRIVATE = "PRIVATE hostile diagnostic, source excerpt, /private/owner/path, token=not-a-secret"
+FAKE_SIGCHLD, FAKE_SIGTERM, FAKE_SIGKILL = 20, 15, 9
+
+
+def synthetic_posix_os(**overrides):
+    """Real owned-fixture file IO, explicit fake wait capabilities, no host process API."""
+    filesystem = ("O_CREAT", "O_EXCL", "O_RDONLY", "O_WRONLY", "O_NOFOLLOW", "SEEK_SET", "X_OK",
+                  "access", "close", "environ", "fsdecode", "fsencode", "fstat", "fsync", "ftruncate",
+                  "lseek", "open", "read", "readlink", "stat_result", "walk", "write")
+    values = {name: getattr(os, name) for name in filesystem if hasattr(os, name)}
+
+    def no_process(*args, **kwargs):
+        raise AssertionError("Unconfigured synthetic process API; no real process authorized")
+
+    def successful_status(status):
+        if status != 0:
+            raise AssertionError("Only the authored fake successful wait status is supported")
+        return 0
+
+    values.update(name="posix", P_PID=1, WEXITED=4, WNOHANG=1, WNOWAIT=0x01000000,
+                  waitid=no_process, waitpid=no_process, killpg=no_process,
+                  waitstatus_to_exitcode=successful_status)
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def synthetic_posix_signal():
+    return SimpleNamespace(SIGCHLD=FAKE_SIGCHLD, SIGTERM=FAKE_SIGTERM, SIGKILL=FAKE_SIGKILL,
+                           SIG_DFL=0, SIG_IGN=1, getsignal=lambda number: 0)
 
 
 def write(path, raw, executable=False):
@@ -167,6 +195,8 @@ class Fixture:
     @contextmanager
     def context(self):
         with ExitStack() as stack:
+            stack.enter_context(patch.object(checks, "os", synthetic_posix_os()))
+            stack.enter_context(patch.object(checks, "signal", synthetic_posix_signal()))
             stack.enter_context(patch.object(checks.platform, "system", return_value="Darwin"))
             stack.enter_context(patch.object(checks.platform, "machine", return_value="arm64"))
             stack.enter_context(patch.object(checks, "XCODEBUILD", self.xcodebuild))
@@ -315,7 +345,7 @@ class SyntheticAuthorityTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.fixture = Fixture(Path(self.temp.name))
+        self.fixture = Fixture(Path(self.temp.name).resolve(strict=True))
         self.context = self.fixture.context()
         self.context.__enter__()
         self.addCleanup(self.context.__exit__, None, None, None)
@@ -485,7 +515,7 @@ class SyntheticDriverReceiptTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.fixture = Fixture(Path(self.temp.name))
+        self.fixture = Fixture(Path(self.temp.name).resolve(strict=True))
         self.private = self.fixture.root / "build/case"
         self.case = self.fixture.case()
 
@@ -630,7 +660,7 @@ class FakeSerialCollectorTests(unittest.TestCase):
     def fixture(self, cohort="first-mac", targets=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        return Fixture(Path(temporary.name), cohort, targets)
+        return Fixture(Path(temporary.name).resolve(strict=True), cohort, targets)
 
     def test_missing_authority_has_requested_eight_no_attempt(self):
         fixture = self.fixture()
@@ -949,7 +979,7 @@ class HeldLeaderFakeProcessTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve(strict=True)
         self.now, self.events = 100.0, []
         self.process = SimpleNamespace(pid=4242, returncode=None)
 
@@ -964,7 +994,7 @@ class HeldLeaderFakeProcessTests(unittest.TestCase):
             self.events.append(("held", self.now, args))
             if lost:
                 raise ChildProcessError(PRIVATE)
-            return SimpleNamespace(si_pid=self.process.pid) if ready or any(event[0] == "signal" and event[2] == signal.SIGKILL for event in self.events) else None
+            return SimpleNamespace(si_pid=self.process.pid) if ready or any(event[0] == "signal" and event[2] == FAKE_SIGKILL for event in self.events) else None
         def killpg(pid, number):
             if number == 0:
                 self.events.append(("probe", self.now, pid))
@@ -981,13 +1011,11 @@ class HeldLeaderFakeProcessTests(unittest.TestCase):
             self.assertGreaterEqual(delay, 0)
             self.now += max(delay, 0.0001)
         with ExitStack() as stack:
+            stack.enter_context(patch.object(checks, "os", synthetic_posix_os(waitid=waitid, killpg=killpg, waitpid=waitpid)))
+            stack.enter_context(patch.object(checks, "signal", synthetic_posix_signal()))
+            stack.enter_context(patch.object(checks, "subprocess", SimpleNamespace(Popen=popen, DEVNULL=checks.subprocess.DEVNULL)))
             stack.enter_context(patch.object(checks, "UNREAPED_CHILDREN", []))
-            stack.enter_context(patch.object(checks.signal, "getsignal", return_value=signal.SIG_DFL))
             stack.enter_context(patch.object(checks, "sigchld_kernel_disposition", return_value=None))
-            stack.enter_context(patch.object(checks.subprocess, "Popen", side_effect=popen))
-            stack.enter_context(patch.object(checks.os, "waitid", side_effect=waitid))
-            stack.enter_context(patch.object(checks.os, "killpg", side_effect=killpg))
-            stack.enter_context(patch.object(checks.os, "waitpid", side_effect=waitpid))
             stack.enter_context(patch.object(checks.time, "monotonic", side_effect=lambda: self.now))
             stack.enter_context(patch.object(checks.time, "sleep", side_effect=sleep))
             if monitor:
@@ -1002,21 +1030,59 @@ class HeldLeaderFakeProcessTests(unittest.TestCase):
         with self.context():
             result = self.run_fake()
         signals = [event for event in self.events if event[0] == "signal"]
-        self.assertEqual([signal.SIGTERM, signal.SIGKILL], [event[2] for event in signals])
+        self.assertEqual([FAKE_SIGTERM, FAKE_SIGKILL], [event[2] for event in signals])
         self.assertGreaterEqual(signals[1][1] - signals[0][1], checks.CLEANUP_SECONDS)
         self.assertGreaterEqual(next(event[1] for event in self.events if event[0] == "reap"), signals[1][1])
         self.assertTrue(checks.command_ok(result))
         self.assertFalse(result["escaped_descendants_proven_absent"])
 
     def test_sigchld_ignored_and_missing_wnowait_are_denied_before_launch(self):
-        with patch.object(checks.signal, "getsignal", return_value=signal.SIG_IGN), \
-                patch.object(checks.subprocess, "Popen", side_effect=AssertionError("No process authorized")):
-            with self.assertRaises(checks.Problem):
-                checks.process_gate()
-        with patch.object(checks.os, "WNOWAIT", None):
-            # Presence alone is not enough: a usable numeric WNOWAIT is required.
-            with self.assertRaises(checks.Problem):
-                checks.process_gate()
+        with self.context():
+            with patch.object(checks.signal, "getsignal", return_value=checks.signal.SIG_IGN):
+                with self.assertRaises(checks.Problem) as caught:
+                    self.run_fake()
+            self.assertEqual("native_throws_sigchld_ownership_unavailable", str(caught.exception))
+            with patch.object(checks.os, "WNOWAIT", None):
+                # Presence alone is not enough: a usable numeric WNOWAIT is required.
+                with self.assertRaises(checks.Problem) as caught:
+                    self.run_fake()
+            self.assertEqual("native_throws_unreaped_process_guard_unavailable", str(caught.exception))
+        self.assertFalse(any(event[0] == "start" for event in self.events))
+
+    def test_each_missing_wait_capability_denies_launch_even_in_the_fake_facade(self):
+        for name in ("waitid", "P_PID", "WEXITED", "WNOHANG", "WNOWAIT", "waitpid", "waitstatus_to_exitcode"):
+            with self.subTest(name=name), self.context():
+                delattr(checks.os, name)
+                with self.assertRaises(checks.Problem) as caught:
+                    self.run_fake()
+                self.assertEqual("native_throws_unreaped_process_guard_unavailable", str(caught.exception))
+        self.assertFalse(any(event[0] == "start" for event in self.events))
+
+    def test_unconfigured_fake_wait_and_signal_apis_never_delegate_to_the_host(self):
+        facade = synthetic_posix_os()
+        for name in ("waitid", "waitpid", "killpg"):
+            with self.subTest(name=name), self.assertRaisesRegex(AssertionError, "no real process authorized"):
+                getattr(facade, name)(4242, 0)
+
+    def test_fake_facades_leave_host_apis_untouched_and_restore_after_failure(self):
+        host_os, host_signal, host_subprocess = checks.os, checks.signal, checks.subprocess
+        missing = object()
+        host_waitid = getattr(host_os, "waitid", missing)
+        host_getsignal, host_popen = host_signal.getsignal, host_subprocess.Popen
+        with self.assertRaisesRegex(RuntimeError, "synthetic unwind"):
+            with self.context():
+                self.assertIsNot(checks.os, host_os)
+                self.assertIsNot(checks.signal, host_signal)
+                self.assertIsNot(checks.subprocess, host_subprocess)
+                self.assertIs(host_waitid, getattr(host_os, "waitid", missing))
+                self.assertIs(host_getsignal, host_signal.getsignal)
+                self.assertIs(host_popen, host_subprocess.Popen)
+                self.assertTrue(checks.command_ok(self.run_fake()))
+                raise RuntimeError("synthetic unwind")
+        self.assertIs(checks.os, host_os)
+        self.assertIs(checks.signal, host_signal)
+        self.assertIs(checks.subprocess, host_subprocess)
+        self.assertIs(host_waitid, getattr(host_os, "waitid", missing))
 
     def test_lost_wait_ownership_never_signals_or_launches_a_later_child(self):
         with self.context(lost=True):
@@ -1035,7 +1101,7 @@ class HeldLeaderFakeProcessTests(unittest.TestCase):
             result = self.run_fake()
         self.assertEqual("failed", result["state"])
         self.assertTrue(result["cleanup_protocol_completed"])
-        self.assertEqual([signal.SIGTERM, signal.SIGKILL], [event[2] for event in self.events if event[0] == "signal"])
+        self.assertEqual([FAKE_SIGTERM, FAKE_SIGKILL], [event[2] for event in self.events if event[0] == "signal"])
         self.assertNotIn(PRIVATE, json.dumps(result))
 
     def test_live_case_sibling_output_limit_triggers_cleanup(self):
@@ -1119,14 +1185,14 @@ class SyntheticDarwinSigactionTests(unittest.TestCase):
         return api, calls
 
     def observe(self, api):
-        with patch.object(checks.sys, "platform", "darwin"), \
+        with patch.object(checks, "signal", synthetic_posix_signal()), patch.object(checks.sys, "platform", "darwin"), \
                 patch.object(checks.ctypes, "CDLL", return_value=SimpleNamespace(sigaction=api)):
             checks.sigchld_kernel_disposition()
 
     def test_synthetic_darwin_read_is_null_new_action_never_repaired(self):
         api, calls = self.fake_api()
         self.observe(api)
-        self.assertEqual([(int(signal.SIGCHLD), None)], calls)
+        self.assertEqual([(FAKE_SIGCHLD, None)], calls)
         self.assertEqual(3, len(api.argtypes))
         self.assertIs(checks.ctypes.c_int, api.restype)
 

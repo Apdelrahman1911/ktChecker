@@ -329,16 +329,50 @@ class CodeImageTest {
         assertEquals("code_image_symlink", assertFailsWith<CliProblem> { CodeImage.resourceRoot(type, "/rules.json") }.code)
     }
 
+    /** A disposable leaf needs no permission restoration. Unlink requires writable/searchable
+     * parent permissions, not readable leaf permissions, and never follows a substituted symlink.
+     * Do not replace this with a following chmod or a check-then-chmod pathname fallback. */
+    private fun unlinkPermissionFixtureLeaf(path: Path) { Files.deleteIfExists(path) }
+
     @Test fun explicitlyUnreadableModeIsRejectedEvenForAPrivilegedProcess() {
         val root = directory("permissions")
         val artifact = file(root, "image.bin", "bytes")
         val view = Files.getFileAttributeView(artifact, PosixFileAttributeView::class.java, NOFOLLOW_LINKS)
         assumeTrue(view != null, "POSIX permission-control fixture unavailable")
-        val original = requireNotNull(view).readAttributes().permissions()
+        val posix = requireNotNull(view)
         try {
-            view.setPermissions(emptySet())
+            posix.setPermissions(emptySet())
+            assertTrue(posix.readAttributes().permissions().isEmpty())
             assertEquals("code_image_unreadable", assertFailsWith<CliProblem> { capture(artifact) }.code)
-        } finally { view.setPermissions(original) }
+        } finally { unlinkPermissionFixtureLeaf(artifact) }
+        assertFalse(Files.exists(artifact, NOFOLLOW_LINKS))
+    }
+
+    @Test fun permissionFixtureCleanupUnlinksASubstitutedSymlinkWithoutChangingItsTarget() {
+        val root = directory("permission-cleanup")
+        val artifact = file(root, "image.bin", "owned unreadable fixture")
+        val retained = root.resolve("original-unreadable.bin")
+        val target = file(temporary, "unrelated-target.bin", "unrelated fixture bytes")
+        val view = Files.getFileAttributeView(artifact, PosixFileAttributeView::class.java, NOFOLLOW_LINKS)
+        assumeTrue(view != null, "POSIX permission-control fixture unavailable")
+        val targetView = requireNotNull(Files.getFileAttributeView(target, PosixFileAttributeView::class.java, NOFOLLOW_LINKS))
+        val originalTarget = targetView.readAttributes()
+        val targetKey = assertNotNull(originalTarget.fileKey())
+        try {
+            requireNotNull(view).setPermissions(emptySet())
+            Files.move(artifact, retained)
+            link(artifact, target)
+            unlinkPermissionFixtureLeaf(artifact)
+            assertFalse(Files.exists(artifact, NOFOLLOW_LINKS))
+            val currentTarget = targetView.readAttributes()
+            assertEquals(targetKey, currentTarget.fileKey())
+            assertEquals(originalTarget.permissions(), currentTarget.permissions())
+            assertEquals("unrelated fixture bytes", Files.readString(target))
+            assertTrue(Files.getPosixFilePermissions(retained, NOFOLLOW_LINKS).isEmpty())
+        } finally {
+            unlinkPermissionFixtureLeaf(artifact)
+            unlinkPermissionFixtureLeaf(retained)
+        }
     }
 
     @Test fun malformedLogicalNamesAndUnboundedSelectionsNeverProduceAnIdentity() {

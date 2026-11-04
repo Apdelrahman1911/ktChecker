@@ -13,12 +13,12 @@ if __package__:
     from .ci_common import REPO_ROOT, digest_bytes, gradle_result, source_identity, utc_now, write_json
     from .collect_evidence import artifact, junit_report
     from .provision_android import installed_packages
-    from .record_environment import observe_xcode, probe
+    from .record_environment import observe_xcode, probe, probe_simctl_inventory, validate_simctl_inventory
 else:
     from ci_common import REPO_ROOT, digest_bytes, gradle_result, source_identity, utc_now, write_json
     from collect_evidence import artifact, junit_report
     from provision_android import installed_packages
-    from record_environment import observe_xcode, probe
+    from record_environment import observe_xcode, probe, probe_simctl_inventory, validate_simctl_inventory
 
 
 IOS_TASKS = ("compileKotlinIosArm64", "compileKotlinIosSimulatorArm64", "linkDebugFrameworkIosArm64",
@@ -30,11 +30,13 @@ NATIVE_DIAGNOSTICS = {
 
 
 def select_simulator(runtimes: dict, devices: dict) -> dict:
+    validate_simctl_inventory(runtimes, "runtimes")
+    validate_simctl_inventory(devices, "devices")
     for runtime in runtimes.get("runtimes", []):
         if runtime.get("isAvailable") is not True or runtime.get("version") not in {"26.4", "26.4.0"}:
             continue
         identifier = runtime.get("identifier", "")
-        if "SimRuntime.iOS-" not in identifier:
+        if not re.fullmatch(r"com\.apple\.CoreSimulator\.SimRuntime\.iOS-26-4(?:-0)?", identifier):
             continue
         for device in devices.get("devices", {}).get(identifier, []):
             if device.get("isAvailable") is not True or device.get("name") != "iPhone 17":
@@ -70,21 +72,31 @@ def preflight(profile: str) -> dict:
             errors.append("iOS compile/link/simulator execution is unavailable on a non-Darwin host")
         if platform.machine().lower() not in {"arm64", "aarch64"}:
             errors.append("The iOS simulator arm64 fixture requires an arm64 Mac")
-        xcode = observe_xcode()
+        # Runtime/device inventory is probed below only after the fixed host,
+        # JVM, Android configuration and selected-Xcode controls are available.
+        xcode = observe_xcode(include_simulator_inventory=False)
         result["xcode"] = xcode
-        if xcode.get("version") != "26.4.1" or xcode.get("build") != "17E202":
+        if xcode.get("state") != "observed" or xcode.get("version") != "26.4.1" or xcode.get("build") != "17E202":
             errors.append("Select Xcode 26.4.1, build 17E202 explicitly; runner defaults are not evidence")
         if any(xcode.get(f"{sdk}_sdk") != "26.4" for sdk in ("iphoneos", "iphonesimulator")):
             errors.append("The selected Xcode must expose both iOS 26.4 SDKs")
         if not errors:
-            runtime_code, runtime_text = probe(["/usr/bin/xcrun", "simctl", "list", "runtimes", "--json"])
-            device_code, device_text = probe(["/usr/bin/xcrun", "simctl", "list", "devices", "available", "--json"])
-            try:
-                if runtime_code != 0 or device_code != 0:
-                    raise ValueError("simctl inventory command did not succeed")
-                result["simulator"] = select_simulator(json.loads(runtime_text), json.loads(device_text))
-            except (ValueError, AttributeError, TypeError) as error:
-                errors.append(str(error))
+            runtime_metadata, runtimes = probe_simctl_inventory("runtimes")
+            result["simulator_inventory"] = {"runtimes": runtime_metadata}
+            if runtimes is None:
+                errors.append(f"simctl runtimes prerequisite unavailable: {runtime_metadata['reason']}")
+            else:
+                device_metadata, devices = probe_simctl_inventory("devices")
+                result["simulator_inventory"]["devices"] = device_metadata
+                if devices is None:
+                    errors.append(f"simctl devices prerequisite unavailable: {device_metadata['reason']}")
+                else:
+                    try:
+                        result["simulator"] = select_simulator(runtimes, devices)
+                    except ValueError as error:
+                        # select_simulator emits fixed schema/selection errors,
+                        # never JSON decoder excerpts or raw simctl stderr.
+                        errors.append(str(error))
     result["state"] = "passed" if not errors else "unavailable"
     return result
 

@@ -1,0 +1,1083 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "github_push_run_job_status_observation",
+  "repository": "Apdelrahman1911/ktChecker",
+  "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+  "observation_kind": "terminal_observed_snapshot",
+  "metadata_collection_completed_at": "2026-11-04T13:54:37.847680+00:00",
+  "record_authored_at": "2026-11-04T14:14:16.645546+00:00",
+  "collection_is_atomic": false,
+  "collection_scope": {
+    "method": "Eight bounded sequential authenticated exact run/job metadata GET requests, followed by two newly authorized failed macOS single-job text-log GET requests; seven previously retained failure logs reused without redownloading.",
+    "metadata_request_count": 8,
+    "metadata_response_byte_limit_per_request": 2097152,
+    "metadata_timeout_seconds_per_request": 45,
+    "new_single_job_log_response_count": 2,
+    "new_single_job_log_response_bytes": 374149,
+    "new_single_job_log_collection_completed_at": "2026-11-04T13:55:53.182879+00:00",
+    "previously_retained_logs_reused": 7,
+    "manual_workflow_dispatch": false,
+    "workflow_cancellation_by_collector": false,
+    "workflow_rerun_by_collector": false,
+    "artifact_bundles_downloaded": false,
+    "original_test_report_artifacts_downloaded": false,
+    "distribution_archives_downloaded": false,
+    "private_log_bytes_in_this_record": false
+  },
+  "qualification": {
+    "release_qualified": false,
+    "rule_qualification": false,
+    "production_native_supervision_qualification": false,
+    "apple_abi_qualification": false,
+    "native_throws_qualification": false,
+    "loaded_artifact_enrollment_verified_by_this_record": false,
+    "original_junit_and_stress_artifacts_verified_by_this_record": false
+  },
+  "metadata_collection_started_at": "2026-11-04T13:54:27.818632+00:00",
+  "related_earlier_observation": {
+    "path": "docs/evidence/ci-2026-11-04-75fc659.json",
+    "sha256": "1386c610e1420d3f7e813fe2ff24cc874761dfb164c38b27d396a2edad8b3f22",
+    "size_bytes": 21355,
+    "metadata_collection_completed_at": "2026-11-04T13:11:43.802160+00:00",
+    "preserved_byte_for_byte": true
+  },
+  "runs": [
+    {
+      "workflow_id": 406714086,
+      "workflow_name": "Preview implementation (real pinned JVM)",
+      "run_id": 41832603039,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603039",
+      "api_status": "completed",
+      "api_conclusion": "failure",
+      "api_created_at": "2026-11-04T12:49:27Z",
+      "api_updated_at": "2026-11-04T13:16:41Z",
+      "run_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41832603039",
+        "started_at": "2026-11-04T13:54:27.818660+00:00",
+        "completed_at": "2026-11-04T13:54:28.940032+00:00",
+        "response_sha256": "48b3ac41f101a1b6d6b0ce5f7734e10800aa12306a6b246e062a34ba743e1c2c",
+        "response_size_bytes": 13545,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41832603039/jobs?filter=latest&per_page=100",
+        "started_at": "2026-11-04T13:54:28.940413+00:00",
+        "completed_at": "2026-11-04T13:54:30.313477+00:00",
+        "response_sha256": "63f734b88b344da4424be0062a960c3d5dd35c294fe8783a7070040e76e317ee",
+        "response_size_bytes": 17675,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs": [
+        {
+          "job_id": 126583290922,
+          "job_name": "JVM 21 checker build and installed launcher (macos-26)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603039/job/126583290922",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T13:15:54Z",
+          "api_completed_at": "2026-11-04T13:16:41Z",
+          "api_runner_labels": [
+            "macos-26"
+          ],
+          "first_failed_step": {
+            "number": 5,
+            "name": "Verify the evidence harness failure paths"
+          },
+          "failed_steps": [
+            {
+              "number": 5,
+              "name": "Verify the evidence harness failure paths"
+            },
+            {
+              "number": 9,
+              "name": "Bind observed Gradle to the selected JVM"
+            },
+            {
+              "number": 10,
+              "name": "Observe exact helper build inputs and compiler or explicit unsupported host"
+            },
+            {
+              "number": 11,
+              "name": "Execute exact tiny native controls or record Windows native unavailability"
+            },
+            {
+              "number": 14,
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips"
+            },
+            {
+              "number": 17,
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes"
+            },
+            {
+              "number": 18,
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices"
+            },
+            {
+              "number": 19,
+              "name": "Collect actual suites and artifact identities, including failures"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "macos_synthetic_harness_fixture_and_api_failure",
+            "observed_cause": "The first failed workflow step is the Python evidence-harness suite. Its first traceback is the trusted-root alias library test failing a path-relative containment comparison. Native synthetic tests mix aliased fresh temporary roots with canonical required inputs, and held-leader fakes try to patch the absent host Python os.waitid API.",
+            "scope": "Authored Python fixture and fake-process failures before implementation build or planning validation; not Native/compiler/runtime execution or qualification.",
+            "diagnosis_basis": "Newly authorized exact-job attempt-1 complete original text log retained privately.",
+            "unittest_log_summary": {
+              "tests_run": 256,
+              "failures": 0,
+              "errors": 36,
+              "skipped": 0
+            },
+            "observed_categories": [
+              {
+                "code": "library_trusted_temp_root_alias_mix",
+                "error_group_count": 1,
+                "source_file_at_commit": "scripts/ci/test_library_ci.py",
+                "source_line": 135
+              },
+              {
+                "code": "native_serial_fake_temp_root_alias_mix",
+                "error_group_count": 24,
+                "source_file_at_commit": "scripts/ci/run_native_throws_checks.py",
+                "source_line": 1464
+              },
+              {
+                "code": "native_held_leader_fake_missing_host_waitid",
+                "error_group_count": 10,
+                "source_file_at_commit": "scripts/ci/test_native_throws_ci.py",
+                "source_line": 988
+              },
+              {
+                "code": "native_synthetic_authority_input_alias",
+                "error_group_count": 1,
+                "source_file_at_commit": "scripts/ci/run_native_throws_checks.py",
+                "source_line": 432
+              }
+            ]
+          }
+        },
+        {
+          "job_id": 126583291303,
+          "job_name": "JVM 21 checker build and installed launcher (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603039/job/126583291303",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:49:49Z",
+          "api_runner_labels": [
+            "windows-2025"
+          ],
+          "first_failed_step": {
+            "number": 2,
+            "name": "Check out candidate (no persisted credentials)"
+          },
+          "failed_steps": [
+            {
+              "number": 2,
+              "name": "Check out candidate (no persisted credentials)"
+            },
+            {
+              "number": 9,
+              "name": "Bind observed Gradle to the selected JVM"
+            },
+            {
+              "number": 10,
+              "name": "Observe exact helper build inputs and compiler or explicit unsupported host"
+            },
+            {
+              "number": 11,
+              "name": "Execute exact tiny native controls or record Windows native unavailability"
+            },
+            {
+              "number": 14,
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips"
+            },
+            {
+              "number": 17,
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes"
+            },
+            {
+              "number": 18,
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices"
+            },
+            {
+              "number": 19,
+              "name": "Collect actual suites and artifact identities, including failures"
+            },
+            {
+              "number": 20,
+              "name": "Retain sanitized observed evidence (not terminal transcripts)"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "windows_checkout_long_path",
+            "observed_cause": "Git checkout reports Filename too long and exit code 128 while materializing required retained archive originals.",
+            "scope": "Checkout failure; later failure-path steps are not native/provider execution evidence.",
+            "diagnosis_basis": "Previously retained exact-job attempt-1 text log; original digest and size reverified, not redownloaded."
+          }
+        },
+        {
+          "job_id": 126583291306,
+          "job_name": "JVM 21 checker build and installed launcher (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603039/job/126583291306",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:53:11Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": {
+            "number": 13,
+            "name": "Build and test actual modules; assemble preview distributions"
+          },
+          "failed_steps": [
+            {
+              "number": 13,
+              "name": "Build and test actual modules; assemble preview distributions"
+            },
+            {
+              "number": 14,
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips"
+            },
+            {
+              "number": 17,
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes"
+            },
+            {
+              "number": 18,
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices"
+            },
+            {
+              "number": 19,
+              "name": "Collect actual suites and artifact identities, including failures"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "cli_test_permission_cleanup_failure",
+            "observed_cause": "The Gradle :cli:test task fails when CodeImageTest.explicitlyUnreadableModeIsRejectedEvenForAPrivilegedProcess throws java.nio.file.AccessDeniedException at CodeImageTest.kt:341. At this commit that line restores permissions in the test finally block after mode 000.",
+            "scope": "Observed test cleanup failure; this does not establish a failure of production unreadability rejection or of a native compiler/helper.",
+            "source_file_at_commit": "modules/cli/src/test/kotlin/dev/ktchecker/cli/CodeImageTest.kt",
+            "source_line": 341,
+            "diagnosis_basis": "Previously retained exact-job attempt-1 text log; original digest and size reverified, not redownloaded."
+          }
+        }
+      ]
+    },
+    {
+      "workflow_id": 406714087,
+      "workflow_name": "Preview platform execution (actual KMP targets)",
+      "run_id": 41832602989,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832602989",
+      "api_status": "completed",
+      "api_conclusion": "failure",
+      "api_created_at": "2026-11-04T12:49:27Z",
+      "api_updated_at": "2026-11-04T12:53:05Z",
+      "run_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41832602989",
+        "started_at": "2026-11-04T13:54:30.314016+00:00",
+        "completed_at": "2026-11-04T13:54:31.386003+00:00",
+        "response_sha256": "3f0faebd18da9c642f0ad15309d2ed5f59b50b29626478c89e5171e583a827ee",
+        "response_size_bytes": 13557,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41832602989/jobs?filter=latest&per_page=100",
+        "started_at": "2026-11-04T13:54:31.386380+00:00",
+        "completed_at": "2026-11-04T13:54:32.758217+00:00",
+        "response_sha256": "698c99b6b098bfe154e8c76c833f0edbb691ddef1fac5082cb22a538f47bdb17",
+        "response_size_bytes": 12690,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs": [
+        {
+          "job_id": 126583290396,
+          "job_name": "Actual Android KMP compile, host tests and NewApi adapter controls",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832602989/job/126583290396",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:50:43Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": {
+            "number": 9,
+            "name": "Execute Android host tests and clean/invalid actual Lint controls"
+          },
+          "failed_steps": [
+            {
+              "number": 9,
+              "name": "Execute Android host tests and clean/invalid actual Lint controls"
+            },
+            {
+              "number": 11,
+              "name": "Collect exact Android host-side reports and provider outcomes"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "fixture_build_script_compilation_failure",
+            "observed_cause": "The shared KMP fixture build script fails configuration compilation: Android compilerOptions.configure receiver mismatch and unresolved jvmTarget, unresolved desktopTest accessor, and rejected deprecated xml/html/text Lint report fields.",
+            "scope": "Pre-target-task build-script failure, not an Android compile/test/Lint result.",
+            "diagnosis_basis": "Previously retained exact-job attempt-1 text log; original digest and size reverified, not redownloaded."
+          }
+        },
+        {
+          "job_id": 126583290785,
+          "job_name": "Real iOS arm64 compile/link and iOS 26.4 simulator execution",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832602989/job/126583290785",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:52:18Z",
+          "api_completed_at": "2026-11-04T12:53:04Z",
+          "api_runner_labels": [
+            "macos-26"
+          ],
+          "first_failed_step": {
+            "number": 9,
+            "name": "Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals"
+          },
+          "failed_steps": [
+            {
+              "number": 9,
+              "name": "Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals"
+            },
+            {
+              "number": 11,
+              "name": "Execute Native FIR library feasibility with the existing exact distribution"
+            },
+            {
+              "number": 12,
+              "name": "Collect exact simulator reports, linked frameworks and provider outcomes"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "ios_preexecution_prerequisite_failure",
+            "observed_cause": "The simctl prerequisite JSON decoder fails at offset 65536 under the generic clipped combined-output probe. A separate Native FIR feasibility failure exposes only native_semantic_prerequisites_unavailable.",
+            "scope": "Pre-execution prerequisite failure, not a Native compile/link/simulator result. Stderr contamination was not independently established; the generic Native code does not identify its missing prerequisite branch.",
+            "diagnosis_basis": "Previously retained exact-job attempt-1 text log; original digest and size reverified, not redownloaded."
+          }
+        },
+        {
+          "job_id": 126583290862,
+          "job_name": "Actual Desktop/JVM KMP common boundary tests",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832602989/job/126583290862",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:50:28Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": {
+            "number": 8,
+            "name": "Execute Desktop/JVM KMP fixture tests"
+          },
+          "failed_steps": [
+            {
+              "number": 8,
+              "name": "Execute Desktop/JVM KMP fixture tests"
+            },
+            {
+              "number": 9,
+              "name": "Collect exact Desktop/JVM test reports"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "fixture_build_script_compilation_failure",
+            "observed_cause": "The shared KMP fixture build script fails configuration compilation: Android compilerOptions.configure receiver mismatch and unresolved jvmTarget, unresolved desktopTest accessor, and rejected deprecated xml/html/text Lint report fields.",
+            "scope": "Pre-target-task build-script failure, not a Desktop/JVM target test result.",
+            "diagnosis_basis": "Previously retained exact-job attempt-1 text log; original digest and size reverified, not redownloaded."
+          }
+        }
+      ]
+    },
+    {
+      "workflow_id": 406714085,
+      "workflow_name": "Preview bridges (actual SDK and synthetic host controls)",
+      "run_id": 41832603248,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603248",
+      "api_status": "completed",
+      "api_conclusion": "failure",
+      "api_created_at": "2026-11-04T12:49:27Z",
+      "api_updated_at": "2026-11-04T13:15:52Z",
+      "run_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41832603248",
+        "started_at": "2026-11-04T13:54:32.758620+00:00",
+        "completed_at": "2026-11-04T13:54:33.828072+00:00",
+        "response_sha256": "c2b3053cfdc107cd449bfb09ab6adb0abd5426e20947637d3c4cb8dfeed98ae7",
+        "response_size_bytes": 13565,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41832603248/jobs?filter=latest&per_page=100",
+        "started_at": "2026-11-04T13:54:33.828347+00:00",
+        "completed_at": "2026-11-04T13:54:35.399992+00:00",
+        "response_sha256": "a346e1d2dfb6dad0de70c6d1452d9cd27288fb0326fe64a74ef2693f3ff7e9fd",
+        "response_size_bytes": 9424,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs": [
+        {
+          "job_id": 126583291098,
+          "job_name": "MCP SDK and synthetic host tests/audits (macos-26)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603248/job/126583291098",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "success",
+          "api_started_at": "2026-11-04T13:15:02Z",
+          "api_completed_at": "2026-11-04T13:15:51Z",
+          "api_runner_labels": [
+            "macos-26"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126583291594,
+          "job_name": "MCP SDK and synthetic host tests/audits (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603248/job/126583291594",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:49:44Z",
+          "api_runner_labels": [
+            "windows-2025"
+          ],
+          "first_failed_step": {
+            "number": 2,
+            "name": "Check out candidate without persisted credentials"
+          },
+          "failed_steps": [
+            {
+              "number": 2,
+              "name": "Check out candidate without persisted credentials"
+            },
+            {
+              "number": 6,
+              "name": "Bind sanitized bridge evidence to actual source and job outcome"
+            },
+            {
+              "number": 7,
+              "name": "Retain sanitized case counts, exact lock pins and audit outcomes"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "windows_checkout_long_path",
+            "observed_cause": "Git checkout reports Filename too long and exit code 128 while materializing required retained archive originals.",
+            "scope": "Checkout failure; later failure-path steps are not native/provider execution evidence.",
+            "diagnosis_basis": "Previously retained exact-job attempt-1 text log; original digest and size reverified, not redownloaded."
+          }
+        },
+        {
+          "job_id": 126583291652,
+          "job_name": "MCP SDK and synthetic host tests/audits (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603248/job/126583291652",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "success",
+          "api_started_at": "2026-11-04T12:49:30Z",
+          "api_completed_at": "2026-11-04T12:50:02Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        }
+      ]
+    },
+    {
+      "workflow_id": 406620452,
+      "workflow_name": "Planning evidence and registry",
+      "run_id": 41832603088,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603088",
+      "api_status": "completed",
+      "api_conclusion": "failure",
+      "api_created_at": "2026-11-04T12:49:27Z",
+      "api_updated_at": "2026-11-04T13:15:01Z",
+      "run_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41832603088",
+        "started_at": "2026-11-04T13:54:35.400406+00:00",
+        "completed_at": "2026-11-04T13:54:36.473680+00:00",
+        "response_sha256": "19f3cb6911136311ac18948905151f7ff1fe255250aa9954e23af83e6daa228c",
+        "response_size_bytes": 13536,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs_metadata_request": {
+        "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs/41832603088/jobs?filter=latest&per_page=100",
+        "started_at": "2026-11-04T13:54:36.474031+00:00",
+        "completed_at": "2026-11-04T13:54:37.847128+00:00",
+        "response_sha256": "5740aa23bcbf29a1d7eebfeb0a53df4fc28febe184bec93f6979b5e3f8b4941e",
+        "response_size_bytes": 8411,
+        "response_byte_limit": 2097152,
+        "timeout_seconds": 45
+      },
+      "jobs": [
+        {
+          "job_id": 126583290495,
+          "job_name": "Planning integrity (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603088/job/126583290495",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "success",
+          "api_started_at": "2026-11-04T12:49:30Z",
+          "api_completed_at": "2026-11-04T12:50:35Z",
+          "api_runner_labels": [
+            "ubuntu-24.04"
+          ],
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126583290876,
+          "job_name": "Planning integrity (macos-15)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603088/job/126583290876",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T13:14:39Z",
+          "api_completed_at": "2026-11-04T13:15:00Z",
+          "api_runner_labels": [
+            "macos-15"
+          ],
+          "first_failed_step": {
+            "number": 4,
+            "name": "Test validation failure paths"
+          },
+          "failed_steps": [
+            {
+              "number": 4,
+              "name": "Test validation failure paths"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "macos_synthetic_harness_fixture_and_api_failure",
+            "observed_cause": "The first failed workflow step is the Python evidence-harness suite. Its first traceback is the trusted-root alias library test failing a path-relative containment comparison. Native synthetic tests mix aliased fresh temporary roots with canonical required inputs, and held-leader fakes try to patch the absent host Python os.waitid API.",
+            "scope": "Authored Python fixture and fake-process failures before implementation build or planning validation; not Native/compiler/runtime execution or qualification.",
+            "diagnosis_basis": "Newly authorized exact-job attempt-1 complete original text log retained privately.",
+            "unittest_log_summary": {
+              "tests_run": 412,
+              "failures": 1,
+              "errors": 39,
+              "skipped": 35
+            },
+            "observed_categories": [
+              {
+                "code": "library_trusted_temp_root_alias_mix",
+                "error_group_count": 1,
+                "source_file_at_commit": "scripts/ci/test_library_ci.py",
+                "source_line": 135
+              },
+              {
+                "code": "native_serial_fake_temp_root_alias_mix",
+                "error_group_count": 24,
+                "source_file_at_commit": "scripts/ci/run_native_throws_checks.py",
+                "source_line": 1464
+              },
+              {
+                "code": "native_held_leader_fake_missing_host_waitid",
+                "error_group_count": 10,
+                "source_file_at_commit": "scripts/ci/test_native_throws_ci.py",
+                "source_line": 988
+              },
+              {
+                "code": "native_synthetic_authority_input_alias",
+                "error_group_count": 1,
+                "source_file_at_commit": "scripts/ci/run_native_throws_checks.py",
+                "source_line": 432
+              },
+              {
+                "code": "prepared_jdk_synthetic_absolute_link_target_alias",
+                "error_group_count": 3,
+                "source_file_at_commit": "scripts/prepare_jdk_image.py",
+                "source_line": 266
+              },
+              {
+                "code": "prepared_jdk_synthetic_probe_path_alias_comparison",
+                "failure_group_count": 1,
+                "source_file_at_commit": "scripts/test_prepare_jdk_image.py",
+                "source_line": 383
+              }
+            ]
+          }
+        },
+        {
+          "job_id": 126583291005,
+          "job_name": "Planning integrity (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603088/job/126583291005",
+          "run_attempt": 1,
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:30Z",
+          "api_completed_at": "2026-11-04T12:49:46Z",
+          "api_runner_labels": [
+            "windows-2025"
+          ],
+          "first_failed_step": {
+            "number": 2,
+            "name": "Check out reviewed revision"
+          },
+          "failed_steps": [
+            {
+              "number": 2,
+              "name": "Check out reviewed revision"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "windows_checkout_long_path",
+            "observed_cause": "Git checkout reports Filename too long and exit code 128 while materializing required retained archive originals.",
+            "scope": "Checkout failure; later failure-path steps are not native/provider execution evidence.",
+            "diagnosis_basis": "Previously retained exact-job attempt-1 text log; original digest and size reverified, not redownloaded."
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "workflow_count": 4,
+    "terminal_workflow_count": 4,
+    "job_count": 12,
+    "job_status_counts": {
+      "completed": 12
+    },
+    "job_conclusion_counts": {
+      "failure": 9,
+      "success": 3
+    },
+    "all_workflows_terminal": true,
+    "all_required_workflows_passed": false
+  },
+  "private_diagnostic_log_digests": [
+    {
+      "run_id": 41832602989,
+      "job_id": 126583290396,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "99e6ef136c0d592cd43fcc44371d8131a9cf3ae5cd5d169eef540abd00e5226a",
+      "size_bytes": 39686,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": false
+    },
+    {
+      "run_id": 41832602989,
+      "job_id": 126583290785,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "31139cde9c0f809fd62d5c8431fcf47bb01308bd3a4ebd53594dc0ccb0856bd4",
+      "size_bytes": 36203,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": false
+    },
+    {
+      "run_id": 41832602989,
+      "job_id": 126583290862,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "593031bc1860b24bfce830e12982bf24b1b51d6cd4c4a0a7141ccf98c1390734",
+      "size_bytes": 36301,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": false
+    },
+    {
+      "run_id": 41832603088,
+      "job_id": 126583291005,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "cc64dfef3ba18521d5f57d5e7cb6630180534f181b86e0aa3f82c73e78c147c6",
+      "size_bytes": 12170,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": false
+    },
+    {
+      "run_id": 41832603039,
+      "job_id": 126583291303,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "59dcba658812572bf14718a712db6d534276126482fc2265411c77393d7b27db",
+      "size_bytes": 24931,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": false
+    },
+    {
+      "run_id": 41832603039,
+      "job_id": 126583291306,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "02f1ccfdabe696cb16e772263193f298d759348f84a9f3878e4cdd17cc0b84b9",
+      "size_bytes": 115351,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": false
+    },
+    {
+      "run_id": 41832603248,
+      "job_id": 126583291594,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "c1c104927aa809d3a252901edafc0b7c2908c8f6d67ed71a55cf47fb309137cc",
+      "size_bytes": 14155,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": false
+    },
+    {
+      "run_id": 41832603039,
+      "job_id": 126583290922,
+      "attempt": 1,
+      "runner_label": "macos-26",
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "c3a726286a571d4904128cd4a6fa62e95982d851e48d208d8cddb33e31ad57b4",
+      "size_bytes": 177150,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T13:55:48.777584+00:00",
+      "download_completed_at": "2026-11-04T13:55:51.003763+00:00",
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": true
+    },
+    {
+      "run_id": 41832603088,
+      "job_id": 126583290876,
+      "attempt": 1,
+      "runner_label": "macos-15",
+      "source_kind": "github_single_job_raw_text_log",
+      "sha256": "c3ee8614bf4c156fe92b882ac8f9e9a5019cd66f52948716a250eb5a95836111",
+      "size_bytes": 196999,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "download_started_at": "2026-11-04T13:55:51.005331+00:00",
+      "download_completed_at": "2026-11-04T13:55:53.181715+00:00",
+      "raw_bytes_published": false,
+      "collected_in_this_refresh": true
+    }
+  ],
+  "baseline_source_inventory": [
+    {
+      "path": ".github/workflows/platform-validation.yml",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "feaefa94468a0daaec2920184051ba3c753a2689a8f76675c31381c4643eb187",
+      "size_bytes": 12609
+    },
+    {
+      "path": "scripts/ci/provision_android.py",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "ac9035b534a9deefa1cf7cdaa9218a49b9ac601170a58b92dc71f40720128b30",
+      "size_bytes": 7393
+    },
+    {
+      "path": "scripts/ci/record_environment.py",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "38ff2e1ed07031415ad7bf74dcd326241326a30b3973f035f2d5819b6ec78939",
+      "size_bytes": 9264
+    },
+    {
+      "path": "scripts/ci/run_platform_checks.py",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "1546324b16066c96950b2e5d1f07497149e41838c2481d7f840a948df8f42a48",
+      "size_bytes": 14782
+    },
+    {
+      "path": "scripts/ci/run_semantic_checks.py",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "75e25068c8aec4365feba1591250897bc6f75feeaa84db76aa00ac0eb011d62f",
+      "size_bytes": 34312
+    },
+    {
+      "path": "scripts/ci/run_native_throws_checks.py",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "c2a2aacb33592383036adf57f97a47716ca8bf98f66ec71c37b906aa63f68a1b",
+      "size_bytes": 101806
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "sha256": "89f62533208a72b7a8cc2892b6b3540c445fa6175508297d932dae57d653591a",
+      "size_bytes": 368
+    }
+  ],
+  "retained_tool_selection_inventory": [
+    {
+      "job_id": 126583290396,
+      "basis": "Allowlisted setup/tool-cache version strings and runner headers in the retained exact-job text log.",
+      "reported_operating_system": [
+        "Ubuntu",
+        "24.04.5",
+        "LTS"
+      ],
+      "reported_image": "ubuntu-24.04",
+      "reported_image_version": "20261101.360.1",
+      "reported_image_provisioner_version": "20261028.624",
+      "reported_image_provisioner_commit": "54898b74c23fde5556c9b3c3a2290865feef0dfe",
+      "selected_temurin_version_strings_in_order": [
+        "21.0.13+9",
+        "25.0.5+8"
+      ],
+      "selected_python_tool_cache_versions": [
+        "3.12.16"
+      ],
+      "java_python_selectors_floating": true,
+      "whole_java_python_distribution_hash_locked": false,
+      "image_version_not_a_toolchain_byte_manifest": true,
+      "gradle": {
+        "selected_version": "9.6.1",
+        "wrapper_distribution_sha256": "9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14",
+        "basis": "Checksum-selected baseline wrapper and successful wrapper/environment requirement steps.",
+        "distribution_archives_inspected_by_this_collector": false
+      },
+      "android_sdk": {
+        "selected_packages": [
+          "platforms;android-37.0",
+          "build-tools;36.0.0"
+        ],
+        "provisioner_reported_state": "passed",
+        "baseline_platform_guard": {
+          "api_major": 37,
+          "api_minor": 0,
+          "preview": false,
+          "base_sdk": true
+        },
+        "baseline_build_tools_guard_revision": "36.0.0",
+        "package_property_digests_inspected_by_this_collector": false,
+        "agp_compile_sdk_resolution_observed_by_this_record": false,
+        "whole_distribution_hash_locked": false
+      }
+    },
+    {
+      "job_id": 126583290862,
+      "basis": "Allowlisted setup/tool-cache version strings and runner headers in the retained exact-job text log.",
+      "reported_operating_system": [
+        "Ubuntu",
+        "24.04.5",
+        "LTS"
+      ],
+      "reported_image": "ubuntu-24.04",
+      "reported_image_version": "20261025.353.1",
+      "reported_image_provisioner_version": "20261021.618",
+      "reported_image_provisioner_commit": "21505ad2541d5be6135ed84fc33697146cf75b8e",
+      "selected_temurin_version_strings_in_order": [
+        "25.0.5+8"
+      ],
+      "selected_python_tool_cache_versions": [
+        "3.12.15"
+      ],
+      "java_python_selectors_floating": true,
+      "whole_java_python_distribution_hash_locked": false,
+      "image_version_not_a_toolchain_byte_manifest": true,
+      "gradle": {
+        "selected_version": "9.6.1",
+        "wrapper_distribution_sha256": "9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14",
+        "basis": "Checksum-selected baseline wrapper and successful wrapper/environment requirement steps.",
+        "distribution_archives_inspected_by_this_collector": false
+      },
+      "android_sdk": {
+        "selected_packages": [
+          "platforms;android-37.0",
+          "build-tools;36.0.0"
+        ],
+        "provisioner_reported_state": "passed",
+        "baseline_platform_guard": {
+          "api_major": 37,
+          "api_minor": 0,
+          "preview": false,
+          "base_sdk": true
+        },
+        "baseline_build_tools_guard_revision": "36.0.0",
+        "package_property_digests_inspected_by_this_collector": false,
+        "agp_compile_sdk_resolution_observed_by_this_record": false,
+        "whole_distribution_hash_locked": false
+      }
+    },
+    {
+      "job_id": 126583290785,
+      "basis": "Allowlisted setup/tool-cache version strings and runner headers in the retained exact-job text log.",
+      "reported_operating_system": [
+        "macOS",
+        "26.6.2",
+        "25G83"
+      ],
+      "reported_image": "macos-26-arm64",
+      "reported_image_version": "20261026.0455.2",
+      "reported_image_provisioner_version": "20261021.618",
+      "reported_image_provisioner_commit": "21505ad2541d5be6135ed84fc33697146cf75b8e",
+      "selected_temurin_version_strings_in_order": [
+        "21.0.13+9.0",
+        "25.0.5+8.0"
+      ],
+      "selected_python_tool_cache_versions": [
+        "3.12.10"
+      ],
+      "java_python_selectors_floating": true,
+      "whole_java_python_distribution_hash_locked": false,
+      "image_version_not_a_toolchain_byte_manifest": true,
+      "gradle": {
+        "selected_version": "9.6.1",
+        "wrapper_distribution_sha256": "9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14",
+        "basis": "Checksum-selected baseline wrapper and successful wrapper/environment requirement steps.",
+        "distribution_archives_inspected_by_this_collector": false
+      },
+      "android_sdk": {
+        "selected_packages": [
+          "platforms;android-37.0",
+          "build-tools;36.0.0"
+        ],
+        "provisioner_reported_state": "passed",
+        "baseline_platform_guard": {
+          "api_major": 37,
+          "api_minor": 0,
+          "preview": false,
+          "base_sdk": true
+        },
+        "baseline_build_tools_guard_revision": "36.0.0",
+        "package_property_digests_inspected_by_this_collector": false,
+        "agp_compile_sdk_resolution_observed_by_this_record": false,
+        "whole_distribution_hash_locked": false
+      },
+      "xcode": {
+        "workflow_selected_application": "Xcode_26.4.1.app",
+        "required_and_preflight_guarded_version": "26.4.1",
+        "required_and_preflight_guarded_build": "17E202",
+        "preflight_guarded_iphoneos_sdk": "26.4",
+        "preflight_guarded_iphonesimulator_sdk": "26.4",
+        "basis": "Exact baseline workflow selection and source guards: iOS preflight reached simctl JSON decoding only after Java/SDK/Darwin/arm64/Xcode guards passed.",
+        "simulator_inventory_decode_failure_offset": 65536,
+        "available_simulator_runtime_established": false,
+        "whole_xcode_sdk_distribution_hash_locked": false
+      }
+    },
+    {
+      "job_id": 126583290922,
+      "basis": "Allowlisted setup/tool-cache version strings and runner headers in the retained exact-job text log.",
+      "reported_operating_system": [
+        "macOS",
+        "26.6.2",
+        "25G83"
+      ],
+      "reported_image": "macos-26-arm64",
+      "reported_image_version": "20261026.0455.2",
+      "reported_image_provisioner_version": "20261021.618",
+      "reported_image_provisioner_commit": "21505ad2541d5be6135ed84fc33697146cf75b8e",
+      "selected_temurin_version_strings_in_order": [
+        "21.0.13+9.0"
+      ],
+      "selected_python_tool_cache_versions": [
+        "3.12.10"
+      ],
+      "java_python_selectors_floating": true,
+      "whole_java_python_distribution_hash_locked": false,
+      "image_version_not_a_toolchain_byte_manifest": true
+    },
+    {
+      "job_id": 126583290876,
+      "basis": "Allowlisted setup/tool-cache version strings and runner headers in the retained exact-job text log.",
+      "reported_operating_system": [
+        "macOS",
+        "15.8.2",
+        "24H232"
+      ],
+      "reported_image": "macos-15-arm64",
+      "reported_image_version": "20261028.0489.1",
+      "reported_image_provisioner_version": "20261021.618",
+      "reported_image_provisioner_commit": "21505ad2541d5be6135ed84fc33697146cf75b8e",
+      "selected_temurin_version_strings_in_order": [],
+      "selected_python_tool_cache_versions": [
+        "3.12.10"
+      ],
+      "java_python_selectors_floating": true,
+      "whole_java_python_distribution_hash_locked": false,
+      "image_version_not_a_toolchain_byte_manifest": true
+    }
+  ],
+  "native_semantic_prerequisite_selection_gap": {
+    "job_id": 126583290785,
+    "target": "iosSimulatorArm64",
+    "observed_error_code": "native_semantic_prerequisites_unavailable",
+    "gradle_attempt_executed": false,
+    "compiler_execution_count": 0,
+    "failed_prerequisite_branch_identified": false,
+    "baseline_checks": [
+      "Actual and recorded Darwin arm64/aarch64; matching current source working-tree digest.",
+      "Java major 25; observed Xcode 26.4.1/build 17E202; recorded Gradle state pinned.",
+      "Selected JAVA_HOME java path plus launcher and release-file digests match the environment record.",
+      "Absolute non-symlink pre-existing Native data directory, at most 200 entries, exactly one accepted macOS arm64 2.4.21 home.",
+      "Selected bin/tools/konan/common KLIB/target KLIB directories; bounded regular compiler JAR; exact 2.4.21 manifest; env_blacklist; executable konanc.",
+      "Bounded readable konan.properties for external-dependency inventory."
+    ],
+    "accepted_preexisting_home_names": [
+      "kotlin-native-prebuilt-macos-aarch64-2.4.21",
+      "kotlin-native-prebuilt-macos-arm64-2.4.21"
+    ],
+    "data_directory_selection": "KONAN_DATA_DIR when set, otherwise the user Native cache; no discovery outside this selection.",
+    "explicit_native_provision_or_owner_cache_enrollment_step_in_baseline_workflow": false,
+    "earlier_ios_target_preflight_failed_before_kgp_native_tasks": true,
+    "selection_gap": "The independent gate assumes an exact pre-existing Native home. The baseline workflow never explicitly provisions or enrolls one, and the earlier iOS preflight never reaches KGP tasks that might provision it.",
+    "selection_gap_is_source_inference_not_identified_failed_branch": true,
+    "specific_missing_home_or_cache_proven": false,
+    "simctl_failure_does_not_directly_explain_native_prerequisite_failure": true,
+    "android_required_for_this_gate": false,
+    "simulator_runtime_required_for_this_gate": false,
+    "llvm_libffi_sysroot_absence_not_by_itself_a_generic_precheck_failure": true,
+    "separate_native_throws_collector_workflow_enabled_at_baseline": false,
+    "separate_native_throws_collector_actual_apple_qualification": false
+  },
+  "limitations": [
+    "This timestamped record is the terminal API observation for the exact baseline push and attempt; the earlier partial observation remains byte-identical.",
+    "Sequential metadata requests are non-atomic. Each response retains its request interval, digest and size; log collection occurred afterward.",
+    "All four workflows failed. The three successful jobs are Planning Linux, Bridges Linux and Bridges macOS 26; status alone is not original JUnit/stress/package or all-host qualification.",
+    "The two macOS unittest summaries are exact text-log summaries, not original test-report artifact inspection or Native compiler tests.",
+    "Step names describe intended commands, not proof of compiler/linker/simulator/target execution. Failure-path cascades are not passed controls.",
+    "Image/OS/setup selections are scoped to each retained exact job; Xcode/SDK/image evidence is not transferred to another macOS job.",
+    "SDK provisioner success and baseline guards establish availability reporting, not full SDK byte enrollment or successful AGP target configuration.",
+    "The iOS JSON error is pre-execution. Native FIR returned a generic prerequisite code with zero compiler attempts; its exact failed branch and any particular missing Native/LLVM/libffi/sysroot component remain unknown.",
+    "Run head SHA is not complete same-job loaded broker/driver/provider/runtime artifact enrollment. Floating Java/Python selectors are not a whole-distribution M0 lock.",
+    "Original raw logs remain private and untouched; only exact byte digests, sizes, bounded collection metadata and fixed sanitized causes are published.",
+    "The separate Native throws collector was not workflow enabled and is not Apple qualified. Fake-process test repairs are not real Darwin ownership or Native support evidence.",
+    "CI harness process-group cleanup is best effort, not a sandbox or native production supervision/descendant-absence proof."
+  ]
+}

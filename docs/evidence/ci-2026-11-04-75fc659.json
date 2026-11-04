@@ -1,0 +1,500 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "github_push_run_job_status_observation",
+  "repository": "Apdelrahman1911/ktChecker",
+  "commit": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+  "observation_kind": "partial_observed_snapshot",
+  "metadata_collection_completed_at": "2026-11-04T13:11:43.802160+00:00",
+  "record_authored_at": "2026-11-04T13:15:16.928856+00:00",
+  "collection_is_atomic": false,
+  "summary": {
+    "workflow_count": 4,
+    "terminal_workflow_count": 1,
+    "job_count": 12,
+    "job_status_counts": {
+      "completed": 9,
+      "queued": 3
+    },
+    "job_conclusion_counts": {
+      "success": 2,
+      "not_terminal": 3,
+      "failure": 7
+    },
+    "all_workflows_terminal": false,
+    "all_required_workflows_passed": false
+  },
+  "collection_scope": {
+    "method": "Sequential authenticated GitHub run/job API reads plus bounded authorized single-job logs for diagnosed failures.",
+    "manual_workflow_dispatch": false,
+    "workflow_cancellation_by_collector": false,
+    "artifact_bundles_downloaded": false,
+    "original_test_report_artifacts_downloaded": false,
+    "distribution_archives_downloaded": false,
+    "private_log_bytes_in_this_record": false
+  },
+  "runs": [
+    {
+      "workflow_id": 406620452,
+      "workflow_name": "Planning evidence and registry",
+      "run_id": 41832603088,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603088",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T12:49:27Z",
+      "api_updated_at": "2026-11-04T12:49:27Z",
+      "jobs": [
+        {
+          "job_id": 126583290495,
+          "job_name": "Planning integrity (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603088/job/126583290495",
+          "api_status": "completed",
+          "api_conclusion": "success",
+          "api_started_at": "2026-11-04T12:49:30Z",
+          "api_completed_at": "2026-11-04T12:50:35Z",
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126583290876,
+          "job_name": "Planning integrity (macos-15)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603088/job/126583290876",
+          "api_status": "queued",
+          "api_conclusion": null,
+          "api_started_at": "2026-11-04T12:49:28Z",
+          "api_completed_at": null,
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126583291005,
+          "job_name": "Planning integrity (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603088/job/126583291005",
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:30Z",
+          "api_completed_at": "2026-11-04T12:49:46Z",
+          "first_failed_step": {
+            "number": 2,
+            "name": "Check out reviewed revision"
+          },
+          "failed_steps": [
+            {
+              "number": 2,
+              "name": "Check out reviewed revision"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "windows_checkout_long_path",
+            "observed_cause": "Git checkout reports Filename too long and exit code 128 while materializing required retained archive originals.",
+            "scope": "Checkout failure; later failure-path steps are not native/provider execution evidence."
+          }
+        }
+      ]
+    },
+    {
+      "workflow_id": 406714086,
+      "workflow_name": "Preview implementation (real pinned JVM)",
+      "run_id": 41832603039,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603039",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T12:49:27Z",
+      "api_updated_at": "2026-11-04T12:49:27Z",
+      "jobs": [
+        {
+          "job_id": 126583290922,
+          "job_name": "JVM 21 checker build and installed launcher (macos-26)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603039/job/126583290922",
+          "api_status": "queued",
+          "api_conclusion": null,
+          "api_started_at": "2026-11-04T12:49:28Z",
+          "api_completed_at": null,
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126583291303,
+          "job_name": "JVM 21 checker build and installed launcher (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603039/job/126583291303",
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:49:49Z",
+          "first_failed_step": {
+            "number": 2,
+            "name": "Check out candidate (no persisted credentials)"
+          },
+          "failed_steps": [
+            {
+              "number": 2,
+              "name": "Check out candidate (no persisted credentials)"
+            },
+            {
+              "number": 9,
+              "name": "Bind observed Gradle to the selected JVM"
+            },
+            {
+              "number": 10,
+              "name": "Observe exact helper build inputs and compiler or explicit unsupported host"
+            },
+            {
+              "number": 11,
+              "name": "Execute exact tiny native controls or record Windows native unavailability"
+            },
+            {
+              "number": 14,
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips"
+            },
+            {
+              "number": 17,
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes"
+            },
+            {
+              "number": 18,
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices"
+            },
+            {
+              "number": 19,
+              "name": "Collect actual suites and artifact identities, including failures"
+            },
+            {
+              "number": 20,
+              "name": "Retain sanitized observed evidence (not terminal transcripts)"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "windows_checkout_long_path",
+            "observed_cause": "Git checkout reports Filename too long and exit code 128 while materializing required retained archive originals.",
+            "scope": "Checkout failure; later failure-path steps are not native/provider execution evidence."
+          }
+        },
+        {
+          "job_id": 126583291306,
+          "job_name": "JVM 21 checker build and installed launcher (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603039/job/126583291306",
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:53:11Z",
+          "first_failed_step": {
+            "number": 13,
+            "name": "Build and test actual modules; assemble preview distributions"
+          },
+          "failed_steps": [
+            {
+              "number": 13,
+              "name": "Build and test actual modules; assemble preview distributions"
+            },
+            {
+              "number": 14,
+              "name": "Verify exact genuine library controls or visible Windows opt-out skips"
+            },
+            {
+              "number": 17,
+              "name": "Verify actual host-specific helper receipt and installed doctor bytes"
+            },
+            {
+              "number": 18,
+              "name": "Inventory actual dependency bytes, declared licenses and retained notices"
+            },
+            {
+              "number": 19,
+              "name": "Collect actual suites and artifact identities, including failures"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "cli_test_permission_cleanup_failure",
+            "observed_cause": "The Gradle :cli:test task fails when CodeImageTest.explicitlyUnreadableModeIsRejectedEvenForAPrivilegedProcess throws java.nio.file.AccessDeniedException at CodeImageTest.kt:341. At this commit that line restores permissions in the test finally block after mode 000.",
+            "scope": "Observed test cleanup failure; this does not establish a failure of production unreadability rejection or of a native compiler/helper.",
+            "source_file_at_commit": "modules/cli/src/test/kotlin/dev/ktchecker/cli/CodeImageTest.kt",
+            "source_line": 341
+          }
+        }
+      ]
+    },
+    {
+      "workflow_id": 406714087,
+      "workflow_name": "Preview platform execution (actual KMP targets)",
+      "run_id": 41832602989,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832602989",
+      "api_status": "completed",
+      "api_conclusion": "failure",
+      "api_created_at": "2026-11-04T12:49:27Z",
+      "api_updated_at": "2026-11-04T12:53:05Z",
+      "jobs": [
+        {
+          "job_id": 126583290396,
+          "job_name": "Actual Android KMP compile, host tests and NewApi adapter controls",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832602989/job/126583290396",
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:50:43Z",
+          "first_failed_step": {
+            "number": 9,
+            "name": "Execute Android host tests and clean/invalid actual Lint controls"
+          },
+          "failed_steps": [
+            {
+              "number": 9,
+              "name": "Execute Android host tests and clean/invalid actual Lint controls"
+            },
+            {
+              "number": 11,
+              "name": "Collect exact Android host-side reports and provider outcomes"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "fixture_build_script_compilation_failure",
+            "observed_cause": "The shared KMP fixture build script fails configuration compilation: Android compilerOptions.configure receiver mismatch and unresolved jvmTarget, unresolved desktopTest accessor, and rejected deprecated xml/html/text Lint report fields.",
+            "scope": "Pre-target-task build-script failure, not an Android compile/test/Lint result."
+          }
+        },
+        {
+          "job_id": 126583290785,
+          "job_name": "Real iOS arm64 compile/link and iOS 26.4 simulator execution",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832602989/job/126583290785",
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:52:18Z",
+          "api_completed_at": "2026-11-04T12:53:04Z",
+          "first_failed_step": {
+            "number": 9,
+            "name": "Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals"
+          },
+          "failed_steps": [
+            {
+              "number": 9,
+              "name": "Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals"
+            },
+            {
+              "number": 11,
+              "name": "Execute Native FIR library feasibility with the existing exact distribution"
+            },
+            {
+              "number": 12,
+              "name": "Collect exact simulator reports, linked frameworks and provider outcomes"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "ios_preexecution_prerequisite_failure",
+            "observed_cause": "The simctl prerequisite JSON decoder fails at offset 65536 under the generic clipped combined-output probe. A separate Native FIR feasibility failure exposes only native_semantic_prerequisites_unavailable.",
+            "scope": "Pre-execution prerequisite failure, not a Native compile/link/simulator result. Stderr contamination was not independently established; the generic Native code does not identify its missing prerequisite branch."
+          }
+        },
+        {
+          "job_id": 126583290862,
+          "job_name": "Actual Desktop/JVM KMP common boundary tests",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832602989/job/126583290862",
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:50:28Z",
+          "first_failed_step": {
+            "number": 8,
+            "name": "Execute Desktop/JVM KMP fixture tests"
+          },
+          "failed_steps": [
+            {
+              "number": 8,
+              "name": "Execute Desktop/JVM KMP fixture tests"
+            },
+            {
+              "number": 9,
+              "name": "Collect exact Desktop/JVM test reports"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "fixture_build_script_compilation_failure",
+            "observed_cause": "The shared KMP fixture build script fails configuration compilation: Android compilerOptions.configure receiver mismatch and unresolved jvmTarget, unresolved desktopTest accessor, and rejected deprecated xml/html/text Lint report fields.",
+            "scope": "Pre-target-task build-script failure, not a Desktop/JVM target test result."
+          }
+        }
+      ]
+    },
+    {
+      "workflow_id": 406714085,
+      "workflow_name": "Preview bridges (actual SDK and synthetic host controls)",
+      "run_id": 41832603248,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "75fc6594a96a1e645ac8e0312b3eec5182fda135",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603248",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T12:49:27Z",
+      "api_updated_at": "2026-11-04T12:49:27Z",
+      "jobs": [
+        {
+          "job_id": 126583291098,
+          "job_name": "MCP SDK and synthetic host tests/audits (macos-26)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603248/job/126583291098",
+          "api_status": "queued",
+          "api_conclusion": null,
+          "api_started_at": "2026-11-04T12:49:28Z",
+          "api_completed_at": null,
+          "first_failed_step": null,
+          "failed_steps": []
+        },
+        {
+          "job_id": 126583291594,
+          "job_name": "MCP SDK and synthetic host tests/audits (windows-2025)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603248/job/126583291594",
+          "api_status": "completed",
+          "api_conclusion": "failure",
+          "api_started_at": "2026-11-04T12:49:29Z",
+          "api_completed_at": "2026-11-04T12:49:44Z",
+          "first_failed_step": {
+            "number": 2,
+            "name": "Check out candidate without persisted credentials"
+          },
+          "failed_steps": [
+            {
+              "number": 2,
+              "name": "Check out candidate without persisted credentials"
+            },
+            {
+              "number": 6,
+              "name": "Bind sanitized bridge evidence to actual source and job outcome"
+            },
+            {
+              "number": 7,
+              "name": "Retain sanitized case counts, exact lock pins and audit outcomes"
+            }
+          ],
+          "failure_diagnosis": {
+            "code": "windows_checkout_long_path",
+            "observed_cause": "Git checkout reports Filename too long and exit code 128 while materializing required retained archive originals.",
+            "scope": "Checkout failure; later failure-path steps are not native/provider execution evidence."
+          }
+        },
+        {
+          "job_id": 126583291652,
+          "job_name": "MCP SDK and synthetic host tests/audits (ubuntu-24.04)",
+          "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41832603248/job/126583291652",
+          "api_status": "completed",
+          "api_conclusion": "success",
+          "api_started_at": "2026-11-04T12:49:30Z",
+          "api_completed_at": "2026-11-04T12:50:02Z",
+          "first_failed_step": null,
+          "failed_steps": []
+        }
+      ]
+    }
+  ],
+  "private_diagnostic_log_digests": [
+    {
+      "run_id": 41832602989,
+      "job_id": 126583290396,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "99e6ef136c0d592cd43fcc44371d8131a9cf3ae5cd5d169eef540abd00e5226a",
+      "size_bytes": 39686,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false
+    },
+    {
+      "run_id": 41832602989,
+      "job_id": 126583290785,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "31139cde9c0f809fd62d5c8431fcf47bb01308bd3a4ebd53594dc0ccb0856bd4",
+      "size_bytes": 36203,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false
+    },
+    {
+      "run_id": 41832602989,
+      "job_id": 126583290862,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "593031bc1860b24bfce830e12982bf24b1b51d6cd4c4a0a7141ccf98c1390734",
+      "size_bytes": 36301,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false
+    },
+    {
+      "run_id": 41832603088,
+      "job_id": 126583291005,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "cc64dfef3ba18521d5f57d5e7cb6630180534f181b86e0aa3f82c73e78c147c6",
+      "size_bytes": 12170,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false
+    },
+    {
+      "run_id": 41832603039,
+      "job_id": 126583291303,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "59dcba658812572bf14718a712db6d534276126482fc2265411c77393d7b27db",
+      "size_bytes": 24931,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false
+    },
+    {
+      "run_id": 41832603039,
+      "job_id": 126583291306,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "02f1ccfdabe696cb16e772263193f298d759348f84a9f3878e4cdd17cc0b84b9",
+      "size_bytes": 115351,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false
+    },
+    {
+      "run_id": 41832603248,
+      "job_id": 126583291594,
+      "attempt": 1,
+      "source_kind": "github_single_job_raw_log_response",
+      "sha256": "c1c104927aa809d3a252901edafc0b7c2908c8f6d67ed71a55cf47fb309137cc",
+      "size_bytes": 14155,
+      "complete_download": true,
+      "download_byte_limit": 8388608,
+      "download_timeout_seconds": 60,
+      "raw_bytes_published": false
+    }
+  ],
+  "qualification": {
+    "release_qualified": false,
+    "rule_qualification": false,
+    "production_native_supervision_qualification": false,
+    "apple_abi_qualification": false,
+    "native_throws_qualification": false,
+    "loaded_artifact_enrollment_verified_by_this_record": false,
+    "original_junit_and_stress_artifacts_verified_by_this_record": false
+  },
+  "limitations": [
+    "This is the as-observed partial snapshot for the exact pushed commit and attempt, not a terminal conclusion for the three queued workflows.",
+    "Queued jobs remain queued; no timeout, host-unavailability, execution or qualification is inferred from waiting.",
+    "API status values and API timestamps are retained without treating a queued job started_at field as proof of execution.",
+    "Workflow step names describe intended commands; a failed named target step alone does not prove compiler, linker, simulator or target test execution.",
+    "The two successful Linux jobs establish their observed GitHub job status only; original test report artifacts, counts and package contents were not inspected by this collector.",
+    "Run head SHA identifies the workflow candidate; it is not complete same-job loaded broker/driver/provider/runtime artifact enrollment.",
+    "Failed checkout/build/prerequisite paths are not passed provider controls. Later fixes or later runs cannot retroactively change this commit observation.",
+    "Raw logs remain private; this record retains only exact log byte digests, sizes, bounded collection metadata and sanitized technical diagnoses.",
+    "CI harness process-group cleanup is best effort, not a sandbox or native production supervision/descendant-absence proof."
+  ]
+}
