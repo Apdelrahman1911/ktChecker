@@ -62,6 +62,11 @@ export class ActualCliFixture {
   async enableCompilerRule(registration: Registration): Promise<void> {
     const revision = this.outputFile('owner-policy-revision');
     await this.call(['suppressions', 'inspect', '--client', registration.binding.clientId, '--out', revision]);
+    const current = JSON.parse(await readFile(revision, 'utf8')) as { effectiveRules?: Record<string, { enabled?: boolean }> };
+    // Consumers deliberately share a worktree and its SHARED owner policy. A's explicit
+    // enable is already visible to B; repeating an unchanged policy mutation is an error,
+    // not an authorization step or an independent consumer requirement.
+    if (current.effectiveRules?.[COMPILER_RULE]?.enabled === true) return;
     await this.call(['suppressions', 'enable', '--client', registration.binding.clientId, '--rule', COMPILER_RULE,
       '--expected', revision, '--owner-action']);
   }

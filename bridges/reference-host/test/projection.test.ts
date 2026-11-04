@@ -8,6 +8,7 @@ import { canonical, digest, InboxJournal } from '../src/journal.js';
 import { KernelBroker } from '../src/broker.js';
 import { ReferenceHost } from '../src/adapter.js';
 import { readHostConfig, hostConfigSchema } from '../src/config.js';
+import { observationProjection } from '../src/codex-observation.js';
 import { binding, event, FixtureHost, FixtureKernel, registration } from './fixtures.js';
 
 test('1663-row coverage projection is bounded, explicit about missing coverage, and retains every finding obligation', async t=>{
@@ -67,6 +68,37 @@ test('blank certificates cannot summarize as successful, and structural coverage
   assert.equal(summary.hasUnsuccessfulRequiredCoverage,true);
   assert.equal(summary.requiredUnqualifiedRows,1);assert.equal(summary.requiredUntestedRows,1);
   assert.equal(summary.requiredUnimplementedRows,1);assert.equal(summary.hasUnqualifiedRequiredCoverage,true);
+});
+
+test('required plan_accepted retains the complete parent vector in insertion and public observation, without retroactive null fields',async t=>{
+  const r=registration(),e=event(r);e.kind='plan_accepted';
+  const parentPlan={contractVersion:'ktchecker/preview-1',planId:'parent-plan',clientId:r.binding.clientId,
+    patchId:'parent-patch',sourceSnapshotId:e.sourceSnapshotId,planDigest:digest('plan'),state:'accepted',reasons:[],
+    slots:[{slotId:'main-jvm',reviewId:e.reviewId,context:{target:'jvm',sourceSet:'main',module:':fixture',compilation:'main'},requiredRuleIds:['compiler.rule'],state:'queued',reasons:[]}]};
+  e.payload=canonical({state:'plan_accepted',result:null,parentPlan});e.payloadDigest=digest(e.payload);
+  const dir=await mkdtemp(join(tmpdir(),'ktchecker-parent-context-'));const journal=new InboxJournal(dir,binding(r));
+  t.after(async()=>{journal.close();await rm(dir,{recursive:true,force:true});});
+  const kernel=new FixtureKernel(r),host=new FixtureHost(binding(r));kernel.eventsByClient.set(r.binding.clientId,[e]);
+  const adapter=new ReferenceHost(journal,new KernelBroker(kernel,r),host);await adapter.pollOnce();await adapter.drainContext();
+  const saved=journal.read().inbox[e.eventId]!;assert.equal(saved.acknowledged,true);assert.equal(saved.observed,false);
+  assert.deepEqual(observationProjection(saved.item!).parentPlan,parentPlan);
+  const old=event(r,'old-without-parent');kernel.eventsByClient.get(r.binding.clientId)!.push(old);
+  await adapter.pollOnce();await adapter.drainContext();
+  assert.equal(Object.hasOwn(observationProjection(journal.read().inbox[old.eventId]!.item!),'parentPlan'),false);
+});
+
+test('a 512-slot parent vector exceeding the aggregate budget remains unACKed, never narrowed to fit',async t=>{
+  const r=registration(),e=event(r);e.kind='plan_accepted';
+  e.payload=canonical({state:'plan_accepted',result:null,parentPlan:{slots:Array.from({length:512},(_,i)=>({slotId:'slot-'+i,
+    requiredRuleIds:['rule-'+i],context:{target:'jvm',sourceSet:'main',module:':module-'+i,compilation:'main'},reviewId:'review-'+i,state:'queued',reasons:[]}))}});
+  e.payloadDigest=digest(e.payload);
+  const dir=await mkdtemp(join(tmpdir(),'ktchecker-parent-large-'));const journal=new InboxJournal(dir,binding(r));
+  t.after(async()=>{journal.close();await rm(dir,{recursive:true,force:true});});
+  const kernel=new FixtureKernel(r),host=new FixtureHost(binding(r));kernel.eventsByClient.set(r.binding.clientId,[e]);
+  const adapter=new ReferenceHost(journal,new KernelBroker(kernel,r),host);await adapter.pollOnce();
+  await assert.rejects(adapter.drainContext(),/required_context_exceeds_budget/);
+  assert.equal(kernel.acked.size,0);assert.equal(host.insertionCalls,0);
+  assert.equal(journal.readPayload(e.eventId,e.payloadDigest),e.payload);
 });
 
 test('owner configuration forbids model settings and insecure files; generation is a safe integer',async t=>{

@@ -36,3 +36,13 @@ fun localShadow(): String {
     fun choose(value: Long): String = value.toString()
     return choose(1L)
 }
+
+fun firstGenericScope(): String {
+    fun <T> same(value: T): T = value
+    return same("first")
+}
+
+fun secondGenericScope(): String {
+    fun <T> same(value: T): T = value
+    return same("second")
+}

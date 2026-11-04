@@ -1,0 +1,529 @@
+{
+  "schema": "ktchecker-host-evidence/preview-1",
+  "date": "2026-11-04T09:24:57.504Z",
+  "evidenceScope": "actual_cli_kernel_compiler_and_real_codex_application_requests_with_public_synthetic_source",
+  "contractVersion": "ktchecker/preview-1",
+  "model": "gpt-6-astra",
+  "allowProviderModelFallback": false,
+  "internalInferenceRequestTrace": false,
+  "actualKernelIntegration": false,
+  "actualKotlinCompilerRun": false,
+  "sourceAuthority": "immutable_owner_overlay_not_physical_live_worktree",
+  "fullProjectModel": false,
+  "releaseQualified": false,
+  "guardedActionPerformed": false,
+  "modelPollingCalls": 0,
+  "node": "v24.20.0",
+  "codex": "codex-cli 0.160.0",
+  "sourceFixture": {
+    "path": "Contract.kt",
+    "p1": "interface Contract { fun run(): String }\nclass Missing : Contract\n",
+    "p2": "interface Contract { fun run(): String }\nclass Missing : Contract { override fun run(): String = \"ok\" }\n"
+  },
+  "ownerExplicitlyEnabledRule": "ktc.compiler.common.abstract_member_not_implemented",
+  "candidateCoverageScope": "all-catalog-candidates-for-declared-target",
+  "phases": [],
+  "negatives": {},
+  "verified": false,
+  "stage": "owner_fixture_enrollment_and_preparation",
+  "runIdentity": {
+    "currentCheckout": {
+      "commit": "bc3208ffb14bb30bdd1e81b6959db1ddcfef5541",
+      "dirty": true
+    },
+    "bridgeSources": [
+      {
+        "path": "bridges/mcp/src/main.ts",
+        "bytes": 1892,
+        "digest": "sha256:9daa5ff00cfab5774dbb9c5a69c04ecb07e4d386bc4b7c867a4d772ebcd7ddf6"
+      },
+      {
+        "path": "bridges/mcp/src/private-state.ts",
+        "bytes": 433,
+        "digest": "sha256:436fde512db125b9d8c333e01852d392f67501e2030354ead530e9f6f9f941b3"
+      },
+      {
+        "path": "bridges/mcp/src/rpc.ts",
+        "bytes": 8365,
+        "digest": "sha256:e14fc1fa1ce79a0cf5aa011b2b49a21f72aacbb8d61c0cbd96293069d90ee362"
+      },
+      {
+        "path": "bridges/mcp/src/server.ts",
+        "bytes": 5578,
+        "digest": "sha256:6c0b935dba9ed7d29efd6df7aefe3d40d466f3b357a4bf9df74030c147e85319"
+      },
+      {
+        "path": "bridges/reference-host/src/adapter.ts",
+        "bytes": 14610,
+        "digest": "sha256:90257b740202ae02eec927f3d78244fade74781bc02178460e91c58d1b6e37b5"
+      },
+      {
+        "path": "bridges/reference-host/src/broker.ts",
+        "bytes": 1849,
+        "digest": "sha256:3ff514306d9cea66585a2c2162599b93bb37c57e22e9a40dcd244820fa7b0ca6"
+      },
+      {
+        "path": "bridges/reference-host/src/codex-app-server.ts",
+        "bytes": 13752,
+        "digest": "sha256:807984c9ba055e72cd17fdefb7007398d2e2cc5fb3745292063daab7f70bfa16"
+      },
+      {
+        "path": "bridges/reference-host/src/codex-host.ts",
+        "bytes": 13218,
+        "digest": "sha256:d47983cb92624f3a2ba1e7b017d5f584f9ac5d67ab163e28449911165b84fecf"
+      },
+      {
+        "path": "bridges/reference-host/src/codex-observation.ts",
+        "bytes": 7229,
+        "digest": "sha256:9920d52fbc2eaafdc9e6b3a031bb5ad0d40ec7831d4b829a684d692764ecfec2"
+      },
+      {
+        "path": "bridges/reference-host/src/codex-store.ts",
+        "bytes": 4913,
+        "digest": "sha256:191bf707cf92cb220a2182c15f6f34eb8f6203f0ed3a5599dad87a221d27fb16"
+      },
+      {
+        "path": "bridges/reference-host/src/config.ts",
+        "bytes": 1829,
+        "digest": "sha256:78956eb9f290cdc06d1e8d004b7ecb849db02b88058f434ecbfd21a6e1673bde"
+      },
+      {
+        "path": "bridges/reference-host/src/context-projection.ts",
+        "bytes": 5126,
+        "digest": "sha256:5463a62ee75137ccfa403c4079e81d1247549946a4e1d00feac0a3e78989fcd3"
+      },
+      {
+        "path": "bridges/reference-host/src/journal.ts",
+        "bytes": 8498,
+        "digest": "sha256:5375294b00e14ec76175f00d3782a2c17b017f8c3ede7810f876a7d777465b3b"
+      },
+      {
+        "path": "bridges/reference-host/src/main.ts",
+        "bytes": 3573,
+        "digest": "sha256:a0a215dbdf5b4e226a9d06c2287b6196f7417ca4169348161b69603e81e80a31"
+      },
+      {
+        "path": "bridges/reference-host/src/probe-codex.ts",
+        "bytes": 524,
+        "digest": "sha256:8f8e61d197bcd0650c99673f720dcff1eed86493b98729d9cb627fa028cea06c"
+      },
+      {
+        "path": "bridges/reference-host/src/types.ts",
+        "bytes": 3807,
+        "digest": "sha256:ac149311b4a4faa7b20a9cd60a05ac7fd93d7c9e3590a4de167ec9037bdd71f0"
+      },
+      {
+        "path": "bridges/reference-host/test/demo-cli-codex.ts",
+        "bytes": 19886,
+        "digest": "sha256:51ff9b35d17c0e8e02eac068e36d030a936f159334eed82adc98344693cbc1ff"
+      },
+      {
+        "path": "bridges/reference-host/test/actual-cli-fixture.ts",
+        "bytes": 8343,
+        "digest": "sha256:8b8d8a6702f432a92b3fca9c01c4da894fbc3912a7fede3069c6855810bbd2e5"
+      },
+      {
+        "path": "bridges/reference-host/test/application-evidence.ts",
+        "bytes": 2807,
+        "digest": "sha256:ac955a97efec7f2bf89217c18ca26a8f6f978fafc79908a43d69cc445f081b91"
+      },
+      {
+        "path": "bridges/reference-host/test/run-identity.ts",
+        "bytes": 4219,
+        "digest": "sha256:36be7d4fc685318514beef462a85a645b80dbefd69e0b9e444fb17d96c17e26c"
+      }
+    ],
+    "bridgeSourceDigest": "sha256:8478d4e542a300982191835b28bec770c33bcab31e6d1dd3622d473ea9875ab3",
+    "executedBridgeArtifacts": [
+      {
+        "path": "bridges/mcp/dist/src/main.d.ts",
+        "bytes": 31,
+        "digest": "sha256:43e818adf60173644896298637f47b01d5819b17eda46eaa32d0c7d64724d012"
+      },
+      {
+        "path": "bridges/mcp/dist/src/main.js",
+        "bytes": 1982,
+        "digest": "sha256:2402f581c5ed3cc61381f9873ea20ac7c48ea408d1b1a637f6e4174b6ee5e311"
+      },
+      {
+        "path": "bridges/mcp/dist/src/main.js.map",
+        "bytes": 2288,
+        "digest": "sha256:036be8b9ee50c7235f000b23cdecbe3d8ae32ee3ba719475177792e115155c6d"
+      },
+      {
+        "path": "bridges/mcp/dist/src/private-state.d.ts",
+        "bytes": 337,
+        "digest": "sha256:b9662d1b63c222da60f8c3e625c94909e418a2ca9733dafbbf3fdbf29def2545"
+      },
+      {
+        "path": "bridges/mcp/dist/src/private-state.js",
+        "bytes": 461,
+        "digest": "sha256:b615440cab8f8f3a4a4c9238b8063db1647ee947219838f85211255856dc6b43"
+      },
+      {
+        "path": "bridges/mcp/dist/src/private-state.js.map",
+        "bytes": 259,
+        "digest": "sha256:91322e7837b6bfaaf383ff14177b05e663057685c6094655c430e9228054ddd3"
+      },
+      {
+        "path": "bridges/mcp/dist/src/rpc.d.ts",
+        "bytes": 1844,
+        "digest": "sha256:ecceae7bc796d206c44b373105c462564949e8a33084bca48c3ae64ce1b24aa9"
+      },
+      {
+        "path": "bridges/mcp/dist/src/rpc.js",
+        "bytes": 8342,
+        "digest": "sha256:12c94709d8c13744a4cc36e52beecced1f6b1e473cdb42a55f0e34bf012e1963"
+      },
+      {
+        "path": "bridges/mcp/dist/src/rpc.js.map",
+        "bytes": 8105,
+        "digest": "sha256:25d827e5fab8e9a426b5025f720123835bd6af5662a9fa9e75e84460fe548b56"
+      },
+      {
+        "path": "bridges/mcp/dist/src/server.d.ts",
+        "bytes": 1126,
+        "digest": "sha256:f2c285629d06051c9536a965efcd7d3486e102bd4a0c67e5621feaa17293aa84"
+      },
+      {
+        "path": "bridges/mcp/dist/src/server.js",
+        "bytes": 5566,
+        "digest": "sha256:b49bbe6424456a03b4b96c2e225a351bdc428bcff8b23cf9104008e69575f9f5"
+      },
+      {
+        "path": "bridges/mcp/dist/src/server.js.map",
+        "bytes": 5077,
+        "digest": "sha256:a87a88bb517fb6dccd245ec0012825c0bb5d75affaaf8edb282e092520b5cb8c"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/adapter.d.ts",
+        "bytes": 1772,
+        "digest": "sha256:feaaa0a5c09a895eac2946b191499d31aba513fe9adf5a3f44e4a43715544fbd"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/adapter.js",
+        "bytes": 16321,
+        "digest": "sha256:6195390f99a66cad95d20a8f1139c18bd534a17ddcdf7505bd6f46bdfe919e22"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/adapter.js.map",
+        "bytes": 15767,
+        "digest": "sha256:987fd2eaeb9baa5c0a108641ebaca70d5cc6667e05883839cd148c6e7930c3cb"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/broker.d.ts",
+        "bytes": 1010,
+        "digest": "sha256:66a91c3fbc0973bb987fdd236aaf782d1f0154a24cc00ca7a267be01a71e6130"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/broker.js",
+        "bytes": 1596,
+        "digest": "sha256:8f8b2ca7fefb7987f58dadb413e4c51a6aea2458026874ec324da47948e0ae5e"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/broker.js.map",
+        "bytes": 1706,
+        "digest": "sha256:699b3f1202c7ecf8c4f92f844ff5c4d2e8d2792f22e01ccfb1d6bdad3955d8f8"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-app-server.d.ts",
+        "bytes": 2917,
+        "digest": "sha256:d15a962ca333476f893999413e41f029ac811558109d372b3639326df54c64dc"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-app-server.js",
+        "bytes": 13133,
+        "digest": "sha256:5d50491de9b7b68b4ca8c310361ebddaa86ec4602feb450e0da696fa341b5542"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-app-server.js.map",
+        "bytes": 13428,
+        "digest": "sha256:741014230b1fb58629c3bc7da55121497b4ab88e213119ac498b5c682c30d450"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-host.d.ts",
+        "bytes": 1718,
+        "digest": "sha256:2555d0ea35be619b451ff3ebdf1c8eae9bd8991b9ace18640bebd0765d485e78"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-host.js",
+        "bytes": 13521,
+        "digest": "sha256:9dd4ac875262bdcc60065e15ba8d51dc7c2f8635d89c93d97e8e50d5f79366d5"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-host.js.map",
+        "bytes": 12247,
+        "digest": "sha256:74f5f597f7fff5d5c383e04537415bea93a89805861b2b14fe98e04a867a12cb"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-observation.d.ts",
+        "bytes": 3694,
+        "digest": "sha256:2f9955964c5d3d189ca1a11a57552241bcd6367e19a5d2d314dda775351d5531"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-observation.js",
+        "bytes": 7359,
+        "digest": "sha256:6605d47858430a3f2a496479044b6b5ddaf77d6ee607cd2fe8ac1616e3312172"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-observation.js.map",
+        "bytes": 4298,
+        "digest": "sha256:c2e5d3e7e05add66c1c10ead9a72e10b74c913ba2c99afc7de548b5ec91ad168"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-store.d.ts",
+        "bytes": 1272,
+        "digest": "sha256:f64402330a22f0d5a82a674632e8052081e41f17028709b570e8c877debcd57a"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-store.js",
+        "bytes": 4482,
+        "digest": "sha256:496bb86bf9922aae50b164162f555d2a4721e7efc046f698f91d96bee9d6c2b7"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/codex-store.js.map",
+        "bytes": 4278,
+        "digest": "sha256:b2aeda66894960bd07cf453cec0898e06708af868e72a3b5b84f19fbdcee6c44"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/config.d.ts",
+        "bytes": 1538,
+        "digest": "sha256:3142f605b26ce3f64f78877de1f36183b24237afd6de60881ecbd73d4997ae4a"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/config.js",
+        "bytes": 1811,
+        "digest": "sha256:b99238404061eacd556f02772bf9d90bfbe81bea00f022669e4f5c6433852b72"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/config.js.map",
+        "bytes": 2431,
+        "digest": "sha256:9c1224342599b28750c0437a23cea3574c64a7918e2cf77773853a2ff60b4f75"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/context-projection.d.ts",
+        "bytes": 912,
+        "digest": "sha256:b65e184f16c76804ba1ffcec9e00a927eec5dbe4dce12ba020c981a2eae62d95"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/context-projection.js",
+        "bytes": 5040,
+        "digest": "sha256:f09c95d297d8500f2db8afb281b6ee7f78efa351caacd2d9dad8a91d9238ab3e"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/context-projection.js.map",
+        "bytes": 4588,
+        "digest": "sha256:850b450f7134dd5e38851d241abb629948553c450ab0b7471237b613542c695f"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/journal.d.ts",
+        "bytes": 1362,
+        "digest": "sha256:cdb13c35c09075be930ba065c24a53936129ebbea44c10a267535e91433da000"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/journal.js",
+        "bytes": 9591,
+        "digest": "sha256:97318875a34e2c6960b99514f052a9c9ff3e84bf597ef30003d96ac9912eb61a"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/journal.js.map",
+        "bytes": 9143,
+        "digest": "sha256:ff9a05101f7e1f06f708e94eee508015d3ad998b71644f6d965ad364e9594d70"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/main.d.ts",
+        "bytes": 31,
+        "digest": "sha256:43e818adf60173644896298637f47b01d5819b17eda46eaa32d0c7d64724d012"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/main.js",
+        "bytes": 3823,
+        "digest": "sha256:0236212c970dd49cace98edde2e2bb000f2d90bbdbf3c8443460358b5b8f4c77"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/main.js.map",
+        "bytes": 4158,
+        "digest": "sha256:59e3e25cbab29717217026a24b89d9cdfc1cbfe4e2062f63b36d2a15e5f030f4"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/probe-codex.d.ts",
+        "bytes": 31,
+        "digest": "sha256:43e818adf60173644896298637f47b01d5819b17eda46eaa32d0c7d64724d012"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/probe-codex.js",
+        "bytes": 600,
+        "digest": "sha256:4fdffed90138f653553c851b535a682eea98ac76be20bb2806632bbfe83f33e1"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/probe-codex.js.map",
+        "bytes": 704,
+        "digest": "sha256:561cf3a1e6433dd92a0339f3341d7fceb91d423eaacf52b092162d2b0b3cb498"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/types.d.ts",
+        "bytes": 4237,
+        "digest": "sha256:5259f92d55dab0f8b8664ed11a4ee58397fdb4e6784a645d24901ef120e311fc"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/types.js",
+        "bytes": 44,
+        "digest": "sha256:01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2"
+      },
+      {
+        "path": "bridges/reference-host/dist/src/types.js.map",
+        "bytes": 105,
+        "digest": "sha256:17307f7387fbcf31645bdc6c61dd25c80edefb6fbacbb2909f503b879227b631"
+      },
+      {
+        "path": "bridges/reference-host/dist/test/demo-cli-codex.js",
+        "bytes": 19804,
+        "digest": "sha256:2903162a6e8581385b81ec33e9b1e83f1d9b2318df1925b75cffdf06b0379ae1"
+      },
+      {
+        "path": "bridges/reference-host/dist/test/actual-cli-fixture.js",
+        "bytes": 7709,
+        "digest": "sha256:8adad01f16dd0ff7d85270546894b163385f749a6dc0e85ba5948a74f8271160"
+      },
+      {
+        "path": "bridges/reference-host/dist/test/application-evidence.js",
+        "bytes": 2553,
+        "digest": "sha256:cddd2019ae643c6d8a6a66c7f1eaa3272584344120270d4ed6996ccd3d38d380"
+      },
+      {
+        "path": "bridges/reference-host/dist/test/run-identity.js",
+        "bytes": 4199,
+        "digest": "sha256:177b5119b134e90039e0545ea4332ccecd186e39c1f5eed744c0507aa3d3eb3b"
+      }
+    ],
+    "executedBridgeArtifactDigest": "sha256:e146de5bc0233b0b4a7eaaf48dec2a9a6e810c1687af9ed952459879acad3aa9",
+    "installedLauncher": {
+      "path": "bin/ktchecker",
+      "bytes": 9361,
+      "digest": "sha256:f47467c33eea953ada628a4080e6f923c7ead37189302fd6f35a6a66ece3e0b9"
+    },
+    "installedJavaArtifacts": [
+      {
+        "path": "lib/annotations-13.0.jar",
+        "bytes": 17536,
+        "digest": "sha256:ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478"
+      },
+      {
+        "path": "lib/cli-0.1.0-dev.1.jar",
+        "bytes": 821247,
+        "digest": "sha256:0ac473b562b5d8bbbd070442e851bf83dfec63c4de77e78a7d8b581eb32d2605"
+      },
+      {
+        "path": "lib/config-0.1.0-dev.1.jar",
+        "bytes": 399493,
+        "digest": "sha256:ccb45329d130c34676732e13f4e7d139b079f5aa39f132a7c40e441bf81e7e24"
+      },
+      {
+        "path": "lib/contracts-0.1.0-dev.1.jar",
+        "bytes": 133059,
+        "digest": "sha256:380ad8afe410dd1a324a683bd01e05a220b76982ec751f54a221ff2ecb364057"
+      },
+      {
+        "path": "lib/kernel-0.1.0-dev.1.jar",
+        "bytes": 235311,
+        "digest": "sha256:31491a6b3a0fc1939085ad51e419db13f21105ee9a471f9c61e7b53ffc4f5156"
+      },
+      {
+        "path": "lib/kotlin-stdlib-2.4.21.jar",
+        "bytes": 1853315,
+        "digest": "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3"
+      },
+      {
+        "path": "lib/kotlinx-serialization-core-jvm-1.11.0.jar",
+        "bytes": 404509,
+        "digest": "sha256:f4a801c647d4351327cd9e1ac4113e2be9ea37a64ab0abae269c25a52e28f35d"
+      },
+      {
+        "path": "lib/kotlinx-serialization-json-jvm-1.11.0.jar",
+        "bytes": 294166,
+        "digest": "sha256:563a25b4eb5c9128ae9c2479f3d1a5c44dcd176112b91cf03682e906eba5c935"
+      },
+      {
+        "path": "lib/provider-compiler-0.1.0-dev.1.jar",
+        "bytes": 118193,
+        "digest": "sha256:93a0fe434603c4bff8610c5c2ce1d8756f4d14bb7b397482ab8e029c519a6a50"
+      },
+      {
+        "path": "lib/provider-detekt-0.1.0-dev.1.jar",
+        "bytes": 109766,
+        "digest": "sha256:0085915b7b89966c2f212be0af684a1c20dcb8f2b316a62d63a6c3baebb0e837"
+      },
+      {
+        "path": "lib/provider-lint-0.1.0-dev.1.jar",
+        "bytes": 122643,
+        "digest": "sha256:2f37c25cf41ee0760fe514c2762bf928d1e8afabfd4e074a5b29303ee4358b5b"
+      },
+      {
+        "path": "lib/provider-native-0.1.0-dev.1.jar",
+        "bytes": 78101,
+        "digest": "sha256:8cc5ac010ea00575bcbea83498e8d7a5d845c2b78c743c8795b0b8ebd27878b8"
+      },
+      {
+        "path": "lib/provider-runtime-0.1.0-dev.1.jar",
+        "bytes": 67588,
+        "digest": "sha256:c2b111a5f0ff11eeb2a7a30400e9de08f973c41d8e932a4ea21e779c649a6bdf"
+      },
+      {
+        "path": "lib/snapshot-0.1.0-dev.1.jar",
+        "bytes": 291077,
+        "digest": "sha256:75d7f0bc602a73cf2f71be265d166874cb8126dc37227687c963f439b54e834e"
+      },
+      {
+        "path": "lib/sqlite-jdbc-3.50.3.0.jar",
+        "bytes": 14346720,
+        "digest": "sha256:a3f53a2aa15ae9425a9e793bbe9c8e5288febeb4b65ef5c1a4e80d4c2045cf08"
+      },
+      {
+        "path": "providers/compiler/annotations-13.0.jar",
+        "bytes": 17536,
+        "digest": "sha256:ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478"
+      },
+      {
+        "path": "providers/compiler/kotlin-build-tools-api-2.4.21.jar",
+        "bytes": 468126,
+        "digest": "sha256:c5cd6a49bd072b529ae10809111c16a7aa0f92147e95d288354017fd65799461"
+      },
+      {
+        "path": "providers/compiler/kotlin-compiler-embeddable-2.4.21.jar",
+        "bytes": 58593291,
+        "digest": "sha256:ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02"
+      },
+      {
+        "path": "providers/compiler/kotlin-daemon-embeddable-2.4.21.jar",
+        "bytes": 393410,
+        "digest": "sha256:7b3ef24674e5bcffcadfc4e43202ea314194939ecbcdd90a4770b2f1b04e0d07"
+      },
+      {
+        "path": "providers/compiler/kotlin-reflect-1.6.10.jar",
+        "bytes": 3038560,
+        "digest": "sha256:3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203"
+      },
+      {
+        "path": "providers/compiler/kotlin-script-runtime-2.4.21.jar",
+        "bytes": 46533,
+        "digest": "sha256:a658cf5902a1525a06c264a5e42b437e97a6679ddeef8ca641246f270cf6a013"
+      },
+      {
+        "path": "providers/compiler/kotlin-stdlib-2.4.21.jar",
+        "bytes": 1853315,
+        "digest": "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3"
+      },
+      {
+        "path": "providers/compiler/kotlinx-coroutines-core-jvm-1.8.0.jar",
+        "bytes": 1548360,
+        "digest": "sha256:9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5"
+      }
+    ],
+    "installedJavaArtifactDigest": "sha256:55b683fd28711cc7a1c5de4e42234ad4f1a8758d44f8ac2f04b85c3a8958678e",
+    "installedJavaSourceCommit": null,
+    "installedJavaSourceCommitReason": "not_embedded_in_artifacts_no_equivalence_to_current_dirty_checkout_assumed",
+    "sourceScope": "bridge_production_sources_and_demo_drivers_not_an_entire_repository_snapshot"
+  },
+  "failure": "actual_cli_configuration_invalid",
+  "lastProblems": []
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "ktchecker-host-evidence/preview-1",
+  "date": "2026-11-04T08:45:51.275Z",
+  "evidenceScope": "actual_cli_kernel_compiler_and_real_codex_application_requests_with_public_synthetic_source",
+  "contractVersion": "ktchecker/preview-1",
+  "model": "gpt-6-astra",
+  "allowProviderModelFallback": false,
+  "internalInferenceRequestTrace": false,
+  "actualKernelIntegration": false,
+  "actualKotlinCompilerRun": false,
+  "sourceAuthority": "immutable_owner_overlay_not_physical_live_worktree",
+  "fullProjectModel": false,
+  "releaseQualified": false,
+  "guardedActionPerformed": false,
+  "modelPollingCalls": 0,
+  "node": "v24.20.0",
+  "codex": "codex-cli 0.160.0",
+  "sourceFixture": {
+    "path": "Contract.kt",
+    "p1": "interface Contract { fun run(): String }\nclass Missing : Contract\n",
+    "p2": "interface Contract { fun run(): String }\nclass Missing : Contract { override fun run(): String = \"ok\" }\n"
+  },
+  "ownerExplicitlyEnabledRule": "ktc.compiler.common.abstract_member_not_implemented",
+  "candidateCoverageScope": "all-catalog-candidates-for-declared-target",
+  "phases": [],
+  "negatives": {},
+  "verified": false,
+  "stage": "owner_fixture_enrollment_and_preparation",
+  "failure": "actual_cli_operation_failed",
+  "lastProblems": []
+}

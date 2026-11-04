@@ -15,11 +15,12 @@
   ],
   "qualifies_rules": false,
   "qualifies_release": false,
-  "source_provenance": "Post-run retention of existing receipt/fixture identities; no source-to-executed-bytecode qualification proof.",
-  "current_implementation_references": [
+  "source_provenance": "Historical exact post-run source archive; retention is not startup source provenance or source-to-executed-bytecode qualification.",
+  "post_run_source_archive_references": [
     {
-      "path": "modules/provider-lint/src/main/kotlin/dev/ktchecker/providers/lint/AndroidLintProvider.kt",
+      "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/post-run-source/AndroidLintProvider.kt",
       "sha256": "5ede95f7b5bc7018bcfbeac67dd74bbcef07503388e4205b40965da7a25c692d"
     }
-  ]
+  ],
+  "receipt_association": "Post-run manually associated private envelopes and passing JUnit suite; no direct run-ID/raw-report/command/source-to-bytecode attribution proof."
 }

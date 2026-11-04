@@ -12,10 +12,14 @@ import { BrokerError } from '@ktchecker/mcp-preview/rpc';
 import { ReferenceHost } from '../src/adapter.js';
 import { KernelBroker } from '../src/broker.js';
 import { CodexHostPort } from '../src/codex-host.js';
+import { CodexAppServer } from '../src/codex-app-server.js';
 import { canonical, digest, HostError, InboxJournal } from '../src/journal.js';
 import type { InboxEntry, Registration } from '../src/types.js';
 import { ActualCliFixture, ActualFaultBroker, BROKEN_SOURCE, COMPILER_RULE, FIXTURE_PATH, REPAIRED_SOURCE } from './actual-cli-fixture.js';
 import { captureApplicationEvidence } from './application-evidence.js';
+import { captureRunIdentity } from './run-identity.js';
+import { captureDeliveryTelemetry, permanentDeliveryProblem, safeDeliveryProblem } from './delivery-telemetry.js';
+import { OwnedDemoThreads } from './owned-demo-threads.js';
 
 const args = process.argv.slice(2);
 if (args.length !== 5 || args[0] !== '--allow-inference' || args[1] !== '--cli' || !args[2] || args[3] !== '--evidence' || !args[4]) {
@@ -43,6 +47,7 @@ const report: Record<string, unknown> = {
 type Consumer = { registration: Registration; host: CodexHostPort; journal: InboxJournal; adapter: ReferenceHost;
   controller?: AbortController; running?: Promise<void> };
 const consumers: Consumer[] = [];
+const ownedThreads = new OwnedDemoThreads();
 let releaseTool: () => void = () => {};
 const waitUntil = async (predicate: () => boolean, timeout = 180_000) => {
   const deadline = Date.now() + timeout;
@@ -66,7 +71,12 @@ function resultEntry(consumer: Consumer, patch: string): InboxEntry | undefined 
   return Object.values(consumer.journal.read().inbox).find(entry => entry.event.patchId === patch && entry.event.kind === 'result');
 }
 async function waitForResult(consumer: Consumer, patch: string): Promise<InboxEntry> {
-  await waitUntil(() => resultEntry(consumer, patch)?.acknowledged === true);
+  await waitUntil(() => {
+    if (resultEntry(consumer, patch)?.acknowledged === true) return true;
+    const problem = permanentDeliveryProblem(consumer.journal.read());
+    if (problem) throw new HostError(problem); // Deterministic representation failure cannot improve by polling for 180s.
+    return false;
+  });
   return resultEntry(consumer, patch)!;
 }
 function assertPublicOnly(text: string): void {
@@ -111,6 +121,8 @@ async function expectRejection(name: string, operation: () => Promise<unknown>, 
 }
 
 try {
+  report.stage = 'capture_actual_application_bytecode_identity';
+  report.runIdentity = await captureRunIdentity(fixture.launcher);
   report.stage = 'owner_fixture_enrollment_and_preparation';
   await mkdir(publicDirectory, { mode: 0o700 }); await fixture.initialize();
   await writeFile(join(publicDirectory, FIXTURE_PATH), BROKEN_SOURCE);
@@ -123,11 +135,15 @@ try {
   const heldTool = new Promise<void>(resolve => { releaseTool = resolve; });
   for (let i = 0; i < registrations.length; i++) {
     const registration = registrations[i]!;
+    ownedThreads.beginCreation();
     const host = await CodexHostPort.open({ directory: join(privateDirectory, 'codex-' + i), client: registration.binding, cwd: publicDirectory,
       ...(i === 0 ? { dynamicTools: [{ type: 'function', name: 'hold_for_background_review',
         description: 'Fixed no-op demonstration barrier. Wait for the external controller; never polls or executes code.',
         inputSchema: { type: 'object', properties: {}, required: [], additionalProperties: false } }], onModelRequestAccepted: () => releaseTool() } : {}) });
-    const journal = new InboxJournal(join(privateDirectory, 'inbox-' + i), host.binding);
+    ownedThreads.confirmCreation(host.binding.hostThreadId);
+    let journal: InboxJournal;
+    try { journal = new InboxJournal(join(privateDirectory, 'inbox-' + i), host.binding); }
+    catch (error) { await host.close(); throw error; }
     const adapter = new ReferenceHost(journal, new KernelBroker(rpc, registration), host);
     consumers.push({ registration, host, journal, adapter });
   }
@@ -246,22 +262,34 @@ try {
   report.backgroundEventPolls = rpc.calls.filter(call => call.method === 'review.events').length;
   report.adapterObservationCalls = rpc.calls.filter(call => call.method === 'review.observe').length;
   assert.equal(await readFile(join(publicDirectory, FIXTURE_PATH), 'utf8'), REPAIRED_SOURCE);
-  // Delete only two freshly created owned disposable threads, never guessed unrelated IDs.
-  for (const consumer of consumers) { await stopPolling(consumer); await consumer.host.server.request('thread/delete', { threadId: consumer.host.binding.hostThreadId }); }
-  report.ownedDisposableThreadsDeleted = true;
   report.verified = true;
   report.stage = 'verified';
 } catch (error) {
   report.failure = error instanceof HostError ? error.code : error instanceof BrokerError ? error.code :
     error instanceof assert.AssertionError ? 'actual_delivery_assertion_failed' : 'actual_delivery_failed';
-  report.lastProblems = consumers.map(consumer => { try { return consumer.journal.read().lastProblem; } catch { return 'consumer_closed'; } });
+  report.lastProblems = consumers.map(consumer => { try { return safeDeliveryProblem(consumer.journal.read().lastProblem); } catch { return 'consumer_closed'; } });
+  report.failureByteTelemetry = consumers.map(consumer => {
+    try { return captureDeliveryTelemetry(consumer.journal.read()); } catch { return { unavailable: 'consumer_closed_or_telemetry_unavailable' }; }
+  });
   process.exitCode = 1;
 } finally {
   releaseTool();
   for (const consumer of consumers) await closeConsumer(consumer).catch(() => {});
-  await rpc.close(); await rm(directory, { recursive: true, force: true });
+  await rpc.close();
+  // A fresh control-only connection can delete the exact known IDs even when a
+  // consumer app-server was already disconnected. No resume/list/turn is sent.
+  const cleanup = await ownedThreads.cleanup(() => new CodexAppServer());
+  report.threadCleanup = cleanup; report.ownedDisposableThreadsDeleted = cleanup.allConfirmed;
+  report.privateRecoveryStateRetained = !cleanup.allConfirmed;
+  if (cleanup.allConfirmed) await rm(directory, { recursive: true, force: true });
+  else {
+    report.verified = false; report.failure ??= 'owned_disposable_cleanup_unconfirmed'; process.exitCode = 1;
+    if (report.stage === 'verified') report.stage = 'owned_disposable_cleanup_unconfirmed';
+    process.stderr.write('Disposable demo cleanup unconfirmed; owner-only recovery state retained at ' + directory + '\n');
+  }
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, JSON.stringify(report, null, 2) + '\n');
+  if (!report.verified) await writeFile(outputPath.replace(/\.json$/, '') + '.failed-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json', JSON.stringify(report, null, 2) + '\n');
   process.stdout.write(JSON.stringify({ evidenceScope: report.evidenceScope, verified: report.verified,
     phases: (report.phases as unknown[]).length, failure: report.failure ?? null, actualKotlinCompilerRun: report.actualKotlinCompilerRun }) + '\n');
 }

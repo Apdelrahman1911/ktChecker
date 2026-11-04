@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "semantic_vocabulary_observation_not_rule_coverage",
+  "adapter_id": "kotlin-fir-2.4.21/v1",
+  "summary_sha256": "sha256:2cb4b8d9f005afc18dcd9e86be7731acc5499436184697a97a5d237032c5208e",
+  "context": {
+    "compiler": "2.4.21",
+    "host": "Linux amd64",
+    "project_jdk": "21.0.12",
+    "observed_platform": "JVM (1.8)"
+  },
+  "positive_observed_type_fact_occurrences": {
+    "class": 210,
+    "type_parameter": 31
+  },
+  "positive_observed_symbol_fact_kinds": {
+    "backing_field": 10,
+    "class": 8,
+    "constructor": 7,
+    "function": 29,
+    "getter": 3,
+    "property": 12,
+    "type_alias": 1,
+    "value_parameter": 10
+  },
+  "positive_observed_call_fact_kinds": {
+    "function_call": 22,
+    "property_access": 19
+  },
+  "compiler_exercised_capabilities": [
+    "overload-sensitive resolved signatures",
+    "binary dependency calls and inferred generic types",
+    "import alias and local shadow isolation",
+    "distinct same-spelled local generic owners",
+    "common/intermediate/platform source refinement",
+    "matched expect/actual candidates including actual typealias",
+    "resolved annotation identities",
+    "exact CRLF supplementary-Unicode call bytes",
+    "unresolved and error-type abstention"
+  ],
+  "implemented_but_not_compiler_fixture_qualified": [
+    "flexible types",
+    "intersection types",
+    "definitely-not-null types",
+    "callable references",
+    "mismatched expect/actual candidates",
+    "named/default/vararg argument adversarial controls",
+    "captured/unmodeled type abstention paths"
+  ],
+  "not_implemented_or_not_attested": [
+    "effective visibility and Java/Swift API export boundary",
+    "exact per-symbol dependency artifact ownership",
+    "complete public-inline API references",
+    "dynamic/candidate/negative dependency closure",
+    "interprocedural dataflow, effects, lifetimes, aliasing and thread affinity",
+    "general cinterop/header/SDK/generated-code/compiler-plugin closure",
+    "persistent standalone Analysis API sessions",
+    "stable cross-revision suppression fingerprints from local semantic IDs"
+  ],
+  "native_contexts": [
+    {
+      "target": "iosArm64",
+      "execution": "unrun",
+      "qualified": false
+    },
+    {
+      "target": "iosSimulatorArm64",
+      "execution": "unrun",
+      "qualified": false
+    }
+  ],
+  "diagnostic_rules_implemented_by_this_adapter": 0,
+  "qualified_rules": 0,
+  "qualified_tuples": 0,
+  "scope_reduced": false
+}

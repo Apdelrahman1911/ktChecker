@@ -81,11 +81,30 @@ def repository_file(root: Path, value: Any) -> Path:
 
 
 def repository_input(root: Path, path: Path) -> Path:
-    """Resolve CLI/API input paths against the repository, without hiding links."""
-    try:
-        relative = path.relative_to(root) if path.is_absolute() else path
-    except ValueError as error:
-        raise CoverageError(f"input manifest must be inside repository: {path}") from error
+    """Canonicalize only a root alias, preserving every unresolved descendant."""
+    root = root.resolve()
+    relative = path
+    if path.is_absolute():
+        if ".." in path.parts:
+            raise CoverageError(f"unsafe repository input path: {path}")
+        try:
+            relative = path.relative_to(root)
+        except ValueError:
+            # macOS /var versus /private/var and Windows short/long directory
+            # names can identify the same selected repository root. Resolve the
+            # outermost matching root prefix, NEVER the whole input path. The
+            # outermost order also preserves an in-repo link pointing back to
+            # the root, so that repository_file still rejects that link.
+            for ancestor in reversed(path.parents):
+                try:
+                    same_root = ancestor.resolve(strict=True) == root
+                except (OSError, RuntimeError):
+                    continue
+                if same_root:
+                    relative = path.relative_to(ancestor)
+                    break
+            else:
+                raise CoverageError(f"input manifest must be inside repository: {path}")
     return repository_file(root, relative.as_posix())
 
 

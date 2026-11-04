@@ -38,6 +38,7 @@ internal class FirFactExtractor(
     private val relations = mutableListOf<ExpectActualFact>()
     private val unknown = mutableListOf<UnknownSemanticFact>()
     private var visited = 0
+    private var convertedTypeNodes = 0
 
     fun extract(): SemanticFactShard {
         // Source affiliation comes from FIR container files, never a symbol's spelling or imports.
@@ -152,8 +153,7 @@ internal class FirFactExtractor(
             (declaration as? FirTypeAlias)?.expandedTypeRef?.let(::resolvedType))
         // A source location is needed only to disambiguate genuinely local declarations. Moving a
         // non-local overload does not merge it with another overload or change its signature key.
-        val key = descriptor.copy(source = if (descriptor.local) location else null)
-        val result = descriptor.copy(id = Digests.sha256("ktchecker:resolved-symbol:v1\u0000" + ContractJson.encodeToString(key)))
+        val result = descriptor.copy(id = resolvedSymbolIdentity(descriptor))
         symbols[symbol] = result
         if (kind == "unsupported_symbol" || qualifiedName == "<unknown>") {
             unknown += UnknownSemanticFact("symbol", "unsupported_compiler_symbol_kind", location)
@@ -256,6 +256,7 @@ internal class FirFactExtractor(
 
     private fun type(value: ConeKotlinType?, depth: Int, qualifyParameterOwner: Boolean): TypeFact {
         fun unknown(reason: String) = TypeFact("unknown", reason = reason)
+        if (++convertedTypeNodes > 100_000) throw SemanticFactException("semantic_type_limit", "Resolved type expansion exceeds the bounded vocabulary")
         if (value == null) return unknown("compiler_type_unresolved")
         if (depth > 24 || value.typeArguments.size > 64) return unknown("compiler_type_depth_limit")
         fun nested(child: ConeKotlinType) = type(child, depth + 1, qualifyParameterOwner)
@@ -279,25 +280,50 @@ internal class FirFactExtractor(
                     else -> emptyList()
                 }
                 val index = parameters.indexOfFirst { it === parameter }
-                if (index < 0) unknown("compiler_type_parameter_owner_unavailable")
+                val ownerIdentity = if (qualifyParameterOwner) ownerKey(owner) else ownerBaseKey(owner)
+                if (index < 0 || ownerIdentity == null) unknown("compiler_type_parameter_owner_unavailable")
                 else TypeFact("type_parameter", nullable = value.isMarkedNullable,
-                    parameterOwner = if (qualifyParameterOwner) ownerKey(owner) else "signature-local-parameter",
+                    parameterOwner = ownerIdentity,
                     parameterIndex = index)
             }
             else -> unknown("compiler_type_kind_unmodeled:${value::class.java.simpleName}")
         }
     }
 
-    /** Bound generic signature rendering uses positional parameters, avoiding recursive owner IDs. */
-    private fun ownerKey(owner: FirBasedSymbol<*>): String {
+    /**
+     * Bound generic signatures use positional parameters plus nonrecursive owner bases. Local
+     * owners must carry their actual source identity: same-spelled generics in different enclosing
+     * bodies must not share a type-parameter owner. Missing affiliation explicitly abstains.
+     */
+    private fun ownerKey(owner: FirBasedSymbol<*>): String? {
+        val base = ownerBaseKey(owner) ?: return null
         val declaration = owner.fir
-        val types = if (declaration is FirCallableDeclaration) {
-            val refs = listOfNotNull(declaration.receiverParameter?.typeRef, declaration.returnTypeRef) +
-                (declaration as? FirFunction)?.valueParameters.orEmpty().map { it.returnTypeRef }
-            refs.map { type((it as? FirResolvedTypeRef)?.coneType, 0, qualifyParameterOwner = false) }
-        } else emptyList()
-        return Digests.sha256("ktchecker:type-parameter-owner:v1\u0000${owner.moduleData.name}\u0000${name(owner)}\u0000" +
-            ContractJson.encodeToString(types))
+        fun signatureType(ref: FirTypeRef): TypeFact = type((ref as? FirResolvedTypeRef)?.coneType, 0, qualifyParameterOwner = false)
+        val callable = declaration as? FirCallableDeclaration
+        val member = declaration as? FirMemberDeclaration
+        val groups = linkedMapOf(
+            "receiver" to listOfNotNull(callable?.receiverParameter?.typeRef?.let(::signatureType)),
+            "dispatch" to listOfNotNull(callable?.dispatchReceiverType?.let { type(it, 0, qualifyParameterOwner = false) }),
+            "return" to listOfNotNull(callable?.returnTypeRef?.let(::signatureType)),
+            "values" to (declaration as? FirFunction)?.valueParameters.orEmpty().map { signatureType(it.returnTypeRef) },
+            "context" to callable?.contextParameters.orEmpty().map { signatureType(it.returnTypeRef) },
+        )
+        val bounds = member?.typeParameters.orEmpty().map { parameter -> parameter.symbol.resolvedBounds.map(::signatureType) }
+        if ((groups.values.flatten() + bounds.flatten()).any { !it.known }) return null
+        val modes = member?.typeParameters.orEmpty().map { "${it.symbol.variance}:${it.symbol.isReified}" }
+        return Digests.sha256("ktchecker:type-parameter-owner:v1\u0000$base\u0000" +
+            ContractJson.encodeToString(groups) + ContractJson.encodeToString(bounds) + ContractJson.encodeToString(modes) +
+            ContractJson.encodeToString(member?.status?.let(::flags).orEmpty()))
+    }
+
+    private fun ownerBaseKey(owner: FirBasedSymbol<*>): String? {
+        val name = name(owner)
+        if (name == "<unknown>") return null
+        val declaration = owner.fir
+        val local = (declaration as? FirMemberDeclaration)?.isLocal == true || owner is FirAnonymousFunctionSymbol
+        val localSource = if (local) sourceFile(owner)?.let { span(owner.source, it) } ?: return null else null
+        return Digests.sha256("ktchecker:type-parameter-owner-base:v1\u0000${owner.moduleData.name}\u0000$name\u0000" +
+            "${declaration::class.java.simpleName}\u0000" + ContractJson.encodeToString(localSource))
     }
 
     private fun unknownType(type: TypeFact, kind: String, source: SemanticSpan?) {

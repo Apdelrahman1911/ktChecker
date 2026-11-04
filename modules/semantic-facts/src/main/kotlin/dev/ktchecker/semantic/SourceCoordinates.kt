@@ -12,12 +12,14 @@ class SourceCoordinates(private val input: SemanticSource, bytes: ByteArray) {
     private val lineEnds = mutableListOf<Int>()
 
     init {
-        if (bytes.size.toLong() != input.size || Digests.sha256(bytes) != input.digest) {
+        // Detach before hashing/decoding so post-submission mutations cannot change the mapping.
+        val frozen = bytes.copyOf()
+        if (frozen.size.toLong() != input.size || Digests.sha256(frozen) != input.digest) {
             throw SemanticFactException("semantic_source_digest_mismatch", "Source bytes differ from the frozen request")
         }
         text = try {
             Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString()
+                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(frozen)).toString()
         } catch (e: Exception) {
             throw SemanticFactException("semantic_source_encoding_unavailable", "Only strict UTF-8 is currently supported", e)
         }

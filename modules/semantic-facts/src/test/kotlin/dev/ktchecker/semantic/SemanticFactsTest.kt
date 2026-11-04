@@ -57,7 +57,7 @@ class SemanticFactsTest {
 
     @Test fun `selected tuple is never qualified by a successful data envelope`() {
         val input = request()
-        val bundle = SemanticFactsValidation.assemble(input, listOf(shard(input)), 0)
+        val bundle = SemanticFactsValidation.assemble(input, listOf(shard(input)), 0, sourceBytes = { bytes })
         assertTrue(bundle.completeForSupportedVocabulary)
         assertEquals("extracted", bundle.state)
         assertFalse(bundle.tupleQualified)
@@ -134,5 +134,118 @@ class SemanticFactsTest {
         val bundle = SemanticFactsValidation.assemble(input, listOf(shard(input).copy(calls = listOf(call))), 0)
         assertEquals("failed", bundle.state)
         assertContains(bundle.reasons, "semantic_symbol_graph_invalid")
+    }
+
+    @Test fun `unverified data envelopes cannot certify source coordinate coverage`() {
+        val input = request()
+        val bundle = SemanticFactsValidation.assemble(input, listOf(shard(input)), 0)
+        assertFalse(bundle.completeForSupportedVocabulary)
+        assertContains(bundle.reasons, "semantic_source_bytes_unverified")
+    }
+
+    @Test fun `invalid roots are structured failures and never reach the byte reader`() {
+        val input = request().copy(sourceRoot = "invalid\u0000root")
+        var reads = 0
+        val bundle = SemanticFactsValidation.assemble(input, listOf(shard(input)), 0, sourceBytes = { reads++; bytes })
+        assertFalse(bundle.completeForSupportedVocabulary)
+        assertContains(bundle.reasons, "semantic_root_invalid")
+        assertEquals(0, reads)
+    }
+
+    @Test fun `closed type vocabulary rejects invented kinds and malformed structures`() {
+        val malformed = listOf(TypeFact("bogus"), TypeFact("class"), TypeFact("class", "kotlin.Int"),
+            TypeFact("flexible"), TypeFact("flexible", components = listOf(TypeFact("class", "kotlin.Int", false))),
+            TypeFact("type_parameter", nullable = false, parameterOwner = "guessed", parameterIndex = 0),
+            TypeFact("type_parameter", nullable = false, parameterOwner = Digests.sha256("owner"), parameterIndex = -1),
+            TypeFact("definitely_not_null", nullable = true, components = listOf(TypeFact("class", "kotlin.Int", false))),
+            TypeFact("class", "kotlin.List", false, listOf(TypeProjectionFact("guessed", TypeFact("class", "kotlin.Int", false)))),
+            TypeFact("class", "kotlin.List", false, listOf(TypeProjectionFact("star", TypeFact("class", "kotlin.Int", false)))))
+        malformed.forEach { type ->
+            assertFalse(type.known, "Malformed type became known: $type")
+            val input = request()
+            val span = SourceCoordinates(source, bytes).span(0, 0, 0, 1)
+            val bundle = SemanticFactsValidation.assemble(input, listOf(shard(input).copy(types = listOf(TypeUseFact(span, type)))),
+                0, sourceBytes = { bytes })
+            assertFalse(bundle.completeForSupportedVocabulary)
+            assertContains(bundle.reasons, "semantic_facts_unknown")
+        }
+    }
+
+    @Test fun `exact source validation rejects inconsistent UTF16 and byte spans`() {
+        val input = request()
+        val span = SourceCoordinates(source, bytes).span(0, 0, 0, 1)
+        val variants = listOf(span.copy(endByte = 2), span.copy(endLine = 3), span.copy(startColumn = 8, endColumn = 9))
+        variants.forEach {
+            val bundle = SemanticFactsValidation.assemble(input, listOf(shard(input).copy(
+                types = listOf(TypeUseFact(it, TypeFact("class", "kotlin.Int", false))))), 0, sourceBytes = { bytes })
+            assertEquals("failed", bundle.state)
+            assertFalse(bundle.completeForSupportedVocabulary)
+            assertTrue(bundle.reasons.any { it in setOf("semantic_source_coordinate_mismatch", "semantic_source_range_invalid") })
+        }
+        assertContains(SemanticFactsValidation.assemble(input, listOf(shard(input)), 0,
+            sourceBytes = { "changed".toByteArray() }).reasons, "semantic_source_digest_mismatch")
+    }
+
+    @Test fun `symbol identity and argument parameter bindings cannot be forged`() {
+        val input = request()
+        val type = TypeFact("class", "kotlin.Int", false)
+        val descriptor = SymbolFact("", "function", "fixture.f", "module", "Source", false,
+            returnType = type, parameters = listOf(SemanticParameter(0, "value", type)))
+        val symbol = descriptor.copy(id = resolvedSymbolIdentity(descriptor))
+        val span = SourceCoordinates(source, bytes).span(0, 0, 0, 1)
+        val call = CallFact(span, "function_call", symbol.id, null, type,
+            arguments = listOf(ArgumentBindingFact(span, 0, "value")))
+        val valid = shard(input).copy(symbols = listOf(symbol), calls = listOf(call))
+        assertTrue(SemanticFactsValidation.assemble(input, listOf(valid), 0, sourceBytes = { bytes }).completeForSupportedVocabulary)
+        val badArguments = listOf(call.copy(arguments = listOf(ArgumentBindingFact(span, 3, "value"))),
+            call.copy(arguments = listOf(ArgumentBindingFact(span, 0, "other"))),
+            call.copy(arguments = call.arguments + call.arguments))
+        badArguments.forEach {
+            val bundle = SemanticFactsValidation.assemble(input, listOf(valid.copy(calls = listOf(it))), 0, sourceBytes = { bytes })
+            assertEquals("failed", bundle.state)
+            assertContains(bundle.reasons, "semantic_argument_binding_invalid")
+        }
+        assertContains(SemanticFactsValidation.assemble(input, listOf(valid.copy(
+            symbols = listOf(symbol.copy(qualifiedName = "fixture.other")))), 0, sourceBytes = { bytes }).reasons,
+            "semantic_symbol_identity_invalid")
+    }
+
+    @Test fun `validated facts detach caller collections and are recursively unmodifiable`() {
+        val input = request()
+        val arguments = mutableListOf(TypeProjectionFact("star"))
+        val types = mutableListOf(TypeUseFact(SourceCoordinates(source, bytes).span(0, 0, 0, 1),
+            TypeFact("class", "kotlin.List", false, arguments)))
+        val declarations = mutableListOf<String>()
+        val shards = mutableListOf(shard(input).copy(types = types, declarations = declarations))
+        val bundle = SemanticFactsValidation.assemble(input, shards, 0, sourceBytes = { bytes })
+        assertTrue(bundle.completeForSupportedVocabulary)
+        arguments.clear()
+        types.clear()
+        declarations += "foreign"
+        shards.clear()
+        assertEquals(1, bundle.shards.size)
+        assertEquals(1, bundle.shards.single().types.size)
+        assertEquals(1, bundle.shards.single().types.single().type.arguments.size)
+        assertTrue(bundle.shards.single().declarations.isEmpty())
+        assertFailsWith<UnsupportedOperationException> { (bundle.shards as MutableList<*>).clear() }
+        assertFailsWith<UnsupportedOperationException> { (bundle.shards.single().types as MutableList<*>).clear() }
+        assertFailsWith<UnsupportedOperationException> { (bundle.shards.single().types.single().type.arguments as MutableList<*>).clear() }
+        assertFailsWith<UnsupportedOperationException> { (bundle.limitations as MutableList<*>).clear() }
+    }
+
+    @Test fun `cyclic and overdeep DTO type trees fail closed instead of overflowing`() {
+        val input = request()
+        val children = mutableListOf<TypeFact>()
+        val type = TypeFact("intersection", components = children)
+        children += type
+        assertFalse(type.known)
+        val span = SourceCoordinates(source, bytes).span(0, 0, 0, 1)
+        val bundle = SemanticFactsValidation.assemble(input, listOf(shard(input).copy(types = listOf(TypeUseFact(span, type)))),
+            0, sourceBytes = { bytes })
+        assertEquals("failed", bundle.state)
+        assertContains(bundle.reasons, "semantic_fact_shape_limit")
+        var repeated = TypeFact("class", "kotlin.Int", false)
+        repeat(6) { repeated = TypeFact("intersection", components = List(64) { repeated }) }
+        assertFalse(repeated.known) // Small shared DAG must not expand into unbounded validation work.
     }
 }

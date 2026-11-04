@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "verified_local_semantic_fixture_observation",
+  "state": "passed",
+  "observed_at": "2026-11-04T09:16:49.560317588Z",
+  "tested_commit": "bc3208ffb14bb30bdd1e81b6959db1ddcfef5541",
+  "tested_working_tree_had_uncommitted_changes": true,
+  "summary_sha256": "sha256:2cb4b8d9f005afc18dcd9e86be7731acc5499436184697a97a5d237032c5208e",
+  "private_report_sha256": "sha256:62804b3d1a330175317774d4eaffa0c5d88d3347d6c8ae6cd499faa6a4267270",
+  "selected_plugin": {
+    "coordinate": "ktchecker:kotlin-fir-2.4.21/v1",
+    "digest": "sha256:7c12ccd8af201bd59c08f6e82cfd07c4cfdd586c38591912355bbc5221e70b99",
+    "omittedCoordinateDigest": null
+  },
+  "executed_bytecode_artifacts_observed_after_run": [
+    {
+      "coordinate": "ktchecker:semantic-main",
+      "digest": "sha256:39dafbcd83fcd95a7a620a2787c931f538a0e28f6b56756efed9d6d470a866b4"
+    },
+    {
+      "coordinate": "ktchecker:contracts",
+      "digest": "sha256:380ad8afe410dd1a324a683bd01e05a220b76982ec751f54a221ff2ecb364057"
+    },
+    {
+      "coordinate": "ktchecker:snapshot",
+      "digest": "sha256:3c8914de64c6bc46cbf331a6f871d9836228b2696934505152625ff3be51e18a"
+    },
+    {
+      "coordinate": "ktchecker:provider-runtime",
+      "digest": "sha256:48b8934ab5bd81b796bcd66fd7c92b402520ce121635964e34f2777c194796ef"
+    }
+  ],
+  "fixture_driver_test_classes": {
+    "file_count": 25,
+    "aggregate_sha256": "sha256:be64d6fc7163d71fe5adf07dc29d28ff5a80610d3a04279fb6d92f10a0b5e464",
+    "recorded_after_run": true
+  },
+  "owned_source_observation": {
+    "file_count": 26,
+    "aggregate_sha256": "sha256:ed39084883f0ce39adc2d302ab18983c7667a652d55a367a7c25462579b9d085",
+    "recorded_after_run": true,
+    "scope": "semantic module excluding build/evidence plus semantic fixtures; not a full repository input proof"
+  },
+  "unit_tests": [
+    {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suite": "dev.ktchecker.semantic.SemanticFactsTest",
+      "seconds": 0.275,
+      "observed_at": "2026-11-04T09:16:30.187Z",
+      "report_sha256": "sha256:1836248e9ec8732b50d419b14f068cc2f779ba965109e273b4e15e3a9c477f77"
+    },
+    {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suite": "dev.ktchecker.semantic.SemanticFixtureSummaryTest",
+      "seconds": 0.02,
+      "observed_at": "2026-11-04T09:16:30.465Z",
+      "report_sha256": "sha256:b2443d4f70f4ebb5a083f952e3b8bc493f6a65247da1606c7b4649da82bf0833"
+    }
+  ],
+  "actual_compiler_attempts": 5,
+  "actual_case_count": 4,
+  "observed_positive_compiler_platforms": [
+    "JVM (1.8)"
+  ],
+  "selected_project_jdk": "21.0.12+8-1-24.04-Ubuntu",
+  "compiler_version": "2.4.21",
+  "reproduce": [
+    "./gradlew",
+    "--no-daemon",
+    "--max-workers=1",
+    ":semantic-facts:test",
+    ":semantic-facts:semanticFixtures"
+  ],
+  "qualified_rules": 0,
+  "qualified_tuples": 0,
+  "release_qualified": false,
+  "limitations": [
+    "Local Linux/JVM feasibility only; not hosted CI, Native/iOS, final integrated commit or release qualification.",
+    "The JVM fixture used the explicit Gradle Java launcher 21.0.12 and observed compiler default JVM 1.8 target; not the release project JDK25/JVM17 tuple.",
+    "The tested commit label did not include all in-flight semantic changes. Snapshot/plugin/artifact digests bind the actual run.",
+    "Source and driver-bytecode inventories were observed after the run; they do not independently attest the entire compiler execution environment.",
+    "Compiler process elapsed times are cold invocation observations; CPU and peak RSS were unavailable, not zero.",
+    "Acceptance, useful-result latency, required completion, host context delivery and contention were not measured by this fixture.",
+    "No full project model, exported API ownership, complete dependency closure, dataflow, or diagnostic-rule implementation is qualified."
+  ]
+}

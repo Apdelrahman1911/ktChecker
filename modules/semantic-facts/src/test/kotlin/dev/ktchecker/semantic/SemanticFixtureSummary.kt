@@ -76,7 +76,7 @@ internal data class SemanticFixtureSummary(
                 coordinate.matches(Regex("fixture-dependency:(jar|klib):(jvm|linuxX64|iosArm64|iosSimulatorArm64)")) ||
                 (coordinate.startsWith("selected-native-2.4.21:") &&
                     coordinate.substringAfter(':').let { component ->
-                        component.startsWith("bin/") || component.startsWith("konan/") || component.startsWith("klib/")
+                        component.startsWith("bin/") || component.startsWith("tools/") || component.startsWith("konan/") || component.startsWith("klib/")
                     } && coordinate.substringAfter(':').split('/').all { it.matches(Regex("[A-Za-z0-9_.+-]{1,200}")) && it !in setOf(".", "..") })
             return SemanticArtifactSummary(if (safe) coordinate else "unrecognized_coordinate_omitted", digest(value.digest),
                 if (safe) null else Digests.sha256(coordinate))

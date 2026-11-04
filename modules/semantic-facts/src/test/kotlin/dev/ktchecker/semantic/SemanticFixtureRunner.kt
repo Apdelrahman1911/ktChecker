@@ -129,7 +129,9 @@ object SemanticFixtureRunner {
             if (target == "linuxX64" && !host.contains("linux")) throw ExecutionProblem("native_target_host_unavailable", "Exploratory Linux target requires Linux")
             nativeHome = Path.of(options["native-home"] ?: throw ExecutionProblem("semantic_native_home_required", "Select the exact Native 2.4.21 home")).toRealPath()
             val home = requireNotNull(nativeHome)
-            val roots = listOf(home.resolve("bin"), home.resolve("konan"), home.resolve("klib/common"),
+            // run_konan reads tools/env_blacklist, so script configuration belongs to the
+            // selected artifact inventory along with the compiler, properties and target KLIBs.
+            val roots = listOf(home.resolve("bin"), home.resolve("tools"), home.resolve("konan"), home.resolve("klib/common"),
                 home.resolve("klib/platform/${konanTarget()}"))
             if (roots.any { !Files.isDirectory(it, NOFOLLOW_LINKS) }) {
                 throw ExecutionProblem("semantic_native_distribution_incomplete", "Selected target compiler/standard/platform KLIB inputs are unavailable")
@@ -174,6 +176,8 @@ object SemanticFixtureRunner {
             it.qualifiedName == "fixture.semantic.choose" && !it.local
         }
         val relations = bundle.shards.flatMap { it.expectActual }
+        val localGenerics = allSymbols.values.filter { it.local && it.kind == "function" && it.typeParameterCount == 1 &&
+            it.parameters.singleOrNull()?.type?.kind == "type_parameter" }
         val assertions = linkedMapOf(
             "actual_compiler_succeeded" to (outcome.successfulExecution && outcome.exitCode == 0),
             "supported_fact_vocabulary_complete" to bundle.completeForSupportedVocabulary,
@@ -185,6 +189,9 @@ object SemanticFixtureRunner {
             "local_shadow_is_not_top_level_overload" to allCalls.any { call ->
                 allSymbols[call.targetSymbolId]?.let { it.local && it.parameters.singleOrNull()?.type?.classifierId == "kotlin.Long" } == true
             },
+            "same_spelled_local_generic_owners_are_distinct" to (localGenerics.size == 2 &&
+                localGenerics.map { it.parameters.single().type.parameterOwner }.toSet().size == 2 &&
+                localGenerics.all { symbol -> allCalls.any { it.targetSymbolId == symbol.id } }),
             "separate_binary_dependency_call_resolved" to allSymbols.values.any {
                 it.qualifiedName == "fixture.dependency.libraryCall" && it.source == null && it.parameters.singleOrNull()?.type?.classifierId == "kotlin.String"
             },
@@ -325,7 +332,9 @@ object SemanticFixtureRunner {
             require(files.size <= request.sources.size * 4) { "Fact shard count exceeds request" }
             files.map { path -> ContractJson.decodeFromString<SemanticFactShard>(outcome.report("facts/${path.fileName}", 16_777_216).toString(Charsets.UTF_8)) }
         } else emptyList()
-        return SemanticFactsValidation.assemble(request, shards, outcome.exitCode, outcome.successfulExecution, outcome.reasons)
+        return SemanticFactsValidation.assemble(request, shards, outcome.exitCode, outcome.successfulExecution, outcome.reasons) {
+            Files.readAllBytes(frozen.root.resolve(it.path))
+        }
     }
 
     private fun sourceText(span: SemanticSpan): String {

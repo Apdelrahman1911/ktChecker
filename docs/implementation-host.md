@@ -57,7 +57,9 @@ it does not grant editing, compiler execution, source authority or finalization.
 5. A completed public `agentMessage` must bind the invocation, request/context and
    original payload digests, and all finding diagnosis/location/verification
    content. Projected contexts additionally require every finding obligation and
-   the explicit coverage summary. A marker echo, insertion response, turn-start
+   the explicit coverage summary (including any derivable-validation-reason
+   projection). A non-null parent plan must also be reflected in full, including
+   every slot, rule, context, identity and reason. A marker echo, insertion response, turn-start
    response, timeout, mismatched content or test-only witness cannot observe an
    event. Observation is durably recorded before the distinct `review.observe` RPC.
 6. Lost ACK/observe responses retry the same receipts. Lost model responses
@@ -89,7 +91,8 @@ Automatic context uses `contextSchema: "ktchecker/context-preview-1"`:
   protected local artifact retrieval, not a model tool or an observation.
 * `diagnosticPayload` is a separately hashed JSON-string projection;
   `diagnosticPayloadDigest` is **not** the original event payload digest.
-* **Every original finding, raw diagnostic and top-level failure reason remains.**
+* **Every original finding, raw diagnostic, provider reason and nonredundant
+  failure reason remains.**
   `findingObligations` enumerates each original finding index, full finding digest
   and event-bound obligation ID. Source ranges keep their original snapshot and
   file digest; stale data is not silently relocated onto current source bytes.
@@ -100,10 +103,28 @@ Automatic context uses `contextSchema: "ktchecker/context-preview-1"`:
   Empty projected `coverage` is **never evidence of passing coverage**.
   Structural success requires a nonblank certificate, separately from explicit
   unqualified/untested/unimplemented-required counts; one never conceals the other.
+* Three exact top-level kernel-final-validation reason families may be represented
+  by `coverageSummary.validationReasonProjection`: `coverage_unimplemented:ID`,
+  `coverage_unqualified:ID`, and `coverage_unsuccessful:ID`. This requires a
+  `result` event with exact preview/review/client/patch/snapshot binding, complete
+  explicitly typed coverage rows, unique rule/context identities, and equality
+  with the complete distinct reason set derived from those rows. All rows are
+  considered, not only required ones. Duplicate reasons/rows, same-rule context
+  aliases, partial fields, collisions or mismatched predicates fail closed;
+  nothing is silently normalized. Kotlin/JVM blank-certificate semantics are
+  reproduced rather than incorrectly using JavaScript `trim`.
+  The three predicate groups carry exact counts and reason/row/context digests,
+  the full original reason-array digest, omission-index digest and retained-count
+  totals. The original immutable payload still holds every reason string.
+  Provider `result.reasons`, unknown failures, diagnoses, recommendations and
+  parent vectors are never compacted by this rule. A shortened top-level reason
+  array is not a clean review: `hasCoverageValidationFailures` stays explicit.
 * The entire prepared context and aggregate invocation must fit the model budget.
   If mandatory findings/diagnostics cannot fit, insertion/ACK/observation stops
   with `required_context_exceeds_budget`. Multi-part finding delivery is not yet
   implemented; mandatory findings are never silently dropped or truncated.
+  A required `plan_accepted` event preserves its complete parent vector. An
+  oversized vector is not narrowed to fit and remains unACKed/unobserved.
 
 Model-request digests bind this prepared representation, not inaccessible internal
 prompt transformations. Existing saved full-payload contexts remain immutable and
@@ -114,8 +135,9 @@ are supported; new contexts use the explicit projection schema.
 | Evidence | Verified scope | Not established |
 |---|---|---|
 | MCP SDK tests | 15 tests: current discovery/tools, legacy rejection, privilege/argument boundaries, transport bounds/reconnect, strict UTF-8, unqualified Windows privacy rejection | Host background wakeup or model observation |
-| Reference-host tests | 26 tests: durable replay, independent clients, stale routing, receipt/fence negatives, synthetic Codex recovery, honest coverage projection, strict UTF-8, independent retained application-evidence validation | Live inference/compiler behavior from test doubles |
+| Reference-host tests | 40 local tests: durable replay, independent clients, stale routing, receipt/fence negatives, synthetic Codex recovery, coverage/redundant-reason projection and proof negatives, complete parent vectors, strict UTF-8, private-safe failure telemetry, owned-thread cleanup, independent retained application-evidence validation | Live inference/compiler behavior from test doubles |
 | [Live projected Codex evidence](../bridges/reference-host/evidence/codex-inbox-projected-synthetic-events.json) | Real Codex 0.160.0, `gpt-6-astra`: background synthetic result delivered while a real turn was active; exact request joined that turn; subsequent adapter/app-server restart resumed only the owned thread and consumed a second result; explicit projected-context scope | Actual Kotlin kernel/compiler, internal inference input trace, a final guarded action |
+| [Actual CLI/kernel/compiler delivery](../bridges/reference-host/evidence/cli-kernel-codex-public-fixture.json) | Real installed CLI/kernel/compiler and Codex 0.160.0 `gpt-6-astra`, three verified public diagnostic observations: active consumer A, independent consumer B, and repaired P2 after A/broker restart; exact public lexical text retained | Full-project qualification, stock-client universality, internal inference tracing, original full-coverage-byte reconstruction offline, final guarded action |
 
 The live evidence includes exact serialized **application** `turn/start` requests,
 SHA-256 digests, public response content and identity bindings. It verifies more
@@ -132,6 +154,54 @@ be independently recomputed offline. Their exact application-request digests and
 public **content** bindings can be independently verified. New demonstration
 captures additionally retain exact verified public text, without reasoning/raw
 events, so that its digest can also be recomputed offline.
+
+The separate owner-opt-in `demo:cli:codex` driver uses the real installed CLI,
+kernel and compiler with disposable public Kotlin source and two independently
+enrolled consumers. It does **not** substitute fixture broker events. The
+**2026-11-04 09:48 UTC** run completed three verified diagnostic observations.
+Owner preparation retained all **1097 catalog candidates for the declared JVM
+target**, not a reduced compiler-only subset. P1's 644,994-byte original result
+became a 10,398-byte context with 3290 exactly derivable validation reasons
+explicitly summarized; the aggregate request contexts were 20,074 bytes per
+consumer. P2's 640,774-byte result became 5661 bytes (10,660 aggregate), with 3291
+reasons summarized. A larger 1663-row/4989-reason case is a **synthetic regression**,
+not the measured live inventory.
+
+The owner explicitly enabled the experimental compiler rule
+`ktc.compiler.common.abstract_member_not_implemented`. Real P1 execution found the
+missing implementation; real P2 execution no longer emitted that diagnosis.
+P2 still had unknown/unqualified coverage and **did not pass the final gate**.
+The run also verified exact replay after loss of a real accepted-submit response,
+ordinary-token ACK/observe rejection, cross-consumer event/cursor/receipt
+rejection, and independent cursors/inboxes/observations. P2 was queued with zero
+workers and then executed while A's adapter/app-server was disconnected, before
+resuming only A's saved owned thread. Both disposable threads were confirmed
+deleted. No guarded action was performed.
+
+Earlier failures remain separately retained: native catalog startup, shared-policy
+duplicate enable, and required-context overflow. The overflow attempt reached
+real kernel submission/replay and accepted/progress insertion, but its final
+result was correctly unACKed and unobserved; later success does not rewrite it.
+
+New actual runs record independent source, executed bridge, launcher and installed
+Java artifact hashes; a current dirty checkout is **not** asserted to be the source
+of installed bytecode. The live private inbox retained and checked each full
+immutable event while delivery was active. The public artifact retains complete
+reason arrays/findings/raw diagnostics, selected compiler coverage and the full
+coverage digest, but not every original coverage row. After disposable-state
+cleanup, original full-event/coverage digests cannot be independently recomputed
+offline from this artifact alone. Exact application requests, projected contexts
+and original lexical public-response bytes **can** be independently recomputed.
+Deterministic representation failures stop promptly and
+retain only fixed-field byte/count/hash telemetry, never private diagnostics or
+credentials. Both success and failure attempt deletion once for the exact known
+disposable thread IDs. Unknown creation/deletion outcomes retain private recovery
+state and remain unverified; no unrelated thread listing/resume is used.
+
+Hosted baseline `bc3208ff` tested MCP15/host26 on Linux and macOS successfully;
+Windows had real failures, not skipped tests. New local test counts above must
+not be retroactively attributed to that earlier hosted run. Windows native ACL
+qualification remains outstanding as described below.
 
 `modelRequestId` values prefixed `codex-app-request:` are **application request
 IDs**, not upstream Responses or internal inference IDs. A controlled serialized

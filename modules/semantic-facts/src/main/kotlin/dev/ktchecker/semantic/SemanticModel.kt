@@ -4,7 +4,9 @@ import dev.ktchecker.contracts.ArtifactIdentity
 import dev.ktchecker.contracts.ContractJson
 import dev.ktchecker.contracts.Digests
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.encodeToJsonElement
+import java.util.Collections
 
 const val SEMANTIC_ADAPTER_ID = "kotlin-fir-2.4.21/v1"
 const val SEMANTIC_COMPILER_VERSION = "2.4.21"
@@ -71,8 +73,35 @@ data class TypeFact(
     val parameterIndex: Int? = null,
     val reason: String? = null,
 ) {
-    val known: Boolean get() = kind != "unknown" && reason == null &&
-        arguments.all { it.variance == "star" || it.type?.known == true } && components.all { it.known }
+    val known: Boolean get() {
+        var nodes = 0
+        return known(0) { ++nodes <= 100_000 }
+    }
+
+    private fun known(depth: Int, withinBudget: () -> Boolean): Boolean {
+        if (!withinBudget() || depth > 24 || reason != null || arguments.size > 64 || components.size > 64) return false
+        val noParameter = parameterOwner == null && parameterIndex == null
+        fun children() = components.all { it.known(depth + 1, withinBudget) }
+        return when (kind) {
+            "class" -> !classifierId.isNullOrBlank() && classifierId.length <= 4096 && nullable != null &&
+                noParameter && components.isEmpty() && arguments.all {
+                    when (it.variance) {
+                        "star" -> it.type == null
+                        "invariant", "in", "out" -> it.type?.known(depth + 1, withinBudget) == true
+                        else -> false
+                    }
+                }
+            "type_parameter" -> classifierId == null && nullable != null && arguments.isEmpty() && components.isEmpty() &&
+                parameterOwner?.let(Digests::valid) == true && parameterIndex != null && parameterIndex in 0..255
+            "flexible" -> classifierId == null && nullable == null && noParameter && arguments.isEmpty() &&
+                components.size == 2 && children()
+            "intersection" -> classifierId == null && nullable == null && noParameter && arguments.isEmpty() &&
+                components.isNotEmpty() && children()
+            "definitely_not_null" -> classifierId == null && nullable == false && noParameter && arguments.isEmpty() &&
+                components.size == 1 && children()
+            else -> false
+        }
+    }
 }
 
 @Serializable
@@ -104,6 +133,10 @@ data class SymbolFact(
     val supertypes: List<TypeFact> = emptyList(),
     val aliasExpansion: TypeFact? = null,
 )
+
+/** Canonical structural binding only; caller-created DTOs do not establish compiler provenance. */
+fun resolvedSymbolIdentity(symbol: SymbolFact): String = Digests.sha256("ktchecker:resolved-symbol:v1\u0000" +
+    ContractJson.encodeToString(symbol.copy(id = "", source = if (symbol.local) symbol.source else null)))
 
 @Serializable
 data class ArgumentBindingFact(val source: SemanticSpan?, val parameterIndex: Int, val parameterName: String)
@@ -184,14 +217,15 @@ data class SemanticFactBundle(
     val adapterId: String = SEMANTIC_ADAPTER_ID,
 )
 
-val SEMANTIC_LIMITATIONS = listOf(
+val SEMANTIC_LIMITATIONS: List<String> = Collections.unmodifiableList(listOf(
     "Version-isolated FIR compiler-plugin spike; not a supported standalone Analysis API implementation.",
     "Statically resolved direct targets are not complete dynamic/candidate/negative dependency edges.",
     "No interprocedural control/data-flow, effect, lifetime, aliasing, or thread-affinity proof.",
     "No universal cinterop/header, compiler-plugin, generated-source, or project-import qualification.",
+    "Selected Native distribution digests do not attest the complete external LLVM/libffi/sysroot/cache dependency closure.",
     "FIR expect/actual candidate matching is not by itself final compatibility or Apple build evidence.",
     "Fact extraction does not implement, test, or qualify any custom diagnostic rule.",
-)
+))
 
 class SemanticFactException(val code: String, message: String, cause: Throwable? = null) :
     IllegalStateException(message, cause)

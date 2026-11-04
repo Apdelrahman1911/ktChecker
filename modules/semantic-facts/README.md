@@ -55,6 +55,14 @@ graph consistency and explicit unknowns. Missing output, malformed code, unresol
 references, provider errors or changed artifacts cannot become complete semantics.
 Qualified tuple/rule flags are always false in this M0 adapter.
 
+Raw serializable DTOs are not provenance certificates. `assemble` detaches and
+recursively freezes their collections, validates a closed type vocabulary, symbol
+identity/argument edges, and recomputes every byte span from an explicitly supplied
+immutable-source byte reader. Without that reader a decoded envelope remains
+`semantic_source_bytes_unverified`, never complete. Local generic owner identity
+includes compiler-owned source affiliation and signature/context/bounds; identical
+local names in different enclosing bodies cannot stand in for one another.
+
 Not implemented here: complete dynamic/candidate/negative dependency edges;
 interprocedural CFG/data-flow/effects/lifetime/thread proofs; general generator,
 arbitrary compiler-plugin, cinterop/header/SDK completeness; persistent semantic
@@ -101,6 +109,13 @@ private outputs; the selected Native distribution is verified before/after.
 Native dependency auto-download is disabled with `airplaneMode=true` and the caller
 must provision target inputs first. These are trusted cooperative processes, not an
 OS security sandbox or a proof against transient restored writes.
+
+Selected Native artifacts include `bin`, `tools` (the launcher's `env_blacklist`),
+`konan`, common KLIBs and the chosen target's platform KLIBs. Their digests are **not**
+a proof of the complete external LLVM/libffi/sysroot/cache dependency closure. The
+Native distribution's configured target sysroot is also distinct from the selected
+host Xcode/SDK. The Apple lane must observe its actual prerequisites; this library-
+only feasibility task cannot qualify omitted SDK/header/link/runtime coverage.
 
 The driver writes two deliberately distinct evidence forms:
 

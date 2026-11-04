@@ -252,6 +252,34 @@ class CoverageTests(unittest.TestCase):
         with self.assertRaisesRegex(CoverageError, "symlink"):
             generate_coverage(self.root, evidence_paths=[alias])
 
+    def test_absolute_input_root_aliases_canonicalize_only_repository_prefix(self):
+        self.emit()
+        with tempfile.TemporaryDirectory() as outside:
+            alias = Path(outside) / "repository-root"
+            alias.symlink_to(self.root, target_is_directory=True)
+            output = generate_coverage(self.root.resolve(),
+                mapping_paths=[alias / self.mapping_path.relative_to(self.root)],
+                evidence_paths=[alias / self.evidence_path.relative_to(self.root)])
+            self.assertTrue(output["rows"][0]["tested"])
+            self.assertFalse(output["release_qualified"])
+
+    def test_root_alias_does_not_hide_in_repository_symlink_ancestors(self):
+        self.emit()
+        with tempfile.TemporaryDirectory() as outside:
+            alias = Path(outside) / "repository-root"
+            alias.symlink_to(self.root, target_is_directory=True)
+            resources = self.root / "linked-resources"
+            resources.symlink_to(self.mapping_path.parent, target_is_directory=True)
+            reentrant = self.root / "back-to-root"
+            reentrant.symlink_to(self.root, target_is_directory=True)
+            for path in (alias / "linked-resources" / self.mapping_path.name,
+                         alias / "back-to-root" / self.mapping_path.relative_to(self.root)):
+                with self.subTest(path=path), self.assertRaisesRegex(CoverageError, "symlink"):
+                    generate_coverage(self.root.resolve(), mapping_paths=[path])
+            with self.assertRaisesRegex(CoverageError, "symlink"):
+                generate_coverage(self.root.resolve(),
+                    evidence_paths=[alias / "back-to-root" / self.evidence_path.relative_to(self.root)])
+
     def test_qualification_requires_known_tuple_and_separate_evidence(self):
         self.sidecar["context"] = QUALIFIED_CONTEXT
         self.sidecar["rules"][0]["qualified"] = True

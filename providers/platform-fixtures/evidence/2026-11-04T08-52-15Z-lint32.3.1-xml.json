@@ -16,7 +16,7 @@
     },
     "run": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml",
     "fixture_scope": "Two XML detector controls only; no Android Gradle or Kotlin/Native execution.",
-    "evidence_state": "verified_xml_controls_unqualified"
+    "evidence_state": "historical_xml_controls_unqualified_post_run_manual_association"
   },
   "rules": [
     {
@@ -59,7 +59,7 @@
       ],
       "implementation_evidence": [
         {
-          "path": "modules/provider-lint/src/main/kotlin/dev/ktchecker/providers/lint/AndroidLintProvider.kt",
+          "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/post-run-source/AndroidLintProvider.kt",
           "sha256": "5ede95f7b5bc7018bcfbeac67dd74bbcef07503388e4205b40965da7a25c692d"
         }
       ],
@@ -68,7 +68,8 @@
         "Only positive, legal negative, and provider-suppression XML controls executed; configuration/version/regression detector controls missing.",
         "Actual Lint32.3.1/client9.3.1 only: no Lint32.5.0 detector execution or qualification.",
         "Standalone JVM version was not independently probed; no complete project/toolchain qualification tuple.",
-        "Synthetic 609-ID transport tests are not detector cases, Native execution, precision/corpus review, or release coverage."
+        "Synthetic 609-ID transport tests are not detector cases, Native execution, precision/corpus review, or release coverage.",
+        "Historical post-run source archive preserves the originally retained bytes; manually associated JUnit and private receipts have no direct run-ID or source-to-bytecode attribution proof."
       ]
     },
     {
@@ -111,7 +112,7 @@
       ],
       "implementation_evidence": [
         {
-          "path": "modules/provider-lint/src/main/kotlin/dev/ktchecker/providers/lint/AndroidLintProvider.kt",
+          "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/post-run-source/AndroidLintProvider.kt",
           "sha256": "5ede95f7b5bc7018bcfbeac67dd74bbcef07503388e4205b40965da7a25c692d"
         }
       ],
@@ -120,7 +121,8 @@
         "Only positive, legal negative, and provider-suppression XML controls executed; configuration/version/regression detector controls missing.",
         "Actual Lint32.3.1/client9.3.1 only: no Lint32.5.0 detector execution or qualification.",
         "Standalone JVM version was not independently probed; no complete project/toolchain qualification tuple.",
-        "Synthetic 609-ID transport tests are not detector cases, Native execution, precision/corpus review, or release coverage."
+        "Synthetic 609-ID transport tests are not detector cases, Native execution, precision/corpus review, or release coverage.",
+        "Historical post-run source archive preserves the originally retained bytes; manually associated JUnit and private receipts have no direct run-ID or source-to-bytecode attribution proof."
       ]
     }
   ]
