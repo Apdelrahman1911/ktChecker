@@ -26,6 +26,8 @@ REPORTS = tuple(f"modules/{module}/build/test-results/test/*.xml" for module in 
     "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelStressTest.xml",
 )
 STRESS = "modules/kernel/build/reports/stress/kernel-100-patches.json"
+PYTHON_REPORTS = ("build/ci-evidence/python/python-checks.json",
+                  "build/ci-evidence/python/python-checks.xml")
 
 
 def authored_command(document: str, name: str) -> list[str]:
@@ -183,7 +185,8 @@ class DistributionUploadWorkflowTests(unittest.TestCase):
         document = self.document()
         evidence = self.step(document, "Retain sanitized observed evidence (not terminal transcripts)")
         original = self.step(document, "Retain original controlled-fixture JUnit and kernel stress reports")
-        self.assertEqual(["build/ci-evidence/*.json", self.inventory_outputs[2], self.review_outputs[2]],
+        self.assertEqual(["build/ci-evidence/*.json", *PYTHON_REPORTS,
+                          self.inventory_outputs[2], self.review_outputs[2]],
                          self.artifact_paths(evidence))
         self.assertEqual(["modules/*/build/test-results/**/*.xml", "tests/audit/build/test-results/**/*.xml",
                           "modules/kernel/build/reports/stress/*.json"], self.artifact_paths(original))
@@ -258,6 +261,116 @@ class DistributionUploadWorkflowTests(unittest.TestCase):
             self.assertEqual({Path(path).name for path in self.review_outputs[1:]},
                              {row["name"] for row in reviewed["generated_reports"]})
             self.assertIn("owner_license_unresolved", (root / self.review_outputs[2]).read_text(encoding="utf-8"))
+
+
+class PythonEvidenceWorkflowTests(unittest.TestCase):
+    """Authored routing/gates only; hosted execution still needs actual receipts."""
+
+    profiles = (
+        ("implementation.yml", "Verify the evidence harness failure paths", "scripts/ci",
+         "Retain sanitized observed evidence (not terminal transcripts)"),
+        ("plan-validation.yml", "Test validation failure paths", "scripts",
+         "Retain sanitized Python diagnostics even when validation fails"),
+    )
+
+    def document(self, filename):
+        return (ci_common.REPO_ROOT / ".github/workflows" / filename).read_text(encoding="utf-8")
+
+    def step(self, document, name):
+        rows = re.findall(r"^      - name: " + re.escape(name) + r"\n([\s\S]*?)(?=^      - name: |\Z)",
+                          document, re.MULTILINE)
+        self.assertEqual(1, len(rows), name)
+        return rows[0]
+
+    def assert_execution(self, document, name, start):
+        self.assertEqual([
+            "python", "scripts/ci/run_python_checks.py", "--start-directory", start,
+            "--output", PYTHON_REPORTS[0], "--junit", PYTHON_REPORTS[1],
+            "--host", "${{ matrix.os }}", "--require-ci-context", "--timeout", "480",
+        ], authored_command(document, name))
+        step = self.step(document, name)
+        self.assertNotRegex(step, r"(?m)^        if:")
+        self.assertNotIn("continue-on-error:", step)
+        self.assertNotIn("GITHUB_SHA:", step)
+        self.assertNotIn("GITHUB_RUN_ID:", step)
+
+    def assert_retention(self, document, name):
+        step = self.step(document, name)
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertNotIn("continue-on-error:", step)
+        self.assertEqual(["actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"],
+                         re.findall(r"^        uses: ([^\s]+)", step, re.MULTILINE))
+        paths = re.search(r"^          path: \|\n((?:            [^\n]*\n)+)", step, re.MULTILINE)
+        self.assertIsNotNone(paths)
+        selected = [line.strip() for line in paths[1].splitlines()]
+        for path in PYTHON_REPORTS:
+            self.assertEqual(1, selected.count(path))
+        self.assertEqual(list(PYTHON_REPORTS), [path for path in selected if "/python/" in path])
+        self.assertFalse(any("raw" in path or "**" in path or "log" in path or "checkpoint" in path
+                             for path in selected))
+        self.assertEqual(["error"], re.findall(r"^          if-no-files-found: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual(["14"], re.findall(r"^          retention-days: ([^\n]+)$", step, re.MULTILINE))
+
+    def test_discovery_scope_stays_complete_and_nonzero_exits_gate_each_workflow(self):
+        for filename, name, start, _ in self.profiles:
+            with self.subTest(workflow=filename):
+                self.assert_execution(self.document(filename), name, start)
+
+    def test_only_literal_sanitized_pair_is_retained_even_on_failure(self):
+        for filename, _, _, upload in self.profiles:
+            with self.subTest(workflow=filename):
+                self.assert_retention(self.document(filename), upload)
+
+    def test_python_projection_never_enters_the_ordinary_junit_denominator(self):
+        command = authored_command(self.document("implementation.yml"),
+                                   "Collect actual suites and artifact identities, including failures")
+        for option in ("--reports", "--require-report"):
+            for pattern in values(command, option):
+                self.assertTrue(pattern.startswith(("modules/", "tests/audit/")))
+        # Its JSON has unittest-specific discovery/callback semantics, not the
+        # generic command-result contract. The actual step exit gates the job.
+        self.assertNotIn(PYTHON_REPORTS[0], values(command, "--command-result"))
+        self.assertNotIn(PYTHON_REPORTS[1], command)
+
+    def test_linux_lint_normal_and_optimized_privacy_controls_are_preserved(self):
+        step = self.step(self.document("implementation.yml"),
+                         "Verify synthetic Lint receipt privacy without relying on Python assertions")
+        self.assertEqual(["runner.os == 'Linux'"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertIn("          python providers/platform-fixtures/test_retain_lint_evidence.py -q\n", step)
+        self.assertIn("          python -O providers/platform-fixtures/test_retain_lint_evidence.py -q\n", step)
+        self.assertNotIn("continue-on-error:", step)
+
+    def test_execution_gate_rejects_scope_reduction_or_masked_failure(self):
+        for filename, name, start, _ in self.profiles:
+            document = self.document(filename)
+            mutations = (
+                ("--start-directory " + start + "\n", "--start-directory scripts/empty\n"),
+                ("--require-ci-context ", ""),
+                ("--timeout 480", "--timeout 2400"),
+                ("      - name: " + name + "\n", "      - name: " + name + "\n        continue-on-error: true\n"),
+            )
+            for old, new in mutations:
+                with self.subTest(workflow=filename, mutation=old):
+                    changed = document.replace(old, new)
+                    self.assertNotEqual(document, changed)
+                    with self.assertRaises(AssertionError):
+                        self.assert_execution(changed, name, start)
+
+    def test_retention_gate_rejects_raw_globs_missing_pair_and_success_only_upload(self):
+        for filename, _, _, upload in self.profiles:
+            document = self.document(filename)
+            for path in (PYTHON_REPORTS[0], PYTHON_REPORTS[1], "build/ci-evidence/python/**"):
+                old = PYTHON_REPORTS[1] if path.endswith("/**") else path
+                new = path if path.endswith("/**") else "build/ci-evidence/other.json"
+                with self.subTest(workflow=filename, replacement=new, original=old):
+                    changed = document.replace("            " + old + "\n", "            " + new + "\n")
+                    self.assertNotEqual(document, changed)
+                    with self.assertRaises(AssertionError):
+                        self.assert_retention(changed, upload)
+            step = self.step(document, upload)
+            changed = document.replace(step, step.replace("if: always()", "if: success()"))
+            with self.assertRaises(AssertionError):
+                self.assert_retention(changed, upload)
 
 
 class WindowsCheckoutWorkflowTests(unittest.TestCase):

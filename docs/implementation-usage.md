@@ -38,6 +38,26 @@ complete dependency/NOTICE review remain unresolved, so opt-in alone cannot
 authorize publication. Diagnostic reports remain available on failed runs. This
 license gate inspects `installDist`, not the contents of ZIP/TAR archives.
 
+For an explicit staged installation and existing local archives, the read-only
+archive verifier compares decoded file bytes, names and executable flags without
+extracting or running them. The report parent must already exist and the report
+must be new:
+
+```sh
+python3 scripts/ci/verify_distribution_archives.py \
+  --installation /owner/staged/ktchecker \
+  --archive /owner/packages/ktchecker.zip --archive /owner/packages/ktchecker.tar \
+  --output /owner/reports/archive-comparison.json
+```
+
+Exit `0` requires verified inputs **and** confirmed report delivery. Unsupported
+platforms/formats, observed changes and incomplete reads are non-success. The
+current implementation supports POSIX no-follow I/O, ZIP32 stored/deflate and
+uncompressed USTAR—not Windows, ZIP64, GNU/PAX or hostile-writer atomicity. This is
+neither licensing approval nor evidence that the archived code was built, tested,
+signed or qualified. Local synthetic and retained-preview byte-comparison results
+are recorded [separately](evidence/local-python-archives-20261104.json).
+
 Archives now include a **host-specific** native owned-child supervisor in the
 provider-runtime JAR. Select the correct OS/architecture artifact; this is not a
 universal native binary. `doctor` reports bounded installed-helper inspection

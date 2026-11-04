@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "kind": "local_python_integration_and_retained_archive_byte_observation",
+  "date": "2026-11-04",
+  "scope": "Linux local controlled validation on an explicitly dirty source cut; not hosted CI, rule qualification, or a release.",
+  "git_base_commit": "edda5c0",
+  "source_cut": [
+    {
+      "path": "scripts/ci/run_python_checks.py",
+      "sha256": "3a3ee0ccd29afdf74a75b86a5001fa5ce3a631361ab015cceb017c9500a3b284"
+    },
+    {
+      "path": "scripts/ci/test_python_checks_ci.py",
+      "sha256": "6dbe51755ebfd2759e9faa70fd4c03435af0482066dd6893a4a1ede0d4cd9d20"
+    },
+    {
+      "path": "scripts/ci/test_workflow_ci.py",
+      "sha256": "5454c9e7d39f65838da547a08027b4621f4381516ab413d1e96848fc34aad7e8"
+    },
+    {
+      "path": "scripts/ci/verify_distribution_archives.py",
+      "sha256": "a61ed482ab3d464dfe01f081be6267c2bf8817a3d024f2ce203b5e1a54b80af6"
+    },
+    {
+      "path": "scripts/ci/test_distribution_archives_ci.py",
+      "sha256": "b0966ecbceb7d7a09ebdd8e85608f6a239cc046413a1155171319e2be0f359bf"
+    },
+    {
+      "path": ".github/workflows/implementation.yml",
+      "sha256": "3c4598a3b36a0777038442849f1f3174caa939efc53ace0fe2aec6807ab35ce7"
+    },
+    {
+      "path": ".github/workflows/plan-validation.yml",
+      "sha256": "44fcbd8f07ca189fdd3ef5e0baa592f270151e35939186ffbe6a05f0efcd45de"
+    }
+  ],
+  "python_integration": [
+    {
+      "run": "workflow-normal",
+      "retained_receipt_sha256": "14c61271c176409efaba3d70afde46f390d560106a694cd495246142ab4396ff",
+      "selected_python_source_digest": "sha256:91e91443842b46f7ca489804765e8af29b30dfc7bcacc2710ffba13dadf20cf5",
+      "selected_source_tree": "scripts/ci",
+      "state": "passed",
+      "counts": {
+        "tests_run": 17,
+        "successful_tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "test_denominators": {
+        "discovered_test_cases": 17,
+        "started_test_cases": 17,
+        "stop_callbacks_observed": 17,
+        "completed_test_cases": 17,
+        "setup_blocked_test_cases": 0,
+        "pending_selected_test_cases": 0,
+        "unbound_started_test_cases": 0,
+        "fixture_or_framework_events": 0
+      },
+      "elapsed_seconds": 0.403939,
+      "source_unchanged": true,
+      "results_complete": true,
+      "persistence_complete": true
+    },
+    {
+      "run": "ci-normal",
+      "retained_receipt_sha256": "fb0c46fcfc9f92cb84b53e346fe385c4833c12a84c3634d64400b2192106328a",
+      "selected_python_source_digest": "sha256:91e91443842b46f7ca489804765e8af29b30dfc7bcacc2710ffba13dadf20cf5",
+      "selected_source_tree": "scripts/ci",
+      "state": "passed",
+      "counts": {
+        "tests_run": 740,
+        "successful_tests": 739,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "test_denominators": {
+        "discovered_test_cases": 740,
+        "started_test_cases": 740,
+        "stop_callbacks_observed": 740,
+        "completed_test_cases": 740,
+        "setup_blocked_test_cases": 0,
+        "pending_selected_test_cases": 0,
+        "unbound_started_test_cases": 0,
+        "fixture_or_framework_events": 0
+      },
+      "elapsed_seconds": 118.027134,
+      "source_unchanged": true,
+      "results_complete": true,
+      "persistence_complete": true
+    },
+    {
+      "run": "ci-optimized",
+      "retained_receipt_sha256": "e83592c54de5dccbe1c88c4535126812c462d670b46cfb74947c828aa6dbc53c",
+      "selected_python_source_digest": "sha256:91e91443842b46f7ca489804765e8af29b30dfc7bcacc2710ffba13dadf20cf5",
+      "selected_source_tree": "scripts/ci",
+      "state": "passed",
+      "counts": {
+        "tests_run": 740,
+        "successful_tests": 739,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "test_denominators": {
+        "discovered_test_cases": 740,
+        "started_test_cases": 740,
+        "stop_callbacks_observed": 740,
+        "completed_test_cases": 740,
+        "setup_blocked_test_cases": 0,
+        "pending_selected_test_cases": 0,
+        "unbound_started_test_cases": 0,
+        "fixture_or_framework_events": 0
+      },
+      "elapsed_seconds": 119.81251,
+      "source_unchanged": true,
+      "results_complete": true,
+      "persistence_complete": true
+    },
+    {
+      "run": "planning-normal",
+      "retained_receipt_sha256": "c662c10698568602464c1abf20d5689d6012781dbfb549e73058592b528730ef",
+      "selected_python_source_digest": "sha256:69e382409f661cd6efbe06915ee3bc5d5fe7317d066366b18b6348fd5aee13c6",
+      "selected_source_tree": "scripts",
+      "state": "passed",
+      "counts": {
+        "tests_run": 918,
+        "successful_tests": 917,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "test_denominators": {
+        "discovered_test_cases": 918,
+        "started_test_cases": 918,
+        "stop_callbacks_observed": 918,
+        "completed_test_cases": 918,
+        "setup_blocked_test_cases": 0,
+        "pending_selected_test_cases": 0,
+        "unbound_started_test_cases": 0,
+        "fixture_or_framework_events": 0
+      },
+      "elapsed_seconds": 157.776877,
+      "source_unchanged": true,
+      "results_complete": true,
+      "persistence_complete": true
+    },
+    {
+      "run": "planning-optimized",
+      "retained_receipt_sha256": "5694c1a1fc1019bead4307af7ade8e95f78f1cf841736d0dd609fe440f3016ea",
+      "selected_python_source_digest": "sha256:69e382409f661cd6efbe06915ee3bc5d5fe7317d066366b18b6348fd5aee13c6",
+      "selected_source_tree": "scripts",
+      "state": "passed",
+      "counts": {
+        "tests_run": 918,
+        "successful_tests": 917,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "test_denominators": {
+        "discovered_test_cases": 918,
+        "started_test_cases": 918,
+        "stop_callbacks_observed": 918,
+        "completed_test_cases": 918,
+        "setup_blocked_test_cases": 0,
+        "pending_selected_test_cases": 0,
+        "unbound_started_test_cases": 0,
+        "fixture_or_framework_events": 0
+      },
+      "elapsed_seconds": 152.565278,
+      "source_unchanged": true,
+      "results_complete": true,
+      "persistence_complete": true
+    }
+  ],
+  "denominator_notes": [
+    "The full scripts discovery includes the scripts/ci cases; do not sum overlapping suites or variants into unique coverage.",
+    "The one skip in each full run is the actual-non-POSIX Apple-probe-refusal control on this POSIX host, not an unavailable product target counted as passed.",
+    "The selected source digest covers Python sources only; external fixtures/toolchains and loaded bytecode are not enrolled.",
+    "The full local discovery also included 58 untracked publication-verifier controls; those source files are NOT included in this admitted source cut and receive no publication/qualification approval."
+  ],
+  "archive_synthetic_tests": [
+    {
+      "variant": "normal",
+      "retained_receipt_sha256": "c4306e6fffb3a813b5e938af750c965346390ff895afdb9828d1c66e980e9fdd",
+      "state": "passed",
+      "counts": {
+        "tests_run": 161,
+        "successful_tests": 161,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "test_denominators": {
+        "discovered_test_cases": 161,
+        "started_test_cases": 161,
+        "stop_callbacks_observed": 161,
+        "completed_test_cases": 161,
+        "setup_blocked_test_cases": 0,
+        "pending_selected_test_cases": 0,
+        "unbound_started_test_cases": 0,
+        "fixture_or_framework_events": 0
+      },
+      "elapsed_seconds": 3.258247,
+      "source_unchanged": true,
+      "results_complete": true,
+      "persistence_complete": true
+    },
+    {
+      "variant": "optimized",
+      "retained_receipt_sha256": "f10d40a21a0bdaee74ddbf8a2d7cd95d4ac4c9fa7086c352ffe142b2566f408b",
+      "state": "passed",
+      "counts": {
+        "tests_run": 161,
+        "successful_tests": 161,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "expected_failures": 0,
+        "unexpected_successes": 0
+      },
+      "test_denominators": {
+        "discovered_test_cases": 161,
+        "started_test_cases": 161,
+        "stop_callbacks_observed": 161,
+        "completed_test_cases": 161,
+        "setup_blocked_test_cases": 0,
+        "pending_selected_test_cases": 0,
+        "unbound_started_test_cases": 0,
+        "fixture_or_framework_events": 0
+      },
+      "elapsed_seconds": 3.061407,
+      "source_unchanged": true,
+      "results_complete": true,
+      "persistence_complete": true
+    }
+  ],
+  "earlier_refused_archive_test_invocation": {
+    "state": "refused_before_tests",
+    "exit_code": 2,
+    "cause": "Report destination outside the runner allowed build/ci-evidence subtree; corrected to a new allowed destination without replacing evidence."
+  },
+  "actual_archive_comparison": {
+    "state": "verified",
+    "cli_exit_code": 0,
+    "cli_exit_code_provenance": "Coordinating agent's reaped tool-session observation; not independently encoded in the retained archive report.",
+    "output_written_observed_on_cli": true,
+    "retained_report_sha256": "f4d4a301fa3014490b20907acde27cc2c9847fdb27de4abedb4c7d179e7e0c86",
+    "archives": [
+      {
+        "actual_file_inventory_sha256": "6124fdc53ecfad79edc994af6ad7645cd55b3d5c6789e352ef55fb0ca490d73d",
+        "archive_index": 1,
+        "bytes": 77872233,
+        "decoded_file_bytes": 84074748,
+        "empty_directories_policy": "all_staged_directories_without_regular_descendants_are_explicit",
+        "explicit_directories_sha256": "a18642cd8187842e182c30e7b4bee8b00e74770098fe653e2d62e6bd4c08b7b3",
+        "explicit_directory_count": 8,
+        "format": "zip32",
+        "input_recheck": "unchanged",
+        "matched_staged_inventory_sha256": "23e654a6404d2707c970c4b948a0912815c21000418365e5e6062923ba935cbf",
+        "member_count": 43,
+        "name": "ktchecker-0.1.0-dev.1.zip",
+        "prefix": "ktchecker-0.1.0-dev.1",
+        "regular_file_count": 35,
+        "sha256": "2cf8e5bc6aa15b9bee3feabe417fcb5d2f7337f88651bed8f7de165fc0c38f93",
+        "state": "verified"
+      },
+      {
+        "actual_file_inventory_sha256": "6124fdc53ecfad79edc994af6ad7645cd55b3d5c6789e352ef55fb0ca490d73d",
+        "archive_index": 2,
+        "bytes": 84107264,
+        "decoded_file_bytes": 84074748,
+        "empty_directories_policy": "all_staged_directories_without_regular_descendants_are_explicit",
+        "explicit_directories_sha256": "a18642cd8187842e182c30e7b4bee8b00e74770098fe653e2d62e6bd4c08b7b3",
+        "explicit_directory_count": 8,
+        "format": "ustar",
+        "input_recheck": "unchanged",
+        "matched_staged_inventory_sha256": "23e654a6404d2707c970c4b948a0912815c21000418365e5e6062923ba935cbf",
+        "member_count": 43,
+        "name": "ktchecker-0.1.0-dev.1.tar",
+        "prefix": "ktchecker-0.1.0-dev.1",
+        "regular_file_count": 35,
+        "sha256": "76067651a861bafe7a307b6111b183cfed609f4827a4cf58c1b85d162bd117a1",
+        "state": "verified"
+      }
+    ],
+    "input_recheck": "unchanged",
+    "scope": "Observed staged installation versus explicit local archive bytes and regular-file/executable inventories only; no historical source/build binding, compiled-code or runtime proof, authenticity, extraction, installation, license/release qualification or publication.",
+    "release_qualified": false
+  },
+  "limits": [
+    "Reporter source and workflow wiring received independent review; local passes do not establish Windows/macOS behavior.",
+    "The preview archives are from an older retained build, not the newly authored Native live transport or current source tree.",
+    "No archive extraction, runtime/provider execution, signing, license approval or binary publication occurred in this comparison.",
+    "Native live transport remains under source review; the real project-model R2 observation separately timed out and remains unavailable.",
+    "The full launch rule inventory and release gates are unchanged."
+  ],
+  "rule_qualification": false,
+  "hosted_ci_verified_by_this_record": false,
+  "release_qualified": false
+}

@@ -18,6 +18,7 @@ jobs:
     name: Planning integrity (${{ matrix.os }})
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         os: [ubuntu-24.04, windows-2025, macos-15]
     runs-on: ${{ matrix.os }}
@@ -37,7 +38,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Test validation failure paths
-        run: python -m unittest discover -s scripts -p "test_*.py" -v
+        # Preserve the full scripts discovery root; the report is not rule coverage.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory scripts
+          --output build/ci-evidence/python/python-checks.json
+          --junit build/ci-evidence/python/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout 480
       - name: Validate rule metadata and generated indexes
         run: python scripts/validate_plan.py
       - name: Install hash-locked planning schema dependencies
@@ -49,3 +55,14 @@ jobs:
           KT_PR_BASE: ${{ github.event.pull_request.base.sha }}
           KT_PUSH_BASE: ${{ github.event.before }}
         run: python scripts/check_whitespace.py
+      - name: Retain sanitized Python diagnostics even when validation fails
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: planning-python-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          # Never upload the neighboring raw console, protocol or checkpoint files.
+          path: |
+            build/ci-evidence/python/python-checks.json
+            build/ci-evidence/python/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14

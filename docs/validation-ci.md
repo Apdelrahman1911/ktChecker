@@ -420,12 +420,13 @@ Library minimum OS support and the runtime versions actually executed are report
 separately. Do not infer all iOS/macOS/Windows minimum-version behavior from one
 current simulator or server image.
 
-## 8. Proposed implementation workflows
+## 8. Implementation workflows and remaining qualification
 
-These are future workflow specifications, **not executable checker workflows
-delivered here**. The current planning workflow must keep its narrower name and
-claims. Job names below describe suites to implement; they do not assert Gradle
-tasks or fixtures already exist.
+The repository now contains executable planning, checker, bridge and platform
+preview workflows. Their actual results belong in the implementation evidence
+ledger; their existence does **not** satisfy every suite below. The table remains
+the full release requirement, not a claim that every task, target or qualification
+lane has passed. Planning-only results retain their narrower names and claims.
 
 | Workflow | Trigger and required suites | Evidence retained |
 |---|---|---|
@@ -449,6 +450,31 @@ checker to cancel accepted patch obligations. Serialize constrained Apple/heavy
 jobs, preserve required checks for the selected commit, and do not let nightly
 canaries starve release validation. A retry retains the original failure and
 reason; repeated retries until one passes are not evidence of reliability.
+
+### Python validation receipts
+
+The planning and checker workflows use `scripts/ci/run_python_checks.py`, preserving
+their original `scripts` and `scripts/ci` unittest discovery roots respectively.
+The wrapper records discovered occurrences, started/stopped cases, fixture failures,
+and incomplete selections separately. It binds the selected Python source before
+and after execution and checks the expected CI commit; this does not bind external
+fixtures or establish loaded-bytecode/toolchain provenance.
+
+Exit `0` requires a complete passing run and persisted matching JSON/XML; exit `1`
+reports complete test failure, and exit `2` reports incomplete execution, empty
+selection, source drift, timeout, protocol or persistence failure. Neither workflow
+uses `continue-on-error`. Each retains only the explicit sanitized pair
+`build/ci-evidence/python/python-checks.{json,xml}` with `always()`. Neighboring raw
+console/checkpoint files are not uploaded. The XML is a **diagnostic projection**,
+not an ordinary JVM/native JUnit denominator or independent completion certificate.
+The Linux Lint normal/optimized privacy controls remain separate required steps.
+
+The worker timeout is 480 seconds, with separately bounded best-effort cleanup and
+pipe draining. Trusted repository tests are not sandboxed; direct-worker exit does
+not prove descendant absence, and synchronous OS calls are not hard-preemptible.
+Synthetic wrapper tests, local integrated discovery and hosted runs remain distinct
+evidence stages. These Python reports always retain false qualification flags;
+any later release qualification requires separate evidence and gates.
 
 ### Workflow security, cache and dependency controls
 
