@@ -37,6 +37,8 @@ object OwnerModelFixtureRunner {
         var runtimeInputDigest: String? = null
         var runtimeIdentity: String? = null
         var executionHome: OwnerFixtureExecutionHome? = null
+        var planEvidence = OwnerJvmPlanEvidence("unavailable_without_trusted_import",
+            rejection = OwnerJvmPlanRejection("owner_jvm_trusted_import_unavailable", "trusted-import"))
         val envelope = try {
             // Bind authored containment/adapter sources and the actual installed code/native
             // image at START, before loading owner contracts/inputs or launching any process.
@@ -54,6 +56,15 @@ object OwnerModelFixtureRunner {
             fun verifyRuntime() { registry.verifyRuntimeInputs(); startupCapture.verify() }
             val capture = contract.capture(fixtures.resolve("jvm-owner-export/project"), work)
             snapshotId = capture.snapshot.snapshotId
+            var planPreparationFailure: OwnerJvmPlanRejection? = null
+            val preparedPlan = try {
+                val executableContract = OwnerFixtureExecutableContract.load(fixtures.resolve("jvm-owner-export"))
+                OwnerFixturePreparedJvmInputs.bind(executableContract, contract, capture, registry, home, startupCapture)
+            } catch (error: Exception) {
+                // The new classifier is not another importer gate or input enrollment path.
+                planPreparationFailure = ownerJvmPlanFailure(error)
+                null
+            }
             verifyRuntime()
             val profile = GradleModelExporter.profile(registry.gradleHome.resolve("bin/gradle"),
                 registry.artifact(registry.gradleHome.resolve("bin/gradle")).digest!!, registry.javaHome, home.root)
@@ -88,11 +99,25 @@ object OwnerModelFixtureRunner {
             // JSON is evidence data, never another importer/owner capability.
             Files.createDirectories(result.parent)
             Files.write(result.parent.resolve("owner-model-export.json"), raw)
+            val contexts = model.compilationIds.map { id -> model.context(id, contract.digest).let {
+                OwnerFixtureContext(id, it.completeness.name.lowercase(), it.context?.fullProject ?: false, it.issues.map { issue -> issue.kind }.distinct())
+            } }
+            val issueKinds = model.issues.map { it.kind }.distinct()
+            // Only after the existing trusted import, using the actual owner's output root.
+            // Classification, input drift or serialization failure never rewrites that import.
+            planEvidence = try {
+                if (preparedPlan == null) OwnerJvmPlanEvidence("unavailable_intended_operands",
+                    rejection = planPreparationFailure ?: OwnerJvmPlanRejection("owner_jvm_plan_unprepared", "preparation"),
+                    importedContexts = contexts, importedIssueKinds = issueKinds)
+                else OwnerFixtureJvmExecutableInputs.evidence(preparedPlan.classifyAfterImport(model, request,
+                    requireNotNull(completed.outcome.outputDirectory)), contexts, issueKinds)
+            } catch (error: Exception) {
+                OwnerJvmPlanEvidence("unavailable_intended_operands", rejection = ownerJvmPlanFailure(error),
+                    importedContexts = contexts, importedIssueKinds = issueKinds)
+            }
             OwnerModelFixtureEnvelope("exported_and_trusted_imported", contract.value.caseId, snapshotId, executionId,
                 contract.digest, runtimeDigest, model.identity, model.ingressCertificate,
-                model.compilationIds.map { id -> model.context(id, contract.digest).let {
-                    OwnerFixtureContext(id, it.completeness.name.lowercase(), it.context?.fullProject ?: false, it.issues.map { issue -> issue.kind }.distinct())
-                } }, model.issues.map { it.kind }.distinct(), impact.obligations.map { it.compilationId },
+                contexts, issueKinds, impact.obligations.map { it.compilationId },
                 assertions = listOf("Exact fixed source/domain contract matched the registered complete producer overlay.",
                     "Successful zero-exit quiescent pinned Gradle exporter invocation and fresh anchored report were verified.",
                     "Actual terminal-confirmed native supervisor identity matched the independent START bundle capture.",
@@ -109,11 +134,19 @@ object OwnerModelFixtureRunner {
             OwnerModelFixtureEnvelope("unavailable", "jvm-owner-export", snapshotId, executionId,
                 reasons = listOf(code), assertions = listOf("No model completeness, compiler success or runtime qualification was inferred from this failure."))
         }
+        val planPath = result.parent.resolve("owner-lib-main-input-plan-${executionId ?: UUID.randomUUID()}.json")
+        val planPublication = try {
+            Files.createDirectories(result.parent)
+            publishOwnerJvmPlanEvidence(planPath, planEvidence)
+        } catch (error: Exception) {
+            OwnerJvmPlanPublication("publication_failed", planPath.toString(), failureCode = ownerJvmPlanFailure(error).code)
+        }
         val retained = envelope.copy(ownerRuntimeDigest = runtimeIdentity,
             runtimeInputDigest = runtimeInputDigest, startupDigest = startup?.digest,
             startupEvidencePath = startup?.evidencePath?.toString(), privateWorkRoot = work.toString(),
             executionHomeDigest = executionHome?.digest, executionHomeEvidencePath = executionHome?.evidencePath?.toString(),
             executionHomeRoot = executionHome?.root?.toString(),
+            intendedInputPlan = planPublication,
             processOutcome = outcome?.let(::ownerFixtureProcessEvidence))
         Files.createDirectories(result.parent)
         outcome?.let { Files.writeString(result.parent.resolve("owner-model-private-process.log"), it.stdout + "\n" + it.stderr) }
@@ -313,6 +346,10 @@ internal class OwnerFixtureRuntimeRegistry private constructor(private val manif
     private var boundCompilerPluginClasspath: List<ModelArtifact>? = null
     val compilerPluginClasspath: List<ModelArtifact>
         get() = boundCompilerPluginClasspath?.toList() ?: throw OwnerFixtureProblem("owner_fixture_plugin_classpath_unbound")
+
+    /** Existing complete owner JDK inventory only; this exposes no enrollment or compiler permit. */
+    fun selectedJvmJdkInputs(): OwnerJvmJdkInputs = OwnerJvmJdkInputs.fromManifest(javaHome, runtimeDigest,
+        manifest.files.filter { it.kind == "jdk" }, manifest.directories.filter { it.kind == "jdk" })
 
     fun deriveExecutionHome(work: Path): OwnerFixtureExecutionHome {
         expect(executionHome == null, "owner_fixture_execution_home_already_registered")
@@ -650,6 +687,7 @@ private fun ownerFixtureProcessEvidence(actual: ProcessOutcome) = OwnerFixturePr
     val runtimeInputDigest: String? = null, val startupDigest: String? = null, val startupEvidencePath: String? = null,
     val privateWorkRoot: String? = null, val processOutcome: OwnerFixtureProcessEvidence? = null,
     val executionHomeDigest: String? = null, val executionHomeEvidencePath: String? = null, val executionHomeRoot: String? = null,
+    val intendedInputPlan: OwnerJvmPlanPublication? = null,
     val limitations: List<String> = listOf("Fixed explicitly selected trusted fixture only; this is not a general arbitrary-project capture proof.",
         "Registered model inputs are not executable compiler-input relocation or successful compiler/rule coverage.",
         "Pinned scripting classpath files/argv do not establish plugin metadata, generated outputs or an executed compiler invocation.",

@@ -32,6 +32,7 @@ private const val STARTUP_ENTRY_LIMIT = 8_000
     val nativeBuildReceipt: ModelFile, val runtimeCodeSource: String, val runtimeClassRoles: List<String>,
     val inputs: List<OwnerFixtureStartupInput>, val trees: List<OwnerFixtureStartupTree>,
     val sourceToBinaryAttested: Boolean = false, val loadedJvmMemoryAttested: Boolean = false,
+    val executableContractCaptureFailure: String? = null,
     val limitations: List<String> = listOf(
         "Startup authored sources, installed JVM code images and declared native bundle bytes are independent identities, not source-to-binary proof.",
         "Only actual runner completion can provide terminal-derived execution confirmation and the native image identity used by that invocation.",
@@ -93,6 +94,9 @@ internal class OwnerFixtureStartupCapture private constructor(
             "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/OwnerModelFixtureRunner.kt",
             "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/OwnerFixtureStartup.kt",
             "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/OwnerFixtureExecutionHome.kt",
+            "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/OwnerFixtureJvmExecutableInputs.kt",
+            "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/OwnerFixtureDefaultScripting2421.kt",
+            "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/OwnerFixtureDerivedOutputTree.kt",
         )
         private val RUNTIME_ROLES = listOf("IsolatedProcessRunner", "ProcessOutcome", "ExecutionPermit", "ExactExecutionAuthority",
             "OwnedProcessContainment", "OwnedSupervisorIdentity", "OwnedProcessSupervisor", "SupervisorTransport",
@@ -127,6 +131,20 @@ internal class OwnerFixtureStartupCapture private constructor(
                 return bytes
             }
             SOURCE_PATHS.forEach { preserve(repository.resolve(it), "authored-source", "sources/$it", 2 * 1024 * 1024) }
+            // This optional plan input must be captured now, never first enrolled after
+            // export. Failure disables the separate classifier, not an otherwise valid
+            // original exporter/import. Its pin is checked by pre-export plan binding.
+            val executableContractCaptureFailure = try {
+                preserve(fixtures.resolve("jvm-owner-export/executable-input-contract.json"),
+                    "authored-executable-input-contract", "contracts/jvm-owner-export/executable-input-contract.json", 64 * 1024)
+                null
+            } catch (error: Exception) {
+                when (error) {
+                    is OwnerFixtureProblem -> error.code
+                    is ProjectModelException -> error.code
+                    else -> "owner_jvm_contract_start_capture_unavailable"
+                }
+            }
 
             val runtimeClass = IsolatedProcessRunner::class.java
             val runtimeRoot = codeSource(runtimeClass)
@@ -196,7 +214,7 @@ internal class OwnerFixtureStartupCapture private constructor(
                 ModelFile(NATIVE_PREFIX + "build-provenance.json", Digests.sha256(receipt), receipt.size.toLong()),
                 runtimeRoot.toString(), roleNames, records.toList(), trees.map {
                     OwnerFixtureStartupTree(it.root.toString(), it.preserved.toString(), it.entries)
-                })
+                }, executableContractCaptureFailure = executableContractCaptureFailure)
             val evidencePath = preservedRoot.resolve("startup-evidence.json")
             // Bound worst-case JSON escaping BEFORE constructing the serialized content.
             verifyOwnerFixtureStartupEvidenceBound(evidence)
@@ -288,6 +306,7 @@ internal fun verifyOwnerFixtureStartupEvidenceBound(evidence: OwnerFixtureStartu
     evidence.runtimeClassRoles.forEach(::text)
     evidence.inputs.forEach { text(it.role); text(it.original); text(it.preserved); text(it.digest) }
     evidence.trees.forEach { text(it.root); text(it.preserved); it.entries.forEach(::text) }
+    evidence.executableContractCaptureFailure?.let(::text)
     evidence.limitations.forEach(::text)
 }
 

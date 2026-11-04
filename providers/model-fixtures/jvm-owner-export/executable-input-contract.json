@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "caseId": "jvm-owner-export",
+  "sourceContractDigest": "sha256:ce8db3ddfcba040f71b3fa6177af540da743c2b44fedaded327816a1f03adb53",
+  "compilationId": ":lib||main",
+  "compileTaskPath": ":lib:compileKotlin",
+  "compilerVersion": "2.4.21",
+  "jvmTarget": "21",
+  "moduleName": "owner-model-fixture:lib",
+  "source": {
+    "path": "lib/src/main/kotlin/Library.kt",
+    "digest": "sha256:88cabd9e9dc1a46be119a938d7972475e32b341f041b14b6ed9f92d3a3fdfde7",
+    "size": 58
+  },
+  "outputRelativePath": "gradle-build/10557602b86b871f06774e27e6fa94f53ef2b8e12a902e6d301ae14933f78cd8/classes/kotlin/main",
+  "scriptingAdapterId": "ktchecker/owner-default-scripting/jvm-2.4.21/1",
+  "compilerRuntimeClasspath": [
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-compat/2.4.21/cb4697b622ca0fbc5bfd5ac5521d8603e21dc219/kotlin-build-tools-compat-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.21",
+      "digest": "sha256:9e71ba89b6d26e46a087d4f8b64bc2f0a774282ea779fc08b26527d0a80d4fe8",
+      "size": 135980
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-impl/2.4.21/898086a64b68b1e9131900909e0fc056a782f37f/kotlin-build-tools-impl-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.21",
+      "digest": "sha256:3152b3e1fbaa4d48f3681734a2c0efc438359a48c8a3c5cac00d874670de1377",
+      "size": 3456633
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-tooling-core/2.4.21/a92e365882e147d1054b6245d2aa822cbaa77ad6/kotlin-tooling-core-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-tooling-core:2.4.21",
+      "digest": "sha256:5fc5db083803232857408ed5c25bcc307c703b04bdef6cb2c34ebf4db611a622",
+      "size": 89152
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-cri-impl/2.4.21/f4d2161fc6a0a6f727bc673b8c90ebb0cad4c479/kotlin-build-tools-cri-impl-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-build-tools-cri-impl:2.4.21",
+      "digest": "sha256:d1849f9b98033f5333905409074ca90e6a0e17258cd0eb8befa47d795e695841",
+      "size": 568963
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-runner/2.4.21/74c995efdbc8e7347b42d33af076920daee81064/kotlin-compiler-runner-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-compiler-runner:2.4.21",
+      "digest": "sha256:75cd5956405697559e6925ebc5808449a2e12002d4f017275281ad3d4c0c7985",
+      "size": 20367
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable/2.4.21/3cd9c37c505fb9879e03ebeaf91d9c9500ab6eca/kotlin-compiler-embeddable-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21",
+      "digest": "sha256:ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02",
+      "size": 58593291
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-api/2.4.21/f5fd68c20ba38519b91ab2411b004a1730453d6f/kotlin-build-tools-api-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21",
+      "digest": "sha256:c5cd6a49bd072b529ae10809111c16a7aa0f92147e95d288354017fd65799461",
+      "size": 468126
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-client/2.4.21/6fc0b01cd07b02b22ec967a50f6aa7677ea9c0c9/kotlin-daemon-client-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-daemon-client:2.4.21",
+      "digest": "sha256:095903c4c4713bf91a562d226d7ba0464cf5424e76342d487deec494451ab29b",
+      "size": 265893
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.21/c343e135bd1e7dd94b7ed76b4159068d888d09db/kotlin-stdlib-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-stdlib:2.4.21",
+      "digest": "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3",
+      "size": 1853315
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar",
+      "coordinate": "org.jetbrains:annotations:13.0",
+      "digest": "sha256:ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478",
+      "size": 17536
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-script-runtime/2.4.21/abc7ff9f7e229cb6bdfadad81e93c871e6cdde41/kotlin-script-runtime-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-script-runtime:2.4.21",
+      "digest": "sha256:a658cf5902a1525a06c264a5e42b437e97a6679ddeef8ca641246f270cf6a013",
+      "size": 46533
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.6.10/1cbe9c92c12a94eea200d23c2bbaedaf3daf5132/kotlin-reflect-1.6.10.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-reflect:1.6.10",
+      "digest": "sha256:3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203",
+      "size": 3038560
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-embeddable/2.4.21/5d9b0394b3ff65cd3dd33c6c31a2956b1d59885a/kotlin-daemon-embeddable-2.4.21.jar",
+      "coordinate": "org.jetbrains.kotlin:kotlin-daemon-embeddable:2.4.21",
+      "digest": "sha256:7b3ef24674e5bcffcadfc4e43202ea314194939ecbcdd90a4770b2f1b04e0d07",
+      "size": 393410
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.8.0/ac1dc37a30a93150b704022f8d895ee1bd3a36b3/kotlinx-coroutines-core-jvm-1.8.0.jar",
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0",
+      "digest": "sha256:9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5",
+      "size": 1548360
+    }
+  ],
+  "compileClasspath": [
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.21/c343e135bd1e7dd94b7ed76b4159068d888d09db/kotlin-stdlib-2.4.21.jar",
+      "coordinate": "resolved:kotlin-stdlib-2.4.21.jar",
+      "digest": "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3",
+      "size": 1853315
+    },
+    {
+      "seedRelativePath": "caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar",
+      "coordinate": "resolved:annotations-13.0.jar",
+      "digest": "sha256:ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478",
+      "size": 17536
+    }
+  ]
+}
