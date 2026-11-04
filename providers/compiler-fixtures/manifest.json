@@ -1749,6 +1749,456 @@
         "legitimate_or_intentional_alternative": "Explicit containsValue/contains calls can intentionally test values; an actual Map-typed receiver has key membership semantics. Preserve the compiler contract, not an inferred policy exemption.",
         "evidence_state": "not_run; source-only authorship"
       }
+    },
+    {
+      "rule_id": "ktc.compiler.common.int_literal_out_of_range",
+      "upstream_id": "INT_LITERAL_OUT_OF_RANGE",
+      "positive": "cases/int_literal_out_of_range/positive.kt",
+      "negative": "cases/int_literal_out_of_range/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L185",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-type_boundaries",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual INT_LITERAL_OUT_OF_RANGE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit INT_LITERAL_OUT_OF_RANGE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A value above Long.MAX_VALUE can legitimately use an explicitly unsigned ULong representation; integer-literal validity is not an inferred policy about overflow or intent.",
+        "evidence_state": "not_run; source-only authorship"
+      },
+      "supplemental_inputs": [
+        {
+          "kind": "boundary",
+          "path": "cases/int_literal_out_of_range/boundary.kt",
+          "source_sha256": "5317b90e45898a253afe0d5a9f58d6862e8264da8ce4dd033732a1a92f4a50ed",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: both signed Long boundaries compile with this ID absent. The minimum uses two representable literals, not a guessed special unary-minus exemption.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cases/int_literal_out_of_range/applicability.kt",
+          "source_sha256": "6e338567d56a6a600e208ebca03903c1854ca6dbba5d1c2e3ebe4f2f176e346c",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: an explicitly unsigned maximum fits ULong and does not emit this signed-literal error; no signed arithmetic overflow or runtime behavior is certified.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cases/int_literal_out_of_range/suppression.kt",
+          "source_sha256": "c8a323d1910f22dbd1d00b3598a6f8da2f47fe9adca9cb71de82e7429eb7dce7",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: execute compiler-error suppression independently; preserve actual failed compilation or compiler-accepted suppression. The selected ID may remain or be suppressed; neither outcome creates clean/complete coverage. This source body matches the existing pair harness transform, but this authored file is not an extra executed job.",
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        }
+      ],
+      "supplemental_execution_scope": "Authored input plans only. The current pair harness does not schedule these files; its existing six-kind dynamic transforms remain separate actual jobs."
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_check_for_erased",
+      "upstream_id": "CANNOT_CHECK_FOR_ERASED",
+      "positive": "cases/cannot_check_for_erased/positive.kt",
+      "negative": "cases/cannot_check_for_erased/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L935",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-type_boundaries",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual CANNOT_CHECK_FOR_ERASED at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit CANNOT_CHECK_FOR_ERASED under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A reified inline type parameter or an explicit value predicate is legitimate. A star-projected collection check does not prove erased element types.",
+        "evidence_state": "not_run; source-only authorship"
+      },
+      "supplemental_inputs": [
+        {
+          "kind": "boundary",
+          "path": "cases/cannot_check_for_erased/boundary.kt",
+          "source_sha256": "cd63f250360d9bec939380d308169887d7017f562699a95e49f95c455215a6b8",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: a star-projected collection type check compiles without this ID; it checks only the runtime collection shape, not String/other element types.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cases/cannot_check_for_erased/applicability.kt",
+          "source_sha256": "eae215a94605de750be76cd9dc911368ab5ab798123768651272948de460f044",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: ordinary erased generic values may be consumed by an explicit predicate without an illegal runtime type test; no predicate behavior is inferred.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cases/cannot_check_for_erased/suppression.kt",
+          "source_sha256": "afa0a7509ae539b0b6c4dccae4977f52ff2d893b8a8a848548c7d9bec9aac087",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: execute compiler-error suppression independently; preserve actual failed compilation or compiler-accepted suppression. The selected ID may remain or be suppressed; neither outcome creates clean/complete coverage. This source body matches the existing pair harness transform, but this authored file is not an extra executed job.",
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        }
+      ],
+      "supplemental_execution_scope": "Authored input plans only. The current pair harness does not schedule these files; its existing six-kind dynamic transforms remain separate actual jobs."
+    },
+    {
+      "rule_id": "ktc.compiler.common.recursive_typealias_expansion",
+      "upstream_id": "RECURSIVE_TYPEALIAS_EXPANSION",
+      "positive": "cases/recursive_typealias_expansion/positive.kt",
+      "negative": "cases/recursive_typealias_expansion/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1004",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-type_boundaries",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual RECURSIVE_TYPEALIAS_EXPANSION at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit RECURSIVE_TYPEALIAS_EXPANSION under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Recursive nominal domain classes are valid and are not infinite typealias expansions; finite chains of aliases are also legitimate.",
+        "evidence_state": "not_run; source-only authorship"
+      },
+      "supplemental_inputs": [
+        {
+          "kind": "boundary",
+          "path": "cases/recursive_typealias_expansion/boundary.kt",
+          "source_sha256": "27546e583f4ff54393af9d0ceaaf8e7d1806c884bd03af1489180bf8bad1d19b",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: finite nested aliases expand to List<List<String>> without this ID; source spelling alone is not a recursion detector.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cases/recursive_typealias_expansion/applicability.kt",
+          "source_sha256": "78ef670e4512bbcad9866de3d57e3a416888fe9b7cd738511e228c380b7d6140",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: a recursive nominal class compiles without this typealias-specific ID; no allocation, termination or graph-cycle behavior is certified.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cases/recursive_typealias_expansion/suppression.kt",
+          "source_sha256": "8e089e9e6464df1fe29d6124f56289d057f0060e9bd35536c42d162b1bc40e1f",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: execute compiler-error suppression independently; preserve actual failed compilation or compiler-accepted suppression. The selected ID may remain or be suppressed; neither outcome creates clean/complete coverage. This source body matches the existing pair harness transform, but this authored file is not an extra executed job.",
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        }
+      ],
+      "supplemental_execution_scope": "Authored input plans only. The current pair harness does not schedule these files; its existing six-kind dynamic transforms remain separate actual jobs."
+    },
+    {
+      "rule_id": "ktc.compiler.common.conflicting_upper_bounds",
+      "upstream_id": "CONFLICTING_UPPER_BOUNDS",
+      "positive": "cases/conflicting_upper_bounds/positive.kt",
+      "negative": "cases/conflicting_upper_bounds/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L595",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-type_boundaries",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual CONFLICTING_UPPER_BOUNDS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit CONFLICTING_UPPER_BOUNDS under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Multiple compatible interface bounds and an open class plus interface can be legitimate. Preserve FINAL_UPPER_BOUND/ONLY_ONE_CLASS_BOUND_ALLOWED or other actual companion diagnostics on the deliberately conflicting positive.",
+        "evidence_state": "not_run; source-only authorship"
+      },
+      "supplemental_inputs": [
+        {
+          "kind": "boundary",
+          "path": "cases/conflicting_upper_bounds/boundary.kt",
+          "source_sha256": "58a7486a1f7dbdd8a72e2ea8f75e41504458925e7622bf61bc7ef2cd878d823c",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: one open class bound plus a compatible interface compiles without the selected conflict ID; no omitted dependency hierarchy is substituted.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cases/conflicting_upper_bounds/applicability.kt",
+          "source_sha256": "f832b9c433d988981fb9167b8e9dab57531064dd0cbd60959fbe88262f51f1cb",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: a single CharSequence interface bound compiles without this ID; constrained generics are not rejected merely for having a bound.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cases/conflicting_upper_bounds/suppression.kt",
+          "source_sha256": "a34f0128ad63764a731737ca044ed6d828fac2412359b7616510276a5b321fd0",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: execute compiler-error suppression independently; preserve actual failed compilation or compiler-accepted suppression. The selected ID may remain or be suppressed; neither outcome creates clean/complete coverage. This source body matches the existing pair harness transform, but this authored file is not an extra executed job.",
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        }
+      ],
+      "supplemental_execution_scope": "Authored input plans only. The current pair harness does not schedule these files; its existing six-kind dynamic transforms remain separate actual jobs."
+    },
+    {
+      "rule_id": "ktc.compiler.common.type_variance_conflict_error",
+      "upstream_id": "TYPE_VARIANCE_CONFLICT_ERROR",
+      "positive": "cases/type_variance_conflict_error/positive.kt",
+      "negative": "cases/type_variance_conflict_error/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L619",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-type_boundaries",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual TYPE_VARIANCE_CONFLICT_ERROR at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit TYPE_VARIANCE_CONFLICT_ERROR under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An immutable covariant producer, mutable invariant container, or contravariant consumer is legitimate. The compiler resolves actual variance positions; textual use of T is not itself a defect.",
+        "evidence_state": "not_run; source-only authorship"
+      },
+      "supplemental_inputs": [
+        {
+          "kind": "boundary",
+          "path": "cases/type_variance_conflict_error/boundary.kt",
+          "source_sha256": "e84683626556459de8661d278d632556b49a798f54863b088470aaa037b998b6",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: an invariant mutable property compiles without this ID; mutability is not prohibited independently of variance.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cases/type_variance_conflict_error/applicability.kt",
+          "source_sha256": "b964d3824925310f5c878cef028d4f6fcece9e838f42962d25b91e59db9c9f1f",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: a contravariant type parameter in a consuming function parameter compiles without this ID; no public producer position is silently added.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cases/type_variance_conflict_error/suppression.kt",
+          "source_sha256": "a72f4f74a5492cd76ed5d8095169c417371bde406902a373929b9b035f4d73e9",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: execute compiler-error suppression independently; preserve actual failed compilation or compiler-accepted suppression. The selected ID may remain or be suppressed; neither outcome creates clean/complete coverage. This source body matches the existing pair harness transform, but this authored file is not an extra executed job.",
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        }
+      ],
+      "supplemental_execution_scope": "Authored input plans only. The current pair harness does not schedule these files; its existing six-kind dynamic transforms remain separate actual jobs."
+    },
+    {
+      "rule_id": "ktc.compiler.common.unresolved_reference_wrong_receiver",
+      "upstream_id": "UNRESOLVED_REFERENCE_WRONG_RECEIVER",
+      "positive": "cases/unresolved_reference_wrong_receiver/positive.kt",
+      "negative": "cases/unresolved_reference_wrong_receiver/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L207",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-type_boundaries",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual UNRESOLVED_REFERENCE_WRONG_RECEIVER at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit UNRESOLVED_REFERENCE_WRONG_RECEIVER under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A genuinely compatible receiver or explicitly declared Int overload is valid; missing extension/import/dependency membership is an unsupported context, not a guessed source defect.",
+        "evidence_state": "not_run; source-only authorship"
+      },
+      "supplemental_inputs": [
+        {
+          "kind": "boundary",
+          "path": "cases/unresolved_reference_wrong_receiver/boundary.kt",
+          "source_sha256": "05f4412ed537aefc23824dc5223a8f09ed7c1474944411bfc884c895af284c0f",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: both Int and Double receivers resolve a declared Number extension without this ID; conversion/truncation semantics are not qualified.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cases/unresolved_reference_wrong_receiver/applicability.kt",
+          "source_sha256": "fad5f520c0fa0cc9e72b3cf3a88c5ee51eef3f44a6a263a4aeb1de1dc123c2b5",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: a real Int overload in the sealed batch resolves the call without this ID; same textual function name is not a wrong-receiver proof.",
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cases/unresolved_reference_wrong_receiver/suppression.kt",
+          "source_sha256": "c5de166c4603fef3470e978bf72a436885a11b05fbf4227291388b5026722dcc",
+          "status": "unrun_supplemental_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "proposed_expectation": "Proposed: execute compiler-error suppression independently; preserve actual failed compilation or compiler-accepted suppression. The selected ID may remain or be suppressed; neither outcome creates clean/complete coverage. This source body matches the existing pair harness transform, but this authored file is not an extra executed job.",
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "execution_policy": "Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution."
+        }
+      ],
+      "supplemental_execution_scope": "Authored input plans only. The current pair harness does not schedule these files; its existing six-kind dynamic transforms remain separate actual jobs."
     }
   ]
 }

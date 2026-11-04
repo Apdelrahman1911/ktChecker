@@ -1,0 +1,1315 @@
+{
+  "schema_version": 1,
+  "status": "source_only_partition_selectors_implemented_not_executed",
+  "execution_or_selection_authority": false,
+  "current_harness_support": "The trusted fixture-host source now accepts the ten exact reviewed --cohort names as stable original rule-ID subsets. The runner passes each explicit ruleId for both selection and evidence state; legacy original/all and authored-cohort predicates remain unchanged. This descriptor grants no execution or project-policy authority, and no new named subgroup has executed in this worktree.",
+  "ordinary_manifest_reference": {
+    "path": "providers/compiler-fixtures/manifest.json",
+    "sha256": "4854aa356caba6e90b48e10e333bf32828460dc64b04dd0d6b86db3653d49774"
+  },
+  "mapping_reference": {
+    "path": "modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+    "sha256": "687e453926dd2dce5737b4ee03498dc8e8214d5083c06f79231a62b9cef6482e"
+  },
+  "visible_inventory": {
+    "ordinary_pairs": 98,
+    "planned_unsupported_kmp_graphs": 16,
+    "mapped_rules": 443,
+    "selected_partition_members": 42
+  },
+  "partition_policy": [
+    "Select only the listed exact stable rule IDs through explicit trusted fixture-host cohort names, never row offsets, inferred severity filters or mutable source annotations. Source row order below is informational only.",
+    "Preserve every original positive/corrected-negative byte and original flags. This proposal neither changes authored_cohort metadata nor suppresses historical failures.",
+    "All 98 ordinary pairs, 16 unsupported graph plans and 443 mappings must remain visible in every future run; unselected or failed IDs are gaps, never hidden exclusions.",
+    "Each subcohort requires a fresh UUID, frozen source tuple, owner-approved bounded invocation and new exact nonserializable execution permit for each child-capable call.",
+    "Do not resume, merge receipts, pool execution budgets or attribute one run to another tuple. Separately executed subcohorts remain separate runs, not one qualified corpus.",
+    "The first three thematic parent names remain organizational only because their all-rerun plans exceed 48. The ten explicit smaller selector names implement the bounded partition; original_experimental is both its singleton theme and accepted singleton selector."
+  ],
+  "schedule_assumptions": [
+    "Static transcription of current runFixtures/cohort scheduling: compatible stable flags group together; all phases except negative split declared severity and mapped backend.",
+    "Five phases can issue at most one conditional single rerun per selected ID: positive, negative, configuration, version and regression. Warnings can add one conditional suppression rerun; error suppression is mandatory and already counted.",
+    "Warning-disabled phase groups are counted separately; no per-ID disabled rerun is scheduled. Four actual control calls and one pre-runtime wrong-version denial are counted for each independent run.",
+    "Source-planned provider admissions are not compiler launches, receipts, pass claims or completion guarantees. Runtime failures, time/evidence limits or cleanup/quiescence failures can still leave a run partial."
+  ],
+  "thematic_groups": [
+    {
+      "name": "original_calls",
+      "status": "organizational_theme_not_executable_selector",
+      "rule_ids": [
+        "ktc.compiler.common.unresolved_reference",
+        "ktc.compiler.common.unresolved_import",
+        "ktc.compiler.common.return_type_mismatch",
+        "ktc.compiler.common.initializer_type_mismatch",
+        "ktc.compiler.common.assignment_type_mismatch",
+        "ktc.compiler.common.argument_type_mismatch",
+        "ktc.compiler.common.null_for_nonnull_type",
+        "ktc.compiler.common.unsafe_call",
+        "ktc.compiler.common.no_value_for_parameter",
+        "ktc.compiler.common.too_many_arguments",
+        "ktc.compiler.common.named_parameter_not_found",
+        "ktc.compiler.common.argument_passed_twice",
+        "ktc.compiler.common.non_vararg_spread",
+        "ktc.compiler.common.spread_of_nullable"
+      ],
+      "static_schedule": {
+        "selected_pairs": 14,
+        "declared_errors": 14,
+        "declared_warnings": 0,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 0,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 14,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 84,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 25,
+        "no_fallback_child_capable_calls": 24,
+        "conditional_single_rerun_upper_bound": 70,
+        "all_conditional_reruns_provider_admissions_bound": 95,
+        "within_48_admissions_even_with_all_conditional_reruns": false,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "name": "original_flow_types",
+      "status": "organizational_theme_not_executable_selector",
+      "rule_ids": [
+        "ktc.compiler.common.val_reassignment",
+        "ktc.compiler.common.uninitialized_variable",
+        "ktc.compiler.common.no_else_in_when",
+        "ktc.compiler.common.wrong_annotation_target",
+        "ktc.compiler.common.exposed_function_return_type",
+        "ktc.compiler.common.upper_bound_violated",
+        "ktc.compiler.common.division_by_zero",
+        "ktc.compiler.common.unreachable_code",
+        "ktc.compiler.common.cast_never_succeeds",
+        "ktc.compiler.common.useless_cast",
+        "ktc.compiler.common.unnecessary_safe_call",
+        "ktc.compiler.common.unnecessary_not_null_assertion",
+        "ktc.compiler.common.deprecation"
+      ],
+      "static_schedule": {
+        "selected_pairs": 13,
+        "declared_errors": 6,
+        "declared_warnings": 7,
+        "phase_group_provider_calls": {
+          "positive": 3,
+          "negative": 2,
+          "warning-disabled": 2,
+          "configuration": 3,
+          "version": 3,
+          "suppression": 3,
+          "regression": 3
+        },
+        "mandatory_individual_error_suppression_calls": 6,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 78,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 30,
+        "no_fallback_child_capable_calls": 29,
+        "conditional_single_rerun_upper_bound": 72,
+        "all_conditional_reruns_provider_admissions_bound": 102,
+        "within_48_admissions_even_with_all_conditional_reruns": false,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "name": "original_jvm",
+      "status": "organizational_theme_not_executable_selector",
+      "rule_ids": [
+        "ktc.compiler.jvm.jvm_static_not_in_object_or_companion",
+        "ktc.compiler.jvm.jvm_inline_without_value_class",
+        "ktc.compiler.jvm.value_class_without_jvm_inline_annotation",
+        "ktc.compiler.jvm.inapplicable_jvm_field",
+        "ktc.compiler.jvm.overloads_without_default_arguments",
+        "ktc.compiler.jvm.overloads_interface",
+        "ktc.compiler.jvm.overloads_abstract",
+        "ktc.compiler.jvm.synchronized_on_suspend_error",
+        "ktc.compiler.jvm.synchronized_on_inline",
+        "ktc.compiler.jvm.synchronized_on_abstract",
+        "ktc.compiler.jvm.external_declaration_cannot_have_body",
+        "ktc.compiler.jvm.non_data_class_jvm_record",
+        "ktc.compiler.jvm.jvm_record_not_val_parameter",
+        "ktc.compiler.jvm.field_in_jvm_record"
+      ],
+      "static_schedule": {
+        "selected_pairs": 14,
+        "declared_errors": 12,
+        "declared_warnings": 2,
+        "phase_group_provider_calls": {
+          "positive": 2,
+          "negative": 1,
+          "warning-disabled": 1,
+          "configuration": 2,
+          "version": 2,
+          "suppression": 2,
+          "regression": 2
+        },
+        "mandatory_individual_error_suppression_calls": 12,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 84,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 29,
+        "no_fallback_child_capable_calls": 28,
+        "conditional_single_rerun_upper_bound": 72,
+        "all_conditional_reruns_provider_admissions_bound": 101,
+        "within_48_admissions_even_with_all_conditional_reruns": false,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "name": "original_experimental",
+      "status": "organizational_theme_and_implemented_singleton_selector_unrun",
+      "rule_ids": [
+        "ktc.compiler.common.empty_range"
+      ],
+      "static_schedule": {
+        "selected_pairs": 1,
+        "declared_errors": 0,
+        "declared_warnings": 1,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 1,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 0,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 6,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 12,
+        "no_fallback_child_capable_calls": 11,
+        "conditional_single_rerun_upper_bound": 6,
+        "all_conditional_reruns_provider_admissions_bound": 18,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    }
+  ],
+  "recommended_bounded_subcohorts": [
+    {
+      "proposed_selector_name": "original_calls_a",
+      "parent_theme": "original_calls",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.common.unresolved_reference",
+          "upstream_id": "UNRESOLVED_REFERENCE",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/unresolved_reference/positive.kt",
+            "sha256": "cc58d834595d3f05f4dad1f3a568ea60561c63a08974847a5024d627cc3e940a"
+          },
+          "negative": {
+            "path": "cases/unresolved_reference/negative.kt",
+            "sha256": "b806e34702c37d638d0a6452ff9b6c90484a256f6e285ca51a08ae33b5f0970e"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.unresolved_import",
+          "upstream_id": "UNRESOLVED_IMPORT",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/unresolved_import/positive.kt",
+            "sha256": "ed407fd6fcb4501abac71543be3b3dbb5eb3d69c3016e900c6e52157d22dfaf7"
+          },
+          "negative": {
+            "path": "cases/unresolved_import/negative.kt",
+            "sha256": "312ef33f114811ca282e51a44c617bcdc91838f79e1d86731355f2bc57c7a919"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.return_type_mismatch",
+          "upstream_id": "RETURN_TYPE_MISMATCH",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/return_type_mismatch/positive.kt",
+            "sha256": "c986ad1553c671aae2f601948702d049951977d9249a240493d7fda39f3ad88e"
+          },
+          "negative": {
+            "path": "cases/return_type_mismatch/negative.kt",
+            "sha256": "0193c131a5bb90f961699f6da6c2803a41a7b7c0986471468838da0a425bee1d"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.initializer_type_mismatch",
+          "upstream_id": "INITIALIZER_TYPE_MISMATCH",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/initializer_type_mismatch/positive.kt",
+            "sha256": "09b2517fe550b84a8e18b33f99941e866fd0e76bd7bf757ea319fda4cca4f155"
+          },
+          "negative": {
+            "path": "cases/initializer_type_mismatch/negative.kt",
+            "sha256": "08997eea65a80881d420c90bf9d806bf242475791103c6e1fbaf1d0885533c44"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.assignment_type_mismatch",
+          "upstream_id": "ASSIGNMENT_TYPE_MISMATCH",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/assignment_type_mismatch/positive.kt",
+            "sha256": "67b5b7ba4da08a6349637de33f955c029067001675c138e4571280df3e03d048"
+          },
+          "negative": {
+            "path": "cases/assignment_type_mismatch/negative.kt",
+            "sha256": "0e2a8e5c13bd454f0f33f0b54c3cee6f19180852e89fbc8d2c4dcc51f0d12399"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.argument_type_mismatch",
+          "upstream_id": "ARGUMENT_TYPE_MISMATCH",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/argument_type_mismatch/positive.kt",
+            "sha256": "e3ca48f35c28d63c5df1a72ce786fefd02da2cb052cd104f5859951f4a76b0f7"
+          },
+          "negative": {
+            "path": "cases/argument_type_mismatch/negative.kt",
+            "sha256": "84ddc70e56de0a4da5dbc3c603d8978a57c146d1acfaf98b6ee3a136c5dd4c71"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 6,
+        "declared_errors": 6,
+        "declared_warnings": 0,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 0,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 6,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 36,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 17,
+        "no_fallback_child_capable_calls": 16,
+        "conditional_single_rerun_upper_bound": 30,
+        "all_conditional_reruns_provider_admissions_bound": 47,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_calls_b",
+      "parent_theme": "original_calls",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.common.null_for_nonnull_type",
+          "upstream_id": "NULL_FOR_NONNULL_TYPE",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/null_for_nonnull_type/positive.kt",
+            "sha256": "960419f714930897b4c5910942d4cdedc2804949357043766e0ff14c7f508a5e"
+          },
+          "negative": {
+            "path": "cases/null_for_nonnull_type/negative.kt",
+            "sha256": "1bbfb915c432d6f14bcb4086ec22d6b1731ea2a640f39ab7f6773faca66b1fa9"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.unsafe_call",
+          "upstream_id": "UNSAFE_CALL",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/unsafe_call/positive.kt",
+            "sha256": "4f903026cb19f77c8a7e8fa600cd8bbc75609f9aeb03d7bbe6297bbac5d193f0"
+          },
+          "negative": {
+            "path": "cases/unsafe_call/negative.kt",
+            "sha256": "f2a9d838a60636e6383e842c6f819fe32e9ecd60fee6b2d47215f0a02d66b9ca"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.no_value_for_parameter",
+          "upstream_id": "NO_VALUE_FOR_PARAMETER",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/no_value_for_parameter/positive.kt",
+            "sha256": "870e8886fa5dbdf28e79b57226ef0c303b2672f1304d8adf7f090a97c0f0634d"
+          },
+          "negative": {
+            "path": "cases/no_value_for_parameter/negative.kt",
+            "sha256": "168700c9d126cd38057b379840e8f4d722825e3d41676619ad3b255562db536f"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.too_many_arguments",
+          "upstream_id": "TOO_MANY_ARGUMENTS",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/too_many_arguments/positive.kt",
+            "sha256": "94f3450e4cccca25c787bd9f2f34518d4dd9bb03e9974d372e122005be9ed7a3"
+          },
+          "negative": {
+            "path": "cases/too_many_arguments/negative.kt",
+            "sha256": "d07b0b6ce2d154e827627cd6ce7b2f0ad2a8c750712e189875f1edd3f875ab5b"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.named_parameter_not_found",
+          "upstream_id": "NAMED_PARAMETER_NOT_FOUND",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/named_parameter_not_found/positive.kt",
+            "sha256": "d8a874bc538fcd2399712682d6d6b255c0ebedb495c8c2762a912ce567223706"
+          },
+          "negative": {
+            "path": "cases/named_parameter_not_found/negative.kt",
+            "sha256": "5c20a523e3eb890796ef6c3b21940fe0f16b0bbd1e64f6e9e1aedd3140df4545"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.argument_passed_twice",
+          "upstream_id": "ARGUMENT_PASSED_TWICE",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/argument_passed_twice/positive.kt",
+            "sha256": "ea61635a65c3ff235a0bd1e8f8e2e78d4aa9bc9a6c861ffcac1a83a6d0d80470"
+          },
+          "negative": {
+            "path": "cases/argument_passed_twice/negative.kt",
+            "sha256": "37051bf8322e7c636d451de85296d640d79121bb4fb45f0bcfc24674d1b397cc"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 6,
+        "declared_errors": 6,
+        "declared_warnings": 0,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 0,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 6,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 36,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 17,
+        "no_fallback_child_capable_calls": 16,
+        "conditional_single_rerun_upper_bound": 30,
+        "all_conditional_reruns_provider_admissions_bound": 47,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_calls_c",
+      "parent_theme": "original_calls",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.common.non_vararg_spread",
+          "upstream_id": "NON_VARARG_SPREAD",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/non_vararg_spread/positive.kt",
+            "sha256": "02dd78ac96f8906436e5cb2609f34fa2416cba1b665deac09abd6fedde4c6f90"
+          },
+          "negative": {
+            "path": "cases/non_vararg_spread/negative.kt",
+            "sha256": "8dac2d7a498631eeb6e3e235cf26e2a0b01387115c5690db91dec2f50a96a274"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.spread_of_nullable",
+          "upstream_id": "SPREAD_OF_NULLABLE",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/spread_of_nullable/positive.kt",
+            "sha256": "fbb0192f4de9a69c5229ada9655571d9d4c143aeb48e6b5d6873b9a9c1c44d4d"
+          },
+          "negative": {
+            "path": "cases/spread_of_nullable/negative.kt",
+            "sha256": "54133866b669f4c598a416a2085af7104e0005ba0b2418e94eccc5dbd3d10db0"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 2,
+        "declared_errors": 2,
+        "declared_warnings": 0,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 0,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 2,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 12,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 13,
+        "no_fallback_child_capable_calls": 12,
+        "conditional_single_rerun_upper_bound": 10,
+        "all_conditional_reruns_provider_admissions_bound": 23,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_flow_errors",
+      "parent_theme": "original_flow_types",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.common.val_reassignment",
+          "upstream_id": "VAL_REASSIGNMENT",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/val_reassignment/positive.kt",
+            "sha256": "3bf39cc517c492848601e06ff06ee5f6ec0fec12b80b99309a129cb8a8a11ac3"
+          },
+          "negative": {
+            "path": "cases/val_reassignment/negative.kt",
+            "sha256": "3ad282b3a83b8f21f31eb83a10aee22ad8b21a5c5b512e2694c52f85fc5d34fb"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.uninitialized_variable",
+          "upstream_id": "UNINITIALIZED_VARIABLE",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/uninitialized_variable/positive.kt",
+            "sha256": "50b19de9b95ef105643f1515b5d12b5b7b6074329a982e913378533e3c946465"
+          },
+          "negative": {
+            "path": "cases/uninitialized_variable/negative.kt",
+            "sha256": "a38a03ced2e492e0d67299b1ab4b12ff674435bf080b2dee38d4d67f8ff544e2"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.no_else_in_when",
+          "upstream_id": "NO_ELSE_IN_WHEN",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/no_else_in_when/positive.kt",
+            "sha256": "5d8f5be96dcbe428c44cf261201a0a02afc48c4734e8e7850c117bfd3d14e575"
+          },
+          "negative": {
+            "path": "cases/no_else_in_when/negative.kt",
+            "sha256": "4aafd331666be6854bf57d3642bd7257d60163803b0dc3ae982691bd59dd6b5c"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.wrong_annotation_target",
+          "upstream_id": "WRONG_ANNOTATION_TARGET",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/wrong_annotation_target/positive.kt",
+            "sha256": "2b118d54a8d08ec37128a443af8394088f1b9006fbf5bde609e4d69fc801f2cc"
+          },
+          "negative": {
+            "path": "cases/wrong_annotation_target/negative.kt",
+            "sha256": "6fbe78a340fee808c5cfdfa929359a9237e370718c25bafe144707d4764a244a"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.exposed_function_return_type",
+          "upstream_id": "EXPOSED_FUNCTION_RETURN_TYPE",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/exposed_function_return_type/positive.kt",
+            "sha256": "8963fb30a263ae6a268ed19743d7d7c8706781eebc15b62c1c381f963bd22d1e"
+          },
+          "negative": {
+            "path": "cases/exposed_function_return_type/negative.kt",
+            "sha256": "f593184550060456f13aad945e690e8b35a5d35690aafb64b3b3cb781415ce47"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.upper_bound_violated",
+          "upstream_id": "UPPER_BOUND_VIOLATED",
+          "declared_severity": "error",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/upper_bound_violated/positive.kt",
+            "sha256": "d4c523be141bce9e62df159a14cb7e31c3bc7842cedca3630dca17b2223b0f50"
+          },
+          "negative": {
+            "path": "cases/upper_bound_violated/negative.kt",
+            "sha256": "d48e64516ae15b1c4fb1fca18bcca2b2e2992fe8b300b80bc1793b5b10e30be3"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 6,
+        "declared_errors": 6,
+        "declared_warnings": 0,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 0,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 6,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 36,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 17,
+        "no_fallback_child_capable_calls": 16,
+        "conditional_single_rerun_upper_bound": 30,
+        "all_conditional_reruns_provider_admissions_bound": 47,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_flow_warnings",
+      "parent_theme": "original_flow_types",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.common.division_by_zero",
+          "upstream_id": "DIVISION_BY_ZERO",
+          "declared_severity": "warning",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/division_by_zero/positive.kt",
+            "sha256": "620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc"
+          },
+          "negative": {
+            "path": "cases/division_by_zero/negative.kt",
+            "sha256": "768029687bcb1f822397d08592dc6dddf337c2eb1dfa1b949a4297df99c3076a"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.cast_never_succeeds",
+          "upstream_id": "CAST_NEVER_SUCCEEDS",
+          "declared_severity": "warning",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/cast_never_succeeds/positive.kt",
+            "sha256": "4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138"
+          },
+          "negative": {
+            "path": "cases/cast_never_succeeds/negative.kt",
+            "sha256": "eec391d9fcce29e433f582ce9fdfd14bdbafac4c0b9ed5ad4eb3a1ff719f3a68"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.useless_cast",
+          "upstream_id": "USELESS_CAST",
+          "declared_severity": "warning",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/useless_cast/positive.kt",
+            "sha256": "08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4"
+          },
+          "negative": {
+            "path": "cases/useless_cast/negative.kt",
+            "sha256": "4963806bb8acc6e0d49d6e8e711c701aae8a5fd25420a013c6de50c72dfd9d28"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.unnecessary_safe_call",
+          "upstream_id": "UNNECESSARY_SAFE_CALL",
+          "declared_severity": "warning",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/unnecessary_safe_call/positive.kt",
+            "sha256": "ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548"
+          },
+          "negative": {
+            "path": "cases/unnecessary_safe_call/negative.kt",
+            "sha256": "809ccd608c17ae112809fd952f506cf1166196b008acd1189277b9b20af5b159"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.unnecessary_not_null_assertion",
+          "upstream_id": "UNNECESSARY_NOT_NULL_ASSERTION",
+          "declared_severity": "warning",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/unnecessary_not_null_assertion/positive.kt",
+            "sha256": "8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2"
+          },
+          "negative": {
+            "path": "cases/unnecessary_not_null_assertion/negative.kt",
+            "sha256": "3c9dbcee9ae1e837ef55c6286d76490ab04384b3f4a945fe681650429aa88e4b"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.common.deprecation",
+          "upstream_id": "DEPRECATION",
+          "declared_severity": "warning",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/deprecation/positive.kt",
+            "sha256": "a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399"
+          },
+          "negative": {
+            "path": "cases/deprecation/negative.kt",
+            "sha256": "bd72e7cab839f26de91a9265f6a325150e0c20b736f3d16dff8080791fad54b0"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 6,
+        "declared_errors": 0,
+        "declared_warnings": 6,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 1,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 0,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 36,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 12,
+        "no_fallback_child_capable_calls": 11,
+        "conditional_single_rerun_upper_bound": 36,
+        "all_conditional_reruns_provider_admissions_bound": 48,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_flow_extra",
+      "parent_theme": "original_flow_types",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.common.unreachable_code",
+          "upstream_id": "UNREACHABLE_CODE",
+          "declared_severity": "warning",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17",
+            "-Wextra"
+          ],
+          "positive": {
+            "path": "cases/unreachable_code/positive.kt",
+            "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+          },
+          "negative": {
+            "path": "cases/unreachable_code/negative.kt",
+            "sha256": "c116121d5e27e7f351736fb701838c0ab3f793c25d81e8be4ddadb11c8b95af4"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 1,
+        "declared_errors": 0,
+        "declared_warnings": 1,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 1,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 0,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 6,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 12,
+        "no_fallback_child_capable_calls": 11,
+        "conditional_single_rerun_upper_bound": 6,
+        "all_conditional_reruns_provider_admissions_bound": 18,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_jvm_errors_a",
+      "parent_theme": "original_jvm",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.jvm.jvm_static_not_in_object_or_companion",
+          "upstream_id": "JVM_STATIC_NOT_IN_OBJECT_OR_COMPANION",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/jvm_static_not_in_object_or_companion/positive.kt",
+            "sha256": "e7be9832a7faf93fd48fea27bed75f836145ae746c4cd0459c250549ca5f9a88"
+          },
+          "negative": {
+            "path": "cases/jvm_static_not_in_object_or_companion/negative.kt",
+            "sha256": "b86ef61cf9806a9d0b0b6938a9d6973a57a79f1f5a0fb96ce01f739ab31e523f"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.jvm_inline_without_value_class",
+          "upstream_id": "JVM_INLINE_WITHOUT_VALUE_CLASS",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/jvm_inline_without_value_class/positive.kt",
+            "sha256": "95a5b2916882ac920002f5cc6e5e813cfe7cccd4513a385b21deccc9fc4779ce"
+          },
+          "negative": {
+            "path": "cases/jvm_inline_without_value_class/negative.kt",
+            "sha256": "25a249a86e91aba07c9b9a69f6441e2eaa12207d1aa68585d464c784d4364f94"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.value_class_without_jvm_inline_annotation",
+          "upstream_id": "VALUE_CLASS_WITHOUT_JVM_INLINE_ANNOTATION",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/value_class_without_jvm_inline_annotation/positive.kt",
+            "sha256": "1b1efa55fa59f3d9c9a0e71bfeefa00bf443dd1cedf5176a7232ea29beabe81b"
+          },
+          "negative": {
+            "path": "cases/value_class_without_jvm_inline_annotation/negative.kt",
+            "sha256": "066b585e95d08c5459a48bd9fc34655bae4c2eda1608c4c69df3071c31c1441c"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.inapplicable_jvm_field",
+          "upstream_id": "INAPPLICABLE_JVM_FIELD",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/inapplicable_jvm_field/positive.kt",
+            "sha256": "f2da19a17c53a85c2ae3bbfe65d0d6e3b8322a344e698f7ea9cdf99e807d442f"
+          },
+          "negative": {
+            "path": "cases/inapplicable_jvm_field/negative.kt",
+            "sha256": "f5fe1ea129f8033c79feb7440f41bf11d0b6ce8b64be34615b58932f3cf53e0d"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.overloads_interface",
+          "upstream_id": "OVERLOADS_INTERFACE",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/overloads_interface/positive.kt",
+            "sha256": "53ed21646366bc097838318d558128412c41861ff4e687205701d998b89ccda5"
+          },
+          "negative": {
+            "path": "cases/overloads_interface/negative.kt",
+            "sha256": "5988fb3c335705efc1ed053807422f64fb2543c25c356f9aa8a7eb428a4d54c3"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.overloads_abstract",
+          "upstream_id": "OVERLOADS_ABSTRACT",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/overloads_abstract/positive.kt",
+            "sha256": "f267bce2c4c7a1f302626a535208c9747476f01f6497dff5ca2fb6285d373654"
+          },
+          "negative": {
+            "path": "cases/overloads_abstract/negative.kt",
+            "sha256": "4f1d0d2bc8de320edae518649f70176df7bfc8b81f9aed36eee221db6270cb81"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 6,
+        "declared_errors": 6,
+        "declared_warnings": 0,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 0,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 6,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 36,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 17,
+        "no_fallback_child_capable_calls": 16,
+        "conditional_single_rerun_upper_bound": 30,
+        "all_conditional_reruns_provider_admissions_bound": 47,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_jvm_errors_b",
+      "parent_theme": "original_jvm",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.jvm.synchronized_on_suspend_error",
+          "upstream_id": "SYNCHRONIZED_ON_SUSPEND_ERROR",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/synchronized_on_suspend_error/positive.kt",
+            "sha256": "38cf0b428a803a6d92cf436b45e45b21104a460fb6ab1e3c33d8b7e5b6a22d3d"
+          },
+          "negative": {
+            "path": "cases/synchronized_on_suspend_error/negative.kt",
+            "sha256": "08f28afe892afd4f8c23ea8290721d41ea847afd542ad8bbb46baed3aeea20fd"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.synchronized_on_abstract",
+          "upstream_id": "SYNCHRONIZED_ON_ABSTRACT",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/synchronized_on_abstract/positive.kt",
+            "sha256": "faa782995219cd8213520c430ed99ab2130b4102fe5bc1f11388663afbca6145"
+          },
+          "negative": {
+            "path": "cases/synchronized_on_abstract/negative.kt",
+            "sha256": "2dffa2b068a6f44545603aa4cf8246779e11c97424b0302e9f1a26bcccb64d33"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.external_declaration_cannot_have_body",
+          "upstream_id": "EXTERNAL_DECLARATION_CANNOT_HAVE_BODY",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/external_declaration_cannot_have_body/positive.kt",
+            "sha256": "8b64781a0667b325d7e715efdb3845e4210ff8bd15e974bc65b6b3c02c441669"
+          },
+          "negative": {
+            "path": "cases/external_declaration_cannot_have_body/negative.kt",
+            "sha256": "909b551935117bb94e0432fca13903d5bb254f2775cc9c70f4bcf108cd6f5650"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.non_data_class_jvm_record",
+          "upstream_id": "NON_DATA_CLASS_JVM_RECORD",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/non_data_class_jvm_record/positive.kt",
+            "sha256": "ca919b1c863819f48f365752a348b440fb74580576dd3bb8d43ed4dc01bcfb37"
+          },
+          "negative": {
+            "path": "cases/non_data_class_jvm_record/negative.kt",
+            "sha256": "e28b0b5ccaa935d7ffe5c80d16fab36fc943211fd205b4368c4836fda322ce57"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.jvm_record_not_val_parameter",
+          "upstream_id": "JVM_RECORD_NOT_VAL_PARAMETER",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/jvm_record_not_val_parameter/positive.kt",
+            "sha256": "92055ea6a5f487c36a93a08fa7be1b8fd83289450e5ff7c8f0d104905f399e49"
+          },
+          "negative": {
+            "path": "cases/jvm_record_not_val_parameter/negative.kt",
+            "sha256": "21afc3f91a6e01a9c991cb8a5bbec10e5a910b6e7455aed448c6210683bd63b5"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.field_in_jvm_record",
+          "upstream_id": "FIELD_IN_JVM_RECORD",
+          "declared_severity": "error",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/field_in_jvm_record/positive.kt",
+            "sha256": "66b92c8378a9df8fd02153d7e69991736b2925be8debdbf656baaaacc1fc5a22"
+          },
+          "negative": {
+            "path": "cases/field_in_jvm_record/negative.kt",
+            "sha256": "decca913e3c2f1f3b4ac213fc74106be3df3a202e264a7e2d55e1780200600eb"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 6,
+        "declared_errors": 6,
+        "declared_warnings": 0,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 0,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 6,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 36,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 17,
+        "no_fallback_child_capable_calls": 16,
+        "conditional_single_rerun_upper_bound": 30,
+        "all_conditional_reruns_provider_admissions_bound": 47,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_jvm_warnings",
+      "parent_theme": "original_jvm",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.jvm.overloads_without_default_arguments",
+          "upstream_id": "OVERLOADS_WITHOUT_DEFAULT_ARGUMENTS",
+          "declared_severity": "warning",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/overloads_without_default_arguments/positive.kt",
+            "sha256": "c46dd40de00400bbe0b26406c1c6b4dcaf19e757742c813feb15f72c2d53f74d"
+          },
+          "negative": {
+            "path": "cases/overloads_without_default_arguments/negative.kt",
+            "sha256": "cc302a10c855f2dbe851317a4e38aac4b1ce9d5e32549b84a86f9ce20ffbd6d3"
+          }
+        },
+        {
+          "rule_id": "ktc.compiler.jvm.synchronized_on_inline",
+          "upstream_id": "SYNCHRONIZED_ON_INLINE",
+          "declared_severity": "warning",
+          "mapped_backend": "jvm",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17"
+          ],
+          "positive": {
+            "path": "cases/synchronized_on_inline/positive.kt",
+            "sha256": "deed6c4c156441afcd5541bf99fe17e89f5691d5248bc974a67841c47457f8c5"
+          },
+          "negative": {
+            "path": "cases/synchronized_on_inline/negative.kt",
+            "sha256": "8e69a7864553d650fcc43b3f98dd43dacda874d8bba77a57997f6c63fc12a81f"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 2,
+        "declared_errors": 0,
+        "declared_warnings": 2,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 1,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 0,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 12,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 12,
+        "no_fallback_child_capable_calls": 11,
+        "conditional_single_rerun_upper_bound": 12,
+        "all_conditional_reruns_provider_admissions_bound": 24,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    },
+    {
+      "proposed_selector_name": "original_experimental",
+      "parent_theme": "original_experimental",
+      "status": "source_selector_implemented_not_executed",
+      "members": [
+        {
+          "rule_id": "ktc.compiler.common.empty_range",
+          "upstream_id": "EMPTY_RANGE",
+          "declared_severity": "warning",
+          "mapped_backend": "common",
+          "unchanged_flags": [
+            "-jvm-target",
+            "17",
+            "-Xuse-fir-experimental-checkers"
+          ],
+          "positive": {
+            "path": "cases/empty_range/positive.kt",
+            "sha256": "823eb81e16992276d5cebd6fe5dc19bb7b314158e1af9c75df71caefe9fe76bd"
+          },
+          "negative": {
+            "path": "cases/empty_range/negative.kt",
+            "sha256": "79d3f1591aa626f44afa8cc18691dcabe9480163fa49d4d34d993e5f26bd9d78"
+          }
+        }
+      ],
+      "static_schedule": {
+        "selected_pairs": 1,
+        "declared_errors": 0,
+        "declared_warnings": 1,
+        "phase_group_provider_calls": {
+          "positive": 1,
+          "negative": 1,
+          "warning-disabled": 1,
+          "configuration": 1,
+          "version": 1,
+          "suppression": 1,
+          "regression": 1
+        },
+        "mandatory_individual_error_suppression_calls": 0,
+        "wrong_requested_version_denial_calls": 1,
+        "actual_control_provider_calls": 4,
+        "ordinary_assessment_receipts_if_all_assessed": 6,
+        "actual_control_receipts_if_all_assessed": 4,
+        "no_fallback_provider_admissions": 12,
+        "no_fallback_child_capable_calls": 11,
+        "conditional_single_rerun_upper_bound": 6,
+        "all_conditional_reruns_provider_admissions_bound": 18,
+        "within_48_admissions_even_with_all_conditional_reruns": true,
+        "counts_are_source_plan_not_execution": true
+      }
+    }
+  ],
+  "empty_range_failure_retention": {
+    "rule_id": "ktc.compiler.common.empty_range",
+    "unchanged_flags": [
+      "-jvm-target",
+      "17",
+      "-Xuse-fir-experimental-checkers"
+    ],
+    "historical_run_evidence": {
+      "path": "providers/compiler-fixtures/runs/2026-11-04T09-40-05.124767771Z-b5c3e404/compiler-jvm-2.4.21.json",
+      "sha256": "313f442bb953f752f11b89aaaf5fa4c31c3e619bca99b6104305f6444f566597"
+    },
+    "historical_failed_assessment_kinds": [
+      "negative",
+      "configuration"
+    ],
+    "policy": "Keep the deprecated -Xuse-fir-experimental-checkers flag and all global/raw warnings; no clean negative/configuration result is claimed or repaired by this partition. Historical failed receipts stay immutable and do not attest this new tuple."
+  },
+  "evidence_promotion": {
+    "implemented": false,
+    "tested": false,
+    "qualified": false,
+    "attempted": false
+  },
+  "source_only_selector_implementation": {
+    "trusted_harness_source_support": true,
+    "compiler_or_subgroup_execution_state": "not_run_in_this_worktree",
+    "fixture_controls": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureControls.kt",
+    "runner_adapter_scope": "Exactly 11 selection-only calls pass authoredCohort and ruleId; no lifecycle, admission, reservation, compiler flags or provider semantics changed.",
+    "missing_or_unknown_original_rule_id_policy": "Fail closed; never fall back to selecting all original42 or silently omit an unknown original ID.",
+    "legacy_original_all_and_authored_cohorts": "preserved",
+    "kotlin_cohort_control_tests": "authored_source_not_executed_in_this_worktree",
+    "limitations": "Source implementation and static Python contract checks are not compiler diagnostics, observed successful controls, coverage, qualification or permission. Each later subgroup still needs its own reviewed source freeze and owner-approved bounded invocation."
+  }
+}

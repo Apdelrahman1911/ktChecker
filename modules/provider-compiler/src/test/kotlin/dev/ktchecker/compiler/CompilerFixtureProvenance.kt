@@ -31,6 +31,7 @@ internal class CompilerFixtureProvenance private constructor(
     private val registryResource: Capture,
     private val registryResourceUrl: String,
     private val nativeImage: NativeImage,
+    private val includeNullabilitySourcePlan: Boolean,
 ) {
     private data class Capture(val original: Path, val preserved: Path, val digest: String, val size: Long)
     private data class Artifact(val location: Path, val kind: String, val roles: List<String>, val files: List<Capture>, val digest: String)
@@ -81,7 +82,11 @@ internal class CompilerFixtureProvenance private constructor(
             "Executed class locations and exact installed native resources are checked before every compiler job and at run end; source drift is checked at run end.",
             "Every actual launched outcome must independently confirm exec and match the START native identity; a fork-child exit, inspector availability, or matching installed bytes alone is not execution proof.",
             "Synthetic compiler-provider results establish neither independent qualification nor current-code results after later edits."),
-    )
+    ) + if (includeNullabilitySourcePlan) mapOf(
+        "conditional_nullability_source_v1_capture" to true,
+        "exact_additional_fixture_paths" to CompilerFixtureNullabilityPlan.START_CAPTURE_PATHS,
+        "conditional_source_capture_is_not_execution_authority" to true,
+    ) else emptyMap()
 
     fun implementationReferences(): List<Map<String, String>> = sources.filter {
         it.original.startsWith(repository.resolve("modules/provider-compiler/src/main/kotlin")) &&
@@ -109,7 +114,7 @@ internal class CompilerFixtureProvenance private constructor(
 
     fun drift(): List<Map<String, String>> {
         val drift = artifactDrift().toMutableList()
-        val currentPaths = runCatching { sourceFiles(repository) }.getOrElse {
+        val currentPaths = runCatching { sourceFiles(repository, includeNullabilitySourcePlan) }.getOrElse {
             drift += mapOf("kind" to "source_inventory_unreadable_or_unsafe", "path" to "authored-source-inputs")
             emptyList()
         }
@@ -177,8 +182,14 @@ internal class CompilerFixtureProvenance private constructor(
             "build.gradle.kts", "settings.gradle.kts", "gradle.properties",
             "gradle/wrapper/gradle-wrapper.properties")
 
+        /** Preserve the original signature/default behavior for ordinary, probe, supplemental and warm callers. */
         fun capture(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,
-            checkpoint: () -> Unit = {}): CompilerFixtureProvenance {
+            checkpoint: () -> Unit = {}): CompilerFixtureProvenance =
+            capture(repositoryPath, runPath, evidence, includeNullabilitySourcePlan = false, checkpoint = checkpoint)
+
+        /** Only the trusted nullability selector requests its exact36 additional source-v1 files. */
+        fun capture(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,
+            includeNullabilitySourcePlan: Boolean, checkpoint: () -> Unit = {}): CompilerFixtureProvenance {
             val suppliedRepository = repositoryPath.toAbsolutePath().normalize()
             val repository = canonicalOuterDirectory(suppliedRepository)
             val suppliedRun = runPath.toAbsolutePath().normalize()
@@ -200,7 +211,7 @@ internal class CompilerFixtureProvenance private constructor(
                 checkpoint()
                 return Capture(original, destination, digest, bytes.size.toLong())
             }
-            val sources = sourceFiles(repository).map { original -> preserve(original,
+            val sources = sourceFiles(repository, includeNullabilitySourcePlan).map { original -> preserve(original,
                 runRoot.resolve("captured-sources").resolve(repository.relativize(original)), MAX_SOURCE_BYTES) }
             // Bind the internal runtime loader's actual source, never a context-classloader first match.
             val supervisorClass = Class.forName("dev.ktchecker.providers.runtime.OwnedProcessSupervisor", false,
@@ -220,6 +231,10 @@ internal class CompilerFixtureProvenance private constructor(
                 "host_json_runtime" to kotlinx.serialization.json.Json::class.java,
                 "host_serialization_runtime" to kotlinx.serialization.KSerializer::class.java,
                 "host_kotlin_runtime" to Unit::class.java)
+            if (includeNullabilitySourcePlan) {
+                roleClasses["fixture_nullability_plan"] = CompilerFixtureNullabilityPlan::class.java
+                roleClasses["fixture_nullability_observation"] = CompilerFixtureNullabilityObservation::class.java
+            }
             val locations = roleClasses.entries.groupBy { entry ->
                 val url = checkNotNull(entry.value.protectionDomain.codeSource?.location) { "Missing actual class code source" }
                 require(url.protocol == "file") { "Unsupported class code-source protocol" }
@@ -310,7 +325,7 @@ internal class CompilerFixtureProvenance private constructor(
             checkpoint()
             val registryResource = Capture(registryPath, registryPath, Digests.sha256(registryBytes).removePrefix("sha256:"), registryBytes.size.toLong())
             return CompilerFixtureProvenance(repository, runRoot, capturedAt, sources, artifacts, anchors, strictUtf8(registryBytes),
-                registryResource, checkNotNull(CompilerRuleRegistry::class.java.getResource("/compiler-rule-map.json")).toString(), nativeImage)
+                registryResource, checkNotNull(CompilerRuleRegistry::class.java.getResource("/compiler-rule-map.json")).toString(), nativeImage, includeNullabilitySourcePlan)
         }
 
         internal fun supervisorIdentityFields(identity: OwnedSupervisorIdentity): Map<String, String> = mapOf(
@@ -321,9 +336,17 @@ internal class CompilerFixtureProvenance private constructor(
         private fun registryBytes(): ByteArray = checkNotNull(CompilerRuleRegistry::class.java.getResourceAsStream("/compiler-rule-map.json"))
             .use { it.readNBytes(MAX_SOURCE_BYTES + 1) }.also { require(it.size <= MAX_SOURCE_BYTES) }
 
-        private fun sourceFiles(repository: Path): List<Path> = (SOURCE_ROOTS.flatMap { root -> regularFiles(repository.resolve(root)) } +
-            SOURCE_FILES.map { repository.resolve(it).also { path -> require(Files.isRegularFile(path, NOFOLLOW_LINKS)) } })
-            .distinct().sorted().also { require(it.size <= MAX_FILES) }
+        private fun sourceFiles(repository: Path, includeNullabilitySourcePlan: Boolean = false): List<Path> =
+            (SOURCE_ROOTS.flatMap { root -> regularFiles(repository.resolve(root)) } +
+                SOURCE_FILES.map { repository.resolve(it).also { path -> require(Files.isRegularFile(path, NOFOLLOW_LINKS)) } } +
+                (if (includeNullabilitySourcePlan) CompilerFixtureNullabilityPlan.START_CAPTURE_PATHS.map {
+                    repository.resolve("providers/compiler-fixtures").resolve(CompilerSnapshot.relative(it)).also { path ->
+                        require(Files.isRegularFile(path, NOFOLLOW_LINKS) && path.toRealPath() == path.toAbsolutePath().normalize()) {
+                            "Unsafe exact additional nullability source-v1 capture path"
+                        }
+                    }
+                } else emptyList()))
+                .distinct().sorted().also { require(it.size <= MAX_FILES) }
 
         private fun artifactFiles(location: Path): List<Path> = (if (Files.isDirectory(location, NOFOLLOW_LINKS)) regularFiles(location) else
             listOf(location).also { require(Files.isRegularFile(location, NOFOLLOW_LINKS) && location.toString().endsWith(".jar")) })

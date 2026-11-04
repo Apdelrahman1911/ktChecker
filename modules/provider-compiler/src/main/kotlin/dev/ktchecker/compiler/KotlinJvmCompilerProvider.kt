@@ -42,11 +42,16 @@ class KotlinJvmToolchain(javaExecutable: Path, compilerClasspath: List<ArtifactI
     fun installationView(): KotlinJvmInstallationView = KotlinJvmInstallationView(digest, runtimeImage.view(),
         compilerClasspath.mapIndexed { index, artifact -> InstalledCompilerJarView(index, artifact, compilerSizes[index]) })
 
-    fun verify(checkpoint: () -> Unit = {}) {
+    fun verify(checkpoint: () -> Unit = {}) = verifyObserved(checkpoint, null)
+
+    /** Private phase collection does not replace any byte/size check or authority checkpoint. */
+    internal fun verifyObserved(checkpoint: () -> Unit, timings: CompilerPhaseTimings?) {
         checkpoint()
-        runtimeImage.verify(checkpoint)
-        CompilerSnapshot.classpath(compilerClasspath, checkpoint)
-        require(compilerClasspath.map { Files.size(Path.of(it.path)) } == compilerSizes) { "Installed compiler JAR sizes changed" }
+        timings.observe(CompilerPhase.JDK_RUNTIME_VERIFICATION) { runtimeImage.verify(checkpoint) }
+        timings.observe(CompilerPhase.COMPILER_CLASSPATH_VERIFICATION) {
+            CompilerSnapshot.classpath(compilerClasspath, checkpoint)
+            require(compilerClasspath.map { Files.size(Path.of(it.path)) } == compilerSizes) { "Installed compiler JAR sizes changed" }
+        }
     }
 }
 
@@ -136,8 +141,21 @@ class KotlinJvmCompilerProvider(
             toolchain.executableDigest, timeoutMillis, maxOutputBytes)
     }
 
-    override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
+    override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult =
+        analyzeWithTimings(input, cancellation, null)
+
+    /** Trusted test-host observations only; neither input JSON nor AnalysisMetrics enables them. */
+    internal fun analyzeObserved(input: AnalysisInput, cancellation: CancellationToken,
+        timings: CompilerPhaseTimings): ProviderResult = analyzeWithTimings(input, cancellation, timings)
+
+    private fun analyzeWithTimings(input: AnalysisInput, cancellation: CancellationToken,
+        timings: CompilerPhaseTimings?): ProviderResult {
         val started = System.nanoTime()
+        return timings.observe(CompilerPhase.PROVIDER_CALL) { analyzeImpl(input, cancellation, started, timings) }
+    }
+
+    private fun analyzeImpl(input: AnalysisInput, cancellation: CancellationToken, started: Long,
+        timings: CompilerPhaseTimings?): ProviderResult {
         val request = freeze(input)
         val required = request.requiredRuleIds.distinct()
         fun unavailable(reason: String, status: String = "unavailable"): ProviderResult = ProviderResult(id, status,
@@ -178,13 +196,18 @@ class KotlinJvmCompilerProvider(
         }
         val sources: List<SealedCompilerSource>
         try {
-            checkpoint()
-            permit.verifySnapshot()
-            if (modelPermit == null) toolchain.verify(checkpoint) else modelPermit.verify(this, request, checkpoint)
-            CompilerSnapshot.classpath(request.context.classpath, checkpoint)
-            require((toolchain.compilerClasspath + request.context.classpath).sumOf { Files.size(Path.of(it.path)) } <=
-                CompilerSnapshot.MAX_TOTAL_ARTIFACT_BYTES) { "Combined compiler/dependency artifacts exceed job byte bound" }
-            sources = CompilerSnapshot.read(request, checkpoint)
+            sources = timings.observe(CompilerPhase.INITIAL_VERIFICATION) {
+                checkpoint()
+                timings.observe(CompilerPhase.SNAPSHOT_VERIFICATION) { permit.verifySnapshot() }
+                if (modelPermit == null) toolchain.verifyObserved(checkpoint, timings) else
+                    timings.observe(CompilerPhase.MODEL_BINDING_VERIFICATION) { modelPermit.verify(this, request, checkpoint) }
+                timings.observe(CompilerPhase.DEPENDENCY_CLASSPATH_VERIFICATION) {
+                    CompilerSnapshot.classpath(request.context.classpath, checkpoint)
+                }
+                require((toolchain.compilerClasspath + request.context.classpath).sumOf { Files.size(Path.of(it.path)) } <=
+                    CompilerSnapshot.MAX_TOTAL_ARTIFACT_BYTES) { "Combined compiler/dependency artifacts exceed job byte bound" }
+                timings.observe(CompilerPhase.SEALED_SOURCE_READING) { CompilerSnapshot.read(request, checkpoint) }
+            }
         } catch (_: CancellationException) {
             return unavailable("cancelled_during_compiler_preparation", "cancelled")
         } catch (problem: ExecutionProblem) {
@@ -197,38 +220,61 @@ class KotlinJvmCompilerProvider(
             return unavailable("sealed_input_or_toolchain_verification_failed")
         }
         val wrappedPermit = ExecutionPermit(execution, permit.snapshotId, permit.materializedRoot, permit.expectedAnalysisKey, {
-            checkpoint()
-            permit.verifySnapshot()
-            // The runner invokes this both before and after the child. Preserve
-            // full-runtime drift codes without discarding actual exit/output.
-            try {
-                if (modelPermit == null) toolchain.verify(checkpoint) else modelPermit.verify(this, request, checkpoint)
-            } catch (problem: KotlinJvmRuntimeException) {
-                throw ExecutionProblem(problem.code, problem.message ?: "Selected Java runtime verification failed")
-            } catch (problem: KotlinJvmModelException) {
-                throw ExecutionProblem(problem.code, problem.message ?: "Live model attempt verification failed")
-            }
-            CompilerSnapshot.classpath(request.context.classpath, checkpoint)
-        }, { output ->
-            checkpoint()
-            permit.prepareOutput(output)
-            Files.createDirectories(output.resolve("classes"))
-            sources.forEach { source ->
+            timings.observe(CompilerPhase.WRAPPED_PERMIT_VERIFICATION) {
                 checkpoint()
-                val destination = output.resolve("sources").resolve(source.relativePath)
-                Files.createDirectories(destination.parent)
-                Files.writeString(destination, source.text, Charsets.UTF_8, StandardOpenOption.CREATE_NEW,
-                    StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)
-                check(fileDigest(destination) == source.digest) { "Source copy differs from sealed UTF-8 bytes" }
+                timings.observe(CompilerPhase.SNAPSHOT_VERIFICATION) { permit.verifySnapshot() }
+                // The runner invokes this both before and after the child. Preserve
+                // full-runtime drift codes without discarding actual exit/output.
+                try {
+                    if (modelPermit == null) toolchain.verifyObserved(checkpoint, timings) else
+                        timings.observe(CompilerPhase.MODEL_BINDING_VERIFICATION) { modelPermit.verify(this, request, checkpoint) }
+                } catch (problem: KotlinJvmRuntimeException) {
+                    throw ExecutionProblem(problem.code, problem.message ?: "Selected Java runtime verification failed")
+                } catch (problem: KotlinJvmModelException) {
+                    throw ExecutionProblem(problem.code, problem.message ?: "Live model attempt verification failed")
+                }
+                timings.observe(CompilerPhase.DEPENDENCY_CLASSPATH_VERIFICATION) {
+                    CompilerSnapshot.classpath(request.context.classpath, checkpoint)
+                }
             }
-            copyArtifacts(toolchain.compilerClasspath, output.resolve("compiler"), checkpoint)
-            copyArtifacts(request.context.classpath, output.resolve("dependencies"), checkpoint)
+        }, { output ->
+            timings.observe(CompilerPhase.OUTPUT_PREPARATION) {
+                checkpoint()
+                timings.observe(CompilerPhase.OWNER_OUTPUT_PREPARATION) { permit.prepareOutput(output) }
+                Files.createDirectories(output.resolve("classes"))
+                timings.observe(CompilerPhase.SOURCE_COPYING) {
+                    sources.forEach { source ->
+                        checkpoint()
+                        val destination = output.resolve("sources").resolve(source.relativePath)
+                        Files.createDirectories(destination.parent)
+                        Files.writeString(destination, source.text, Charsets.UTF_8, StandardOpenOption.CREATE_NEW,
+                            StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)
+                        check(fileDigest(destination) == source.digest) { "Source copy differs from sealed UTF-8 bytes" }
+                    }
+                }
+                timings.observe(CompilerPhase.COMPILER_ARTIFACT_COPYING) {
+                    copyArtifacts(toolchain.compilerClasspath, output.resolve("compiler"), checkpoint)
+                }
+                timings.observe(CompilerPhase.DEPENDENCY_ARTIFACT_COPYING) {
+                    copyArtifacts(request.context.classpath, output.resolve("dependencies"), checkpoint)
+                }
+            }
         })
-        val ran = runner.run(request, ExactExecutionAuthority(wrappedPermit), boundedCancellation)
+        val ran = timings.observe(CompilerPhase.RUNNER_CALL) {
+            runner.run(request, ExactExecutionAuthority(wrappedPermit), boundedCancellation)
+        }
         val outcome = if (System.nanoTime() >= deadline && !cancellation.isCancelled()) ran.copy(
             status = "failed", reasons = (ran.reasons.filterNot { it == "execution_cancelled" } + "compiler_total_timeout").distinct(),
             cancelled = false, timedOut = true) else ran
-        executionObserver(request, outcome)
+        timings.observe(CompilerPhase.EXECUTION_OBSERVER) { executionObserver(request, outcome) }
+        return timings.observe(CompilerPhase.RESULT_NORMALIZATION) {
+            normalize(request, required, sources, outcome, cancellation, started, modelPermit)
+        }
+    }
+
+    private fun normalize(request: AnalysisInput, required: List<String>, sources: List<SealedCompilerSource>,
+        outcome: ProcessOutcome, cancellation: CancellationToken, started: Long,
+        modelPermit: KotlinJvmModelPermit?): ProviderResult {
         val sourcePaths = outcome.outputDirectory?.let { output -> sources.associate { source ->
             output.resolve("sources").resolve(source.relativePath) to
                 CompilerSourceIdentity(source.relativePath, source.digest, source.text)

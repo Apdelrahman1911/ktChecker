@@ -1,0 +1,465 @@
+{
+  "schema_version": 1,
+  "kind": "pinned_public_source_docs_API_and_tagged_marker_evidence_not_execution_receipts",
+  "kotlin_version": "2.4.21",
+  "source_tag": "v2.4.21",
+  "accessed_utc_date": "2026-11-04",
+  "reused_existing_public_source_cache_without_network_download": true,
+  "source_archive": {
+    "url": "https://codeload.github.com/JetBrains/kotlin/tar.gz/refs/tags/v2.4.21",
+    "bytes": 48793351,
+    "sha256": "6ee2c2026ab8fdde96e6f14b84262dfa3ac22ea7510e82b42489d846735b9202",
+    "whole_existing_archive_rehashed_before_source_read": true,
+    "archive_not_copied_or_modified": true
+  },
+  "full_pinned_source_files_are_review_references_not_repo_integration_delta": true,
+  "upstream_license": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/license/LICENSE.txt",
+  "records": [
+    {
+      "rule_id": "ktc.compiler.common.unsafe_implicit_invoke_call",
+      "upstream_id": "UNSAFE_IMPLICIT_INVOKE_CALL",
+      "factory": {
+        "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L919",
+        "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+        "line": 919,
+        "quote": "    val UNSAFE_IMPLICIT_INVOKE_CALL: KtDiagnosticFactory1<ConeKotlinType> = KtDiagnosticFactory1(\"UNSAFE_IMPLICIT_INVOKE_CALL\", ERROR, SourceElementPositioningStrategies.REFERENCE_BY_QUALIFIED, PsiElement::class, getRendererFactory())",
+        "declared_severity": "ERROR",
+        "feature_factory": false
+      },
+      "renderer": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L3336",
+        "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+        "start_line": 3336,
+        "end_line": 3337,
+        "quote": "            UNSAFE_IMPLICIT_INVOKE_CALL,\n            \"Reference has a nullable type ''{0}''. Use explicit ''?.invoke'' to make a function-like call instead.\","
+      },
+      "tagged_seed": {
+        "path": "compiler/testData/diagnostics/tests/extensions/kt1875.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/tests/extensions/kt1875.kt#L13",
+        "sha256": "ee9d61a8bbdfa22ba5c5567d517781dfe00bce17dcf7c8d52125ba1be76e472b",
+        "line": 13,
+        "quote": "    t.<!UNSAFE_IMPLICIT_INVOKE_CALL!>f<!>(1) //unsafe call error",
+        "harness_directives": [
+          "// RUN_PIPELINE_TILL: FRONTEND"
+        ],
+        "not_a_replayed_full_upstream_suite": true
+      },
+      "predicate_api": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt#L724",
+        "sha256": "ad11eaac89712806f4f7e4ad3cad5c6d64ac3987b8e7c3b5529634bb106c69c7",
+        "start_line": 724,
+        "end_line": 725,
+        "quote": "    if (candidate.callInfo.isImplicitInvoke) {\n        return FirErrors.UNSAFE_IMPLICIT_INVOKE_CALL.createOn(source, rootCause.actualType, session)"
+      },
+      "authored_sources_are_independent_adaptations": true,
+      "actual_compiler_execution_observed": false
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_infix_call",
+      "upstream_id": "UNSAFE_INFIX_CALL",
+      "factory": {
+        "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L920",
+        "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+        "line": 920,
+        "quote": "    val UNSAFE_INFIX_CALL: KtDiagnosticFactory4<ConeKotlinType, FirExpression, String, FirExpression?> = KtDiagnosticFactory4(\"UNSAFE_INFIX_CALL\", ERROR, SourceElementPositioningStrategies.REFERENCE_BY_QUALIFIED, KtExpression::class, getRendererFactory())",
+        "declared_severity": "ERROR",
+        "feature_factory": false
+      },
+      "renderer": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L3341",
+        "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+        "start_line": 3341,
+        "end_line": 3342,
+        "quote": "            UNSAFE_INFIX_CALL,\n            \"Infix call is prohibited on a nullable receiver of type ''{0}''. Use ''?.''-qualified call instead.\","
+      },
+      "tagged_seed": {
+        "path": "compiler/testData/diagnostics/tests/nullabilityAndSmartCasts/InfixCallNullability.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/tests/nullabilityAndSmartCasts/InfixCallNullability.kt#L21",
+        "sha256": "3fb61cf410d3ba47aa37e78715659804063cb2ed73d6f3a6558d4f2c6ede1249",
+        "line": 21,
+        "quote": "    a <!UNSAFE_INFIX_CALL!>plus<!> 1",
+        "harness_directives": [
+          "// RUN_PIPELINE_TILL: FRONTEND"
+        ],
+        "not_a_replayed_full_upstream_suite": true
+      },
+      "predicate_api": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt#L732",
+        "sha256": "ad11eaac89712806f4f7e4ad3cad5c6d64ac3987b8e7c3b5529634bb106c69c7",
+        "start_line": 732,
+        "end_line": 752,
+        "quote": "    if (receiverExpression != null && singleArgument != null &&\n        (source?.elementType == KtNodeTypes.OPERATION_REFERENCE || source?.elementType == KtNodeTypes.BINARY_EXPRESSION) &&\n        (candidateFunctionSymbol?.isOperator == true || candidateFunctionSymbol?.isInfix == true)\n    ) {\n        // For augmented assignment operations (e.g., `a += b`), the source is the entire binary expression (BINARY_EXPRESSION).\n        // TODO, KT-59809: No need to check for source.elementType == BINARY_EXPRESSION if we use operator as callee reference source\n        //  (see FirExpressionsResolveTransformer.transformAssignmentOperatorStatement)\n        val operationSource = if (source.elementType == KtNodeTypes.BINARY_EXPRESSION) {\n            source.getChild(KtNodeTypes.OPERATION_REFERENCE)\n        } else {\n            source\n        }\n        return if (operationSource?.getChild(KtTokens.IDENTIFIER) != null) {\n            FirErrors.UNSAFE_INFIX_CALL.createOn(\n                source,\n                rootCause.actualType,\n                receiverExpression,\n                candidateFunctionName!!.asString(),\n                singleArgument.takeIf { it.source != null },\n                session,\n            )"
+      },
+      "authored_sources_are_independent_adaptations": true,
+      "actual_compiler_execution_observed": false
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_operator_call",
+      "upstream_id": "UNSAFE_OPERATOR_CALL",
+      "factory": {
+        "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L921",
+        "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+        "line": 921,
+        "quote": "    val UNSAFE_OPERATOR_CALL: KtDiagnosticFactory4<ConeKotlinType, FirExpression, String, FirExpression?> = KtDiagnosticFactory4(\"UNSAFE_OPERATOR_CALL\", ERROR, SourceElementPositioningStrategies.REFERENCE_BY_QUALIFIED, KtExpression::class, getRendererFactory())",
+        "declared_severity": "ERROR",
+        "feature_factory": false
+      },
+      "renderer": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L3349",
+        "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+        "start_line": 3349,
+        "end_line": 3350,
+        "quote": "            UNSAFE_OPERATOR_CALL,\n            \"Operator call is prohibited on a nullable receiver of type ''{0}''. Use ''?.''-qualified call instead.\","
+      },
+      "tagged_seed": {
+        "path": "compiler/testData/diagnostics/tests/nullabilityAndSmartCasts/InfixCallNullability.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/tests/nullabilityAndSmartCasts/InfixCallNullability.kt#L22",
+        "sha256": "3fb61cf410d3ba47aa37e78715659804063cb2ed73d6f3a6558d4f2c6ede1249",
+        "line": 22,
+        "quote": "    a <!UNSAFE_OPERATOR_CALL!>+<!> 1",
+        "harness_directives": [
+          "// RUN_PIPELINE_TILL: FRONTEND"
+        ],
+        "not_a_replayed_full_upstream_suite": true
+      },
+      "predicate_api": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt#L732",
+        "sha256": "ad11eaac89712806f4f7e4ad3cad5c6d64ac3987b8e7c3b5529634bb106c69c7",
+        "start_line": 732,
+        "end_line": 762,
+        "quote": "    if (receiverExpression != null && singleArgument != null &&\n        (source?.elementType == KtNodeTypes.OPERATION_REFERENCE || source?.elementType == KtNodeTypes.BINARY_EXPRESSION) &&\n        (candidateFunctionSymbol?.isOperator == true || candidateFunctionSymbol?.isInfix == true)\n    ) {\n        // For augmented assignment operations (e.g., `a += b`), the source is the entire binary expression (BINARY_EXPRESSION).\n        // TODO, KT-59809: No need to check for source.elementType == BINARY_EXPRESSION if we use operator as callee reference source\n        //  (see FirExpressionsResolveTransformer.transformAssignmentOperatorStatement)\n        val operationSource = if (source.elementType == KtNodeTypes.BINARY_EXPRESSION) {\n            source.getChild(KtNodeTypes.OPERATION_REFERENCE)\n        } else {\n            source\n        }\n        return if (operationSource?.getChild(KtTokens.IDENTIFIER) != null) {\n            FirErrors.UNSAFE_INFIX_CALL.createOn(\n                source,\n                rootCause.actualType,\n                receiverExpression,\n                candidateFunctionName!!.asString(),\n                singleArgument.takeIf { it.source != null },\n                session,\n            )\n        } else {\n            FirErrors.UNSAFE_OPERATOR_CALL.createOn(\n                source,\n                rootCause.actualType,\n                receiverExpression,\n                candidateFunctionName!!.asString(),\n                singleArgument.takeIf { it.source != null },\n                session,\n            )\n        }"
+      },
+      "authored_sources_are_independent_adaptations": true,
+      "actual_compiler_execution_observed": false,
+      "additional_tagged_seed": {
+        "path": "compiler/testData/diagnostics/tests/nullabilityAndSmartCasts/augmentedAssignment.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/tests/nullabilityAndSmartCasts/augmentedAssignment.kt#L8",
+        "sha256": "1fd4c142ac2d8369beb25c5682bfcca66f87bfc86c7af7fb8a2f9e9e96e56147",
+        "line": 8,
+        "quote": "    a <!UNSAFE_OPERATOR_CALL!>+=<!> \"\"",
+        "not_a_current_execution_receipt": true
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_callable_reference",
+      "upstream_id": "UNSAFE_CALLABLE_REFERENCE",
+      "factory": {
+        "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L922",
+        "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+        "line": 922,
+        "quote": "    val UNSAFE_CALLABLE_REFERENCE: KtDiagnosticFactory1<ConeKotlinType> = KtDiagnosticFactory1(\"UNSAFE_CALLABLE_REFERENCE\", ERROR, SourceElementPositioningStrategies.DOT_BY_QUALIFIED, PsiElement::class, getRendererFactory())",
+        "declared_severity": "ERROR",
+        "feature_factory": false
+      },
+      "renderer": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L3357",
+        "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+        "start_line": 3357,
+        "end_line": 3358,
+        "quote": "            UNSAFE_CALLABLE_REFERENCE,\n            \"Bound callable reference cannot be created on nullable receiver of type ''{0}''.\","
+      },
+      "tagged_seed": {
+        "path": "compiler/testData/diagnostics/tests/problems/kt59574.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/tests/problems/kt59574.kt#L8",
+        "sha256": "09ab0c9714972be11daff91c31c3d987f564bdbc27b6121e5c38f3d01c9fd99f",
+        "line": 8,
+        "quote": "        y::<!UNSAFE_CALLABLE_REFERENCE!>compare<!>",
+        "harness_directives": [
+          "// RUN_PIPELINE_TILL: FRONTEND"
+        ],
+        "not_a_replayed_full_upstream_suite": true
+      },
+      "predicate_api": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt#L765",
+        "sha256": "ad11eaac89712806f4f7e4ad3cad5c6d64ac3987b8e7c3b5529634bb106c69c7",
+        "start_line": 765,
+        "end_line": 767,
+        "quote": "    return when {\n        candidate.callInfo.callSite is FirCallableReferenceAccess -> {\n            FirErrors.UNSAFE_CALLABLE_REFERENCE.createOn(qualifiedAccessSource ?: source, rootCause.actualType, session)"
+      },
+      "authored_sources_are_independent_adaptations": true,
+      "actual_compiler_execution_observed": false
+    },
+    {
+      "rule_id": "ktc.compiler.common.iterator_on_nullable",
+      "upstream_id": "ITERATOR_ON_NULLABLE",
+      "factory": {
+        "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L923",
+        "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+        "line": 923,
+        "quote": "    val ITERATOR_ON_NULLABLE: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"ITERATOR_ON_NULLABLE\", ERROR, SourceElementPositioningStrategies.DEFAULT, KtExpression::class, getRendererFactory())",
+        "declared_severity": "ERROR",
+        "feature_factory": false
+      },
+      "renderer": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L3362",
+        "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+        "start_line": 3362,
+        "end_line": 3363,
+        "quote": "            ITERATOR_ON_NULLABLE,\n            \"Non-nullable value required to call an 'iterator()' method in a for-loop.\","
+      },
+      "tagged_seed": {
+        "path": "compiler/testData/diagnostics/tests/controlStructures/forLoopWithNullableRange.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/tests/controlStructures/forLoopWithNullableRange.kt#L12",
+        "sha256": "2b0b17d0338245f034eb435995c38819637e93dbf54a0cafb08f0d118c48e32c",
+        "line": 12,
+        "quote": "  for (x in <!ITERATOR_ON_NULLABLE!>c<!>) {}",
+        "harness_directives": [
+          "// RUN_PIPELINE_TILL: FRONTEND"
+        ],
+        "not_a_replayed_full_upstream_suite": true
+      },
+      "predicate_api": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt#L53",
+        "sha256": "3edfd76af0912244460fff26d3744a55744098a2c2f0950052209ea4408bec2f",
+        "start_line": 53,
+        "end_line": 61,
+        "quote": "        val iteratorCall = iteratorDeclaration.initializer as FirFunctionCall\n        val source = iteratorCall.explicitReceiver?.source ?: iteratorCall.source\n        if (checkSpecialFunctionCall(\n                iteratorCall,\n                source,\n                ambiguityFactory = ITERATOR_AMBIGUITY,\n                missingFactory = ITERATOR_MISSING,\n                nullableReceiverFactory = ITERATOR_ON_NULLABLE\n            )"
+      },
+      "authored_sources_are_independent_adaptations": true,
+      "actual_compiler_execution_observed": false
+    },
+    {
+      "rule_id": "ktc.compiler.common.unexpected_safe_call",
+      "upstream_id": "UNEXPECTED_SAFE_CALL",
+      "factory": {
+        "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L925",
+        "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+        "line": 925,
+        "quote": "    val UNEXPECTED_SAFE_CALL: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"UNEXPECTED_SAFE_CALL\", ERROR, SourceElementPositioningStrategies.SAFE_ACCESS, PsiElement::class, getRendererFactory())",
+        "declared_severity": "ERROR",
+        "feature_factory": false
+      },
+      "renderer": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L3371",
+        "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+        "start_line": 3371,
+        "end_line": 3371,
+        "quote": "        map.put(UNEXPECTED_SAFE_CALL, \"Safe call is prohibited here.\")"
+      },
+      "tagged_seed": {
+        "path": "compiler/testData/diagnostics/tests/SafeCallOnSuperReceiver.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/tests/SafeCallOnSuperReceiver.kt#L10",
+        "sha256": "3298f57166dada505281602c7f03523b7a51af04595f6f7b735317c1355a7215",
+        "line": 10,
+        "quote": "        super<!UNEXPECTED_SAFE_CALL!>?.<!>f()",
+        "harness_directives": [
+          "// RUN_PIPELINE_TILL: FRONTEND"
+        ],
+        "not_a_replayed_full_upstream_suite": true
+      },
+      "predicate_api": {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirUnnecessarySafeCallChecker.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirUnnecessarySafeCallChecker.kt#L42",
+        "sha256": "418f8efdc8447e08880c53b8c7cf783e04cd315655067385e1946f68aeefa083",
+        "start_line": 42,
+        "end_line": 45,
+        "quote": "            reporter.reportOn(expression.source, FirErrors.UNEXPECTED_SAFE_CALL)\n            return\n        }\n        checkSafeCallReceiverType(receiverType, expression.source)"
+      },
+      "authored_sources_are_independent_adaptations": true,
+      "actual_compiler_execution_observed": false
+    }
+  ],
+  "API_scope_references": [
+    {
+      "path": "libraries/stdlib/src/kotlin/Annotations.kt",
+      "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/libraries/stdlib/src/kotlin/Annotations.kt#L126",
+      "sha256": "3809e147ba670c1e935d613ce69fa4918fb71717f8771fd7b593f5c8dfee3d7a",
+      "start_line": 126,
+      "end_line": 133,
+      "quote": "/**\n * Suppresses the given compilation warnings in the annotated element.\n * @property names Names of the compiler diagnostics to suppress.\n */\n@Target(CLASS, ANNOTATION_CLASS, TYPE_PARAMETER, PROPERTY, FIELD, LOCAL_VARIABLE, VALUE_PARAMETER,\n        CONSTRUCTOR, FUNCTION, PROPERTY_GETTER, PROPERTY_SETTER, TYPE, EXPRESSION, FILE, TYPEALIAS)\n@Retention(SOURCE)\npublic annotation class Suppress(vararg val names: String)",
+      "purpose": "Suppress explicitly documents compilation warnings, not reliable hard-error suppression."
+    },
+    {
+      "path": "core/language.version-settings/src/org/jetbrains/kotlin/config/LanguageVersionSettings.kt",
+      "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/core/language.version-settings/src/org/jetbrains/kotlin/config/LanguageVersionSettings.kt#L794",
+      "sha256": "10b6c246d11cfc1767d05857f4af120dc2d1a2d5890ceba666dbdc5a0cd6a888",
+      "start_line": 794,
+      "end_line": 801,
+      "quote": "        @JvmField\n        val FIRST_SUPPORTED = KOTLIN_2_0\n\n        @JvmField\n        val FIRST_NON_DEPRECATED = KOTLIN_2_2\n\n        @JvmField\n        val LATEST_STABLE = KOTLIN_2_4",
+      "purpose": "Pinned latest stable language is 2.4; no preview/feature flags are selected."
+    },
+    {
+      "path": "core/language.version-settings/src/org/jetbrains/kotlin/config/LanguageVersionSettings.kt",
+      "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/core/language.version-settings/src/org/jetbrains/kotlin/config/LanguageVersionSettings.kt#L891",
+      "sha256": "10b6c246d11cfc1767d05857f4af120dc2d1a2d5890ceba666dbdc5a0cd6a888",
+      "start_line": 891,
+      "end_line": 894,
+      "quote": "    companion object {\n        @JvmField\n        val DEFAULT = LanguageVersionSettingsImpl(LanguageVersion.LATEST_STABLE, ApiVersion.LATEST_STABLE)\n    }",
+      "purpose": "Default settings use latest stable language/API."
+    },
+    {
+      "path": "core/language.version-settings/src/org/jetbrains/kotlin/config/ApiVersion.kt",
+      "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/core/language.version-settings/src/org/jetbrains/kotlin/config/ApiVersion.kt#L78",
+      "sha256": "6d5c582ea2f6274404481e8231de62cc3ec6585b6e1ec05398750e0c11fe717d",
+      "start_line": 78,
+      "end_line": 91,
+      "quote": "        @JvmField\n        val KOTLIN_2_4 = createByLanguageVersion(LanguageVersion.KOTLIN_2_4)\n\n        @JvmField\n        val KOTLIN_2_5 = createByLanguageVersion(LanguageVersion.KOTLIN_2_5)\n\n        @JvmField\n        val KOTLIN_2_6 = createByLanguageVersion(LanguageVersion.KOTLIN_2_6)\n\n        @JvmField\n        val LATEST: ApiVersion = createByLanguageVersion(LanguageVersion.entries.last())\n\n        @JvmField\n        val LATEST_STABLE: ApiVersion = createByLanguageVersion(LanguageVersion.LATEST_STABLE)",
+      "purpose": "API2.4 exists and latest stable API derives from latest stable language."
+    },
+    {
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+      "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L1030",
+      "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+      "start_line": 1030,
+      "end_line": 1034,
+      "quote": "        map.put(\n            ERROR_SUPPRESSION,\n            \"Suppression of error ''{0}'' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue\",\n            TO_STRING\n        )",
+      "purpose": "Error suppression warning is UNSPECIFIED and WILL NOT BE PRESERVED."
+    },
+    {
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt",
+      "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt#L129",
+      "sha256": "3edfd76af0912244460fff26d3744a55744098a2c2f0950052209ea4408bec2f",
+      "start_line": 129,
+      "end_line": 151,
+      "quote": "                    }\n                    is ConeInapplicableCandidateError -> {\n                        if (nullableReceiverFactory != null || noneApplicableFactory != null) {\n                            diagnostic.candidate.diagnostics.filter { it.applicability == diagnostic.applicability }.forEach {\n                                when (it) {\n                                    is InapplicableNullableReceiver -> {\n                                        if (nullableReceiverFactory != null) {\n                                            reporter.reportOn(\n                                                reportSource, nullableReceiverFactory\n                                            )\n                                        } else {\n                                            reporter.reportOn(\n                                                reportSource, noneApplicableFactory!!, listOf(diagnostic.candidate.symbol)\n                                            )\n                                        }\n                                        return true\n                                    }\n                                    is OperatorCallOfNonOperatorFunction -> {\n                                        val symbol = it.function\n                                        reporter.reportOn(\n                                            reportSource, OPERATOR_MODIFIER_REQUIRED, symbol,\n                                        )\n                                    }",
+      "purpose": "Only the inapplicable nullable receiver diagnostic branch gets the iterator nullable factory; nullable-receiver operator extensions can be applicable."
+    }
+  ],
+  "frozen_review_reference_files": [
+    {
+      "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+      "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+      "bytes": 228957,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirCallableReferenceChecker.kt",
+      "sha256": "2a530ec5994562bc0269324934e20047564ed8fb1c51f1f2dc6c19db4f0f23d7",
+      "bytes": 4454,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt",
+      "sha256": "3edfd76af0912244460fff26d3744a55744098a2c2f0950052209ea4408bec2f",
+      "bytes": 8932,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirUnnecessarySafeCallChecker.kt",
+      "sha256": "418f8efdc8447e08880c53b8c7cf783e04cd315655067385e1946f68aeefa083",
+      "bytes": 2144,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/collectors/components/ErrorNodeDiagnosticCollectorComponent.kt",
+      "sha256": "a8d8c158c8d59a7d1ffdc70c88f966ab77a3c859e56922e29c2d4690de3fee34",
+      "bytes": 12124,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+      "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+      "bytes": 249261,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt",
+      "sha256": "ad11eaac89712806f4f7e4ad3cad5c6d64ac3987b8e7c3b5529634bb106c69c7",
+      "bytes": 58909,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/testData/diagnostics/tests/SafeCallOnSuperReceiver.kt",
+      "sha256": "3298f57166dada505281602c7f03523b7a51af04595f6f7b735317c1355a7215",
+      "bytes": 301,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/testData/diagnostics/tests/controlStructures/forLoopWithNullableRange.kt",
+      "sha256": "2b0b17d0338245f034eb435995c38819637e93dbf54a0cafb08f0d118c48e32c",
+      "bytes": 463,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/testData/diagnostics/tests/extensions/kt1875.kt",
+      "sha256": "ee9d61a8bbdfa22ba5c5567d517781dfe00bce17dcf7c8d52125ba1be76e472b",
+      "bytes": 697,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/testData/diagnostics/tests/nullabilityAndSmartCasts/InfixCallNullability.kt",
+      "sha256": "3fb61cf410d3ba47aa37e78715659804063cb2ed73d6f3a6558d4f2c6ede1249",
+      "bytes": 1198,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/testData/diagnostics/tests/nullabilityAndSmartCasts/augmentedAssignment.kt",
+      "sha256": "1fd4c142ac2d8369beb25c5682bfcca66f87bfc86c7af7fb8a2f9e9e96e56147",
+      "bytes": 477,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "compiler/testData/diagnostics/tests/problems/kt59574.kt",
+      "sha256": "09ab0c9714972be11daff91c31c3d987f564bdbc27b6121e5c38f3d01c9fd99f",
+      "bytes": 488,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "core/language.version-settings/src/org/jetbrains/kotlin/config/ApiVersion.kt",
+      "sha256": "6d5c582ea2f6274404481e8231de62cc3ec6585b6e1ec05398750e0c11fe717d",
+      "bytes": 3530,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "core/language.version-settings/src/org/jetbrains/kotlin/config/LanguageVersionSettings.kt",
+      "sha256": "10b6c246d11cfc1767d05857f4af120dc2d1a2d5890ceba666dbdc5a0cd6a888",
+      "bytes": 59910,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "derived-compiler-ledger.json",
+      "sha256": "a056de250bdd987c2fb83f3faef57fb5bc2330eccbdf6a3d0f484e7e91a4f4a2",
+      "bytes": 858558,
+      "origin": "cached_derived_source_ledger",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "libraries/stdlib/src/kotlin/Annotations.kt",
+      "sha256": "3809e147ba670c1e935d613ce69fa4918fb71717f8771fd7b593f5c8dfee3d7a",
+      "bytes": 9251,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    },
+    {
+      "path": "license/LICENSE.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "origin": "hash_verified_existing_v2.4.21_tagged_source_archive",
+      "not_an_integration_delta": true
+    }
+  ],
+  "factory_and_marker_evidence_does_not_establish_actual_K2_or_backend_execution": true,
+  "no_gradle_jvm_compiler_native_provider_execution": true
+}

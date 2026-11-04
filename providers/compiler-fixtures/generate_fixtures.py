@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Original synthetic compiler inputs, not executed proof or upstream conformance."""
 from pathlib import Path
+import hashlib
 import json
-from cohort_expansion import COHORTS, EXPANSION_CASES, PLANNED_KMP_CASES
+from cohort_expansion import COHORTS, EXPANSION_CASES, PLANNED_KMP_CASES, TYPE_BOUNDARY_INPUTS
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'providers/compiler-fixtures'
@@ -52,7 +53,7 @@ CASES = {
     'JVM_RECORD_NOT_VAL_PARAMETER': ('@JvmRecord data class Record(var value: Int)', '@JvmRecord data class Record(val value: Int)'),
     'FIELD_IN_JVM_RECORD': ('@JvmRecord data class Record(val value: Int) { val extra = 1 }', '@JvmRecord data class Record(val value: Int) { val extra get() = 1 }'),
 }
-assert len(CASES) == 42 and len(EXPANSION_CASES) == 50 and len(PLANNED_KMP_CASES) == 16
+assert len(CASES) == 42 and len(EXPANSION_CASES) == 56 and len(PLANNED_KMP_CASES) == 16
 assert not CASES.keys() & EXPANSION_CASES.keys()
 assert not (CASES.keys() | EXPANSION_CASES.keys()) & PLANNED_KMP_CASES.keys()
 CASES.update({name: pair[:2] for name, pair in EXPANSION_CASES.items()})
@@ -82,10 +83,10 @@ for name, (positive, negative) in CASES.items():
     folder.mkdir(parents=True, exist_ok=True)
     package = 'package fixtures.' + name.lower() + '\n\n'
     for kind, text in [('positive', positive), ('negative', negative)]:
-        (folder / (kind + '.kt')).write_text(package + text + '\n')
+        (folder / (kind + '.kt')).write_text(package + text + '\n', encoding='utf-8', newline='\n')
     row = {'rule_id': rule['id'], 'upstream_id': name,
-           'positive': str((folder / 'positive.kt').relative_to(FIXTURES)),
-           'negative': str((folder / 'negative.kt').relative_to(FIXTURES)),
+           'positive': (folder / 'positive.kt').relative_to(FIXTURES).as_posix(),
+           'negative': (folder / 'negative.kt').relative_to(FIXTURES).as_posix(),
            'declared_severity': rule['compiler_factory']['declaration_severity'].lower(),
            'flags': ['-jvm-target', '17'] + (['-Wextra'] if name == 'UNREACHABLE_CODE' else []) +
                     (['-Xuse-fir-experimental-checkers'] if name == 'EMPTY_RANGE' else []),
@@ -93,8 +94,35 @@ for name, (positive, negative) in CASES.items():
     if name in EXPANSION_CASES:
         row['authored_cohort'] = '2026-11-04-' + COHORTS[name]
         row['validation_plan'] = validation_plan(name, row['declared_severity'], EXPANSION_CASES[name][2])
+    if name in TYPE_BOUNDARY_INPUTS:
+        proposed = TYPE_BOUNDARY_INPUTS[name]
+        supplemental = []
+        for kind in ('boundary', 'applicability', 'suppression'):
+            destination = folder / (kind + '.kt')
+            if kind == 'suppression':
+                text = '@file:Suppress("' + name + '")\n' + package + positive + '\n'
+                expectation = ('Proposed: execute compiler-error suppression independently; preserve actual failed compilation or compiler-accepted suppression. '
+                               'The selected ID may remain or be suppressed; neither outcome creates clean/complete coverage. '
+                               'This source body matches the existing pair harness transform, but this authored file is not an extra executed job.')
+                compilation = 'unknown_preserve_actual_failure_or_compiler_accepted_suppression'
+                diagnostic = 'unknown_preserve_actual_emission_or_suppression'
+            else:
+                text = package + proposed[kind + '_source'] + '\n'
+                expectation = proposed[kind + '_expectation']
+                compilation = 'proposed_exit0_not_observed'
+                diagnostic = 'proposed_selected_id_absent_not_observed'
+            destination.write_text(text, encoding='utf-8', newline='\n')
+            supplemental.append({'kind': kind, 'path': destination.relative_to(FIXTURES).as_posix(),
+                                 'source_sha256': hashlib.sha256(text.encode()).hexdigest(),
+                                 'status': 'unrun_supplemental_source_plan',
+                                 'execution_state': 'not_run', 'executed_by_current_pair_harness': False,
+                                 'compiler_flags': row['flags'], 'proposed_expectation': expectation,
+                                 'compilation_expectation': compilation, 'diagnostic_expectation': diagnostic,
+                                 'execution_policy': 'Independent sealed variant only; never concatenate positive/negative/boundary/applicability/suppression variants or count source presence as execution.'})
+        row['supplemental_inputs'] = supplemental
+        row['supplemental_execution_scope'] = 'Authored input plans only. The current pair harness does not schedule these files; its existing six-kind dynamic transforms remain separate actual jobs.'
     manifest.append(row)
-(FIXTURES / 'manifest.json').write_text(json.dumps({'schema_version': 1, 'kotlin_version': '2.4.21', 'fixtures': manifest}, indent=2) + '\n')
+(FIXTURES / 'manifest.json').write_text(json.dumps({'schema_version': 1, 'kotlin_version': '2.4.21', 'fixtures': manifest}, indent=2) + '\n', encoding='utf-8', newline='\n')
 
 planned = []
 for name, (positive_common, positive_jvm, negative_common, negative_jvm, alternative) in PLANNED_KMP_CASES.items():
@@ -112,8 +140,8 @@ for name, (positive_common, positive_jvm, negative_common, negative_jvm, alterna
         members = []
         for fragment, text in [('common', common), ('jvm', jvm)]:
             destination = folder / (fragment + '.kt')
-            destination.write_text('package fixtures.planned_kmp.' + name.lower() + '\n\n' + text + '\n')
-            members.append({'path': str(destination.relative_to(FIXTURES)), 'fragment': fragment})
+            destination.write_text('package fixtures.planned_kmp.' + name.lower() + '\n\n' + text + '\n', encoding='utf-8', newline='\n')
+            members.append({'path': destination.relative_to(FIXTURES).as_posix(), 'fragment': fragment})
         row[kind + '_sources'] = members
     row['validation_plan'] = validation_plan(name, row['declared_severity'], alternative, kmp=True)
     planned.append(row)
@@ -122,6 +150,42 @@ for name, (positive_common, positive_jvm, negative_common, negative_jvm, alterna
     'status': 'planned_unsupported_sealed_source_roles_not_available',
     'execution_policy': 'Do not merge/concatenate these inputs into one module or execute them through the ordinary fixture runner. Requires owner-approved sealed source roles, refines and provider-generated copied-source path flags first.',
     'not_demonstrated': ['common metadata compilation', 'Android', 'Native/iOS actualization', 'linking', 'simulator execution', 'full project graph', 'qualification'],
-    'fixtures': planned}, indent=2) + '\n')
+    'fixtures': planned}, indent=2) + '\n', encoding='utf-8', newline='\n')
+
+# Authorship is independent of the mutable actual-run aggregate and immutable
+# receipts. Never read, reset or replace evidence/, runs/ or unit-evidence/ here.
+inventory = {
+    'schema_version': 1,
+    'kind': 'authored_input_inventory_source_plan',
+    'kotlin_version': '2.4.21',
+    'source_only': True,
+    'execution_or_project_policy_authority': False,
+    'catalog_mappings': len(rules),
+    'ordinary_pairs': len(manifest),
+    'original_ordinary_pairs': sum('authored_cohort' not in row for row in manifest),
+    'expanded_ordinary_pairs': sum('authored_cohort' in row for row in manifest),
+    'planned_unsupported_kmp_graphs': len(planned),
+    'supplemental_type_boundary_source_plans': sum(len(row.get('supplemental_inputs', [])) for row in manifest),
+    'supplemental_source_plans_executed_by_current_pair_harness': False,
+    'per_id_evidence_promotion_from_authorship': {
+        'implemented': False, 'tested': False, 'qualified': False, 'attempted': False,
+    },
+    'execution_receipts_modified_by_generator': False,
+    'ordinary_manifest': {
+        'path': 'providers/compiler-fixtures/manifest.json',
+        'sha256': hashlib.sha256((FIXTURES / 'manifest.json').read_bytes()).hexdigest(),
+    },
+    'planned_kmp_manifest': {
+        'path': 'providers/compiler-fixtures/planned-kmp-manifest.json',
+        'sha256': hashlib.sha256((FIXTURES / 'planned-kmp-manifest.json').read_bytes()).hexdigest(),
+    },
+    'limitations': 'This file inventories authored source plans only, not actual per-ID execution status. '
+                   'Initial unrun input status does not deny later genuine execution. Generation must preserve '
+                   'all independent execution aggregates and immutable run/unit receipts; no source authorship '
+                   'promotes or downgrades their implementation/test/qualification/attempt flags. The 18 '
+                   'supplemental variants remain outside the current pair harness, and planned KMP graphs '
+                   'do not enable sealed source-role capability.',
+}
+(FIXTURES / 'authored-input-inventory.json').write_text(json.dumps(inventory, indent=2) + '\n', encoding='utf-8', newline='\n')
 print('Wrote', len(manifest), 'ordinary per-ID input pairs and', len(planned),
-      'separate planned/unsupported common-to-JVM graphs; no execution or qualification claimed')
+      'separate planned/unsupported common-to-JVM graphs plus source-only authored inventory; no execution or qualification claimed')

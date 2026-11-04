@@ -17,6 +17,7 @@ import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.PosixFilePermission
 import java.security.MessageDigest
 import java.util.Collections
+import java.util.HexFormat
 import java.util.concurrent.CancellationException
 import kotlinx.serialization.json.*
 
@@ -131,7 +132,9 @@ class KotlinJvmRuntimeImage private constructor(
             if (canonicalSelectedHome(selectedRoot) != root) {
                 runtimeFailure("changed", "Selected Java runtime outer alias changed after capture.")
             }
-            val release = read(root.resolve("release"), minOf(limits.maxFileBytes, 65_536), true, ::checkClock)
+            // Reads within one scan are sequential. Never share scratch storage across scans.
+            val buffer = ByteArray(65_536)
+            val release = read(root.resolve("release"), minOf(limits.maxFileBytes, 65_536), true, buffer, ::checkClock)
             val releaseText = try { strictUtf8(release.bytes!!) } catch (_: CharacterCodingException) {
                 runtimeFailure("unsupported", "Java runtime release descriptor is not UTF-8.")
             }
@@ -181,7 +184,7 @@ class KotlinJvmRuntimeImage private constructor(
                     if (attributes.size > limits.maxFileBytes) runtimeFailure("limit", "Java runtime file exceeds its byte bound.")
                     byteCount += attributes.size
                     if (byteCount > limits.maxTotalBytes) runtimeFailure("limit", "Java runtime inventory exceeds its total byte bound.")
-                    val actual = read(file, limits.maxFileBytes, false, ::checkClock)
+                    val actual = read(file, limits.maxFileBytes, false, buffer, ::checkClock)
                     if (actual.stamp != attributes) runtimeFailure("changed", "Java runtime entry changed while inventorying.")
                     entries += Entry(relative, "file", attributes.size, actual.digest, attributes.executable, attributes.executableBits)
                     return FileVisitResult.CONTINUE
@@ -259,7 +262,7 @@ class KotlinJvmRuntimeImage private constructor(
                 attributes.fileKey(), Files.isExecutable(path), bits)
         }
 
-        private fun read(path: Path, maximum: Long, preserveBytes: Boolean, checkpoint: () -> Unit): Read {
+        private fun read(path: Path, maximum: Long, preserveBytes: Boolean, buffer: ByteArray, checkpoint: () -> Unit): Read {
             checkpoint()
             val before = stamp(path)
             if (!before.regular) runtimeFailure("unsupported", "Java runtime requires an ordinary regular file.")
@@ -268,7 +271,6 @@ class KotlinJvmRuntimeImage private constructor(
             val copy = if (preserveBytes) ByteArrayOutputStream(before.size.toInt()) else null
             var size = 0L
             Files.newInputStream(path, READ, NOFOLLOW_LINKS).use { input ->
-                val buffer = ByteArray(65_536)
                 while (true) {
                     checkpoint()
                     val count = input.read(buffer)
@@ -281,7 +283,7 @@ class KotlinJvmRuntimeImage private constructor(
             }
             val after = stamp(path)
             if (size != before.size || after != before) runtimeFailure("changed", "Java runtime file changed while reading.")
-            val digest = "sha256:" + hash.digest().joinToString("") { "%02x".format(it) }
+            val digest = "sha256:" + HexFormat.of().formatHex(hash.digest())
             return Read(digest, copy?.toByteArray(), before)
         }
     }

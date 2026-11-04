@@ -1,0 +1,1055 @@
+{
+  "schema_version": 1,
+  "kotlin_version": "2.4.21",
+  "selector": "nullability_protocols",
+  "authored_cohort": "2026-11-04-nullability_protocols",
+  "status": "authored_unscheduled_source_only_additive_plan",
+  "ordinary_main_manifest_mutation": false,
+  "map_catalog_or_runner_mutation": false,
+  "source_selection_kind": "explicit_six_id_independent_five_variant_source_inventory",
+  "ordered_kinds": [
+    "positive",
+    "negative",
+    "boundary",
+    "applicability",
+    "suppression"
+  ],
+  "flags": [
+    "-jvm-target",
+    "17",
+    "-language-version",
+    "2.4",
+    "-api-version",
+    "2.4"
+  ],
+  "target_profile": {
+    "compiler_version": "2.4.21",
+    "language_version": "2.4",
+    "api_version": "2.4",
+    "backend": "jvm",
+    "jvm_target": "17",
+    "explicit_compiler_flags": [
+      "-jvm-target",
+      "17",
+      "-language-version",
+      "2.4",
+      "-api-version",
+      "2.4"
+    ],
+    "additional_checker_activation_flags": [],
+    "module_mode": "one_independent_Kotlin_file_single_JVM_module",
+    "plugins": [],
+    "java_sources": [],
+    "user_or_test_libraries": [],
+    "expected_library_scope": "trusted_pinned_compiler_and_matching_Kotlin_stdlib_only",
+    "authored_target": "jvm17_only",
+    "potential_launch_targets_requiring_separate_actual_validation": [
+      "jvm",
+      "android_jvm",
+      "desktop_jvm"
+    ],
+    "not_demonstrated": [
+      "compiler execution",
+      "Android/desktop build integration",
+      "Native/iOS compilation",
+      "KMP metadata/actualization",
+      "other JVM targets or compiler versions"
+    ],
+    "project_settings_authority": false
+  },
+  "suppression_policy": "Unknown until separately actually executed; hard errors may remain or fail. Even exit0 is unvalidated error suppression, not clean/complete coverage. Retain every raw diagnostic including ERROR_SUPPRESSION: UNSPECIFIED and WILL NOT BE PRESERVED.",
+  "execution_policy": "Source selector reads exact authored paths/bytes only. No compiler/provider/native helper launches, executable schedule, budgets, ordinary jobs, controls, transformations, retries, replacements, resume, merge or external latest sidecar writes.",
+  "execution_schedule": "none; a future exact bounded schedule requires separate lead authorization and source review",
+  "ordinary_case_kinds": [
+    "positive",
+    "negative",
+    "configuration",
+    "version",
+    "suppression",
+    "regression"
+  ],
+  "new_kind_inventory_is_not_ordinary_six_kind_completion": true,
+  "run_complete": false,
+  "qualified": false,
+  "gap_inventory": "nullability-protocols-gap-inventory.json",
+  "source_evidence": "nullability-protocols-source-evidence.json",
+  "bookkeeping": {
+    "scope": "source_presence_and_manifest_arithmetic_only_not_execution_or_coverage",
+    "existing_main_manifest_ordinary_pairs": 98,
+    "existing_planned_unsupported_graphs": 16,
+    "existing_exact_mappings": 443,
+    "new_additive_source_rule_plans": 6,
+    "new_authored_files": 30,
+    "prospective_ordinary_pairs_only_if_lead_approves_append": 104,
+    "current_remaining_mapped_gaps": 329,
+    "prospective_remaining_mapped_gaps_if_source_plans_append": 323,
+    "current_remaining_mapped_by_backend": {
+      "common": 202,
+      "ir": 8,
+      "jvm": 76,
+      "native": 43
+    },
+    "prospective_remaining_mapped_by_backend": {
+      "common": 196,
+      "ir": 8,
+      "jvm": 76,
+      "native": 43
+    },
+    "preexisting_kotlin_fixture_sources": 278,
+    "combined_authored_kotlin_sources_in_this_sparse_copy": 308,
+    "existing_type_boundary_authored_supplemental_files": 18,
+    "existing_supplemental_execution_results_must_remain_in_their_own_tuple": true,
+    "new_source_selected_compiler_calls": 0,
+    "new_source_selector_provider_reservations": 0,
+    "new_six_kind_completion": false,
+    "new_qualification_count": 0,
+    "baseline_source_pins": [
+      {
+        "path": "providers/compiler-fixtures/manifest.json",
+        "sha256": "4854aa356caba6e90b48e10e333bf32828460dc64b04dd0d6b86db3653d49774",
+        "bytes": 169761
+      },
+      {
+        "path": "providers/compiler-fixtures/planned-kmp-manifest.json",
+        "sha256": "804c242c62707457ff143d16fb03bcd1bddd2ca84b3f9aef2085dc5af800b128",
+        "bytes": 49543
+      },
+      {
+        "path": "providers/compiler-fixtures/authored-input-inventory.json",
+        "sha256": "b8c6af0b0f1d68578ad9a209e900c83668fc25f67bfd7fbf272fc28720511bad",
+        "bytes": 1512
+      },
+      {
+        "path": "providers/compiler-fixtures/generate_fixtures.py",
+        "sha256": "73cfab45c982081da4088daa6fc2b266f16d24c828010772966ea201d1372b69",
+        "bytes": 16716
+      },
+      {
+        "path": "providers/compiler-fixtures/cohort_expansion.py",
+        "sha256": "2dd0d0323b507da9f4ff3e758ab0951f53fcdf196a46006331e5e33681f33edb",
+        "bytes": 45788
+      }
+    ],
+    "preexisting_fixture_inventory_sha256": "378127f94364be6ac94bf84d56769ea25126f28840686f03fa5adafc55c7bc00"
+  },
+  "fixtures": [
+    {
+      "rule_id": "ktc.compiler.common.unsafe_implicit_invoke_call",
+      "upstream_id": "UNSAFE_IMPLICIT_INVOKE_CALL",
+      "backend": "common",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-nullability_protocols",
+      "positive": "cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/positive.kt",
+      "negative": "cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/negative.kt",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L919",
+      "status": "unrun_additive_cohort_source_plan",
+      "inputs": [
+        {
+          "kind": "positive",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/positive.kt",
+          "source_sha256": "52ce436172dae231416bc02452151f569f8760cb9c0439a1bfac2b1f080ee6ea",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_nonzero_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_present_not_observed",
+          "proposed_selected_id": "UNSAFE_IMPLICIT_INVOKE_CALL",
+          "proposed_source_anchor": {
+            "line": 5,
+            "column": 43,
+            "token": "action",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Exact UNSAFE_IMPLICIT_INVOKE_CALL error on the declared nullable/prohibited receiver; preserve every actual companion diagnostic and failed compiler task.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "negative",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/negative.kt",
+          "source_sha256": "afe94061f0e38539f5c6af16eecf10b3e19544725d760ec09c784e310dc3cf9b",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: Independently corrected non-null/ordinary-qualification counterpart; require actual exit0 and selected-ID absence in raw and normalized diagnostics, never infer it from source presence.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "boundary",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/boundary.kt",
+          "source_sha256": "8370b165cbf685e814ae7a02d6ca45d7e5230b349745dde556d95913c2463a51",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: A stable local alias of a nullable function value is invoked only after an explicit non-null check; no custom or mutable getter is assumed stable.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/applicability.kt",
+          "source_sha256": "1894ba6be39d7b43f2d85970182c4d2d0839c27be4d85e8b10238815ad0cfad6",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: An explicit ?.invoke() null-handling call is legitimate and is not an unsafe implicit invoke. This is a source counterpart, not an automatic behavioral rewrite.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/suppression.kt",
+          "source_sha256": "8558e3a92bc5f4586a9eae836cf272687617318b483f269fdf3296b1b427ebbc",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "proposed_selected_id": "UNSAFE_IMPLICIT_INVOKE_CALL",
+          "proposed_source_anchor": {
+            "line": 6,
+            "column": 43,
+            "token": "action",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Independently authored exact file-level error-suppression attempt. Hard errors may remain or fail internally; exit0 may warn ERROR_SUPPRESSION. All outcomes remain unknown/unvalidated here; preserve UNSPECIFIED / WILL NOT BE PRESERVED warnings.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        }
+      ],
+      "ordinary_six_kind_assessment": false,
+      "configuration_and_regression_jobs": "not_authored_or_scheduled_by_this_standalone_five_variant_source_plan"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_infix_call",
+      "upstream_id": "UNSAFE_INFIX_CALL",
+      "backend": "common",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-nullability_protocols",
+      "positive": "cohort-plans/nullability-protocols-cases/unsafe_infix_call/positive.kt",
+      "negative": "cohort-plans/nullability-protocols-cases/unsafe_infix_call/negative.kt",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L920",
+      "status": "unrun_additive_cohort_source_plan",
+      "inputs": [
+        {
+          "kind": "positive",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_infix_call/positive.kt",
+          "source_sha256": "6285cb534f872d68c0461217d1eb9bb080eb7958bb0a3cc1b59b3bfde2e9496e",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_nonzero_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_present_not_observed",
+          "proposed_selected_id": "UNSAFE_INFIX_CALL",
+          "proposed_source_anchor": {
+            "line": 7,
+            "column": 53,
+            "token": "add",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Exact UNSAFE_INFIX_CALL error on the declared nullable/prohibited receiver; preserve every actual companion diagnostic and failed compiler task.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "negative",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_infix_call/negative.kt",
+          "source_sha256": "653b41cebbda3d5eabe8405cb428ee9b328d9b573ebc4d8511297efa805ca562",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: Independently corrected non-null/ordinary-qualification counterpart; require actual exit0 and selected-ID absence in raw and normalized diagnostics, never infer it from source presence.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "boundary",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_infix_call/boundary.kt",
+          "source_sha256": "843e37f6f343c5524092c12c4e30d2f29c8209b15fded1463353904c1f1fd2f4",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: A stable nullable infix receiver becomes non-null on the surviving control-flow branch. The same member is selected; no overload guess or mutable smartcast is substituted.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_infix_call/applicability.kt",
+          "source_sha256": "7939d9a41264cb8b31219092b0f31ffee70b32f8e7a54dad791c08fbd8f95dd9",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: A distinct infix extension deliberately declares a nullable receiver and owns its null handling. Nullable infix syntax is not universally prohibited; preserve actual overload/receiver typing.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_infix_call/suppression.kt",
+          "source_sha256": "e3f44e589b55ed9865957cb93d0aa31e6cb288ef3531ccc3531186816b89be0f",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "proposed_selected_id": "UNSAFE_INFIX_CALL",
+          "proposed_source_anchor": {
+            "line": 8,
+            "column": 53,
+            "token": "add",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Independently authored exact file-level error-suppression attempt. Hard errors may remain or fail internally; exit0 may warn ERROR_SUPPRESSION. All outcomes remain unknown/unvalidated here; preserve UNSPECIFIED / WILL NOT BE PRESERVED warnings.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        }
+      ],
+      "ordinary_six_kind_assessment": false,
+      "configuration_and_regression_jobs": "not_authored_or_scheduled_by_this_standalone_five_variant_source_plan"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_operator_call",
+      "upstream_id": "UNSAFE_OPERATOR_CALL",
+      "backend": "common",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-nullability_protocols",
+      "positive": "cohort-plans/nullability-protocols-cases/unsafe_operator_call/positive.kt",
+      "negative": "cohort-plans/nullability-protocols-cases/unsafe_operator_call/negative.kt",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L921",
+      "status": "unrun_additive_cohort_source_plan",
+      "inputs": [
+        {
+          "kind": "positive",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_operator_call/positive.kt",
+          "source_sha256": "0b4b77531c01ff2135f6d08e96d315a6e7501642e28999f01bade91a236a63ba",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_nonzero_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_present_not_observed",
+          "proposed_selected_id": "UNSAFE_OPERATOR_CALL",
+          "proposed_source_anchor": {
+            "line": 7,
+            "column": 56,
+            "token": "+",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Exact UNSAFE_OPERATOR_CALL error on the declared nullable/prohibited receiver; preserve every actual companion diagnostic and failed compiler task.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "negative",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_operator_call/negative.kt",
+          "source_sha256": "30f620138e400107d6a75fa5a5914c16e6b663f84715de7bbb2a1797d2bb2744",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: Independently corrected non-null/ordinary-qualification counterpart; require actual exit0 and selected-ID absence in raw and normalized diagnostics, never infer it from source presence.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "boundary",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_operator_call/boundary.kt",
+          "source_sha256": "204d5ea963c341f84b4d8eed4b153e4996baf09149653292c74301ac896b99ea",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: A nullable typealias receiver is narrowed by a stable non-null branch before the same resolved plus member. Aliasing does not invent a non-null guarantee.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_operator_call/applicability.kt",
+          "source_sha256": "c8cd8fe0d4fb73f2c35f613f047bcea6337a750ff06ca5fb0593c021384645bf",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: The independently declared plus extension accepts a nullable receiver and explicitly handles null; no same-named member is present to steal resolution. This is not a blanket operator ban or source fix.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_operator_call/suppression.kt",
+          "source_sha256": "8982dbd99ed2256c06190a631d319c8322c567cef00da01dda6634f748b60946",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "proposed_selected_id": "UNSAFE_OPERATOR_CALL",
+          "proposed_source_anchor": {
+            "line": 8,
+            "column": 56,
+            "token": "+",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Independently authored exact file-level error-suppression attempt. Hard errors may remain or fail internally; exit0 may warn ERROR_SUPPRESSION. All outcomes remain unknown/unvalidated here; preserve UNSPECIFIED / WILL NOT BE PRESERVED warnings.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        }
+      ],
+      "ordinary_six_kind_assessment": false,
+      "configuration_and_regression_jobs": "not_authored_or_scheduled_by_this_standalone_five_variant_source_plan"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_callable_reference",
+      "upstream_id": "UNSAFE_CALLABLE_REFERENCE",
+      "backend": "common",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-nullability_protocols",
+      "positive": "cohort-plans/nullability-protocols-cases/unsafe_callable_reference/positive.kt",
+      "negative": "cohort-plans/nullability-protocols-cases/unsafe_callable_reference/negative.kt",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L922",
+      "status": "unrun_additive_cohort_source_plan",
+      "inputs": [
+        {
+          "kind": "positive",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_callable_reference/positive.kt",
+          "source_sha256": "5a2f487292a8f3f7eb99450a46701eb7546e74879eaafa4b24c702de3ebcac7c",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_nonzero_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_present_not_observed",
+          "proposed_selected_id": "UNSAFE_CALLABLE_REFERENCE",
+          "proposed_source_anchor": {
+            "line": 7,
+            "column": 67,
+            "token": "score",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Exact UNSAFE_CALLABLE_REFERENCE error on the declared nullable/prohibited receiver; preserve every actual companion diagnostic and failed compiler task.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "negative",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_callable_reference/negative.kt",
+          "source_sha256": "ae6150502d1274c9298f3f8beac7bb2a1d76abd6493f72d2a61023506c654c73",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: Independently corrected non-null/ordinary-qualification counterpart; require actual exit0 and selected-ID absence in raw and normalized diagnostics, never infer it from source presence.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "boundary",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_callable_reference/boundary.kt",
+          "source_sha256": "76ac4763a73a7394707edcff444fcf9c6305137b064617f61591135ab526cedc",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: A stable nullable value is checked before creating its bound callable reference, and the function can return no reference for null. Do not assume a repeated custom getter is stable.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_callable_reference/applicability.kt",
+          "source_sha256": "e651fdc1199a6dc802b0930ee6ca8e4a76bc7e64aeb84006d9b86059e1629b2c",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: The unbound ReferenceValue::score reference takes an explicit non-null receiver argument; it is not a reference bound to a nullable value. No reflection/JVM artifact or ?:: syntax is required.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cohort-plans/nullability-protocols-cases/unsafe_callable_reference/suppression.kt",
+          "source_sha256": "09af74f7a83980315d267ce8b663be456707b5f342214d9fe8eaa723711acc4c",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "proposed_selected_id": "UNSAFE_CALLABLE_REFERENCE",
+          "proposed_source_anchor": {
+            "line": 8,
+            "column": 67,
+            "token": "score",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Independently authored exact file-level error-suppression attempt. Hard errors may remain or fail internally; exit0 may warn ERROR_SUPPRESSION. All outcomes remain unknown/unvalidated here; preserve UNSPECIFIED / WILL NOT BE PRESERVED warnings.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        }
+      ],
+      "ordinary_six_kind_assessment": false,
+      "configuration_and_regression_jobs": "not_authored_or_scheduled_by_this_standalone_five_variant_source_plan"
+    },
+    {
+      "rule_id": "ktc.compiler.common.iterator_on_nullable",
+      "upstream_id": "ITERATOR_ON_NULLABLE",
+      "backend": "common",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-nullability_protocols",
+      "positive": "cohort-plans/nullability-protocols-cases/iterator_on_nullable/positive.kt",
+      "negative": "cohort-plans/nullability-protocols-cases/iterator_on_nullable/negative.kt",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L923",
+      "status": "unrun_additive_cohort_source_plan",
+      "inputs": [
+        {
+          "kind": "positive",
+          "path": "cohort-plans/nullability-protocols-cases/iterator_on_nullable/positive.kt",
+          "source_sha256": "3e571b48b075a567cde4d06b304159ebce2ee98c5123a33277c630498ef86163",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_nonzero_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_present_not_observed",
+          "proposed_selected_id": "ITERATOR_ON_NULLABLE",
+          "proposed_source_anchor": {
+            "line": 14,
+            "column": 19,
+            "token": "range",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Exact ITERATOR_ON_NULLABLE error on the declared nullable/prohibited receiver; preserve every actual companion diagnostic and failed compiler task.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "negative",
+          "path": "cohort-plans/nullability-protocols-cases/iterator_on_nullable/negative.kt",
+          "source_sha256": "9b4911e6de82cb703c30afc824b75fa66bbd6946504363c232e64107a62fec04",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: Independently corrected non-null/ordinary-qualification counterpart; require actual exit0 and selected-ID absence in raw and normalized diagnostics, never infer it from source presence.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "boundary",
+          "path": "cohort-plans/nullability-protocols-cases/iterator_on_nullable/boundary.kt",
+          "source_sha256": "bffaee3477b8cd269a3edc8d83767173f8bae7007579a520f71fa8934e45b3a3",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: The entire nullable loop range is checked once before desugaring iterator/hasNext/next. The custom iterator has both operator methods with valid types, isolating the null-receiver contract.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cohort-plans/nullability-protocols-cases/iterator_on_nullable/applicability.kt",
+          "source_sha256": "7677625ababb895156875d6f172ec555c116515a1f6ad38b90e0bab3d83220f5",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: A nullable-receiver iterator extension deliberately accepts null and returns a non-null compliant cursor. Only inapplicable nullable receiver resolution is an ITERATOR_ON_NULLABLE error; nullable syntax alone is not a defect.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cohort-plans/nullability-protocols-cases/iterator_on_nullable/suppression.kt",
+          "source_sha256": "e82cc0ca2a434fa8cd893a10b651d02db740c6b160b263af4a9d5b26e3cd5079",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "proposed_selected_id": "ITERATOR_ON_NULLABLE",
+          "proposed_source_anchor": {
+            "line": 15,
+            "column": 19,
+            "token": "range",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Independently authored exact file-level error-suppression attempt. Hard errors may remain or fail internally; exit0 may warn ERROR_SUPPRESSION. All outcomes remain unknown/unvalidated here; preserve UNSPECIFIED / WILL NOT BE PRESERVED warnings.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        }
+      ],
+      "ordinary_six_kind_assessment": false,
+      "configuration_and_regression_jobs": "not_authored_or_scheduled_by_this_standalone_five_variant_source_plan"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unexpected_safe_call",
+      "upstream_id": "UNEXPECTED_SAFE_CALL",
+      "backend": "common",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-nullability_protocols",
+      "positive": "cohort-plans/nullability-protocols-cases/unexpected_safe_call/positive.kt",
+      "negative": "cohort-plans/nullability-protocols-cases/unexpected_safe_call/negative.kt",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L925",
+      "status": "unrun_additive_cohort_source_plan",
+      "inputs": [
+        {
+          "kind": "positive",
+          "path": "cohort-plans/nullability-protocols-cases/unexpected_safe_call/positive.kt",
+          "source_sha256": "abcfbe94c77b33690b2ced052fff55c0c6a14db41b248ca241f81f09c271a3c4",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_nonzero_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_present_not_observed",
+          "proposed_selected_id": "UNEXPECTED_SAFE_CALL",
+          "proposed_source_anchor": {
+            "line": 8,
+            "column": 33,
+            "token": "?.",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Exact UNEXPECTED_SAFE_CALL error on the declared nullable/prohibited receiver; preserve every actual companion diagnostic and failed compiler task.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "negative",
+          "path": "cohort-plans/nullability-protocols-cases/unexpected_safe_call/negative.kt",
+          "source_sha256": "caac88241f68eb0ab07f681408f50155fea8bb8d8bbc282b54da9b8303a7797c",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: Independently corrected non-null/ordinary-qualification counterpart; require actual exit0 and selected-ID absence in raw and normalized diagnostics, never infer it from source presence.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "boundary",
+          "path": "cohort-plans/nullability-protocols-cases/unexpected_safe_call/boundary.kt",
+          "source_sha256": "eb6a0212a10caf44fdd1447f19a4f32e29134f4fdf3aae9a01f99fad7f83eadf",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: An ordinary non-null this receiver uses ordinary qualification. This avoids padding the boundary with the different UNNECESSARY_SAFE_CALL warning.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "applicability",
+          "path": "cohort-plans/nullability-protocols-cases/unexpected_safe_call/applicability.kt",
+          "source_sha256": "5454aca7e046292a36febc10710550a262dfe661f2372ab04e164c568ecd2f7b",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "proposed_exit0_not_observed",
+          "diagnostic_expectation": "proposed_selected_id_absent_not_observed",
+          "proposed_selected_id": null,
+          "proposed_source_anchor": null,
+          "proposed_expectation": "Proposed: A genuinely nullable ordinary object can use ?. followed by explicit null handling. The prohibition is the super receiver, not all safe calls.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        },
+        {
+          "kind": "suppression",
+          "path": "cohort-plans/nullability-protocols-cases/unexpected_safe_call/suppression.kt",
+          "source_sha256": "33c9235a65140044479c14f55f8dc04429e0942de4af692cd441a8280ec280d2",
+          "status": "unrun_independent_next_cohort_source_plan",
+          "execution_state": "not_run",
+          "executed_by_current_pair_harness": false,
+          "compiler_flags": [
+            "-jvm-target",
+            "17",
+            "-language-version",
+            "2.4",
+            "-api-version",
+            "2.4"
+          ],
+          "compilation_expectation": "unknown_preserve_actual_failure_or_compiler_accepted_suppression",
+          "diagnostic_expectation": "unknown_preserve_actual_emission_or_suppression",
+          "proposed_selected_id": "UNEXPECTED_SAFE_CALL",
+          "proposed_source_anchor": {
+            "line": 9,
+            "column": 33,
+            "token": "?.",
+            "purpose": "proposed_source_anchor_only_not_an_observed_diagnostic_location"
+          },
+          "proposed_expectation": "Proposed: Independently authored exact file-level error-suppression attempt. Hard errors may remain or fail internally; exit0 may warn ERROR_SUPPRESSION. All outcomes remain unknown/unvalidated here; preserve UNSPECIFIED / WILL NOT BE PRESERVED warnings.",
+          "expected_outcome_matched": null,
+          "qualification": "none",
+          "execution_policy": "One unchanged existing authored file per separately authorized sealed job. No concatenation, transforms, batches, retries, replacements, resume or merge; source selection is not execution."
+        }
+      ],
+      "ordinary_six_kind_assessment": false,
+      "configuration_and_regression_jobs": "not_authored_or_scheduled_by_this_standalone_five_variant_source_plan"
+    }
+  ]
+}

@@ -4,8 +4,11 @@ import dev.ktchecker.contracts.*
 import dev.ktchecker.providers.runtime.*
 import java.io.RandomAccessFile
 import java.nio.file.Files
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermission
+import java.security.MessageDigest
+import java.util.HexFormat
 import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.*
@@ -14,6 +17,103 @@ import org.junit.jupiter.api.Assumptions.assumeTrue
 
 /** Identity tests use tiny synthetic layouts; no synthetic JVM/compiler is ever launched. */
 class KotlinJvmRuntimeImageTest {
+    @Test fun lowercaseHexFormatMatchesThePreviousFormatterForEveryByteValue() {
+        val values = ByteArray(256) { it.toByte() }
+        assertEquals(values.joinToString("") { "%02x".format(it) }, HexFormat.of().formatHex(values))
+        values.forEach { value -> assertEquals("%02x".format(value), HexFormat.of().formatHex(byteArrayOf(value))) }
+        assertEquals("007f80ff", HexFormat.of().formatHex(byteArrayOf(0, 127, -128, -1)))
+        assertEquals("", HexFormat.of().formatHex(byteArrayOf()))
+    }
+
+    @Test fun bufferBoundaryFilesAndWholeImageMatchIndependentReadAllDigests() = withRoot { root ->
+        val java = SyntheticJdk.create(root.resolve("jdk"))
+        val home = java.parent.parent
+        Files.createDirectory(home.resolve("payloads"))
+        Files.createDirectory(home.resolve("empty-directory"))
+        val sizes = listOf(0, 1, 65_535, 65_536, 65_537, 131_072, 131_073)
+        val authored = sizes.mapIndexed { index, size ->
+            "payloads/$index-$size.bin" to ByteArray(size) { offset -> (offset * 37 + index * 19 + 127).toByte() }
+        }.toMap()
+        authored.forEach { (relative, bytes) -> Files.write(home.resolve(relative), bytes) }
+        val expected = independentInventory(home)
+        val image = KotlinJvmRuntimeImage.capture(java)
+        assertEquals(expected, image.view().entries)
+        assertEquals(independentImageDigest(expected), image.digest)
+        assertEquals(expected.filter { it.kind == JvmRuntimeEntryKind.FILE }.sumOf { it.size }, image.byteCount)
+        authored.forEach { (relative, bytes) ->
+            assertEquals(independentDigest(bytes), image.view().entries.single { it.relativePath == relative }.digest)
+        }
+        image.verify()
+        assertEquals(image.digest, KotlinJvmRuntimeImage.capture(java).digest)
+    }
+
+    @Test fun separateScansDoNotRetainOtherFilesOrOtherImagesScratchBytes() = withRoot { root ->
+        val firstJava = SyntheticJdk.create(root.resolve("first-jdk"))
+        val secondJava = SyntheticJdk.create(root.resolve("second-jdk"))
+        for ((index, java) in listOf(firstJava, secondJava).withIndex()) {
+            val home = java.parent.parent
+            Files.write(home.resolve("large.bin"), ByteArray(65_537 + index * 65_536) { (it * 13 + index * 67).toByte() })
+            Files.write(home.resolve("tiny.bin"), ByteArray(index + 1) { (0xff - index).toByte() })
+            Files.write(home.resolve("empty.bin"), byteArrayOf())
+        }
+        val firstExpected = independentInventory(firstJava.parent.parent)
+        val secondExpected = independentInventory(secondJava.parent.parent)
+        val first = KotlinJvmRuntimeImage.capture(firstJava)
+        val second = KotlinJvmRuntimeImage.capture(secondJava)
+        assertEquals(firstExpected, first.view().entries)
+        assertEquals(secondExpected, second.view().entries)
+        assertEquals(independentImageDigest(firstExpected), first.digest)
+        assertEquals(independentImageDigest(secondExpected), second.digest)
+        assertNotEquals(first.digest, second.digest)
+        first.verify()
+        second.verify()
+        assertEquals(first.digest, KotlinJvmRuntimeImage.capture(firstJava).digest)
+    }
+
+    @Test fun sameSizeRestoredMtimeMutationsAtAndBeyondBufferEdgesAreStillDetected() = withRoot { root ->
+        val java = SyntheticJdk.create(root.resolve("jdk"))
+        val payload = java.parent.parent.resolve("payload.bin")
+        val original = ByteArray(131_073) { (it * 29 + 17).toByte() }
+        Files.write(payload, original)
+        val timestamp = Files.getLastModifiedTime(payload)
+        val image = KotlinJvmRuntimeImage.capture(java)
+        for (offset in listOf(65_535, 65_536, 131_072)) {
+            val changed = original.copyOf().also { it[offset] = (it[offset].toInt() xor 0x5a).toByte() }
+            Files.write(payload, changed)
+            Files.setLastModifiedTime(payload, timestamp)
+            assertEquals(original.size.toLong(), Files.size(payload))
+            assertEquals(timestamp, Files.getLastModifiedTime(payload))
+            assertCode("changed") { image.verify() }
+            val current = KotlinJvmRuntimeImage.capture(java)
+            assertNotEquals(image.digest, current.digest)
+            assertEquals(independentDigest(changed), current.view().entries.single { it.relativePath == "payload.bin" }.digest)
+            Files.write(payload, original)
+            Files.setLastModifiedTime(payload, timestamp)
+            image.verify()
+        }
+    }
+
+    @Test fun exactBufferSizedReleaseAndFilesKeepReleaseFileAndTotalByteBounds() = withRoot { root ->
+        val java = SyntheticJdk.create(root.resolve("jdk"))
+        val release = java.parent.parent.resolve("release")
+        val descriptor = Files.readString(release)
+        // ASCII padding is an ignored descriptor line, not a changed version/layout field.
+        Files.writeString(release, descriptor.padEnd(65_536, '#'))
+        val payload = java.parent.parent.resolve("payload.bin")
+        Files.write(payload, ByteArray(65_536) { (it * 31).toByte() })
+        val limits = KotlinJvmRuntimeLimits(maxFileBytes = 65_536)
+        val exact = KotlinJvmRuntimeImage.capture(java, limits)
+        assertEquals(independentImageDigest(independentInventory(exact.root)), exact.digest)
+        exact.verify()
+        assertEquals(exact.digest, KotlinJvmRuntimeImage.capture(java, limits.copy(maxTotalBytes = exact.byteCount)).digest)
+        assertCode("limit") { KotlinJvmRuntimeImage.capture(java, limits.copy(maxTotalBytes = exact.byteCount - 1)) }
+        Files.write(payload, ByteArray(65_537))
+        assertCode("limit") { KotlinJvmRuntimeImage.capture(java, limits) }
+        Files.write(payload, byteArrayOf())
+        Files.writeString(release, descriptor.padEnd(65_537, '#'))
+        assertCode("limit") { KotlinJvmRuntimeImage.capture(java) }
+    }
+
     @Test fun fullFramedInventoryIncludesConfigurationNativeFilesAndEmptyDirectories() = withRoot { root ->
         val java = SyntheticJdk.create(root.resolve("jdk"))
         Files.createDirectory(java.parent.parent.resolve("empty-directory"))
@@ -294,6 +394,37 @@ class KotlinJvmRuntimeImageTest {
             Files.deleteIfExists(homeLink)
         }
     }
+
+    /** Tiny authored files only; no scanner read helper, shared scratch buffer, or HexFormat. */
+    private fun independentDigest(bytes: ByteArray): String = "sha256:" +
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+    private fun independentInventory(home: Path): List<JvmRuntimeEntryView> = Files.walk(home).use { paths ->
+        paths.map { path ->
+            val relative = home.relativize(path).toString().replace(java.io.File.separatorChar, '/')
+            val directory = Files.isDirectory(path, NOFOLLOW_LINKS)
+            val bytes = if (directory) null else Files.readAllBytes(path)
+            val permissions = if (path.fileSystem.supportedFileAttributeViews().contains("posix"))
+                Files.getPosixFilePermissions(path, NOFOLLOW_LINKS) else null
+            val executableBits = permissions?.let { set ->
+                (if (PosixFilePermission.OWNER_EXECUTE in set) 4 else 0) +
+                    (if (PosixFilePermission.GROUP_EXECUTE in set) 2 else 0) +
+                    (if (PosixFilePermission.OTHERS_EXECUTE in set) 1 else 0)
+            }
+            JvmRuntimeEntryView(relative, if (directory) JvmRuntimeEntryKind.DIRECTORY else JvmRuntimeEntryKind.FILE,
+                bytes?.size?.toLong() ?: 0L, bytes?.let(::independentDigest), Files.isExecutable(path), executableBits)
+        }.toList().sortedBy { it.relativePath }
+    }
+
+    private fun independentImageDigest(entries: List<JvmRuntimeEntryView>): String = independentDigest(Digests.canonical(buildJsonObject {
+        put("schema", "ktchecker/jdk-runtime-image-1")
+        put("java_version", "21.0.9"); put("os_name", SyntheticJdk.hostOsName()); put("architecture", "x86_64")
+        put("entries", JsonArray(entries.map { entry -> buildJsonObject {
+            put("path", entry.relativePath); put("kind", if (entry.kind == JvmRuntimeEntryKind.FILE) "file" else "directory")
+            put("size", entry.size); put("sha256", entry.digest?.let(::JsonPrimitive) ?: JsonNull)
+            put("executable", entry.executable); put("executable_bits", entry.executableBits?.let(::JsonPrimitive) ?: JsonNull)
+        } }))
+    }).toByteArray(Charsets.UTF_8))
 
     private fun createWindowsJunction(link: Path, target: Path) {
         val systemRoot = System.getenv("SystemRoot") ?: error("Windows SystemRoot is unavailable for the junction test")

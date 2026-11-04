@@ -1,0 +1,467 @@
+#!/usr/bin/env python3
+"""Static seven-file hookup/source-oracle controls only; never Kotlin/JVM/compiler/provider execution."""
+from collections import Counter
+from pathlib import Path
+import ast
+import hashlib
+import json
+import re
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = ROOT / 'providers/compiler-fixtures'
+KOTLIN = ROOT / 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler'
+REVIEWED_IDS = [
+    ('ktc.compiler.common.unsafe_implicit_invoke_call', 'UNSAFE_IMPLICIT_INVOKE_CALL'),
+    ('ktc.compiler.common.unsafe_infix_call', 'UNSAFE_INFIX_CALL'),
+    ('ktc.compiler.common.unsafe_operator_call', 'UNSAFE_OPERATOR_CALL'),
+    ('ktc.compiler.common.unsafe_callable_reference', 'UNSAFE_CALLABLE_REFERENCE'),
+    ('ktc.compiler.common.iterator_on_nullable', 'ITERATOR_ON_NULLABLE'),
+    ('ktc.compiler.common.unexpected_safe_call', 'UNEXPECTED_SAFE_CALL'),
+]
+KINDS = ['positive', 'negative', 'boundary', 'applicability', 'suppression']
+FLAGS = ['-jvm-target', '17', '-language-version', '2.4', '-api-version', '2.4']
+SOURCE_V1_METADATA_PINS = {
+    'cohort-plans/nullability-protocols-v1.json': 'e8d9eb399768454c0ad648d2b2f61024e0924cc3589c6f0c3bddbadf2fe1af44',
+    'cohort-plans/nullability-protocols-source-evidence.json': '2a453246ad9db2c0499c5c2c9cd488261493a786a5185618d91beafeb83ea0b5',
+    'cohort-plans/nullability-protocols-gap-inventory.json': 'dbdf33758d612786e9422d45551cdb3fda43f3f4a3fad57a7e3fab47f6c03a70',
+    'nullability_protocols.py': '6e2774bd505110cca4e07eaddacd00d5a3e0a626a7a5e7b238da1798d9840ab1',
+    'test_nullability_protocols.py': '796f6d39d32527185855de0b4647e4966e5e7d6631108a42aeab98ec99836b2f',
+    'cohort-plans/nullability-protocols-README.md': 'a8bd4914cdc7d337add5e1eed8398ebbf32ef8d9f2f0c4ea2a182a6785d62db7',
+}
+HISTORICAL_SOURCE_PINS = {
+    'providers/compiler-fixtures/manifest.json': '4854aa356caba6e90b48e10e333bf32828460dc64b04dd0d6b86db3653d49774',
+    'providers/compiler-fixtures/planned-kmp-manifest.json': '804c242c62707457ff143d16fb03bcd1bddd2ca84b3f9aef2085dc5af800b128',
+    'providers/compiler-fixtures/generate_fixtures.py': '73cfab45c982081da4088daa6fc2b266f16d24c828010772966ea201d1372b69',
+    'providers/compiler-fixtures/cohort_expansion.py': '2dd0d0323b507da9f4ff3e758ab0951f53fcdf196a46006331e5e33681f33edb',
+    'providers/compiler-fixtures/authored-input-inventory.json': 'b8c6af0b0f1d68578ad9a209e900c83668fc25f67bfd7fbf272fc28720511bad',
+    'providers/compiler-fixtures/test_type_boundaries.py': '6bb1a15f884b382593ee797fe4c09d0ec65399a600ffbda9574efa6c7f67456d',
+    'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureSupplemental.kt': 'e6104020de52316072d2e3491ca20296b5381e971a073acda69fc8ce6edd1379',
+    'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureSupplementalTest.kt': 'd1bc76856da36be79a385f260214ddb75f3ee0060006971ba36a76c1a27c5955',
+    'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureTimingProbe.kt': '2f89dd7fe83eb2189c310d7a6f972b2f2a9f409e3c6d3c4cb7963d7077ef43cf',
+    'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureTimingProbeTest.kt': 'cdc3c99660e318e06d4a5f435057f6353d35a3cad5346dbd1780ffb69ea0eaa4',
+}
+# Explicit seventh-file scope addition: preserve every old byte except the exact cohort-set token.
+COHORT_CONTROLS_TEST_PINS = {
+    'preimage': 'c94126878ad5e803b02a7f0d2e04f5fd28e5f30beed0a135cdfb59ed84327050',
+    'postimage': '647731d9f7b4d962f61f8f6945bdc15f58bd6a6509d58b9261181858a8a19e99',
+}
+# Independently saved preimage source segments, not execution/cleanup/timing/qualification witnesses.
+UNCHANGED_RUNNER_SEGMENTS = {
+    'execute': ('    private fun pointMatches(', '987acbe69154a72f96cce02197eb9bc853c12bc1643abab7e34076267fe473dc'),
+    'runFixtures': ('    private fun cohort(', '3b8a9cd031f32a0ad79f8fcb9d7a2ce02f68fede8d15f65fad6b36a69b250edd'),
+    'cohort': ('    private fun execute(', 'bcf1e0a3e41a5d7d3aacb48a45d7dc7a9642ce6f797408c2d2b50c1a6b6e0481'),
+    'probeFixture': ('    private fun runTimingProbeSamples(', '182142918a18cdb94d145994f89bb78c91da69ced12a66882327eb5ce2c637d8'),
+    'runTimingProbeSamples': ('    private fun scheduledWorkComplete(', '22ffaf7a1a0a845cf2f0f20fd36a4d21a5967b4211b18cb5bd7c69b5fb5a3c9f'),
+    'scheduledWorkComplete': ('    private fun probeScope(', 'e68de0f38d79dcff44efe95fff1f55fbfeefb890f6518a65b3f170a64cc5a247'),
+    'probeScope': ('    private fun probeCheckpoint(', 'd33bc46695936eb5d311d1a6205ae3eb0de98cc90806b8264327a53ff3041b06'),
+    'probeCheckpoint': ('    private fun runFixtures(', '0d5e7e8979af4d77450474c5ff82db8c24a1d6fe2a459c6a662cc40c2fda3fb5'),
+    'runSupplementalInputs': ('    private fun probeFixture(', 'c66ff7f5cc37e52e6ea802b2fd4caeb881906a3c6350151a10e7c3ed7a99b4e2'),
+    'supplementalScope': ('    private fun supplementalInventory(', '9cb3daa66e8f624f1358f887bb330224b63952233181975e8947cef7facc9134'),
+    'supplementalInventory': ('    private fun supplementalCheckpoint(', 'b52234c3c31bed5c19764d5afa7072d144e76e930b6c0ff2d85ff23cd7ab6b70'),
+    'supplementalCheckpoint': ('    private fun runSupplementalInputs(', 'bdda472a0317c524899537cbd93240ab5d4d2b01d6a9cb794415af9a3b08290c'),
+    'runIntentControls': ('    private fun runTransportControls(', '77809e6e043827f726dd0e63a639659dc123609e9a25f01af2963e34265c0ccd'),
+    'runTransportControls': ('    private fun recordControl(', 'f11cb5e195594c16856f142956647a311cb9759f505e3ddc76965683df92bafc'),
+    'recordControl': ('    private data class Checkpoint(', '86b782010d057499a01004951d5258c40de3b48522a8ab32a02afe80ceaebf75'),
+    'pointMatches': ('    private fun actualVersion(', '744d35fe068b750c949a8cdbbec71b6d84265dae6fcdbd3e448c5b614ffdf49e'),
+    'publishTerminal': ('    private fun saveTerminal(', '06c8a2816892e0a401793943a0b404c8464b137992c803d8a73da8d493b4931b'),
+    'saveTerminal': ('    private fun references(', '0f352c818942be67e7c93c8b7af2c6960e6d85c7cd496c73a8bfc0961118407e'),
+    'references': ('    private fun reference(', '2fe3d6d84298df896773eb2fb207fe33d7224a65c198be6b550ae16784647e0b'),
+}
+
+
+def segment(source, name, next_marker, private=True):
+    marker = '    private fun ' if private else '    fun '
+    start = source.index(marker + name + '(')
+    return source[start:source.index(next_marker, start)]
+
+
+def kotlin_delimiters_balanced(source):
+    """Conservative lexical delimiter check only, not Kotlin compilation or type checking."""
+    stack = []
+    index = 0
+    pairs = {')': '(', ']': '[', '}': '{'}
+    while index < len(source):
+        if source.startswith('//', index):
+            end = source.find('\n', index + 2)
+            index = len(source) if end < 0 else end + 1
+        elif source.startswith('/*', index):
+            depth = 1
+            index += 2
+            while depth and index < len(source):
+                if source.startswith('/*', index):
+                    depth += 1
+                    index += 2
+                elif source.startswith('*/', index):
+                    depth -= 1
+                    index += 2
+                else:
+                    index += 1
+            if depth:
+                return False
+        elif source.startswith('"""', index):
+            end = source.find('"""', index + 3)
+            if end < 0:
+                return False
+            index = end + 3
+        elif source[index] in ('"', "'"):
+            quote = source[index]
+            index += 1
+            while index < len(source):
+                if source[index] == '\\':
+                    index += 2
+                elif source[index] == quote:
+                    index += 1
+                    break
+                else:
+                    index += 1
+            else:
+                return False
+        else:
+            char = source[index]
+            if char in '([{':
+                stack.append(char)
+            elif char in ')]}':
+                if not stack or stack.pop() != pairs[char]:
+                    return False
+            index += 1
+    return not stack
+
+
+class NullabilityProtocolsHookupSourceContractTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.plan = (KOTLIN / 'CompilerFixtureNullability.kt').read_text(encoding='utf-8')
+        cls.kotlin_tests = (KOTLIN / 'CompilerFixtureNullabilityTest.kt').read_text(encoding='utf-8')
+        cls.runner = (KOTLIN / 'CompilerFixtureRunner.kt').read_text(encoding='utf-8')
+        cls.controls = (KOTLIN / 'CompilerFixtureControls.kt').read_text(encoding='utf-8')
+        cls.provenance = (KOTLIN / 'CompilerFixtureProvenance.kt').read_text(encoding='utf-8')
+        cls.manifest = json.loads((FIXTURES / 'cohort-plans/nullability-protocols-v1.json').read_bytes())
+        cls.ordinary = json.loads((FIXTURES / 'manifest.json').read_bytes())
+        cls.mappings = json.loads((ROOT / 'modules/provider-compiler/src/main/resources/compiler-rule-map.json').read_bytes())['mappings']
+
+    def test_literal_six_ids_thirty_paths_and_source_hashes_match_reviewed_source_v1(self):
+        ids = re.findall(r'Rule\("(ktc\.compiler\.common\.[a-z_]+)", "([A-Z_]+)"', self.plan)
+        self.assertEqual(REVIEWED_IDS, ids)
+        literals = re.findall(r'"(positive|negative|boundary|applicability|suppression)" to \("(cohort-plans/nullability-protocols-cases/[a-z_]+/[a-z]+\.kt)" to "([0-9a-f]{64})"\)', self.plan)
+        expected = [(item['kind'], item['path'], item['source_sha256']) for row in self.manifest['fixtures'] for item in row['inputs']]
+        self.assertEqual(expected, literals)
+        self.assertEqual(30, len(literals))
+        self.assertEqual(30, len({path for _, path, _ in literals}))
+        for kind, path, digest in literals:
+            self.assertEqual(digest, hashlib.sha256((FIXTURES / path).read_bytes()).hexdigest())
+            self.assertEqual(kind + '.kt', Path(path).name)
+        self.assertIn('= KINDS.flatMap { kind ->', self.plan)
+        self.assertIn('RULES.map { rule -> rule to kind }', self.plan)
+        self.assertIn('CompilerFixtureNullabilityDeclaration(index + 1,', self.plan)
+
+    def test_six_source_metadata_pins_are_exact_and_the_thirty_six_capture_paths_are_dedicated(self):
+        pins = dict(re.findall(r'"([a-zA-Z0-9_./-]+)" to "([0-9a-f]{64})"',
+            self.plan[self.plan.index('val SOURCE_METADATA_PINS:'):self.plan.index('fun declarations():')]))
+        self.assertEqual(SOURCE_V1_METADATA_PINS, pins)
+        for path, expected in pins.items():
+            self.assertEqual(expected, hashlib.sha256((FIXTURES / path).read_bytes()).hexdigest(), path)
+        self.assertIn('declarations().map { it.path } + SOURCE_METADATA_PINS.keys', self.plan)
+        self.assertIn('START_CAPTURE_PATHS.size == 36 && START_CAPTURE_PATHS.toSet().size == 36', self.plan)
+        self.assertIn('Digests.sha256(readCapturedSource(path)).removePrefix("sha256:") == expected', self.plan)
+        self.assertNotIn('test_nullability_protocols_hookup.py', self.plan)
+
+    def test_all_historical_278_sources_main_98_graph_16_map_443_and_supplemental_18_stay_exact(self):
+        for path, expected in HISTORICAL_SOURCE_PINS.items():
+            self.assertEqual(expected, hashlib.sha256((ROOT / path).read_bytes()).hexdigest(), path)
+        historical = sorted([*(FIXTURES / 'cases').rglob('*.kt'), *(FIXTURES / 'planned-kmp-cases').rglob('*.kt')],
+                            key=lambda path: path.relative_to(FIXTURES).as_posix())
+        self.assertEqual(278, len(historical))
+        inventory = ''.join(hashlib.sha256(path.read_bytes()).hexdigest() + '  ' + path.relative_to(FIXTURES).as_posix() + '\n'
+                            for path in historical)
+        self.assertEqual('378127f94364be6ac94bf84d56769ea25126f28840686f03fa5adafc55c7bc00', hashlib.sha256(inventory.encode()).hexdigest())
+        self.assertEqual(98, len(self.ordinary['fixtures']))
+        self.assertEqual(16, len(json.loads((FIXTURES / 'planned-kmp-manifest.json').read_bytes())['fixtures']))
+        self.assertEqual(443, len(self.mappings))
+        supplemental = [item for row in self.ordinary['fixtures'] for item in row.get('supplemental_inputs', [])]
+        self.assertEqual(18, len(supplemental))
+        for item in supplemental:
+            self.assertNotIn('expected_outcome_matched', item)  # The historical authoring record is never retrofitted.
+            self.assertEqual('not_run', item['execution_state'])
+            self.assertEqual(item['source_sha256'], hashlib.sha256((FIXTURES / item['path']).read_bytes()).hexdigest())
+
+    def test_exact_existing_common_error_mappings_are_used_without_an_ordinary_fixture_append(self):
+        by_id = {row['rule_id']: row for row in self.mappings}
+        ordinary_ids = {row['rule_id'] for row in self.ordinary['fixtures']}
+        self.assertFalse(ordinary_ids & {rule_id for rule_id, _ in REVIEWED_IDS})
+        for rule_id, upstream_id in REVIEWED_IDS:
+            row = by_id[rule_id]
+            self.assertEqual(('common', 'ERROR', upstream_id, 'exact'),
+                             (row['backend'], row['declared_severity'], row['upstream_id'], row['relation']))
+            self.assertEqual([], row['known_checker_activation_flags'])
+        load = segment(self.runner, 'loadFixtureInventory', '    private fun fixtureScope(')
+        self.assertIn('if (nullabilitySelected()) {', load)
+        self.assertIn('CompilerFixtureNullabilityPlan.verifyCapturedMetadata(provenance::readFixture)', load)
+        self.assertIn('CompilerFixtureNullabilityPlan.load(sourceManifest, provenance::readFixture)', load)
+        self.assertIn('mapping.backend == "common" && mapping.declaredSeverity == "ERROR"', load)
+        self.assertIn('declaration.ruleId !in assessments && fixtureRuleIdsByPath.put(declaration.path, declaration.ruleId) == null', load)
+        self.assertNotIn('assessments[declaration.ruleId]', load)
+        self.assertIn('registry.mappings.size == 443', load)
+
+    def test_conditional_start_capture_preserves_original_four_argument_signature_and_drift_scope(self):
+        self.assertIn('private val includeNullabilitySourcePlan: Boolean,', self.provenance)
+        self.assertIn('checkpoint: () -> Unit = {}): CompilerFixtureProvenance =\n            capture(repositoryPath, runPath, evidence, includeNullabilitySourcePlan = false, checkpoint = checkpoint)', self.provenance)
+        self.assertIn('includeNullabilitySourcePlan: Boolean, checkpoint: () -> Unit = {}): CompilerFixtureProvenance {', self.provenance)
+        self.assertEqual(2, self.provenance.count('fun capture(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,'))
+        self.assertIn('val currentPaths = runCatching { sourceFiles(repository, includeNullabilitySourcePlan) }', self.provenance)
+        self.assertIn('val sources = sourceFiles(repository, includeNullabilitySourcePlan).map', self.provenance)
+        roots = re.search(r'private val SOURCE_ROOTS = listOf\((.*?)\)\n', self.provenance, re.DOTALL)
+        self.assertIsNotNone(roots)
+        self.assertEqual(['modules/provider-compiler/src/main', 'modules/provider-compiler/src/test',
+            'modules/provider-runtime/src/main', 'modules/contracts/src/main', 'providers/compiler-fixtures/cases',
+            'providers/compiler-fixtures/planned-kmp-cases'], re.findall(r'"([^"]+)"', roots.group(1)))
+        files = re.search(r'private val SOURCE_FILES = listOf\((.*?)\)\n', self.provenance, re.DOTALL)
+        self.assertIsNotNone(files)
+        self.assertNotIn('nullability', files.group(1))
+        self.assertIn('if (includeNullabilitySourcePlan) CompilerFixtureNullabilityPlan.START_CAPTURE_PATHS.map', self.provenance)
+        self.assertIn('else emptyList()', self.provenance)
+        self.assertIn('path.toRealPath() == path.toAbsolutePath().normalize()', self.provenance)
+        self.assertIn('provenance = if (nullabilitySelected()) CompilerFixtureProvenance.capture(', self.runner)
+        self.assertIn('includeNullabilitySourcePlan = true) { budget.requireActive() }', self.runner)
+        self.assertIn('else CompilerFixtureProvenance.capture(repository, runRoot, evidence) { budget.requireActive() }', self.runner)
+
+    def test_only_new_selector_has_thirty_five_cap_with_all_old_bounds_and_selects_calls_preserved(self):
+        cohort_test = (KOTLIN / 'CompilerFixtureControlsTest.kt').read_bytes()
+        self.assertEqual(COHORT_CONTROLS_TEST_PINS['postimage'], hashlib.sha256(cohort_test).hexdigest())
+        correction = b', "nullability_protocols"), CompilerFixtureSettings.COHORTS)'
+        self.assertEqual(1, cohort_test.count(correction))
+        old_test = cohort_test.replace(correction, b'), CompilerFixtureSettings.COHORTS)', 1)
+        self.assertEqual(COHORT_CONTROLS_TEST_PINS['preimage'], hashlib.sha256(old_test).hexdigest())
+        expectation = re.search(r'assertEquals\(expectedNames \+ setOf\((.*?)\), CompilerFixtureSettings.COHORTS\)',
+                                cohort_test.decode('utf-8'), re.DOTALL)
+        self.assertIsNotNone(expectation)
+        self.assertEqual(['original', 'overrides', 'visibility', 'types_conventions', 'inline_constructors',
+                          'opt_in', 'jvm', 'type_boundaries', 'all', 'type_boundaries_supplemental', 'nullability_protocols'],
+                         re.findall(r'"([^"]+)"', expectation.group(1)))
+        self.assertIn('val maxAttempts: Int = if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS else MAX_ATTEMPTS,', self.controls)
+        self.assertIn('if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) require(maxAttempts <= CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS)', self.controls)
+        self.assertIn('val attemptLimit = if (cohort == CompilerFixtureNullabilityPlan.SELECTOR)', self.controls)
+        self.assertIn('number("max-attempts", attemptLimit, attemptLimit).toInt()', self.controls)
+        for bound in ('MAX_ATTEMPTS = 48', 'MAX_OVERALL_MILLIS = 1_200_000L', 'MAX_PER_JOB_MILLIS = 90_000L',
+                      'MAX_EVIDENCE_BYTES = 268_435_456L', 'JOB_RESERVE_BYTES = 16_777_216L', 'TERMINAL_RESERVE_BYTES = 8_388_608L'):
+            self.assertIn(bound, self.controls)
+        self.assertIn('if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) return false', self.controls)
+        selects = segment(self.controls, 'selectsNullability', '    fun description(', private=False)
+        self.assertIn('cohort != CompilerFixtureNullabilityPlan.SELECTOR', selects)
+        self.assertIn('require(authoredCohort == CompilerFixtureNullabilityPlan.AUTHORED_COHORT)', selects)
+        self.assertIn('require(ruleId in CompilerFixtureNullabilityPlan.RULE_IDS)', selects)
+        self.assertIn('require(kind in CompilerFixtureNullabilityPlan.KINDS)', selects)
+        calls = re.findall(r'\bsettings\.selects\(([^)]*)\)', self.runner)
+        self.assertEqual(Counter({'it.authoredCohort, it.ruleId': 4, 'fixture.authoredCohort, fixture.ruleId': 7}), Counter(calls))
+
+    def test_schedule_is_fixed_thirty_single_sources_one_denial_four_unchanged_controls_no_fallback(self):
+        for constant in ('INPUT_COUNT = 30', 'PLANNED_ATTEMPTS = 35', 'CHILD_CAPABLE_CALLS = 34', 'VERSION_DENIAL_ATTEMPT = 31'):
+            self.assertIn(constant, self.plan)
+        flags = re.search(r'val FLAGS = listOf\(([^\n]+)\)', self.plan)
+        self.assertEqual(FLAGS, re.findall(r'"([^"]+)"', flags.group(1)))
+        run = segment(self.runner, 'runNullabilityInputs', '    private fun recordNullabilityObservation(')
+        self.assertEqual(2, len(re.findall(r'\bexecute\(', run)))
+        self.assertIn('nullabilityInputs.forEach { input ->', run)
+        self.assertIn('execute(declaration.label, mapOf(declaration.path to input.source), CompilerFixtureNullabilityPlan.FLAGS)', run)
+        self.assertIn('execute(CompilerFixtureNullabilityPlan.VERSION_DENIAL_LABEL,', run)
+        self.assertIn('requestedVersion = CompilerFixtureNullabilityPlan.VERSION_DENIAL_REQUESTED_VERSION', run)
+        for forbidden in ('cohort(', 'ensureEmit(', 'suppress(', 'changePackage(', 'assess(', 'while (', '.positive', '.negative'):
+            self.assertNotIn(forbidden, run)
+        self.assertIn('if (nullabilitySelected()) runNullabilityInputs()\n                else if (supplementalSelected()) runSupplementalInputs()', self.runner)
+        self.assertIn('runIntentControls()\n                runTransportControls()', self.runner)
+        self.assertIn('index + 32', self.plan)
+        for field in ('"source_transforms" to 0', '"cohort_batches" to 0', '"retries_or_replacements" to 0', '"ordinary_six_kind_jobs" to 0'):
+            self.assertIn(field, self.plan)
+
+    def test_all_nineteen_execution_ordinary_probe_supplemental_control_terminal_source_bodies_are_unchanged(self):
+        for name, (next_marker, expected) in UNCHANGED_RUNNER_SEGMENTS.items():
+            self.assertEqual(expected, hashlib.sha256(segment(self.runner, name, next_marker).encode()).hexdigest(), name)
+        self.assertEqual(19, len(UNCHANGED_RUNNER_SEGMENTS))
+
+    def test_predeclared_positive_oracle_requires_failed_nonzero_exact_selected_error_and_full_error_gates(self):
+        oracle = segment(self.plan, 'oracle', '    fun description(', private=False)
+        self.assertIn('"positive" -> "supervised_nonzero_with_exact_selected_raw_and_mapped_ERROR"', oracle)
+        self.assertIn('"positive" -> listOf(upstreamId)', oracle)
+        self.assertIn('"positive_selected_error_requires_exact_authored_file_and_valid_actual_location"', oracle)
+        match = self.plan[self.plan.index('val expectationMatched:'):self.plan.index('val expectedPositiveErrorMatched:')]
+        for gate in ('observedReceiptComplete && actualExitCode != 0 && providerStatus == "failed"',
+            'selectedRawErrorAtAuthoredPointCount > 0 && selectedErrorFindingAtAuthoredPointCount > 0',
+            'selectedRawDiagnosticCount == selectedRawErrorAtAuthoredPointCount',
+            'selectedFindingCount == selectedErrorFindingAtAuthoredPointCount && selectedErrorRawAndMappedPointsAgree',
+            'unexpectedRawErrorCount == 0 && unexpectedMappedErrorCount == 0'):
+            self.assertIn(gate, match)
+        self.assertIn('rawErrorDiagnosticCount - selectedRawErrorAtAuthoredPointCount', self.plan)
+        self.assertIn('errorFindingCount - selectedErrorFindingAtAuthoredPointCount', self.plan)
+        self.assertIn('proposed_exact_selected_error_observed_compiler_task_still_failed', self.plan)
+        self.assertIn('"positive_match_is_successful_compilation" to false', self.runner)
+
+    def test_actual_raw_oracle_reparses_retained_streams_and_never_uses_residual_only_or_filtered_error_totals(self):
+        record = segment(self.runner, 'recordNullabilityObservation', '    private fun recordNullabilityVersionDenial(')
+        self.assertIn('output.resolve("sources").resolve(relative) to CompilerSourceIdentity(relative, Digests.sha256(source), source)', record)
+        self.assertIn('CompilerDiagnosticParser().parse((job.process?.stderr ?: "") + "\\n" + (job.process?.stdout ?: ""), sourcePaths)', record)
+        self.assertIn('val fullRaw = CompilerFixtureNullabilityPlan.fullActualRawDiagnostics(parsed)', record)
+        self.assertIn('parsed.diagnostics.map { RawDiagnostic(it.message, it.severity, it.upstreamId, it.location) } + parsed.rawDiagnostics', self.plan)
+        self.assertIn('selectedRawDiagnosticCount = fullRaw.count { it.upstreamId == declaration.upstreamId }', record)
+        self.assertIn('rawDiagnosticCount = fullRaw.size, rawErrorDiagnosticCount = fullRaw.count { it.severity == "error" }', record)
+        self.assertIn('findingCount = job.result.findings.size, errorFindingCount = job.result.findings.count { it.severity == "error" }', record)
+        self.assertIn('"full_actual_raw_diagnostic_oracle_inventory" to ContractJson.encodeToJsonElement(fullRaw)', record)
+        self.assertIn('"provider_residual_raw_diagnostics" to ContractJson.encodeToJsonElement(job.result.rawDiagnostics)', record)
+        self.assertIn('"full_normalized_finding_oracle_inventory" to ContractJson.encodeToJsonElement(job.result.findings)', record)
+        self.assertNotIn('fullRaw.filter', record)
+        self.assertNotIn('job.result.rawDiagnostics.filter', record)
+        self.assertNotIn('job.result.findings.filter', record)
+        self.assertIn('residualDiagnosticsAccountedFor(fullRaw, job.result.rawDiagnostics)', record)
+        self.assertIn('&& residualAccountedFor &&', record)
+
+    def test_exact_actual_points_messages_and_multiplicity_bind_both_diagnostic_channels(self):
+        point = segment(self.plan, 'authoredPointMatches', '    /** The provider', private=False)
+        for gate in ('location.path != declaration.path', 'location.fileDigest != Digests.sha256(source)',
+            'location.line - 1', 'location.column in 0..line.length', 'location.endLine == location.line',
+            'location.endColumn == location.column', 'declaration.sourceSha256'):
+            self.assertIn(gate, point)
+        agreement = segment(self.plan, 'selectedErrorPointsAgree', '    /** Value-only denial', private=False)
+        self.assertIn('raw.any { it.severity != "error" || !authoredPointMatches(', agreement)
+        self.assertIn('mapped.any { it.severity != "error" || !authoredPointMatches(', agreement)
+        self.assertIn('raw.groupingBy { key(checkNotNull(it.location), it.message) }.eachCount()', agreement)
+        self.assertIn('mapped.groupingBy { key(it.location, it.diagnosis) }.eachCount()', agreement)
+        for field in ('location.path', 'location.fileDigest', 'location.line', 'location.column', 'location.endLine', 'location.endColumn', 'message'):
+            self.assertIn(field, agreement)
+        self.assertNotIn('proposed_source_anchor', point + agreement)
+        self.assertIn('"initial_source_anchors_are_not_observed_diagnostic_locations" to true', self.plan)
+
+    def test_alternative_oracles_need_genuine_exit0_both_channel_absence_no_errors_and_retain_warnings(self):
+        match = self.plan[self.plan.index('val expectationMatched:'):self.plan.index('val expectedPositiveErrorMatched:')]
+        self.assertIn('else -> observedReceiptComplete && actualExitCode == 0 && providerStatus == "partial"', match)
+        self.assertIn('!selectedIdObserved && unexpectedRawErrorCount == 0 && unexpectedMappedErrorCount == 0', match)
+        self.assertIn('selectedRawDiagnosticCount > 0 || selectedFindingCount > 0', self.plan)
+        self.assertIn('else -> rawErrorDiagnosticCount', self.plan)
+        self.assertIn('else -> errorFindingCount', self.plan)
+        self.assertIn('"raw_non_error_diagnostic_count" to rawDiagnosticCount - rawErrorDiagnosticCount', self.plan)
+        self.assertIn('proposed_exit0_selected_absence_observed_with_allowed_non_error_diagnostics', self.plan)
+        self.assertIn('"clean_or_successful_coverage_claim" to false', self.plan)
+        self.assertIn('"non_error_diagnostics" to "allow_and_retain_all_without_clean_compilation_or_coverage_claim"', self.plan)
+
+    def test_all_six_unknown_suppressions_remain_null_for_failure_or_exit0_and_prevent_terminal_success(self):
+        self.assertEqual(6, sum(item['kind'] == 'suppression' for row in self.manifest['fixtures'] for item in row['inputs']))
+        self.assertIn('"suppression" -> null // Even exit0 and no raw warnings cannot validate hard-error suppression.', self.plan)
+        self.assertIn('observations.map { it.declaration } == declarations() && observations.all { it.expectationMatched == true }', self.plan)
+        self.assertIn('failed_compilation_unknown_suppression_expectation', self.plan)
+        self.assertIn('unvalidated_exit0_error_suppression_warnings_retained', self.plan)
+        self.assertIn('"ERROR_SUPPRESSION_diagnostic_count" to errorSuppressionDiagnosticCount', self.plan)
+        self.assertIn('errorSuppressionDiagnosticCount = fullRaw.count { it.upstreamId == "ERROR_SUPPRESSION" }', self.runner)
+        gate = segment(self.runner, 'boundedWorkComplete', '    private fun supplementalScope(')
+        self.assertIn('if (nullabilitySelected())', gate)
+        self.assertIn('CompilerFixtureNullabilityPlan.expectedVariantsValidated(', gate)
+        self.assertIn('nullabilityVersionDenial == true && controls.values.all { it == true }', gate)
+        self.assertIn('Nullability run remains incomplete: six suppression expectations are unknown', self.runner)
+        self.assertIn('"run_complete" to false, "ordinary_six_kind_assessments_complete" to false', self.plan)
+        self.assertNotIn('"nullability_complete" to true', self.plan + self.runner)
+
+    def test_actual_failed_compiler_tasks_are_not_unmatched_counts_or_success_and_survive_withheld_attribution(self):
+        self.assertIn('val actualCompilerTaskFailed: Boolean get() = executionConfirmed && actualExitCode != null && actualExitCode != 0', self.plan)
+        self.assertIn('val actualProviderFailed: Boolean get() = providerStatus == "failed"', self.plan)
+        self.assertIn('val unexpectedOrUnmatchedVariant: Boolean get() = declaration.kind != "suppression" && expectationMatched != true', self.plan)
+        for field in ('"actual_compiler_task_failed" to actualCompilerTaskFailed',
+            '"unexpected_or_unmatched_variant" to unexpectedOrUnmatchedVariant',
+            '"actual_failure_facts_remain_retained_when_receipt_or_START_attribution_is_withheld" to true',
+            '"expected_positive_error_matched" to expectedPositiveErrorMatched'):
+            self.assertIn(field, self.plan)
+        for field in ('nullability_actual_failed_compiler_task_count', 'nullability_unexpected_or_unmatched_variant_count',
+            'nullability_local_expected_positive_ERROR_matched_count', 'nullability_unknown_suppression_expectation_count'):
+            self.assertIn(field, self.runner)
+        self.assertIn('/6 expected positive ERROR matches (compiler tasks still failed)', self.runner)
+        self.assertIn('/18 alternative matches', self.runner)
+        for kind in ('negative', 'boundary', 'applicability'):
+            self.assertIn('/6 ' + kind + ' matches', self.runner)
+        self.assertIn('nullability_local_oracle_match_counts_by_kind', self.runner)
+        self.assertIn('if (kind == "suppression") null else nullabilityReceipts.count', self.runner)
+
+    def test_returned_actual_input_receipts_are_persisted_even_after_execute_rejection_without_retry(self):
+        run = segment(self.runner, 'runNullabilityInputs', '    private fun recordNullabilityObservation(')
+        self.assertEqual(2, run.count('recordNullabilityObservation(input,'))
+        self.assertIn('jobs.singleOrNull { it.attempt.number == declaration.number && it.label == declaration.label }', run)
+        self.assertIn('recordNullabilityObservation(input, actual, executionFailure = failure)', run)
+        self.assertIn('catch (persistence: Throwable) { preserveCompilerFixtureFailure(failure, persistence) }', run)
+        self.assertIn('throw failure // No replacement or continuation', run)
+        record = segment(self.runner, 'recordNullabilityObservation', '    private fun recordNullabilityVersionDenial(')
+        self.assertIn('executionFailure == null && job.persistenceComplete && job.receiptInvariantsPassed', record)
+        self.assertIn('job.directory !in rejectedJobAttribution && job.process?.supervisorIdentity == provenance.supervisorIdentity', record)
+        self.assertIn('job.sources == mapOf(declaration.path to input.source)', record)
+        self.assertIn('job.input.context.compilationFiles == listOf(declaration.path)', record)
+        self.assertIn('"attribution_withheld_after_execute_failure" to (executionFailure != null)', record)
+        self.assertIn('terminal = executionFailure != null', record)
+        self.assertIn('"initial_manifest_authoring_record" to input.authoringRecord', record)
+        self.assertIn('"actual_job_evidence" to references(job)', record)
+        self.assertIn('nullabilityReceipts += NullabilityReceipt(observation, receipt)', record)
+
+    def test_receipt_and_reservation_count_gates_bind_exact_thirty_ordinals_and_subjects_but_are_informational(self):
+        receipts = segment(self.plan, 'observedReceiptsComplete', '    /** A35-label', private=False)
+        for gate in ('observations.size == INPUT_COUNT && attempts.size >= INPUT_COUNT',
+            'observation.declaration == declaration && observation.attemptNumber == declaration.number',
+            'observation.observedReceiptComplete && attempt.number == declaration.number',
+            'attempt.label == declaration.label && attempt.ruleIds == setOf(declaration.ruleId)'):
+            self.assertIn(gate, receipts)
+        schedule = segment(self.plan, 'exactAttemptScheduleMatches', '    /** Six unknown', private=False)
+        self.assertIn('attempts.size == PLANNED_ATTEMPTS', schedule)
+        self.assertIn('attempts[index].number == index + 1 && attempts[index].label == labels[index]', schedule)
+        self.assertIn('expected.getOrNull(index)?.let { setOf(it.ruleId) }.orEmpty()', schedule)
+        self.assertIn('"nullability_observed_receipts_are_success" to false', self.plan)
+        self.assertIn('nullability_reservation_counts_are_arithmetic_not_actual_execution_or_denial_proof', self.runner)
+        self.assertIn('"nullability_current_START_attributed_oracle_match_count" to if (provenanceIntact == true)', self.runner)
+        self.assertIn('provenanceIntact != false &&\n                CompilerFixtureNullabilityPlan.observedReceiptsComplete', self.runner)
+
+    def test_version_denial_is_exact_thirty_first_wrong_request_no_actual_process_with_intact_receipt(self):
+        denial = segment(self.plan, 'versionDenialMatches', '    /** Informational', private=False)
+        for gate in ('attempt.number == VERSION_DENIAL_ATTEMPT', 'attempt.label == VERSION_DENIAL_LABEL && attempt.ruleIds.isEmpty()',
+            'requestedVersion == VERSION_DENIAL_REQUESTED_VERSION && !actualProcessObserved && providerStatus == "unavailable"',
+            '"compiler_version_not_pinned_2_4_21" in reasons && receiptsAndInputIntact'):
+            self.assertIn(gate, denial)
+        record = segment(self.runner, 'recordNullabilityVersionDenial', '    private fun supplementalSelected(')
+        self.assertIn('actualProcessObserved = job.process != null', record)
+        self.assertIn('executionFailure == null && job.persistenceComplete && job.receiptInvariantsPassed', record)
+        self.assertIn('"actual_provider_reasons" to job.result.reasons', record)
+        self.assertIn('"actual_job_evidence" to references(job)', record)
+        self.assertIn('runRoot.resolve("nullability-version-denial.json")', record)
+        self.assertIn('no actual', self.kotlin_tests.lower())
+
+    def test_private_sidecar_and_completion_fields_cannot_rewrite_latest_or_promote_ordinary_credit(self):
+        self.assertIn('if (selected) null else ordinaryProbeOrSupplementalSidecar', self.plan)
+        self.assertIn('compilerFixtureNullabilityLatestSidecar(nullabilitySelected(),', self.runner)
+        self.assertIn('compilerFixtureNullabilityCompletionFields(nullabilitySelected())', self.runner)
+        self.assertIn('CompilerFixtureEvidence(repository, runRoot, latestSidecar(), settings.evidenceBytes)', self.runner)
+        self.assertIn('latestSidecar()?.let { save(it, sidecar,', self.runner)
+        self.assertIn('val implementationObserved = cases.any { it.kind == "positive" && it.passed }', self.runner)
+        self.assertIn('"tested" to (implemented && allCases)', self.runner)
+        self.assertIn('"qualified" to false', self.runner)
+        self.assertIn('not_run_ordinary_six_kind_outside_nullability_schedule', self.runner)
+        self.assertIn('"nullability_input_inventory" to nullabilityInventory(terminal, mapping.ruleId)', self.runner)
+        self.assertIn('nullability_observations_are_not_ordinary_implementation_test_or_qualification_credit', self.runner)
+        self.assertIn('"historical_tuple_policy"', self.runner)
+        self.assertIn('if (!nullabilitySelected()) emptyMap()', self.runner)
+
+    def test_twenty_kotlin_value_controls_and_new_helper_are_source_only_without_process_writer_or_authority_apis(self):
+        self.assertEqual(20, len(re.findall(r'@Test fun ', self.kotlin_tests)))
+        for name in ('positiveOracleRequiresHealthyNonzeroFailedTaskExactErrorInBothChannelsAndActualPointAgreement',
+            'fullRawInventoryIncludesNamedMappedAndResidualDiagnosticsAndMatchesPointsMessagesAndMultiplicity',
+            'allSixSuppressionsStayUnknownForActualFailureExit0SelectedErrorsWarningsOrNoDiagnostics',
+            'thirtyObservedReceiptValuesRequireExactDeclarationsOrdinalsSubjectsAndIntactGatesNotCountLaundering',
+            'privateLatestAndCompletionOverlayCannotPromoteOrdinarySixKindSuccessQualificationOrAnotherTuple'):
+            self.assertIn(name, self.kotlin_tests)
+        for forbidden in ('ProcessOutcome(', 'ProcessBuilder(', 'KotlinJvmCompilerProvider(', '.analyze(', '.analyzeObserved(',
+            'Runtime.getRuntime(', 'Files.write', 'Files.create', 'Files.delete', 'ExecutionPermit(', 'ExecutionAuthority('):
+            self.assertNotIn(forbidden, self.plan + self.kotlin_tests)
+        self.assertIn('No compiler, provider or native helper is launched or simulated', self.kotlin_tests)
+        self.assertIn('Value gate only; no actual receipts or process claimed', self.kotlin_tests)
+        self.assertTrue(kotlin_delimiters_balanced(self.plan))
+        self.assertTrue(kotlin_delimiters_balanced(self.kotlin_tests))
+        self.assertTrue(kotlin_delimiters_balanced(self.controls))
+        self.assertTrue(kotlin_delimiters_balanced(self.provenance))
+        self.assertTrue(kotlin_delimiters_balanced(self.runner))
+        parsed = ast.parse(Path(__file__).read_text(encoding='utf-8'))
+        imports = {alias.name.split('.')[0] for node in ast.walk(parsed) if isinstance(node, ast.Import) for alias in node.names}
+        self.assertFalse(imports & {'subprocess', 'socket', 'urllib', 'requests'})
+
+
+if __name__ == '__main__':
+    unittest.main()

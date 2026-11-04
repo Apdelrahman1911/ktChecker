@@ -498,3 +498,67 @@ COHORTS = {'ABSTRACT_MEMBER_NOT_IMPLEMENTED': 'overrides',
  'EXPECT_ACTUAL_INCOMPATIBLE_PARAMETER_NAMES': 'kmp_matching',
  'EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_KIND': 'kmp_matching',
  'NO_ACTUAL_FOR_EXPECT': 'kmp_matching'}
+
+# Original source plans for a bounded, ordinary JVM cohort. Supplemental inputs
+# are independent source variants, not additional pairs or observed outcomes.
+TYPE_BOUNDARY_INPUTS = {
+    'INT_LITERAL_OUT_OF_RANGE': {
+        'positive': 'val signedValue: Long = 9223372036854775808L',
+        'negative': 'val signedValue: Long = 9223372036854775807L',
+        'alternative': 'A value above Long.MAX_VALUE can legitimately use an explicitly unsigned ULong representation; integer-literal validity is not an inferred policy about overflow or intent.',
+        'boundary_source': 'val maximumSigned: Long = 9223372036854775807L\nval minimumSigned: Long = -9223372036854775807L - 1L',
+        'boundary_expectation': 'Proposed: both signed Long boundaries compile with this ID absent. The minimum uses two representable literals, not a guessed special unary-minus exemption.',
+        'applicability_source': 'val unsignedBits: ULong = 18446744073709551615uL',
+        'applicability_expectation': 'Proposed: an explicitly unsigned maximum fits ULong and does not emit this signed-literal error; no signed arithmetic overflow or runtime behavior is certified.',
+    },
+    'CANNOT_CHECK_FOR_ERASED': {
+        'positive': 'fun <T> matches(value: Any): Boolean = value is T',
+        'negative': 'inline fun <reified T> matches(value: Any): Boolean = value is T',
+        'alternative': 'A reified inline type parameter or an explicit value predicate is legitimate. A star-projected collection check does not prove erased element types.',
+        'boundary_source': 'fun matchesCollection(value: Any): Boolean = value is List<*>',
+        'boundary_expectation': 'Proposed: a star-projected collection type check compiles without this ID; it checks only the runtime collection shape, not String/other element types.',
+        'applicability_source': 'fun <T> matches(value: T, predicate: (T) -> Boolean): Boolean = predicate(value)',
+        'applicability_expectation': 'Proposed: ordinary erased generic values may be consumed by an explicit predicate without an illegal runtime type test; no predicate behavior is inferred.',
+    },
+    'RECURSIVE_TYPEALIAS_EXPANSION': {
+        'positive': 'typealias RecursiveList = List<RecursiveList>',
+        'negative': 'typealias RecursiveList = List<String>',
+        'alternative': 'Recursive nominal domain classes are valid and are not infinite typealias expansions; finite chains of aliases are also legitimate.',
+        'boundary_source': 'typealias TextRow = List<String>\ntypealias TextGrid = List<TextRow>\nfun rows(value: TextGrid): Int = value.size',
+        'boundary_expectation': 'Proposed: finite nested aliases expand to List<List<String>> without this ID; source spelling alone is not a recursion detector.',
+        'applicability_source': 'class Node(val children: List<Node>)',
+        'applicability_expectation': 'Proposed: a recursive nominal class compiles without this typealias-specific ID; no allocation, termination or graph-cycle behavior is certified.',
+    },
+    'CONFLICTING_UPPER_BOUNDS': {
+        'positive': 'class Impossible<T> where T : String, T : Number',
+        'negative': 'interface TextShape { val text: String }\ninterface SizeShape { val size: Int }\nclass Possible<T> where T : TextShape, T : SizeShape',
+        'alternative': 'Multiple compatible interface bounds and an open class plus interface can be legitimate. Preserve FINAL_UPPER_BOUND/ONLY_ONE_CLASS_BOUND_ALLOWED or other actual companion diagnostics on the deliberately conflicting positive.',
+        'boundary_source': 'open class Base\ninterface Tag\nclass Bounded<T> where T : Base, T : Tag',
+        'boundary_expectation': 'Proposed: one open class bound plus a compatible interface compiles without the selected conflict ID; no omitted dependency hierarchy is substituted.',
+        'applicability_source': 'class TextBox<T : CharSequence>(val value: T)',
+        'applicability_expectation': 'Proposed: a single CharSequence interface bound compiles without this ID; constrained generics are not rejected merely for having a bound.',
+    },
+    'TYPE_VARIANCE_CONFLICT_ERROR': {
+        'positive': 'class CovariantBox<out T>(var value: T)',
+        'negative': 'class CovariantBox<out T>(val value: T)',
+        'alternative': 'An immutable covariant producer, mutable invariant container, or contravariant consumer is legitimate. The compiler resolves actual variance positions; textual use of T is not itself a defect.',
+        'boundary_source': 'class InvariantBox<T>(var value: T)',
+        'boundary_expectation': 'Proposed: an invariant mutable property compiles without this ID; mutability is not prohibited independently of variance.',
+        'applicability_source': 'interface Sink<in T> { fun accept(value: T) }',
+        'applicability_expectation': 'Proposed: a contravariant type parameter in a consuming function parameter compiles without this ID; no public producer position is silently added.',
+    },
+    'UNRESOLVED_REFERENCE_WRONG_RECEIVER': {
+        'positive': 'fun String.measure(): Int = length\nval result = 1.measure()',
+        'negative': 'fun String.measure(): Int = length\nval result = "word".measure()',
+        'alternative': 'A genuinely compatible receiver or explicitly declared Int overload is valid; missing extension/import/dependency membership is an unsupported context, not a guessed source defect.',
+        'boundary_source': 'fun Number.measure(): Int = toInt()\nval integer = 1.measure()\nval decimal = 1.5.measure()',
+        'boundary_expectation': 'Proposed: both Int and Double receivers resolve a declared Number extension without this ID; conversion/truncation semantics are not qualified.',
+        'applicability_source': 'fun String.measure(): Int = length\nfun Int.measure(): Int = this\nval result = 1.measure()',
+        'applicability_expectation': 'Proposed: a real Int overload in the sealed batch resolves the call without this ID; same textual function name is not a wrong-receiver proof.',
+    },
+}
+assert len(EXPANSION_CASES) == 50 and len(TYPE_BOUNDARY_INPUTS) == 6
+assert not TYPE_BOUNDARY_INPUTS.keys() & (EXPANSION_CASES.keys() | PLANNED_KMP_CASES.keys())
+EXPANSION_CASES.update({name: (row['positive'], row['negative'], row['alternative'])
+                        for name, row in TYPE_BOUNDARY_INPUTS.items()})
+COHORTS.update({name: 'type_boundaries' for name in TYPE_BOUNDARY_INPUTS})

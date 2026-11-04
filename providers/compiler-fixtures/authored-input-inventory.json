@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "kind": "authored_input_inventory_source_plan",
+  "kotlin_version": "2.4.21",
+  "source_only": true,
+  "execution_or_project_policy_authority": false,
+  "catalog_mappings": 443,
+  "ordinary_pairs": 98,
+  "original_ordinary_pairs": 42,
+  "expanded_ordinary_pairs": 56,
+  "planned_unsupported_kmp_graphs": 16,
+  "supplemental_type_boundary_source_plans": 18,
+  "supplemental_source_plans_executed_by_current_pair_harness": false,
+  "per_id_evidence_promotion_from_authorship": {
+    "implemented": false,
+    "tested": false,
+    "qualified": false,
+    "attempted": false
+  },
+  "execution_receipts_modified_by_generator": false,
+  "ordinary_manifest": {
+    "path": "providers/compiler-fixtures/manifest.json",
+    "sha256": "4854aa356caba6e90b48e10e333bf32828460dc64b04dd0d6b86db3653d49774"
+  },
+  "planned_kmp_manifest": {
+    "path": "providers/compiler-fixtures/planned-kmp-manifest.json",
+    "sha256": "804c242c62707457ff143d16fb03bcd1bddd2ca84b3f9aef2085dc5af800b128"
+  },
+  "limitations": "This file inventories authored source plans only, not actual per-ID execution status. Initial unrun input status does not deny later genuine execution. Generation must preserve all independent execution aggregates and immutable run/unit receipts; no source authorship promotes or downgrades their implementation/test/qualification/attempt flags. The 18 supplemental variants remain outside the current pair harness, and planned KMP graphs do not enable sealed source-role capability."
+}
