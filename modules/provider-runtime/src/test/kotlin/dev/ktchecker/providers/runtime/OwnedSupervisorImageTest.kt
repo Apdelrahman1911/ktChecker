@@ -36,6 +36,12 @@ class OwnedSupervisorImageTest {
         assumeTrue(!System.getProperty("os.name").startsWith("Windows"), "Private POSIX image extraction is unavailable on Windows")
         return directory()
     }
+    private fun moveProtectedImageRoot(root: Path, destination: Path) {
+        // Stage the fixture mutation without relying on a privileged user's permission bypass.
+        Files.setPosixFilePermissions(root, PosixFilePermissions.fromString("rwx------"))
+        Files.move(root, destination)
+        Files.setPosixFilePermissions(destination, PosixFilePermissions.fromString("r-x------"))
+    }
     private fun manifest(content: ByteArray = binary, platform: String = target, digest: String = supervisorDigest(content)): ByteArray =
         "${SupervisorBundleFormat.VERSION}\n$platform\n$sourceDigest\n$digest\n".toByteArray()
 
@@ -192,19 +198,22 @@ class OwnedSupervisorImageTest {
     @Test fun `replaced root is not treated as this invocation's cleanup directory`() {
         val parent = posixDirectory()
         val image = bundle().extract(parent)
-        Files.move(image.root, parent.resolve("original-image"))
+        moveProtectedImageRoot(image.root, parent.resolve("original-image"))
         Files.createDirectory(image.root)
         val other = image.root.resolve("other")
         Files.writeString(other, "keep")
+        Files.setPosixFilePermissions(image.root, PosixFilePermissions.fromString("r-x------"))
         fails("process_supervisor_image_changed") { image.verify() }
         assertFalse(image.closeSafely())
+        assertEquals(PosixFilePermissions.fromString("r-x------"), Files.getPosixFilePermissions(image.root, NOFOLLOW_LINKS))
         assertEquals("keep", Files.readString(other))
     }
 
     @Test fun `missing owned root or binary is image drift not a missing installed bundle`() {
         val parent = posixDirectory()
         val missingRoot = bundle().extract(parent)
-        Files.move(missingRoot.root, parent.resolve("saved-image"))
+        moveProtectedImageRoot(missingRoot.root, parent.resolve("saved-image"))
+        assertFalse(Files.exists(missingRoot.root, NOFOLLOW_LINKS))
         fails("process_supervisor_image_changed") { missingRoot.verify() }
         assertFalse(missingRoot.closeSafely())
 
