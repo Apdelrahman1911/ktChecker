@@ -107,6 +107,7 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
         val modules = graph.modules.associateBy { it.id }
         val sets = graph.sourceSets.associateBy { it.id }
         val compilations = graph.compilations.associateBy { it.id }
+        val moduleCompilations = graph.compilations.groupBy { it.moduleId }
         val issues = graph.issues.toMutableList()
         if (graph.compilations.isEmpty()) issues += ModelIssue("compilation_model_empty", null,
             "No actual compilation was exported; graph completeness and admission are nonvacuous.")
@@ -174,12 +175,22 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
             issues += ModelIssue("source_set_unconsumed", sourceSet.id, "Observed nonempty source set has no actual compilation; unvisited sources are not silently retired.")
         }
         graph.compilations.forEach { compilation ->
-            listOf(compilation.id, compilation.target, compilation.platform, compilation.name, compilation.compileTaskPath,
+            listOf(compilation.id, compilation.platform, compilation.name, compilation.compileTaskPath,
                 compilation.dependencyConfiguration).forEach(::identifier)
             if (compilation.moduleId !in modules || compilation.defaultSourceSetId !in sets ||
                 sets[compilation.defaultSourceSetId]?.moduleId != compilation.moduleId || compilation.sourceSetIds.any {
                     it !in sets || sets[it]?.moduleId != compilation.moduleId
                 }) throw ProjectModelException("model_reference_invalid", "Compilation references an unknown module/source set.")
+            if (compilation.target.isEmpty()) {
+                val module = modules.getValue(compilation.moduleId)
+                // KotlinJvmTarget.name is exactly "" in the pinned JVM-only plugin. This
+                // is an actual target identity, not a platform alias or a null wildcard.
+                // A bare empty string cannot grant this domain to MPP/Android/mixed modules.
+                requireBound("org.jetbrains.kotlin.jvm" in module.pluginIds && module.pluginIds.none {
+                    it in setOf("org.jetbrains.kotlin.multiplatform", "org.jetbrains.kotlin.android") || it.startsWith("com.android.")
+                } && moduleCompilations.getValue(module.id).all { it.target.isEmpty() && it.platform == "jvm" },
+                    "unnamed JVM-only target domain")
+            } else identifier(compilation.target)
             unique(compilation.sourceSetIds, "compilation source sets"); unique(compilation.sourceFiles.map { it.path }, "compilation sources")
             val closure = refinementClosure(compilation.sourceSetIds, sets)
             if (!compilation.sourceSetIds.containsAll(closure) || compilation.defaultSourceSetId !in compilation.sourceSetIds) {
@@ -213,6 +224,7 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
             }
             if (compilation.toolchain == null || compilation.toolchain.compilerVersion == null || compilation.toolchain.compilerArtifacts.isEmpty() ||
                 compilation.toolchain.runtimeArtifacts.isEmpty()) issues += ModelIssue("toolchain_unavailable", compilation.id, "Complete compiler/runtime identity is unavailable.")
+            requireBound(compilation.compilerArguments.size <= 16_384, "compiler argument count")
             compilation.compilerArguments.forEach { requireBound(it.length <= 8192 && '\u0000' !in it, "compiler argument") }
         }
         graph.generatedInputs.forEach { generated ->

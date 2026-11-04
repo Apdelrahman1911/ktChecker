@@ -2,6 +2,8 @@ dependencies {
     implementation(project(":contracts"))
     testImplementation(project(":snapshot"))
     testImplementation(project(":provider-runtime"))
+    // Exercise the pinned exporter helpers without configuring or executing a Gradle build.
+    testImplementation(localGroovy())
 }
 
 tasks.withType<Test>().configureEach {

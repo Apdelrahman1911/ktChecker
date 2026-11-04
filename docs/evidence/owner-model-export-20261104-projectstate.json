@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "kind": "retained_local_actual_owner_export_observation_not_release_qualification",
+  "observed_at": "2026-11-04T16:11:02.476427+00:00",
+  "base_commit": "abf075be353d45a172ed5cd4e13ce86582aed30a",
+  "selected_tuple": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "gradle": "9.6.1",
+    "kotlin_gradle_plugin": "2.4.21",
+    "jdk_major": 21,
+    "fixture": "jvm-owner-export"
+  },
+  "state": "exported_and_trusted_imported",
+  "outer_exit_code": 0,
+  "source_input_count": 77,
+  "changed_inputs": [],
+  "snapshot_id": "sha256:4689eb2194d0433e19f73bba0ad8418b41c51b37237a79cf3583c24a51062973",
+  "execution_id": "21f2b16c-c735-4e39-a68f-ca64e36a93c4",
+  "source_contract_digest": "sha256:ce8db3ddfcba040f71b3fa6177af540da743c2b44fedaded327816a1f03adb53",
+  "model_identity": {
+    "snapshotId": "sha256:4689eb2194d0433e19f73bba0ad8418b41c51b37237a79cf3583c24a51062973",
+    "sourceDigest": "sha256:2b69a72842d0c6221243ce3f46590da62065cc982f22b8ece45f90bbdd596bcd",
+    "modelDigest": "sha256:b3e82f3058d4adec2d8c5d9834437721b0184aaa6d402f7d2776c95abce081ef",
+    "dependencyDigest": "sha256:b6935af0ed3bf6920b92cf00d3591593297ed460d796f887411d82edb27fe87b",
+    "toolchainDigest": "sha256:a8be4a00d70ca4e4aa7d2d59609038dec2eef65274108cd971536236a5e68227",
+    "exporterDigest": "sha256:5fb13fd3b22cd8cddc9bd2260f67c395ec7e3cc520776168438a308edf0b45b1",
+    "gradleRuntimeDigest": "sha256:fef6b51091305ab5affe98aea0795e6f73b76f5011625cd1ecdd8bb409c0da1d",
+    "configurationDigest": "sha256:ce8db3ddfcba040f71b3fa6177af540da743c2b44fedaded327816a1f03adb53"
+  },
+  "contexts": [
+    {
+      "compilationId": ":consumer||main",
+      "modelCompleteness": "unavailable",
+      "fullProjectModel": false,
+      "gaps": [
+        "artifact_unavailable",
+        "produced_variants_unavailable",
+        "compiler_arguments_unmodeled"
+      ]
+    },
+    {
+      "compilationId": ":consumer||test",
+      "modelCompleteness": "unavailable",
+      "fullProjectModel": false,
+      "gaps": [
+        "artifact_unavailable",
+        "produced_variants_unavailable",
+        "compiler_arguments_unmodeled"
+      ]
+    },
+    {
+      "compilationId": ":lib||main",
+      "modelCompleteness": "unavailable",
+      "fullProjectModel": false,
+      "gaps": [
+        "artifact_unavailable",
+        "produced_variants_unavailable",
+        "compiler_arguments_unmodeled"
+      ]
+    },
+    {
+      "compilationId": ":lib||test",
+      "modelCompleteness": "unavailable",
+      "fullProjectModel": false,
+      "gaps": [
+        "artifact_unavailable",
+        "produced_variants_unavailable",
+        "compiler_arguments_unmodeled"
+      ]
+    }
+  ],
+  "remaining_gap_codes": [
+    "artifact_unavailable",
+    "produced_variants_unavailable",
+    "compiler_arguments_unmodeled"
+  ],
+  "native_outcome": {
+    "status": "executed",
+    "reasons": [],
+    "exitCode": 0,
+    "cancelled": false,
+    "timedOut": false,
+    "truncated": false,
+    "executionConfirmed": true,
+    "supervisor": {
+      "protocolVersion": "ktchecker-owned-child-supervisor/preview-1",
+      "target": "linux-x86_64",
+      "declaredSourceDigest": "sha256:453468d9b07489c79ac4a061e9ae9fc6d00d58d98c473670bb6885e3f23ea0fe",
+      "binaryDigest": "sha256:c6f16891a34b53847c780d1af7972d78f613e631341e621404ca121c6332fb63"
+    }
+  },
+  "executed_task": "ktCheckerModelExport",
+  "compiler_executed": false,
+  "qualified": false,
+  "outer_elapsed_seconds_not_product_latency": 76.13386834808625,
+  "all_module_test_observation": {
+    "retained_local_path": "build/evidence/all-module-tests/20261104-first/outcome.json",
+    "sha256": "e04eb7631bc18f7b7fbb83e0c312626e745f89764e3a68904512cb72f88b75e1",
+    "tests": 899,
+    "passed": 894,
+    "skipped": 5,
+    "model_tests": 88,
+    "model_passed": 88,
+    "fresh_xml_reports": 82,
+    "qualification": false
+  },
+  "retained_local_receipts": [
+    {
+      "path": "build/evidence/model-export/20261104-projectstate-owner-first/result.json",
+      "bytes": 6931,
+      "sha256": "36465a88d755df7c40344e70ec7ca9357de2199fd1a30c3c3a904c058d413de2"
+    },
+    {
+      "path": "build/evidence/model-export/20261104-projectstate-owner-first/owner-model-export.json",
+      "bytes": 438326,
+      "sha256": "60ef8edd08b77edf040281c6ac6764de6fd4b0261938e66a6acd256351417a48"
+    },
+    {
+      "path": "build/evidence/model-export/20261104-projectstate-owner-first/outer-observation.json",
+      "bytes": 4609,
+      "sha256": "88e4624ae6feb32f8c52f65a3196aa248fc0274bf1d013a3ee34811298bffccf"
+    },
+    {
+      "path": "build/evidence/model-export/20261104-projectstate-owner-first/invocation.json",
+      "bytes": 16685,
+      "sha256": "cf76ce2df72467366324e3b8d2ce739fbc679d042b3c651fdcbeb8967ebfabec"
+    },
+    {
+      "path": "build/evidence/model-export/20261104-projectstate-owner-first/gradle-original.log",
+      "bytes": 9360,
+      "sha256": "280dabbff24e8d1f58685e33905512cc50cc685236d8784ec2f541907f6dfbb7"
+    }
+  ],
+  "model_source_postimages": [
+    {
+      "path": "modules/project-model/build.gradle.kts",
+      "bytes": 1239,
+      "sha256": "48a33eb5f7366a253f4d4f1fd23e4f8ba56a3f33393d8e18f16dcc0714262792"
+    },
+    {
+      "path": "modules/project-model/src/main/kotlin/dev/ktchecker/projectmodel/Importer.kt",
+      "bytes": 33359,
+      "sha256": "daab48a827f908fe0e6dafcf615f36e9b8fa2789fc47127c0ab9905a3e44df3f"
+    },
+    {
+      "path": "modules/project-model/src/main/kotlin/dev/ktchecker/projectmodel/Models.kt",
+      "bytes": 8059,
+      "sha256": "059c1831e5a9f4a94ff5972ba20db845c13b2e4cfe5255ada32bec1c7169a04e"
+    },
+    {
+      "path": "modules/project-model/src/main/resources/ktchecker-model.init.gradle",
+      "bytes": 70765,
+      "sha256": "5fb13fd3b22cd8cddc9bd2260f67c395ec7e3cc520776168438a308edf0b45b1"
+    },
+    {
+      "path": "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/GradleExporterProfileTest.kt",
+      "bytes": 3808,
+      "sha256": "5c9a64c677766ed1150cd4a032ee1e0c27d43408f465e85a2a36e298eec366ba"
+    },
+    {
+      "path": "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/OwnerFixtureDomainTest.kt",
+      "bytes": 28185,
+      "sha256": "3ca5a1a12c66b90eb39ffe7dbc4faa89ca8033c851f2d0ed8953c39875b54ae7"
+    },
+    {
+      "path": "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/OwnerModelFixtureRunner.kt",
+      "bytes": 49627,
+      "sha256": "4429562c0175f3b4fc83f6b88836c2bb9acb6e80e74363e2f0bd147390be2410"
+    },
+    {
+      "path": "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/GradleModelExporterApiTest.kt",
+      "bytes": 12715,
+      "sha256": "c09fa74cf68e4eebcc078e3a28736d00b0f89111bb97fae12b6dff1e87c60f6d"
+    },
+    {
+      "path": "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/GradleModelProducerAssociationTest.kt",
+      "bytes": 48047,
+      "sha256": "797c8f4966cbdc7e4337741676cf7421118d088b46efc6086787873440e72630"
+    },
+    {
+      "path": "modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/PlainJvmModelTargetTest.kt",
+      "bytes": 10250,
+      "sha256": "bed9d1605166b7b5216dd8be7f50658d818b298a51d718c2daa8052b81d4b8d3"
+    },
+    {
+      "path": "providers/model-fixtures/jvm-owner-export/input-contract.json",
+      "bytes": 8002,
+      "sha256": "ce8db3ddfcba040f71b3fa6177af540da743c2b44fedaded327816a1f03adb53"
+    }
+  ],
+  "limitations": [
+    "A successful trusted import is not complete model or compiler/rule coverage; all four compilation contexts remain unavailable.",
+    "Actual consumer producer identities now resolve to :lib||main; seven scripting classpath files do not prove seven plugins or plugin settings/input/output semantics.",
+    "Missing project/friend artifacts, output-tree/absence semantics, produced publication roles and compiler-plugin provenance remain unresolved.",
+    "Only the fixed owner-registered synthetic fixture was exported. No arbitrary-project, KMP/Native, incremental-equivalence or speed claim follows.",
+    "Native confirmation is the actual runner-derived outcome matching START. No separately archived raw native frame replay was independently performed.",
+    "Full original local logs/export and runtime closure are retained privately; this public summary is not publication of that closure or a rule-qualification certificate.",
+    "Earlier failed exporter attempts remain retained unchanged."
+  ]
+}

@@ -79,6 +79,123 @@ class OwnerFixtureDomainTest {
         }.code)
     }
 
+    @Test fun fixedFourCompilationDomainUsesActualEmptyJvmTargetIdsNotInventedPlatformAliases(): Unit {
+        val directory = fixture().resolve("jvm-owner-export")
+        val contract = OwnerFixtureContract.load(directory)
+        assertEquals(listOf(":consumer||main", ":consumer||test", ":lib||main", ":lib||test"), contract.value.compilations.map { it.id })
+        assertTrue(contract.value.compilations.all { it.target == "" && it.platform == "jvm" })
+        val capture = contract.capture(directory.resolve("project"), temporaryDirectory("ktchecker-owner-empty-target-domain-"))
+        val graph = sourceGraph(contract)
+        contract.verifySourceDomain(capture.snapshot, graph)
+        val oldIds = graph.compilations.associate { it.id to "${it.moduleId}|jvm|${it.name}" }
+        val aliased = graph.copy(compilations = graph.compilations.map { it.copy(id = oldIds.getValue(it.id), target = "jvm",
+            associatedCompilationIds = it.associatedCompilationIds.map(oldIds::getValue),
+            projectDependencies = it.projectDependencies.map { dep -> dep.copy(compilationId = dep.compilationId?.let(oldIds::getValue)) }) })
+        assertEquals("owner_fixture_compilation_domain_incomplete", assertFailsWith<OwnerFixtureProblem> {
+            contract.verifySourceDomain(capture.snapshot, aliased)
+        }.code)
+    }
+
+    @Test fun sourceDomainRejectsNullWrongMissingAndAdditionalProjectProducerEdges(): Unit {
+        val directory = fixture().resolve("jvm-owner-export")
+        val contract = OwnerFixtureContract.load(directory)
+        val capture = contract.capture(directory.resolve("project"), temporaryDirectory("ktchecker-owner-producer-domain-"))
+        val graph = sourceGraph(contract)
+        contract.verifySourceDomain(capture.snapshot, graph)
+        val original = graph.compilations.first { it.moduleId == ":consumer" }.projectDependencies.single()
+        val changedEdges = listOf(
+            listOf(original.copy(compilationId = null)),
+            listOf(original.copy(compilationId = ":lib||test")),
+            emptyList(),
+            listOf(original, original.copy(compilationId = ":lib||test")),
+            listOf(original, original.copy(compilationId = null)),
+        )
+        changedEdges.forEach { edges ->
+            val changed = graph.copy(compilations = graph.compilations.map { if (it.id == ":consumer||main") it.copy(projectDependencies = edges) else it })
+            assertEquals("owner_fixture_actual_compilation_graph_changed", assertFailsWith<OwnerFixtureProblem> {
+                contract.verifySourceDomain(capture.snapshot, changed)
+            }.code)
+        }
+    }
+
+    @Test fun positiveScriptingClasspathPinsResolveOnlyExactAlreadyRegisteredPathsAndBytes(): Unit {
+        val contract = OwnerFixtureContract.load(fixture().resolve("jvm-owner-export"))
+        val root = syntheticPluginHome()
+        val registered = syntheticPluginRegistry(contract, root)
+        val expected = ownerFixturePinnedPluginClasspath(contract.value.compilerPluginClasspath, root, registered)
+        assertEquals(7, expected.size)
+        assertEquals(contract.value.compilerPluginClasspath.map { it.coordinate }, expected.map { it.coordinate })
+        assertEquals(contract.value.compilerPluginClasspath.map { it.digest to it.size }, expected.map { it.digest to it.size })
+        assertEquals("owner_fixture_artifact_unregistered", assertFailsWith<OwnerFixtureProblem> {
+            ownerFixturePinnedPluginClasspath(contract.value.compilerPluginClasspath, root, registered - expected.first().path)
+        }.code)
+        // Prepared-source or report-selected paths cannot substitute for the exact home-copy key.
+        assertEquals("owner_fixture_artifact_unregistered", assertFailsWith<OwnerFixtureProblem> {
+            ownerFixturePinnedPluginClasspath(contract.value.compilerPluginClasspath, root.resolveSibling("different-home"), registered)
+        }.code)
+        val first = expected.first()
+        for (wrong in listOf(first.copy(path = expected.last().path), first.copy(digest = Digests.sha256("other bytes")),
+            first.copy(size = first.size!! + 1), first.copy(digest = null), first.copy(size = null))) {
+            assertEquals("owner_fixture_plugin_classpath_pin_mismatch", assertFailsWith<OwnerFixtureProblem> {
+                ownerFixturePinnedPluginClasspath(contract.value.compilerPluginClasspath, root, registered + (first.path to wrong))
+            }.code)
+        }
+    }
+
+    @Test fun pluginDomainRejectsEmptyPartialExtraReorderedAndSubstitutedClasspathArtifacts(): Unit {
+        val contract = OwnerFixtureContract.load(fixture().resolve("jvm-owner-export"))
+        val expected = ownerFixturePinnedPluginClasspath(contract.value.compilerPluginClasspath, syntheticPluginHome(),
+            syntheticPluginRegistry(contract, syntheticPluginHome()))
+        val graph = pluginGraph(contract, expected)
+        contract.verifyCompilerPluginDomain(graph, expected)
+        // Known files do not turn nullable metadata or unknown output roles into completeness.
+        assertEquals(listOf("compiler_arguments_unmodeled"), graph.issues.map { it.kind })
+        val changedClasspaths = listOf(emptyList(), expected.drop(1), expected + expected.first(), expected.reversed(),
+            listOf(expected.first(), expected.first()) + expected.drop(2)) +
+            listOf(expected.first().copy(coordinate = "different-plugin-label"),
+                expected.first().copy(path = expected.first().path.replace("synthetic-plugin-home", "report-selected-home")),
+                expected.first().copy(digest = Digests.sha256("unregistered replacement")),
+                expected.first().copy(size = expected.first().size!! + 1), expected.first().copy(digest = null),
+                expected.first().copy(size = null)).map { listOf(it) + expected.drop(1) }
+        changedClasspaths.forEach { plugins ->
+            val changed = graph.copy(compilations = graph.compilations.map { it.copy(toolchain = it.toolchain!!.copy(compilerPlugins = plugins)) })
+            assertEquals("owner_fixture_compiler_plugin_classpath_changed", assertFailsWith<OwnerFixtureProblem> {
+                contract.verifyCompilerPluginDomain(changed, expected)
+            }.code)
+        }
+        // Even a coherent model/expected-list echo is not a generic plugin allowlist:
+        // every ordered expected coordinate/digest/size must match the authored pin.
+        assertEquals("owner_fixture_plugin_classpath_pin_mismatch", assertFailsWith<OwnerFixtureProblem> {
+            contract.verifyCompilerPluginDomain(pluginGraph(contract, expected.reversed()), expected.reversed())
+        }.code)
+    }
+
+    @Test fun pluginDomainRequiresOneExactIntendedOperandAndAllPinnedToolchainsAndContexts(): Unit {
+        val contract = OwnerFixtureContract.load(fixture().resolve("jvm-owner-export"))
+        val expected = ownerFixturePinnedPluginClasspath(contract.value.compilerPluginClasspath, syntheticPluginHome(),
+            syntheticPluginRegistry(contract, syntheticPluginHome()))
+        val graph = pluginGraph(contract, expected)
+        val operand = "-Xplugin=" + expected.joinToString(",") { it.path }
+        val changedArguments = listOf(emptyList(), listOf("-nowarn"), listOf(operand, operand),
+            listOf("-Xplugin", expected.joinToString(",") { it.path }), listOf("-Xplugin=" + expected.reversed().joinToString(",") { it.path }),
+            listOf("-Xplugin=" + expected.drop(1).joinToString(",") { it.path }), listOf(operand, "-Xplugin=unregistered.jar"),
+            listOf(operand, "-Xplugin-unmodeled-option"))
+        changedArguments.forEach { argv ->
+            assertEquals("owner_fixture_compiler_plugin_operand_changed", assertFailsWith<OwnerFixtureProblem> {
+                contract.verifyCompilerPluginDomain(graph.copy(compilations = graph.compilations.map { it.copy(compilerArguments = argv) }), expected)
+            }.code)
+        }
+        val chain = graph.compilations.first().toolchain!!
+        for (wrong in listOf(null, chain.copy(compilerVersion = "2.4.20"), chain.copy(kind = "metadata"))) {
+            assertEquals("owner_fixture_compiler_domain_changed", assertFailsWith<OwnerFixtureProblem> {
+                contract.verifyCompilerPluginDomain(graph.copy(compilations = graph.compilations.map { it.copy(toolchain = wrong) }), expected)
+            }.code)
+        }
+        assertEquals("owner_fixture_compilation_domain_incomplete", assertFailsWith<OwnerFixtureProblem> {
+            contract.verifyCompilerPluginDomain(graph.copy(compilations = graph.compilations.drop(1)), expected)
+        }.code)
+    }
+
     @Test fun generatorAndAuxiliaryInputAbsenceMustMatchTheIndependentlyPinnedDomain(): Unit {
         val directory = fixture().resolve("jvm-owner-export")
         val contract = OwnerFixtureContract.load(directory)
@@ -265,6 +382,20 @@ class OwnerFixtureDomainTest {
                 OwnerFixtureRuntimeRegistry.load(path)
             }.code)
         }
+    }
+
+    // Data-only fake pre-enrollment and model comparison. No files, execution home,
+    // Gradle invocation, ingress receipt or compiler authority are created here.
+    private fun syntheticPluginHome(): Path = Path.of(System.getProperty("java.io.tmpdir")).toAbsolutePath().normalize().resolve("synthetic-plugin-home")
+    private fun syntheticPluginRegistry(contract: OwnerFixtureContract, root: Path): Map<String, ModelArtifact> =
+        contract.value.compilerPluginClasspath.associate { pin ->
+            val path = root.resolve(pin.seedRelativePath).toString()
+            path to ModelArtifact("synthetic-pre-enrolled:${pin.seedRelativePath}", path, pin.digest, pin.size)
+        }
+    private fun pluginGraph(contract: OwnerFixtureContract, plugins: List<ModelArtifact>): GradleProjectExport = sourceGraph(contract).let { graph ->
+        graph.copy(compilations = graph.compilations.map { it.copy(toolchain = ModelToolchain(it.platform, contract.value.kotlinVersion,
+            emptyList(), emptyList(), plugins), compilerArguments = listOf("-nowarn", "-Xplugin=" + plugins.joinToString(",") { artifact -> artifact.path })) },
+            issues = listOf(ModelIssue("compiler_arguments_unmodeled", null, "Synthetic nullable plugin metadata/outputs remain unknown")))
     }
 
     private fun sourceGraph(contract: OwnerFixtureContract): GradleProjectExport {

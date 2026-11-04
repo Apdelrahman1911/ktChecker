@@ -5,6 +5,492 @@ import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.security.MessageDigest
 
+// BEGIN KTCHECKER_PINNED_MODEL_API
+// Kept self-contained so public-getter/signature tests can exercise this exact code
+// without configuring a project or launching Gradle. These helpers confer no authority.
+class KtCheckerModelCaptureFailure extends IllegalStateException {
+    final String stage
+    final String failureKind
+
+    KtCheckerModelCaptureFailure(String stage, Throwable cause) {
+        super(stage + ': ' + cause.getClass().getSimpleName(), cause)
+        this.stage = stage
+        this.failureKind = cause.getClass().getSimpleName()
+    }
+}
+
+// Identity-only ownership. A compiler's prerequisites are inputs, not additional
+// producers of the enclosing artifact. Unknown/foreign compilers must terminate
+// the walk too; they cannot be traversed until a convenient local owner is found.
+class KtCheckerModelProducerIndex {
+    static final int TASK_LIMIT = 4096
+    static final int EDGE_LIMIT = 16384
+    private final Class taskType
+    private final List<Class> compilerTypes
+    private final Map projectOwnerApi
+    private final Map byTask = new IdentityHashMap()
+    private final Map byCompilation = new IdentityHashMap()
+    private final Set unavailableProjectOwners = Collections.newSetFromMap(new IdentityHashMap())
+    private boolean projectOwnersComplete = true
+
+    KtCheckerModelProducerIndex(Class taskType, Collection compilerTypes, Map projectOwnerApi) {
+        if (taskType == null || compilerTypes == null || compilerTypes.isEmpty() || compilerTypes.size() > 128 ||
+            compilerTypes.any { !(it instanceof Class) } || projectOwnerApi == null) {
+            throw new IllegalStateException('Unavailable compiler task vocabulary')
+        }
+        this.taskType = taskType
+        this.compilerTypes = new ArrayList<Class>(compilerTypes)
+        this.projectOwnerApi = new LinkedHashMap(projectOwnerApi)
+    }
+
+    void markUnavailable(Object project) {
+        try {
+            unavailableProjectOwners.add(KtCheckerPinnedModelApi.projectOwner(projectOwnerApi, project))
+        } catch (KtCheckerModelCaptureFailure error) {
+            // An unkeyable failed view cannot disappear on a later enumeration.
+            // The caller discards a failed index too; never repair this instance.
+            projectOwnersComplete = false
+            throw error
+        }
+    }
+
+    void register(Object project, Object compilation, String id, Collection tasks) {
+        if (project == null || compilation == null || id == null || id.isBlank() || id.length() > 4096 ||
+            tasks == null || tasks.isEmpty() || tasks.size() > 2) throw new IllegalStateException('Unavailable actual compiler owner')
+        def ownerState = KtCheckerPinnedModelApi.projectOwner(projectOwnerApi, project)
+        def owner = byCompilation.get(compilation)
+        KtCheckerPinnedModelApi.at('outgoing-index-compilation-owner') {
+            if (owner != null && (!owner.projectOwner.is(ownerState) || owner.id != id)) {
+                throw new IllegalStateException('Inconsistent actual compilation owner')
+            }
+        }
+        if (owner == null) {
+            if (byCompilation.size() >= TASK_LIMIT) throw new IllegalStateException('Compiler owner bound exceeded')
+            owner = [projectOwner: ownerState, compilation: compilation, id: id]
+            byCompilation.put(compilation, owner)
+        }
+        tasks.each { task ->
+            KtCheckerPinnedModelApi.at('outgoing-index-task-owner') {
+                if (!taskType.isInstance(task) || !compilerTypes.any { it.isInstance(task) } ||
+                    !KtCheckerPinnedModelApi.projectOwner(projectOwnerApi, taskType.getMethod('getProject').invoke(task)).is(ownerState)) {
+                    throw new IllegalStateException('Compiler task is not owned by the actual compilation project')
+                }
+            }
+            def owners = byTask.get(task)
+            if (owners == null) { owners = []; byTask.put(task, owners) }
+            // Distinct actual compilations remain distinct even if names/IDs collide.
+            if (!owners.any { it.compilation.is(compilation) }) owners.add(owner)
+        }
+    }
+
+    Map resolve(Object project, String configurationName, Collection seeds, Collection usages, Closure dependencies) {
+        if (project == null || configurationName == null || configurationName.isBlank() || seeds == null ||
+            seeds.size() > TASK_LIMIT || usages == null || usages.size() > TASK_LIMIT || dependencies == null) {
+            throw new IllegalStateException('Unavailable bounded outgoing producer inputs')
+        }
+        def ownerState = projectOwnersComplete ? KtCheckerPinnedModelApi.projectOwner(projectOwnerApi, project) : null
+        if (!projectOwnersComplete || unavailableProjectOwners.contains(ownerState)) {
+            // Check the canonical owner BEFORE any task walk, not the ephemeral
+            // Project view returned by this particular allprojects enumeration.
+            return [state: 'producer_or_usage_vocabulary_unavailable', compilationId: null, compilation: null,
+                producerCount: 0, producerIds: [], unknownCompilerCount: 0, usageCount: 0, taskCount: 0, edgeCount: 0]
+        }
+        def scheduled = Collections.newSetFromMap(new IdentityHashMap())
+        def queue = new ArrayDeque()
+        def schedule = { task ->
+            if (!taskType.isInstance(task)) throw new IllegalStateException('Unknown artifact build-dependency vocabulary')
+            if (scheduled.add(task)) {
+                if (scheduled.size() > TASK_LIMIT) throw new IllegalStateException('Producer task bound exceeded')
+                queue.addLast(task)
+            }
+        }
+        seeds.each { schedule(it) }
+        def found = new IdentityHashMap()
+        int edges = seeds.size()
+        int unknownCompilers = 0
+        while (!queue.isEmpty()) {
+            def task = queue.removeFirst()
+            def owners = byTask.get(task)
+            if (owners != null) {
+                owners.each { found.put(it.compilation, it) }
+                continue
+            }
+            if (compilerTypes.any { it.isInstance(task) }) {
+                unknownCompilers++
+                continue
+            }
+            def prerequisites = dependencies.call(task)
+            if (!(prerequisites instanceof Collection) || prerequisites.size() > EDGE_LIMIT - edges) {
+                throw new IllegalStateException('Producer edge bound exceeded')
+            }
+            edges += prerequisites.size()
+            prerequisites.each { schedule(it) }
+        }
+        def usageCompilations = Collections.newSetFromMap(new IdentityHashMap())
+        boolean unknownUsage = false
+        usages.each { usage ->
+            if (!(usage instanceof Map) || usage.project == null || usage.compilation == null ||
+                !(usage.configurationName instanceof String)) throw new IllegalStateException('Unknown actual Kotlin usage vocabulary')
+            if (KtCheckerPinnedModelApi.projectOwner(projectOwnerApi, usage.project).is(ownerState) && usage.configurationName == configurationName) {
+                usageCompilations.add(usage.compilation)
+                def registered = byCompilation.get(usage.compilation)
+                if (registered == null || !registered.projectOwner.is(ownerState)) unknownUsage = true
+            }
+        }
+        def result = [compilationId: null, compilation: null, producerCount: found.size(),
+            producerIds: found.values().collect { it.id }.unique().sort(), unknownCompilerCount: unknownCompilers,
+            usageCount: usageCompilations.size(), taskCount: scheduled.size(), edgeCount: edges]
+        String state
+        if (found.size() > 1) state = 'ambiguous_task_producers'
+        else if (unknownCompilers > 0) state = 'unowned_compiler'
+        else if (found.isEmpty()) state = 'producer_unknown'
+        else {
+            def owner = found.values().iterator().next()
+            if (!owner.projectOwner.is(ownerState)) state = 'foreign_compiler_producer'
+            else if (unknownUsage) state = 'usage_compilation_unregistered'
+            else if (usageCompilations.isEmpty()) state = 'usage_unknown'
+            else if (usageCompilations.size() > 1) state = 'ambiguous_usage_compilations'
+            else if (!usageCompilations.iterator().next().is(owner.compilation)) state = 'usage_producer_mismatch'
+            else {
+                state = 'unique'
+                result.compilationId = owner.id
+                result.compilation = owner.compilation
+            }
+        }
+        result + [state: state]
+    }
+}
+
+class KtCheckerPinnedModelApi {
+    static Object at(String stage, Closure operation) {
+        try { return operation.call() }
+        catch (KtCheckerModelCaptureFailure error) { throw error }
+        catch (Exception error) {
+            Throwable cause = error
+            int depth = 0
+            while ((cause instanceof java.lang.reflect.InvocationTargetException ||
+                cause instanceof java.lang.reflect.UndeclaredThrowableException ||
+                cause instanceof org.codehaus.groovy.runtime.InvokerInvocationException) && cause.getCause() != null && depth++ < 16) cause = cause.getCause()
+            if (cause instanceof KtCheckerModelCaptureFailure) throw cause
+            if (cause instanceof VirtualMachineError || cause instanceof ThreadDeath) throw cause
+            throw new KtCheckerModelCaptureFailure(stage, cause)
+        } catch (LinkageError error) { throw new KtCheckerModelCaptureFailure(stage, error) }
+    }
+
+    static Object getter(Object instance, String name) {
+        if (instance == null) throw new IllegalStateException('Missing instance for pinned getter ' + name)
+        instance.getClass().getMethod(name).invoke(instance)
+    }
+
+    static List<String> strings(Object value) {
+        if (!(value instanceof List) || value.size() > 16384 || value.any {
+            !(it instanceof String) || it.length() > 8192 || it.indexOf('\u0000') >= 0
+        }) throw new IllegalStateException('Unavailable bounded exact string-vector vocabulary')
+        new ArrayList<String>(value)
+    }
+
+    static List<String> pathArray(Object value) {
+        // A successfully created arguments object's null field means no such operand.
+        // It does not establish that a missing plugin/friend provider was verified empty.
+        if (value == null) return []
+        if (!(value instanceof String[])) throw new IllegalStateException('Unsupported pinned path-array vocabulary')
+        strings(Arrays.asList((String[]) value))
+    }
+
+    static Map fullCompilerArguments(Object task) {
+        def api = at('compiler-api-load') {
+            if (task == null || task.getClass().getClassLoader() == null) throw new IllegalStateException('Missing pinned task loader')
+            // Resolve ONLY through this actual task/plugin loader. No context/root/system
+            // loader retries, guessed overloads, deprecated setup flags, or ignored errors.
+            def loader = task.getClass().getClassLoader()
+            def producer = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer')
+            def context = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer$CreateCompilerArgumentsContext')
+            def argumentType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer$ArgumentType')
+            def toolArguments = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.CommonToolArguments')
+            def factoryType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducerKt')
+            def serializerType = loader.loadClass('org.jetbrains.kotlin.compilerRunner.ArgumentUtils')
+            if (!producer.isInterface() || !producer.isInstance(task) || !argumentType.isEnum()) {
+                throw new IllegalStateException('Unsupported pinned compiler producer/type identity')
+            }
+            def types = argumentType.getEnumConstants().toList()
+            if (types.collect { it.name() } != ['Primitive', 'PluginClasspath', 'DependencyClasspath', 'Sources']) {
+                throw new IllegalStateException('Unsupported pinned complete argument-type domain')
+            }
+            def factory = factoryType.getMethod('CreateCompilerArgumentsContext', Set.class, Boolean.TYPE)
+            def create = producer.getMethod('createCompilerArguments', context)
+            def serialize = serializerType.getMethod('convertArgumentsToStringList', toolArguments)
+            if (!java.lang.reflect.Modifier.isStatic(factory.modifiers) || factory.returnType != context ||
+                create.returnType != toolArguments || !java.lang.reflect.Modifier.isStatic(serialize.modifiers) ||
+                !List.class.isAssignableFrom(serialize.returnType)) {
+                throw new IllegalStateException('Unsupported pinned compiler method signatures')
+            }
+            [factory: factory, create: create, serialize: serialize, types: new LinkedHashSet(types),
+                contextType: context, argumentsType: toolArguments]
+        }
+        def context = at('compiler-arguments-context') {
+            def value = api.factory.invoke(null, api.types, false)
+            if (!api.contextType.isInstance(value)) throw new IllegalStateException('Missing exact compiler argument context')
+            value
+        }
+        def value = at('compiler-arguments-create') {
+            def arguments = api.create.invoke(task, context)
+            if (!api.argumentsType.isInstance(arguments)) throw new IllegalStateException('Missing exact compiler arguments object')
+            arguments
+        }
+        def arguments = at('compiler-arguments-serialize') { strings(api.serialize.invoke(null, value)) }
+        // Intended full task-configuration serialization at the exporter lifecycle point,
+        // NOT evidence that this compiler task or a compiler child process actually ran.
+        [value: value, arguments: arguments]
+    }
+
+    static Object optionalPluginData(Object task) {
+        def provider = at('compiler-plugin-data-provider') { getter(task, 'getKotlinPluginData$kotlin_gradle_plugin_common') }
+        if (provider == null) return [state: 'provider_absent', value: null]
+        def value = at('compiler-plugin-data-value') { getter(provider, 'getOrNull') }
+        [state: value == null ? 'value_absent' : 'available', value: value]
+    }
+
+    static List<File> effectivePluginFiles(Object task, Object pluginData) {
+        def files = getter(task, 'getPluginClasspath')
+        if (files == null) throw new IllegalStateException('Missing default compiler plugin classpath')
+        // The pinned KGP composes FileCollections in this order. Do not sort, flatten
+        // into an inferred union, or discard the default scripting compiler plugins.
+        if (pluginData != null) files = files.plus(getter(pluginData, 'getClasspath'))
+        def result = files.toList()
+        if (result.any { !(it instanceof File) }) throw new IllegalStateException('Unsupported compiler plugin file vocabulary')
+        result
+    }
+
+    static void samePaths(List<String> operands, List<File> files) {
+        if (operands != files.collect { it.absolutePath }) throw new IllegalStateException('Exact ordered task/argument path roles differ')
+    }
+
+    static Map projectOwnerApi(Object project) {
+        at('outgoing-project-owner-api') {
+            if (project == null || project.getClass().getClassLoader() == null) {
+                throw new IllegalStateException('Missing actual project loader')
+            }
+            // Pin ONLY through this actual Project's loader, not the target,
+            // helper, context or system loader. No implementation-class guess.
+            def loader = project.getClass().getClassLoader()
+            def projectType = loader.loadClass('org.gradle.api.Project')
+            def internalProjectType = loader.loadClass('org.gradle.api.internal.project.ProjectInternal')
+            def projectStateType = loader.loadClass('org.gradle.api.internal.project.ProjectState')
+            if (!projectType.isInterface() || !internalProjectType.isInterface() || !projectStateType.isInterface() ||
+                !projectType.isAssignableFrom(internalProjectType) || !internalProjectType.isInstance(project)) {
+                throw new IllegalStateException('Unsupported pinned project owner type identity')
+            }
+            def ownerGetter = internalProjectType.getMethod('getOwner')
+            if (java.lang.reflect.Modifier.isStatic(ownerGetter.modifiers) ||
+                !ownerGetter.declaringClass.is(internalProjectType) || !ownerGetter.returnType.is(projectStateType)) {
+                throw new IllegalStateException('Unsupported pinned project owner getter signature')
+            }
+            [projectType: projectType, internalProjectType: internalProjectType,
+                projectStateType: projectStateType, ownerGetter: ownerGetter]
+        }
+    }
+
+    static Object projectOwner(Map api, Object project) {
+        at('outgoing-project-owner-value') {
+            if (!api.internalProjectType.isInstance(project)) throw new IllegalStateException('Missing actual internal project view')
+            def owner = api.ownerGetter.invoke(project)
+            if (!api.projectStateType.isInstance(owner)) throw new IllegalStateException('Missing actual project owner state')
+            // Gradle 9.6.1 can create fresh lifecycle/access Project views on
+            // each allprojects enumeration. Their pinned getOwner delegates to
+            // the same ProjectState. Retain views for operations, compare only
+            // this owner's REFERENCE identity; never unwrap getMutableModel or
+            // use getProject/equals/project paths as a canonicalization fallback.
+            owner
+        }
+    }
+
+    static Map producerApi(Object target) {
+        if (target == null || target.getClass().getClassLoader() == null) throw new IllegalStateException('Missing actual Kotlin target loader')
+        def loader = target.getClass().getClassLoader()
+        // Original, public getters on the pinned implementation. Gradle adhoc
+        // component wrappers do not preserve KotlinUsageContext compilation data.
+        def targetType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.mpp.AbstractKotlinTarget')
+        def targetInterface = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinTarget')
+        def componentType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.mpp.InternalKotlinTargetComponent')
+        def componentInterface = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinTargetComponent')
+        def usageType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.mpp.KotlinUsageContext')
+        def compilationType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilation')
+        def withJavaType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaCompilation')
+        def kotlinCompilerType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer')
+        def taskType = loader.loadClass('org.gradle.api.Task')
+        def projectType = loader.loadClass('org.gradle.api.Project')
+        def providerType = loader.loadClass('org.gradle.api.tasks.TaskProvider')
+        def abstractCompilerType = loader.loadClass('org.gradle.api.tasks.compile.AbstractCompile')
+        def javaCompilerType = loader.loadClass('org.gradle.api.tasks.compile.JavaCompile')
+        if (!targetType.isInstance(target) || !targetInterface.isInstance(target) || !kotlinCompilerType.isInterface() ||
+            !taskType.isAssignableFrom(abstractCompilerType) || !abstractCompilerType.isAssignableFrom(javaCompilerType)) {
+            throw new IllegalStateException('Unsupported pinned producer type identity')
+        }
+        def api = [targetType: targetType, componentType: componentType, componentInterface: componentInterface,
+            usageType: usageType, compilationType: compilationType, withJavaType: withJavaType,
+            kotlinCompilerType: kotlinCompilerType, javaCompilerType: javaCompilerType, abstractCompilerType: abstractCompilerType,
+            taskType: taskType, projectType: projectType, providerType: providerType,
+            targetProject: targetType.getMethod('getProject'), components: targetType.getMethod('getKotlinComponents'),
+            componentTarget: componentInterface.getMethod('getTarget'), usages: componentType.getMethod('getUsages'),
+            usageCompilation: usageType.getMethod('getCompilation'), usageConfiguration: usageType.getMethod('getDependencyConfigurationName'),
+            compilationTarget: compilationType.getMethod('getTarget'), compileKotlin: compilationType.getMethod('getCompileTaskProvider'),
+            compileJava: withJavaType.getMethod('getCompileJavaTaskProvider'), providerGet: providerType.getMethod('get'),
+            taskProject: taskType.getMethod('getProject')]
+        [[api.targetProject, projectType], [api.components, Set.class], [api.componentTarget, targetInterface],
+            [api.usages, Set.class], [api.usageCompilation, compilationType], [api.usageConfiguration, String.class],
+            [api.compilationTarget, targetInterface], [api.compileKotlin, providerType], [api.compileJava, providerType],
+            [api.providerGet, Object.class], [api.taskProject, projectType]].each { signature ->
+            if (java.lang.reflect.Modifier.isStatic(signature[0].modifiers) || signature[0].returnType != signature[1]) {
+                throw new IllegalStateException('Unsupported pinned producer getter signature')
+            }
+        }
+        api.projectOwnerApi = at('outgoing-project-owner-api') {
+            def ownerApi = projectOwnerApi(api.targetProject.invoke(target))
+            if (!ownerApi.projectType.is(projectType)) throw new IllegalStateException('Mixed actual Gradle project type identity')
+            ownerApi
+        }
+        api
+    }
+
+    static List compilerTasks(Map api, Object project, Object target, Object compilation, Object kotlinTask) {
+        def ownerState = projectOwner(api.projectOwnerApi, project)
+        at('outgoing-compilation-target-identity') {
+            if (!api.targetType.isInstance(target) || !api.compilationType.isInstance(compilation) ||
+                !api.compilationTarget.invoke(compilation).is(target)) {
+                throw new IllegalStateException('Missing actual compilation target identity')
+            }
+        }
+        at('outgoing-target-project-owner') {
+            if (!projectOwner(api.projectOwnerApi, api.targetProject.invoke(target)).is(ownerState)) {
+                throw new IllegalStateException('Missing actual target project owner identity')
+            }
+        }
+        at('outgoing-kotlin-compiler-provider') {
+            def kotlinProvider = api.compileKotlin.invoke(compilation)
+            if (!api.providerType.isInstance(kotlinProvider) || !api.providerGet.invoke(kotlinProvider).is(kotlinTask) ||
+                !api.taskType.isInstance(kotlinTask) || !api.kotlinCompilerType.isInstance(kotlinTask)) {
+                throw new IllegalStateException('Missing actual Kotlin compiler provider identity')
+            }
+        }
+        at('outgoing-kotlin-compiler-project-owner') {
+            if (!projectOwner(api.projectOwnerApi, api.taskProject.invoke(kotlinTask)).is(ownerState)) {
+                throw new IllegalStateException('Missing actual Kotlin compiler project owner identity')
+            }
+        }
+        def tasks = [kotlinTask]
+        if (api.withJavaType.isInstance(compilation)) {
+            // This getter derives the task from THIS compilation's stored SourceSet.
+            // Never synthesize compileJava/main task names or traverse Java inputs.
+            def javaTask = at('outgoing-java-compiler-provider') {
+                def provider = api.compileJava.invoke(compilation)
+                if (!api.providerType.isInstance(provider)) throw new IllegalStateException('Missing actual Java compiler provider')
+                def task = api.providerGet.invoke(provider)
+                if (!api.javaCompilerType.isInstance(task)) throw new IllegalStateException('Missing actual Java compiler task')
+                task
+            }
+            at('outgoing-java-compiler-project-owner') {
+                if (!projectOwner(api.projectOwnerApi, api.taskProject.invoke(javaTask)).is(ownerState)) {
+                    throw new IllegalStateException('Missing actual Java compiler project owner identity')
+                }
+            }
+            tasks.add(javaTask)
+        }
+        tasks
+    }
+
+    static List<Map> kotlinUsages(Map api, Object project, Object target) {
+        def ownerState = projectOwner(api.projectOwnerApi, project)
+        at('outgoing-target-project-owner') {
+            if (!api.targetType.isInstance(target) || !projectOwner(api.projectOwnerApi, api.targetProject.invoke(target)).is(ownerState)) {
+                throw new IllegalStateException('Missing actual Kotlin target project owner identity')
+            }
+        }
+        def components = at('outgoing-kotlin-components') {
+            def value = api.components.invoke(target)
+            if (!(value instanceof Set) || value.size() > 128) throw new IllegalStateException('Unavailable bounded original Kotlin components')
+            value
+        }
+        def result = []
+        components.each { component ->
+            at('outgoing-kotlin-component-target') {
+                if (!api.componentType.isInstance(component) || !api.componentInterface.isInstance(component) ||
+                    !api.componentTarget.invoke(component).is(target)) throw new IllegalStateException('Unknown original Kotlin target component')
+            }
+            def usages = at('outgoing-kotlin-usages') {
+                def value = api.usages.invoke(component)
+                if (!(value instanceof Set) || value.size() > KtCheckerModelProducerIndex.TASK_LIMIT - result.size()) {
+                    throw new IllegalStateException('Unavailable bounded original Kotlin usages')
+                }
+                value
+            }
+            usages.each { usage ->
+                at('outgoing-kotlin-usage-compilation') {
+                    if (!api.usageType.isInstance(usage)) throw new IllegalStateException('Missing original KotlinUsageContext metadata')
+                    def compilation = api.usageCompilation.invoke(usage)
+                    def name = api.usageConfiguration.invoke(usage)
+                    if (!api.compilationType.isInstance(compilation) || !api.compilationTarget.invoke(compilation).is(target) ||
+                        !(name instanceof String) || name.isBlank() || name.length() > 4096 || name.indexOf('\u0000') >= 0) {
+                        throw new IllegalStateException('Missing actual usage compilation/configuration identity')
+                    }
+                    result.add([project: project, compilation: compilation, configurationName: name])
+                }
+            }
+        }
+        result
+    }
+
+    static boolean artifactVariantAttributesMatch(Map component, Map artifact, Collection publishedTypes) {
+        if (component == null || artifact == null) return false
+        if (component == artifact) return true
+        // Preserve EVERY selected component attribute. The only supported difference
+        // is the single Gradle artifactType addition evidenced by homogeneous actual
+        // outgoing PublishArtifact type metadata. No transforms/default attrs stripping.
+        if (component.containsKey('artifactType') || !artifact.containsKey('artifactType') || artifact.size() != component.size() + 1 ||
+            !component.every { key, value -> artifact.containsKey(key) && artifact[key] == value } ||
+            publishedTypes == null || publishedTypes.isEmpty() || publishedTypes.size() > 4096 || publishedTypes.any {
+                !(it instanceof String) || it.isBlank() || it.length() > 4096
+            }) return false
+        def types = new LinkedHashSet(publishedTypes)
+        types.size() == 1 && artifact.artifactType == types.iterator().next()
+    }
+
+    static Map matchOutgoingProducer(Object selectedComponent, String moduleId, Map componentAttributes,
+        Collection resolvedArtifacts, Collection outgoing) {
+        if (selectedComponent == null || moduleId == null || moduleId.isBlank() || moduleId.length() > 4096 || componentAttributes == null ||
+            resolvedArtifacts == null || outgoing == null ||
+            resolvedArtifacts.size() > 4096 || outgoing.size() > 4096) throw new IllegalStateException('Unavailable exact artifact association inputs')
+        // Component equality includes build identity. The caller MUST also retain the
+        // independent actual root/selected BuildIdentifier guards before calling this.
+        def componentArtifacts = resolvedArtifacts.findAll { it.componentId == selectedComponent }
+        def candidates = outgoing.findAll { candidate ->
+            candidate.moduleId == moduleId && candidate.attrs == componentAttributes && candidate.compilation != null &&
+                candidate.compilationId instanceof String && !candidate.compilationId.isBlank() &&
+                !componentArtifacts.isEmpty() && candidate.files instanceof Collection && !candidate.files.isEmpty() &&
+                componentArtifacts.every { resolved ->
+                    resolved.file instanceof String && candidate.files.contains(resolved.file) && resolved.attrs instanceof Map &&
+                        artifactVariantAttributesMatch(componentAttributes, resolved.attrs, candidate.artifactTypes)
+                }
+        }
+        def owners = Collections.newSetFromMap(new IdentityHashMap())
+        candidates.each { owners.add(it.compilation) }
+        def ids = candidates.collect { it.compilationId }.unique()
+        if (owners.size() == 1 && ids.size() == 1) return [state: 'unique', compilationId: ids[0], candidateCount: candidates.size()]
+        [state: candidates.isEmpty() ? 'artifact_or_variant_unknown' : 'ambiguous_artifact_producers',
+            compilationId: null, candidateCount: candidates.size()]
+    }
+
+    static String projectBuildPath(Object id, Class projectType, Class buildType) {
+        if (!projectType.isInstance(id)) throw new IllegalStateException('Missing actual ProjectComponentIdentifier')
+        def build = projectType.getMethod('getBuild').invoke(id)
+        if (!buildType.isInstance(build)) throw new IllegalStateException('Missing actual BuildIdentifier')
+        def path = buildType.getMethod('getBuildPath').invoke(build)
+        if (!(path instanceof String) || path.length() < 1 || path.length() > 4096 || path.isBlank() ||
+            path.toCharArray().any { Character.isISOControl(it as char) }) throw new IllegalStateException('Missing exact buildPath')
+        path
+    }
+}
+// END KTCHECKER_PINNED_MODEL_API
+
 gradle.beforeProject { p ->
     def buildRoot = p.findProperty('ktcheckerModelBuildRoot')
     if (buildRoot != null) {
@@ -66,9 +552,14 @@ gradle.projectsEvaluated {
                 [coordinate: coordinate, path: actual.absolutePath, digest: sha(actual), size: actual.length()]
             }
             def known = { Object instance, String getter ->
-                def method = instance.class.methods.find { it.name == getter && it.parameterCount == 0 }
-                if (method == null) throw new IllegalStateException('Unsupported pinned getter ' + getter)
-                method.invoke(instance)
+                KtCheckerPinnedModelApi.getter(instance, getter)
+            }
+            def capture = { String kind, String scope, String stage, Closure operation ->
+                try { return KtCheckerPinnedModelApi.at(stage, operation) }
+                catch (KtCheckerModelCaptureFailure error) {
+                    issue(kind, scope, error.stage + ': ' + error.failureKind + ': pinned task-configuration capture unavailable')
+                    return null
+                }
             }
             def attributes = { container ->
                 def values = [:]
@@ -213,14 +704,29 @@ gradle.projectsEvaluated {
                     def cp = []
                     def auxiliaryFiles = []
                     def auxiliaryArtifacts = []
-                    try {
+                    capture('compilation_task_inputs_unmodeled', id, 'compilation-task-sources') {
                         task = c.compileTaskProvider.get()
                         actualFiles = task.sources.files.toList().sort { it.absolutePath }.collect { sourceFile(it, id) }.findAll { it != null }
-                    } catch (Exception error) { issue('compilation_task_inputs_unmodeled', id, error.class.simpleName + ': actual task source membership unavailable') }
-                    try {
-                        args = task.serializedCompilerArguments.collect { it.toString() }
-                        friends = known(task, 'getFriendPathsSet$kotlin_gradle_plugin_common').get().toList()
-                            .collect { artifact(new File(it.toString()), 'friend:' + it.toString(), id) }
+                    }
+                    def fullArguments = capture('compiler_arguments_unmodeled', id, 'compiler-full-arguments') {
+                        KtCheckerPinnedModelApi.fullCompilerArguments(task)
+                    }
+                    if (fullArguments != null) args = fullArguments.arguments
+                    // Do not replace a failed all-type capture with serializedCompilerArguments:
+                    // that KGP getter intentionally excludes DependencyClasspath and Sources.
+                    def friendFiles = capture('compiler_arguments_unmodeled', id, 'compiler-friend-files') {
+                        def files = known(task, 'getFriendPaths').toList()
+                        if (files.any { !(it instanceof File) }) throw new IllegalStateException('Unsupported friend file vocabulary')
+                        files
+                    }
+                    if (friendFiles != null) friends = friendFiles.collect { artifact(it, 'friend:' + it.absolutePath, id) }
+                    if (fullArguments != null && friendFiles != null && target.platformType.toString() == 'jvm') {
+                        capture('compiler_arguments_unmodeled', id, 'compiler-friend-argument-roles') {
+                            KtCheckerPinnedModelApi.samePaths(KtCheckerPinnedModelApi.pathArray(known(fullArguments.value, 'getFriendPaths')), friendFiles)
+                        }
+                    }
+                    def compiler = capture(target.platformType.toString().toLowerCase().contains('native') ? 'native_toolchain_unmodeled' :
+                        'compiler_arguments_unmodeled', id, 'compiler-artifact-identity') {
                         def compilerCp = known(task, 'getDefaultCompilerClasspath$kotlin_gradle_plugin_common').files.toList()
                         def compilerConfiguration = p.configurations.getByName('kotlinCompilerClasspath')
                         def compilerResolved = compilerConfiguration.resolvedConfiguration.resolvedArtifacts.toList()
@@ -229,28 +735,76 @@ gradle.projectsEvaluated {
                         if (compilerIdentity.size() != 1) throw new IllegalStateException('No exact resolved Kotlin compiler artifact identity')
                         def compilerVersion = compilerIdentity[0].moduleVersion.id.version
                         if (compilerVersion != '2.4.21') issue('kotlin_compiler_version_unsupported', id, 'Compiler artifact version is not pinned Kotlin 2.4.21.')
+                        [version: compilerVersion, artifacts: compilerCp.collect { file ->
+                            def resolved = compilerResolved.find { it.file.canonicalFile == file.canonicalFile }
+                            artifact(file, resolved != null ? resolved.moduleVersion.id.toString() : 'compiler-file:' + file.name, id)
+                        }]
+                    }
+                    def jdkArtifacts = capture('compiler_arguments_unmodeled', id, 'compiler-selected-jdk') {
                         def kotlinJdk = known(task, 'getDefaultKotlinJavaToolchain$kotlin_gradle_plugin_common').get()
                         def selectedJvm = known(kotlinJdk, 'getBuildJvm$kotlin_gradle_plugin_common').get()
                         def selectedHome = selectedJvm.javaHome.toPath().toRealPath().toFile()
-                        def pluginData = known(task, 'getKotlinPluginData$kotlin_gradle_plugin_common').get()
-                        def pluginCp = pluginData.classpath.files.toList()
-                        def pluginInputs = pluginData.inputsOutputsState.inputFiles.toList()
-                        pluginInputs.each { input ->
+                        runtime(selectedHome, 'compilation-jdk', id)
+                    }
+                    def pluginDataCapture = capture('compiler_arguments_unmodeled', id, 'compiler-plugin-data') {
+                        KtCheckerPinnedModelApi.optionalPluginData(task)
+                    }
+                    def pluginData = pluginDataCapture?.value
+                    if (pluginDataCapture != null && pluginDataCapture.state != 'available') {
+                        issue('compiler_arguments_unmodeled', id, 'compiler-plugin-data-' + pluginDataCapture.state +
+                            ': nullable pinned plugin metadata is absent; this is not an empty plugin/input-domain attestation')
+                    }
+                    def pluginFiles = capture('compiler_arguments_unmodeled', id, 'compiler-plugin-files') {
+                        KtCheckerPinnedModelApi.effectivePluginFiles(task, pluginData)
+                    }
+                    def plugins = []
+                    if (fullArguments != null) {
+                        def pluginPaths = capture('compiler_arguments_unmodeled', id, 'compiler-plugin-argument-paths') {
+                            KtCheckerPinnedModelApi.pathArray(known(fullArguments.value, 'getPluginClasspaths'))
+                        }
+                        if (pluginPaths != null) {
+                            plugins = pluginPaths.collect { artifact(new File(it), 'compiler-plugin:' + new File(it).name, id) }
+                            if (pluginFiles != null) capture('compiler_arguments_unmodeled', id, 'compiler-plugin-argument-roles') {
+                                KtCheckerPinnedModelApi.samePaths(pluginPaths, pluginFiles)
+                            }
+                        } else if (pluginFiles != null) plugins = pluginFiles.collect { artifact(it, 'compiler-plugin:' + it.name, id) }
+                    } else if (pluginFiles != null) {
+                        // Independently observed task files only; the all-type failure above
+                        // remains a gap, so this ordering is not an effective argv attestation.
+                        plugins = pluginFiles.collect { artifact(it, 'compiler-plugin:' + it.name, id) }
+                    }
+                    if (!plugins.isEmpty()) issue('compiler_arguments_unmodeled', id,
+                        'compiler-plugin-provenance: nonempty plugin operands are retained; complete plugin properties/output roles require a separately qualified typed model')
+                    if (pluginData != null) capture('compiler_arguments_unmodeled', id, 'compiler-plugin-input-state') {
+                        def state = known(pluginData, 'getInputsOutputsState')
+                        known(state, 'getInputFiles').toList().each { input ->
                             if (input.toPath().toAbsolutePath().normalize().startsWith(rootPath)) auxiliaryFiles += capturedTree([input], id)
                             else auxiliaryArtifacts << artifact(input, 'compiler-plugin-input:' + input.name, id)
                         }
-                        if (task.hasProperty('javaSources')) auxiliaryFiles += capturedTree(task.javaSources.files.toList(), id)
-                        toolchain = [kind: target.platformType.toString(), compilerVersion: compilerVersion,
-                            compilerArtifacts: compilerCp.collect { file ->
-                                def resolved = compilerResolved.find { it.file.canonicalFile == file.canonicalFile }
-                                artifact(file, resolved != null ? resolved.moduleVersion.id.toString() : 'compiler-file:' + file.name, id)
-                            }, runtimeArtifacts: runtime(selectedHome, 'compilation-jdk', id),
-                            compilerPlugins: pluginCp.collect { artifact(it, 'compiler-plugin:' + it.name, id) }]
-                    } catch (Exception error) {
-                        issue(target.platformType.toString().toLowerCase().contains('native') ? 'native_toolchain_unmodeled' : 'compiler_arguments_unmodeled', id,
-                            error.class.simpleName + ': actual compiler/options/plugins/selected-JDK vocabulary unavailable')
+                        if (!known(state, 'getInputs').isEmpty() || !known(state, 'getOutputFiles').isEmpty()) issue('compiler_arguments_unmodeled', id,
+                            'compiler-plugin-properties-and-outputs: generated/plugin scalar derivation roles are outside this model vocabulary')
                     }
-                    try { cp = task.libraries.files.toList().collect { artifact(it, 'resolved:' + it.name, id) } }
+                    if (target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compilation-java-inputs') {
+                        auxiliaryFiles += capturedTree(known(task, 'getJavaSources').files.toList(), id)
+                    }
+                    if (target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compilation-script-inputs') {
+                        auxiliaryFiles += capturedTree(known(task, 'getScriptSources$kotlin_gradle_plugin_common').files.toList(), id)
+                    }
+                    if (compiler != null || jdkArtifacts != null || pluginFiles != null) toolchain = [kind: target.platformType.toString(),
+                        compilerVersion: compiler?.version, compilerArtifacts: compiler?.artifacts ?: [],
+                        runtimeArtifacts: jdkArtifacts ?: [], compilerPlugins: plugins]
+                    try {
+                        def declaredCompilerFiles = task.libraries.files.toList()
+                        // Preserve ALL declared task entries, including absent/generated/tree
+                        // outputs. The pinned builder filters missing files for its argv; that
+                        // is not proof of authenticated NO-SOURCE absence or new artifact origin.
+                        cp = declaredCompilerFiles.collect { artifact(it, 'resolved:' + it.name, id) }
+                        if (fullArguments != null && target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compiler-classpath-argument-roles') {
+                            def actual = known(fullArguments.value, 'getClasspath')
+                            def expected = declaredCompilerFiles.findAll { it.exists() }.collect { it.absolutePath }.join(File.pathSeparator)
+                            if (!(actual instanceof String) || actual != expected) throw new IllegalStateException('Exact declared/effective classpath roles differ')
+                        }
+                    }
                     catch (Exception error) {
                         try { cp = c.compileDependencyFiles.files.toList().collect { artifact(it, 'resolved:' + it.name, id) } }
                         catch (Exception ignored) { issue('dependency_resolution_failed', id, 'Actual ordered compiler classpath is unavailable.') }
@@ -258,11 +812,13 @@ gradle.projectsEvaluated {
                     }
                     def language = null
                     def api = null
-                    try { language = task.compilerOptions.languageVersion.orNull?.version; api = task.compilerOptions.apiVersion.orNull?.version }
-                    catch (Exception error) { issue('compiler_options_unavailable', id, error.class.simpleName + ': effective language/API options unavailable') }
+                    capture('compiler_options_unavailable', id, 'compiler-language-version') { language = task.compilerOptions.languageVersion.orNull?.version }
+                    capture('compiler_options_unavailable', id, 'compiler-api-version') { api = task.compilerOptions.apiVersion.orNull?.version }
                     def associated = []
                     try { associated = c.allAssociatedCompilations.collect { a -> "${a.project.path}|${a.target.name}|${a.name}".toString() }.sort() }
                     catch (Exception error) { issue('associated_compilations_unavailable', id, error.class.simpleName + ': actual friend/association graph unavailable') }
+                    if (!associated.isEmpty() && friends.isEmpty()) issue('compiler_arguments_unmodeled', id,
+                        'compiler-associated-friend-inputs: associated compilations are retained but no immutable friend-output bytes were established')
                     def fact = [id: id, moduleId: p.path, target: target.name, platform: target.platformType.toString(), name: c.name,
                         defaultSourceSetId: "${p.path}|${c.defaultSourceSet.name}".toString(), sourceSetIds: members, sourceFiles: actualFiles,
                         compileTaskPath: task != null ? task.path : "${p.path}:<unavailable-${target.name}-${c.name}>".toString(),
@@ -271,45 +827,103 @@ gradle.projectsEvaluated {
                         friendArtifacts: friends, producedVariants: [], associatedCompilationIds: associated,
                         auxiliaryInputFiles: auxiliaryFiles.unique { it.path }.sort { it.path }, auxiliaryArtifacts: auxiliaryArtifacts]
                     compilations << fact
-                    compilationObjects << [project: p, compilation: c, task: task, fact: fact]
+                    compilationObjects << [project: p, target: target, compilation: c, task: task, fact: fact]
                 }
             }
-            // Derive producer compilations from ACTUAL outgoing artifact build-dependency paths.
-            // Never guess 'main' from a target/variant's name.
-            def compilationByTask = compilationObjects.findAll { it.task != null }.collectEntries { [(it.task.path): it.fact.id] }
-            def compilationModuleById = compilationObjects.collectEntries { [(it.fact.id): it.fact.moduleId] }
-            def producerTasks = { Collection seeds ->
-                def found = [] as Set
-                def seen = [] as Set
-                def queue = new ArrayDeque(seeds)
-                while (!queue.isEmpty()) {
-                    def task = queue.removeFirst()
-                    if (!seen.add(task.path)) continue
-                    if (compilationByTask.containsKey(task.path)) {
-                        found.add(compilationByTask[task.path])
-                        // Compilation prerequisites describe inputs, not additional producers of this artifact.
-                        continue
-                    }
-                    task.taskDependencies.getDependencies(task).toList().sort { it.path }.each { queue.addLast(it) }
+            // Corroborate ACTUAL Kotlin + same-compilation Java compiler boundaries
+            // with ACTUAL original Kotlin usage compilation/configuration metadata.
+            // A target, variant, configuration or compiler task name never guesses main.
+            def producerApis = []
+            def compilerOwners = []
+            def usageRecords = []
+            // Retain failed views until the index pins their ProjectState owners.
+            // A List cannot silently discard an equality-colliding failed view.
+            def unavailableProducerProjects = []
+            boolean producerVocabularyComplete = true
+            targetObjects.each { targetEntry ->
+                def p = targetEntry.project
+                def target = targetEntry.target
+                def api = capture('produced_variants_unavailable', p.path, 'outgoing-producer-api') {
+                    KtCheckerPinnedModelApi.producerApi(target)
                 }
-                found.toList().sort()
+                if (api == null) {
+                    producerVocabularyComplete = false
+                    unavailableProducerProjects.add(p)
+                    return
+                }
+                producerApis.add(api)
+                def usages = capture('produced_variants_unavailable', p.path, 'outgoing-kotlin-usage-metadata') {
+                    KtCheckerPinnedModelApi.kotlinUsages(api, p, target)
+                }
+                if (usages == null) unavailableProducerProjects.add(p)
+                else usageRecords.addAll(usages)
+                compilationObjects.findAll { it.target.is(target) }.each { entry ->
+                    def tasks = capture('produced_variants_unavailable', entry.fact.id, 'outgoing-compilation-compiler-owners') {
+                        KtCheckerPinnedModelApi.at('outgoing-compilation-project-owner') {
+                            if (!KtCheckerPinnedModelApi.projectOwner(api.projectOwnerApi, entry.project).is(
+                                KtCheckerPinnedModelApi.projectOwner(api.projectOwnerApi, p))) {
+                                throw new IllegalStateException('Missing actual compilation project owner identity')
+                            }
+                        }
+                        KtCheckerPinnedModelApi.compilerTasks(api, p, target, entry.compilation, entry.task)
+                    }
+                    if (tasks == null) unavailableProducerProjects.add(p)
+                    else compilerOwners.add([project: p, compilation: entry.compilation, id: entry.fact.id, tasks: tasks])
+                }
+            }
+            def producerIndex = null
+            if (producerVocabularyComplete && !producerApis.isEmpty()) producerIndex = capture('produced_variants_unavailable', null, 'outgoing-producer-index') {
+                if (producerApis.any { !it.taskType.is(producerApis[0].taskType) }) throw new IllegalStateException('Mixed actual Gradle task type identity')
+                def ownerApi = producerApis[0].projectOwnerApi
+                KtCheckerPinnedModelApi.at('outgoing-project-owner-api') {
+                    if (producerApis.any { !it.projectOwnerApi.projectType.is(ownerApi.projectType) ||
+                        !it.projectOwnerApi.internalProjectType.is(ownerApi.internalProjectType) ||
+                        !it.projectOwnerApi.projectStateType.is(ownerApi.projectStateType) }) {
+                        throw new IllegalStateException('Mixed actual Gradle project owner type identity')
+                    }
+                }
+                def index = new KtCheckerModelProducerIndex(producerApis[0].taskType,
+                    producerApis.collectMany { [it.kotlinCompilerType, it.abstractCompilerType] }.unique(), ownerApi)
+                unavailableProducerProjects.each { index.markUnavailable(it) }
+                compilerOwners.each { owner -> index.register(owner.project, owner.compilation, owner.id, owner.tasks) }
+                index
             }
             def outgoing = []
             root.allprojects.toList().sort { it.path }.each { p ->
                 p.configurations.findAll { it.canBeConsumed }.sort { it.name }.each { conf ->
-                    def record = { String name, attrs, artifacts ->
+                    def record = { String name, attrs, Collection artifacts ->
                         try {
+                            if (artifacts.size() > KtCheckerModelProducerIndex.TASK_LIMIT) throw new IllegalStateException('Outgoing artifact bound exceeded')
                             def files = artifacts.collect { it.file.canonicalPath }.sort()
-                            def producers = producerTasks(artifacts.collectMany { it.buildDependencies.getDependencies(null).toList() })
-                            if (producers.size() == 1 && !files.isEmpty() && compilationModuleById[producers[0]] == p.path) {
-                                outgoing << [moduleId: p.path, name: name, attrs: attributes(attrs), files: files, compilationId: producers[0]]
-                            } else if (!files.isEmpty() && !producers.isEmpty()) {
-                                issue('produced_variants_unavailable', p.path, 'Outgoing artifact set has no unique same-module compilation producer.')
+                            if (files.isEmpty()) return
+                            def seeds = []
+                            artifacts.each { published ->
+                                def tasks = published.buildDependencies.getDependencies(null)
+                                if (!(tasks instanceof Collection) || tasks.size() > KtCheckerModelProducerIndex.TASK_LIMIT - seeds.size()) {
+                                    throw new IllegalStateException('Outgoing seed task bound exceeded')
+                                }
+                                seeds.addAll(tasks)
                             }
-                        } catch (Exception error) { issue('produced_variants_unavailable', p.path, error.class.simpleName + ': outgoing artifact producer association unavailable') }
+                            def producer = producerIndex != null ?
+                                producerIndex.resolve(p, conf.name, seeds, usageRecords, { task -> task.taskDependencies.getDependencies(task) }) :
+                                [state: 'producer_or_usage_vocabulary_unavailable', compilationId: null, producerIds: []]
+                            if (producer.state == 'unique') {
+                                outgoing << [moduleId: p.path, name: name, configurationName: conf.name,
+                                    attrs: attributes(attrs), files: files, artifactTypes: artifacts.collect { it.type },
+                                    compilation: producer.compilation, compilationId: producer.compilationId]
+                            } else {
+                                issue('produced_variants_unavailable', p.path, 'configuration=' + conf.name + ', outgoing=' + name +
+                                    ', state=' + producer.state + ', producerIds=' + producer.producerIds.join(',') +
+                                    ', taskCount=' + producer.taskCount + ', edgeCount=' + producer.edgeCount +
+                                    ': no corroborated unique same-module compiler producer')
+                            }
+                        } catch (KtCheckerModelCaptureFailure error) { issue('produced_variants_unavailable', p.path,
+                            error.stage + ': ' + error.failureKind + ': outgoing artifact producer association unavailable')
+                        } catch (Exception error) { issue('produced_variants_unavailable', p.path,
+                            'configuration=' + conf.name + ', outgoing=' + name + ', ' + error.class.simpleName + ': outgoing artifact producer association unavailable') }
                     }
-                    record(conf.name, conf.attributes, conf.outgoing.artifacts.toList())
-                    conf.outgoing.variants.toList().sort { it.name }.each { variant -> record(variant.name, variant.attributes, variant.artifacts.toList()) }
+                    record(conf.name, conf.attributes, conf.outgoing.artifacts)
+                    conf.outgoing.variants.toList().sort { it.name }.each { variant -> record(variant.name, variant.attributes, variant.artifacts) }
                 }
             }
             compilationObjects.each { entry ->
@@ -318,26 +932,43 @@ gradle.projectsEvaluated {
                 try {
                     def conf = p.configurations.getByName(fact.dependencyConfiguration)
                     def resolvedArtifacts = conf.incoming.artifacts.artifacts.toList()
+                    def resolutionRoot = conf.incoming.resolutionResult.rootComponent.get()
+                    def rootBuildPath = capture('dependency_resolution_failed', fact.id, 'resolution-root-build-identity') {
+                        KtCheckerPinnedModelApi.projectBuildPath(resolutionRoot.id,
+                            org.gradle.api.artifacts.component.ProjectComponentIdentifier,
+                            org.gradle.api.artifacts.component.BuildIdentifier)
+                    }
+                    // A root ProjectComponentIdentifier and its actual nonempty buildPath are
+                    // mandatory. Never default an unknown identity to ':' or compare projectPath.
+                    if (rootBuildPath == null) return
                     // These are DIRECT root dependencies. Transitive closure is an explicit owner policy.
-                    conf.incoming.resolutionResult.rootComponent.get().dependencies.each { dependency ->
+                    resolutionRoot.dependencies.each { dependency ->
                         if (dependency instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
                             issue('dependency_resolution_failed', fact.id, dependency.attempted.displayName)
                         } else if (dependency.selected.id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
                             def selected = dependency.selected.id
-                            if (!selected.build.currentBuild) {
+                            def selectedBuildPath = capture('dependency_resolution_failed', fact.id, 'selected-project-build-identity') {
+                                KtCheckerPinnedModelApi.projectBuildPath(selected,
+                                    org.gradle.api.artifacts.component.ProjectComponentIdentifier,
+                                    org.gradle.api.artifacts.component.BuildIdentifier)
+                            }
+                            if (selectedBuildPath == null) return
+                            if (selectedBuildPath != rootBuildPath) {
                                 issue('included_project_dependency_unmodeled', fact.id, 'Resolved composite project is outside this root-build vocabulary.')
                             } else {
                                 def variant = dependency.resolvedVariant
                                 def attrs = attributes(variant.attributes)
-                                def artifactFiles = resolvedArtifacts.findAll { a -> a.id.componentIdentifier == selected && attributes(a.variant.attributes) == attrs }
-                                    .collect { it.file.canonicalPath }.sort()
-                                def candidates = outgoing.findAll { a -> a.moduleId == selected.projectPath && a.attrs == attrs &&
-                                    !artifactFiles.isEmpty() && a.files.containsAll(artifactFiles) }
-                                def producerIds = candidates.collect { it.compilationId }.unique()
-                                def producer = producerIds.size() == 1 ? producerIds[0] : null
+                                def componentArtifacts = resolvedArtifacts.findAll { a -> a.id.componentIdentifier == selected }.collect { a ->
+                                    [componentId: a.id.componentIdentifier, attrs: attributes(a.variant.attributes), file: a.file.canonicalPath]
+                                }
+                                def association = KtCheckerPinnedModelApi.matchOutgoingProducer(selected, selected.projectPath, attrs, componentArtifacts, outgoing)
+                                def producer = association.compilationId
                                 if (producer != null) {
                                     def record = compilations.find { it.id == producer }
                                     record.producedVariants = (record.producedVariants + [variant.displayName]).unique().sort()
+                                } else {
+                                    issue('produced_variants_unavailable', fact.id, 'selectedVariant=' + variant.displayName + ', state=' + association.state +
+                                        ', candidateCount=' + association.candidateCount + ': exact selected component/artifact association unavailable')
                                 }
                                 fact.projectDependencies << [moduleId: selected.projectPath, selectedVariant: variant.displayName,
                                     variantAttributes: attrs, compilationId: producer]

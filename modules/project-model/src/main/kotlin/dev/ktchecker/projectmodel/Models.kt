@@ -94,6 +94,9 @@ data class ModelCompilation(
     val classpath: List<ModelArtifact>,
     val projectDependencies: List<ModelProjectDependency>,
     val toolchain: ModelToolchain?,
+    /** Intended task-configuration arguments, not proof of an observed compiler invocation.
+     * The pinned exporter requests every KGP argument type with errors enabled. Any failure
+     * is a completeness gap; partial serialized options are never an execution substitute. */
     val compilerArguments: List<String>,
     val languageVersion: String?,
     val apiVersion: String?,

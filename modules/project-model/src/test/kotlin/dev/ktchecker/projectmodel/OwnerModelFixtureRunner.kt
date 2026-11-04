@@ -47,6 +47,9 @@ object OwnerModelFixtureRunner {
             }))
             runtimeInputDigest = registry.runtimeDigest
             val home = registry.deriveExecutionHome(work).also { executionHome = it }
+            // Bind only contract-pinned, already-enrolled dependency copies BEFORE
+            // exporter registration/launch. The eventual report cannot enroll files.
+            registry.bindCompilerPluginClasspath(contract.value.compilerPluginClasspath)
             val runtimeDigest = ownerFixtureRuntimeIdentity(registry.runtimeDigest, startupCapture.digest, home.digest).also { runtimeIdentity = it }
             fun verifyRuntime() { registry.verifyRuntimeInputs(); startupCapture.verify() }
             val capture = contract.capture(fixtures.resolve("jvm-owner-export/project"), work)
@@ -94,6 +97,7 @@ object OwnerModelFixtureRunner {
                     "Successful zero-exit quiescent pinned Gradle exporter invocation and fresh anchored report were verified.",
                     "Actual terminal-confirmed native supervisor identity matched the independent START bundle capture.",
                     "Original owner inputs remained immutable; only pre-enrolled exact dependency copies from the writable home could be model artifacts.",
+                    "Seven exact ordered scripting classpath artifact pins and the intended -Xplugin operand matched; plugin metadata/outputs remained unqualified.",
                     "All actual compilation contexts remained initial review obligations; no compiler or rule coverage was certified."))
         } catch (error: Exception) {
             val code = when (error) {
@@ -126,10 +130,14 @@ object OwnerModelFixtureRunner {
     val platform: String, val name: String, val defaultSourceSetId: String, val sourceSetIds: List<String>,
     val compileTaskPath: String, val dependencyConfiguration: String, val associatedCompilationIds: List<String>,
     val projectProducerIds: List<String>)
+/** Ordered classpath files for default kotlin.scripting, not seven independent plugins. */
+@Serializable internal data class OwnerFixturePluginClasspathPin(val seedRelativePath: String, val coordinate: String,
+    val digest: String, val size: Long)
 @Serializable internal data class OwnerFixtureContractData(val schemaVersion: Int, val caseId: String,
     val gradleVersion: String, val kotlinVersion: String, val javaMajor: Int, val files: List<ModelFile>,
     val modules: List<OwnerFixtureModule>, val sourceSets: List<OwnerFixtureSourceSet>,
-    val compilations: List<OwnerFixtureCompilation>, val configurationPaths: List<String>)
+    val compilations: List<OwnerFixtureCompilation>, val configurationPaths: List<String>,
+    val compilerPluginClasspath: List<OwnerFixturePluginClasspathPin>)
 
 internal data class OwnerFixtureCapture(val root: Path, val snapshot: SnapshotManifest, val verify: () -> Unit)
 internal class OwnerFixtureProblem(val code: String) : IllegalStateException(code)
@@ -140,6 +148,26 @@ internal fun ownerFixtureExecutionVerification(verify: () -> Unit) {
     try { verify() }
     catch (error: OwnerFixtureProblem) {
         throw ExecutionProblem(error.code, "Owner fixture input verification failed").apply { initCause(error) }
+    }
+}
+
+/** Pure exact lookup/comparison only, not enrollment or file/execution authority.
+ * The driver supplies the private registry, never a map taken from model JSON. */
+internal fun ownerFixturePinnedPluginClasspath(pins: List<OwnerFixturePluginClasspathPin>, root: Path,
+    registered: Map<String, ModelArtifact>): List<ModelArtifact> {
+    expect(root.isAbsolute && root.normalize() == root && pins.size == 7 &&
+        pins.map { it.seedRelativePath }.distinct().size == pins.size, "owner_fixture_plugin_classpath_pin_mismatch")
+    return pins.map { pin ->
+        logicalPath(pin.seedRelativePath)
+        expect(pin.seedRelativePath.startsWith("caches/modules-2/files-2.1/") && Digests.valid(pin.digest) &&
+            pin.size in 0..512L * 1024 * 1024 &&
+            pin.coordinate == "compiler-plugin:${Path.of(pin.seedRelativePath).fileName}", "owner_fixture_plugin_classpath_pin_mismatch")
+        val path = root.resolve(pin.seedRelativePath)
+        expect(',' !in path.toString(), "owner_fixture_plugin_classpath_pin_mismatch")
+        val artifact = registered[path.toString()] ?: throw OwnerFixtureProblem("owner_fixture_artifact_unregistered")
+        expect(artifact.path == path.toString() && artifact.digest == pin.digest && artifact.size == pin.size,
+            "owner_fixture_plugin_classpath_pin_mismatch")
+        artifact.copy(coordinate = pin.coordinate)
     }
 }
 
@@ -171,12 +199,33 @@ internal class OwnerFixtureContract private constructor(val value: OwnerFixtureC
 
     fun verifyDomain(snapshot: SnapshotManifest, graph: GradleProjectExport, registry: OwnerFixtureRuntimeRegistry) {
         verifySourceDomain(snapshot, graph)
-        graph.compilations.forEach { actual -> actual.toolchain?.let { chain ->
-            expect(chain.compilerVersion == value.kotlinVersion && chain.compilerPlugins.isEmpty(), "owner_fixture_compiler_domain_changed")
+        verifyCompilerPluginDomain(graph, registry.compilerPluginClasspath)
+        graph.compilations.forEach { actual ->
+            val chain = actual.toolchain ?: throw OwnerFixtureProblem("owner_fixture_compiler_domain_changed")
             expect(chain.runtimeArtifacts.map { it.path }.sorted() == registry.jdkPaths, "owner_fixture_selected_jdk_domain_incomplete")
-        } }
+            chain.compilerPlugins.forEach(registry::verifyArtifact)
+        }
         expect(graph.externalConfigurationArtifacts.map { it.path } == listOf(registry.exporterPath), "owner_fixture_external_configuration_domain_changed")
         graph.externalConfigurationArtifacts.forEach(registry::verifyArtifact)
+    }
+
+    /** Pure fixed-classpath/argv comparison. Production expected paths come ONLY from
+     * prelaunch registry binding. This verifies no plugin metadata/properties/outputs,
+     * file identity, executed compiler invocation or full compiler-input authority. */
+    fun verifyCompilerPluginDomain(graph: GradleProjectExport, expectedClasspath: List<ModelArtifact>) {
+        expect(graph.compilations.map { it.id }.sorted() == value.compilations.map { it.id }, "owner_fixture_compilation_domain_incomplete")
+        expect(expectedClasspath.size == value.compilerPluginClasspath.size && expectedClasspath.zip(value.compilerPluginClasspath).all { (artifact, pin) ->
+            artifact.coordinate == pin.coordinate && artifact.digest == pin.digest && artifact.size == pin.size &&
+                Path.of(artifact.path).let { it.isAbsolute && it.normalize().toString() == artifact.path && it.endsWith(Path.of(pin.seedRelativePath)) } &&
+                ',' !in artifact.path
+        }, "owner_fixture_plugin_classpath_pin_mismatch")
+        val operand = "-Xplugin=" + expectedClasspath.joinToString(",") { it.path }
+        graph.compilations.forEach { actual ->
+            val chain = actual.toolchain ?: throw OwnerFixtureProblem("owner_fixture_compiler_domain_changed")
+            expect(chain.kind == actual.platform && chain.compilerVersion == value.kotlinVersion, "owner_fixture_compiler_domain_changed")
+            expect(chain.compilerPlugins == expectedClasspath, "owner_fixture_compiler_plugin_classpath_changed")
+            expect(actual.compilerArguments.filter { it.startsWith("-Xplugin") } == listOf(operand), "owner_fixture_compiler_plugin_operand_changed")
+        }
     }
 
     /** Pure domain validation only; never an execution/artifact/import capability. */
@@ -215,7 +264,7 @@ internal class OwnerFixtureContract private constructor(val value: OwnerFixtureC
     }
 
     companion object {
-        private const val PIN = "sha256:dd78e5cb3f59e1cc1d9110eb36d3ca37781020ca650ed4047314650a71ae6731"
+        private const val PIN = "sha256:ce8db3ddfcba040f71b3fa6177af540da743c2b44fedaded327816a1f03adb53"
         fun load(directory: Path): OwnerFixtureContract {
             val bytes = readOwnerFixtureInput(directory.resolve("input-contract.json"), 1024 * 1024)
             expect(bytes.size in 1..1024 * 1024 && Digests.sha256(bytes) == PIN, "owner_fixture_contract_pin_changed")
@@ -223,6 +272,13 @@ internal class OwnerFixtureContract private constructor(val value: OwnerFixtureC
             expect(data.schemaVersion == 1 && data.caseId == "jvm-owner-export" && data.javaMajor == 21 &&
                 data.files.map { it.path } == data.files.map { it.path }.distinct().sorted(), "owner_fixture_contract_invalid")
             data.files.forEach { logicalPath(it.path); digest(it.digest); expect(it.size in 0..32L * 1024 * 1024, "owner_fixture_contract_invalid") }
+            expect(data.compilerPluginClasspath.size == 7 && data.compilerPluginClasspath.map { it.seedRelativePath }.distinct().size == 7,
+                "owner_fixture_contract_invalid")
+            data.compilerPluginClasspath.forEach { pin ->
+                logicalPath(pin.seedRelativePath); digest(pin.digest)
+                expect(pin.seedRelativePath.startsWith("caches/modules-2/files-2.1/") && pin.size in 0..512L * 1024 * 1024 &&
+                    pin.coordinate == "compiler-plugin:${Path.of(pin.seedRelativePath).fileName}", "owner_fixture_contract_invalid")
+            }
             val covered = data.configurationPaths.toSet() + data.sourceSets.flatMap { set ->
                 data.files.filter { file -> (set.sourceRoots + set.resourceRoots).any { file.path.startsWith("$it/") } }.map { it.path }
             }
@@ -254,6 +310,9 @@ internal class OwnerFixtureRuntimeRegistry private constructor(private val manif
     var exporterPath: String? = null
         private set
     private var executionHome: OwnerFixtureExecutionHome? = null
+    private var boundCompilerPluginClasspath: List<ModelArtifact>? = null
+    val compilerPluginClasspath: List<ModelArtifact>
+        get() = boundCompilerPluginClasspath?.toList() ?: throw OwnerFixtureProblem("owner_fixture_plugin_classpath_unbound")
 
     fun deriveExecutionHome(work: Path): OwnerFixtureExecutionHome {
         expect(executionHome == null, "owner_fixture_execution_home_already_registered")
@@ -267,6 +326,18 @@ internal class OwnerFixtureRuntimeRegistry private constructor(private val manif
         executionHome = home
         verifyRuntimeInputs()
         return home
+    }
+
+    fun bindCompilerPluginClasspath(pins: List<OwnerFixturePluginClasspathPin>) {
+        expect(boundCompilerPluginClasspath == null && exporterPath == null, "owner_fixture_plugin_classpath_already_bound")
+        val home = executionHome ?: throw OwnerFixtureProblem("owner_fixture_plugin_classpath_unbound")
+        // Both exact original prepared seed entries and pre-enrolled copy identities
+        // must match. No discovered/generated cache file or report-selected path joins.
+        ownerFixturePinnedPluginClasspath(pins, gradleSeedHome, artifacts).forEach(::verifyArtifact)
+        val copies = ownerFixturePinnedPluginClasspath(pins, home.root, artifacts)
+        expect(copies.all { home.containsDependency(it.path) }, "owner_fixture_artifact_unregistered")
+        copies.forEach(::verifyArtifact)
+        boundCompilerPluginClasspath = copies.toList()
     }
 
     fun artifact(path: Path): ModelArtifact = artifacts[path.toString()] ?: throw OwnerFixtureProblem("owner_fixture_artifact_unregistered")
@@ -286,6 +357,7 @@ internal class OwnerFixtureRuntimeRegistry private constructor(private val manif
     }
     fun registerExporter(output: Path) {
         expect(exporterPath == null, "owner_fixture_exporter_already_registered")
+        expect(boundCompilerPluginClasspath != null, "owner_fixture_plugin_classpath_unbound")
         val path = output.resolve(GradleModelExporter.SCRIPT)
         expect(hashFile(path, 1024 * 1024L) == GradleModelExporter.scriptDigest(), "owner_fixture_exporter_pin_changed")
         exporterPath = path.toString()
@@ -580,6 +652,7 @@ private fun ownerFixtureProcessEvidence(actual: ProcessOutcome) = OwnerFixturePr
     val executionHomeDigest: String? = null, val executionHomeEvidencePath: String? = null, val executionHomeRoot: String? = null,
     val limitations: List<String> = listOf("Fixed explicitly selected trusted fixture only; this is not a general arbitrary-project capture proof.",
         "Registered model inputs are not executable compiler-input relocation or successful compiler/rule coverage.",
+        "Pinned scripting classpath files/argv do not establish plugin metadata, generated outputs or an executed compiler invocation.",
         "Missing project/friend output artifacts and exporter API gaps remain unavailable; no tuple is qualified.",
         "START source/runtime/native-image identities do not attest source-to-binary builds, loaded JVM memory or a runtime tuple.",
         "The initial exact seed-copy derivation is bound; generated execution-home caches are not model/compiler artifact authority.",
