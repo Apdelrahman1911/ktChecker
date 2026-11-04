@@ -2,14 +2,16 @@
 
 Implementation additions: [required executable concurrent histories](implementation-contract.md#required-executable-histories).
 
-**Status: proposed plan. Research retrieved on 2026-11-04 UTC.**
+**Status: normative release gates; implementation is an unqualified preview.
+Research retrieved on 2026-11-04 UTC.**
 
-There is no checker implementation, executed Kotlin rule suite, target-platform
-validation, measured field precision/recall, or benchmark result established by
-this document. The repository's planning validator and planning workflow check
-documents and metadata; they do not run the future checker. The acceptance
-numbers below are **PROPOSED gates**, not measurements or promises of achieved
-performance. Read this with [the product contract](PLAN.md),
+This document defines acceptance, not evidence that it has passed. Actual
+implementation, test and hosted-run results are recorded separately in the
+[implementation evidence ledger](implementation-evidence.md) and
+[independent implementation audit](implementation-audit.md). The planning
+validator checks documents and metadata; it does not execute the checker.
+The numerical gates below remain **PROPOSED acceptance thresholds**, not measured
+field precision/recall or performance promises. Read this with [the product contract](PLAN.md),
 [architecture](architecture.md), [protocol](protocol.md), and
 [independent audit](review-audit.md).
 
@@ -22,13 +24,13 @@ declared policy. It is not an arbitrary cross product of every dependency patch.
 Version families can share qualification only after a reviewer records why their
 contracts are equivalent and compatibility/conformance tests cover the boundary.
 
-| State | Required evidence | Present checker status |
+| State | Required evidence | Accounting rule |
 |---|---|---|
-| Planned | Predicate, exclusions, exact provider ID, proposed tests and evidence route | All initial rule records |
-| Implemented | Identified ktChecker revision with adapter/rule and coverage plumbing | Not established |
-| Tested | Retained executed integration reports for the declared contexts | Not established |
-| Validated: conditional certification | Reviewed proof/contract plus implementation conformance and adversarial evidence | Not established |
-| Validated: field evidence | Frozen detector/configuration passing an independent natural-project evaluation | Not established |
+| Planned | Predicate, exclusions, exact provider ID, proposed tests and evidence route | A catalog entry alone establishes only this stage |
+| Implemented | Identified ktChecker revision with adapter/rule and coverage plumbing | Report per rule/context; a provider mapping alone is insufficient |
+| Tested | Retained executed integration reports for the declared contexts | Require current source, runtime and applicability bindings |
+| Validated: conditional certification | Reviewed proof/contract plus implementation conformance and adversarial evidence | No preview result automatically grants this stage |
+| Validated: field evidence | Frozen detector/configuration passing an independent natural-project evaluation | No fixture count substitutes for an independently labeled corpus |
 
 The registry's `validated` status must carry its route, context, limits, reviewers,
 run IDs, artifact hashes and raw counts. Conditional certification is not a field

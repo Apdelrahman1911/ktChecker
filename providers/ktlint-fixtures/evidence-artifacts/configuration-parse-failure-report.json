@@ -1,0 +1,13 @@
+[
+    {
+        "file": "Parent.kt",
+        "errors": [
+            {
+                "line": 1,
+                "column": 1,
+                "message": "Not a valid Kotlin file (1:1 parameter name expected)",
+                "rule": ""
+            }
+        ]
+    }
+]

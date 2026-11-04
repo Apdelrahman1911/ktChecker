@@ -16,6 +16,7 @@ import kotlin.system.exitProcess
 private const val HELP = """ktChecker 0.1.0-dev.1 — executable preview, not a qualified release
 
 ktchecker doctor --format json
+ktchecker providers [--compiler-java-home DIR]
 ktchecker rules [--id ktc.rule.id]
 ktchecker register --workspace ID --worktree ID --client ID --session ID --lineage ID --out PRIVATE.json
 ktchecker overlay --request overlay.json [--out result.json]
@@ -28,12 +29,14 @@ ktchecker suppressions remove --client ID --id SUPPRESSION --expected revision.j
 ktchecker suppressions export --client ID --out shared-policy.json
 ktchecker suppressions import --client ID --request shared-policy.json --expected revision.json --owner-action
 ktchecker suppressions apply --client ID --request mutation.json --owner-action
+ktchecker suppressions selector --client ID --prepared prepared.json --finding finding.json [--out selector.json]
 ktchecker suppressions explain --client ID --prepared prepared.json --finding finding.json
 ktchecker rpc
 
-Global options: --state DIR --compiler-dir DIR --detekt-artifacts DIR --workers 0|1|2
+Global options: --state DIR --compiler-dir DIR --compiler-java-home DIR --detekt-artifacts DIR --ktlint-artifacts DIR --workers 0|1|2
 Review commands never edit project source or grant execution/suppression permission.
 Only explicit owner prepare with --authorize-execution permits the pinned provider profiles.
+Compiler execution requires a complete link-free JDK 21 image. A rejected image is unavailable, not a launcher-only fallback.
 RPC accepts private NDJSON; use bridges/mcp for actual MCP. Do not send owner/adapter credentials to a model.
 Unavailable/partial analysis is not passing. Exit 0 on submit without waiting means accepted only.
 """
@@ -55,7 +58,7 @@ internal class Arguments(args: Array<String>) {
                 options[key] = args[i++]
             }
         }
-        val allowed = setOf("state", "compiler-dir", "detekt-artifacts", "workers", "format", "id", "workspace", "worktree",
+        val allowed = setOf("state", "compiler-dir", "compiler-java-home", "detekt-artifacts", "ktlint-artifacts", "workers", "format", "id", "workspace", "worktree",
             "client", "session", "lineage", "out", "request", "prepared", "wait-ms", "review", "cursor", "limit", "finding",
             "expected", "layer", "rule") + booleans
         if ((options.keys - allowed).isNotEmpty()) throw CliProblem("invalid_arguments", "Unknown command option.")
@@ -64,6 +67,10 @@ internal class Arguments(args: Array<String>) {
     operator fun get(name: String): String? = options[name]
     fun has(name: String): Boolean = name in options
     fun required(name: String): String = options[name] ?: throw CliProblem("invalid_arguments", "Option --$name is required.")
+    fun integer(name: String, default: Int): Int = if (has(name)) required(name).toIntOrNull()
+        ?: throw CliProblem("invalid_arguments", "Option --$name requires an integer.") else default
+    fun long(name: String, default: Long): Long = if (has(name)) required(name).toLongOrNull()
+        ?: throw CliProblem("invalid_arguments", "Option --$name requires an integer.") else default
 }
 
 fun main(args: Array<String>) { exitProcess(runCli(args)) }
@@ -75,11 +82,13 @@ internal fun runCli(args: Array<String>): Int {
         if (options.has("help") || command in setOf(null, "help", "--help")) { println(HELP); return 0 }
         if (command == "doctor") { emit(doctor(), options["out"]); return 0 }
         if (command == "rules") { emit(Catalog().inspect(options["id"]), options["out"]); return 0 }
-        val workers = options["workers"]?.toIntOrNull() ?: 2
+        val workers = options.integer("workers", 2)
         if (workers !in 0..2) throw CliProblem("invalid_arguments", "Preview supports zero to two persistent worker threads per process.")
         Workbench(WorkbenchOptions(options["state"]?.let(Path::of) ?: PrivateState.defaultPath(),
-            options["compiler-dir"]?.let(Path::of), options["detekt-artifacts"]?.let(Path::of), workers)).use { workbench ->
+            options["compiler-dir"]?.let(Path::of), options["detekt-artifacts"]?.let(Path::of), workers,
+            options["ktlint-artifacts"]?.let(Path::of), options["compiler-java-home"]?.let(Path::of))).use { workbench ->
             when (command) {
+                "providers" -> { emit(workbench.providerAvailability(), options["out"]); 0 }
                 "rpc" -> { RpcServer(workbench).serve(System.`in`, System.out); 0 }
                 "register" -> {
                     val out = options.required("out")
@@ -102,15 +111,17 @@ internal fun runCli(args: Array<String>): Int {
                         put("snapshotId", prepared.input.snapshot.snapshotId); put("preparedFile", out)
                         put("coverageScope", prepared.coverageScope); put("releaseQualified", false)
                         put("executionAuthorized", prepared.executionAuthorized)
+                        put("installedProviders", workbench.providerAvailability())
                         put("providerProfiles", ContractJson.encodeToJsonElement(prepared.profiles.keys.sorted())) })
                     0
                 }
                 "submit" -> {
+                    // Validate before acceptance: a rejected CLI invocation must not secretly submit work.
+                    val wait = options.long("wait-ms", 0)
+                    if (wait !in 0..300_000) throw CliProblem("invalid_arguments", "wait-ms must be between zero and 300000.")
                     val prepared = readOwnerFile<PreparedReview>(options.required("prepared"))
                     val credential = workbench.registration(prepared.binding.clientId).client
                     var status = workbench.submit(credential, prepared.patchId, prepared.idempotencyKey, prepared.input)
-                    val wait = options["wait-ms"]?.toLongOrNull() ?: 0
-                    if (wait !in 0..300_000) throw CliProblem("invalid_arguments", "wait-ms must be between zero and 300000.")
                     val deadline = System.nanoTime() + wait * 1_000_000
                     while (wait > 0 && status.result == null && System.nanoTime() < deadline) {
                         Thread.sleep(25); status = workbench.kernel.status(credential, status.reviewId)
@@ -121,7 +132,7 @@ internal fun runCli(args: Array<String>): Int {
                 "status", "events", "cancel" -> {
                     val credential = workbench.registration(options.required("client")).client
                     val response = when (command) {
-                        "events" -> result(workbench.kernel.events(credential, options["cursor"], options["limit"]?.toIntOrNull() ?: 20))
+                        "events" -> result(workbench.kernel.events(credential, options["cursor"], options.integer("limit", 20)))
                         "cancel" -> result(workbench.kernel.cancel(credential, options.required("review")))
                         else -> result(workbench.kernel.status(credential, options.required("review")))
                     }
@@ -156,11 +167,13 @@ internal fun runCli(args: Array<String>): Int {
                             requireKeys(mutation, setOf("layer", "expected", "action"))
                             workbench.mutateConfig(clientId, mutation.decode("layer"), mutation.decode("expected"), mutation.decode("action"))
                         }
-                        "explain" -> {
+                        "selector", "explain" -> {
                             val prepared = readOwnerFile<PreparedReview>(options.required("prepared"))
-                            workbench.explain(clientId, prepared.input, readOwnerFile(options.required("finding")))
+                            val finding = readOwnerFile<Finding>(options.required("finding"))
+                            if (options.words[1] == "selector") workbench.findingSelector(clientId, prepared.input, finding)
+                            else workbench.explain(clientId, prepared.input, finding)
                         }
-                        else -> throw CliProblem("invalid_arguments", "Use suppressions inspect, add, remove, import, export, enable, disable, apply or explain.")
+                        else -> throw CliProblem("invalid_arguments", "Use suppressions inspect, add, remove, import, export, enable, disable, apply, selector or explain.")
                     }
                     emit(response, options["out"]); 0
                 }
@@ -198,7 +211,10 @@ internal inline fun <reified T> readOwnerFile(path: String): T {
     if (!Files.isRegularFile(file, NOFOLLOW_LINKS) || Files.size(file) > 8_388_608) throw CliProblem("invalid_owner_file", "Expected a bounded regular explicitly selected file.")
     val bytes = Files.newInputStream(file, NOFOLLOW_LINKS).use { it.readNBytes(8_388_609) }
     if (bytes.size > 8_388_608) throw CliProblem("invalid_owner_file", "Selected file exceeds the input limit.")
-    return ContractJson.decodeFromString(bytes.toString(Charsets.UTF_8))
+    val document = strictJsonDocument(bytes, "invalid_owner_file")
+    return try { ContractJson.decodeFromString(document) } catch (_: Exception) {
+        throw CliProblem("invalid_owner_file", "Selected file does not match the required document schema.")
+    }
 }
 
 /** Explicit CLI output only; never chmod or rewrite the parent/project directory. */
@@ -213,6 +229,12 @@ internal fun saveOwnerFile(path: Path, value: JsonObject) {
     }
 }
 
-private fun emit(value: JsonObject, out: String? = null) {
-    if (out == null) println(value) else saveOwnerFile(Path.of(out), value)
+internal fun emit(value: JsonObject, out: String? = null) {
+    if (out == null) writeJsonLine(value, System.out) else saveOwnerFile(Path.of(out), value)
+}
+
+/** Machine output is UTF-8 on every OS, independent of the terminal's PrintStream encoding. */
+internal fun writeJsonLine(value: JsonObject, output: java.io.OutputStream) {
+    output.write((value.toString() + "\n").toByteArray(Charsets.UTF_8))
+    output.flush()
 }

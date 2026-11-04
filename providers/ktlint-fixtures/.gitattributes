@@ -1,0 +1,6 @@
+# Reports, receipts and source/bytecode witnesses are exact-byte evidence.
+evidence-artifacts/** -text
+runs/** -text
+# Genuine Gradle console output contains an upstream trailing space. Preserve it;
+# this exception does not apply to authored adapter code or fixture source JSON.
+runs/**/gradle-output.log -whitespace

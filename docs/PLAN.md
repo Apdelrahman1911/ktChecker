@@ -12,20 +12,34 @@ low false positives, and fast useful feedback after every patch**. None can be
 traded away silently to label a small ruleset an MVP. Milestones are implementation
 stages of the same first release, not progressively redefined product scope.
 
-## 1. What is delivered now, and what is not
+## 1. Planning baseline and current implementation status
 
-Delivered here: a researched design, atomic candidate rule inventories, explicit
+The original planning checkpoint delivered a researched design, atomic candidate rule inventories, explicit
 applicability and exclusions, proposed validation gates, a release/CI plan, and
 executable checks of the **planning artifacts**. The source repository was inspected
 before modification: it was already public at
 [Apdelrahman1911/ktChecker](https://github.com/Apdelrahman1911/ktChecker), with a single
 README in commit `6bef07933a1113985b4a62d8f3e3da93e809df33`.
 
-**Not delivered or demonstrated yet:** an engine, running rule integrations, measured
-latency or accuracy, incremental/full equivalence, Android/iOS/Desktop target
-execution, distributable binaries, or findings actually injected into a coding
-agent. A passing planning workflow proves none of these. All initial rule records
-remain `planned`; their validation sections are test requirements, not test results.
+That checkpoint did **not** deliver an engine or executable validation. Implementation
+has since produced a runnable **unqualified preview**: immutable capture and a
+concurrent durable review kernel, installed JVM CLI, isolated provider adapters,
+suppression controls, and a reference host. Actual compiler findings have entered
+subsequent Codex model requests in the retained three-phase synthetic-project
+[delivery experiment](../bridges/reference-host/evidence/cli-kernel-codex-public-fixture.json).
+This does not qualify all hosts or rules; its final completion gate deliberately
+denied success. Original full coverage event arrays were not retained in that
+experiment; its evidence document records that reproducibility limit.
+
+Use the [implementation usage guide](implementation-usage.md),
+[independent implementation audit](implementation-audit.md), and
+machine-readable coverage report for the exact tested source tuples and remaining
+gaps. The Linux CI preview archives are not evidence of Windows/macOS or target
+qualification. **A complete release, general incremental/full equivalence,
+Android/iOS/Desktop target validation, per-rule real-world precision/recall, and
+the warm 1–3 second useful-result objective remain unproven.** Planning records
+still describe requirements: an initial `planned` catalog record is neither a
+current test result nor a reason to reduce the agreed inventory.
 
 Read the detailed specifications together:
 

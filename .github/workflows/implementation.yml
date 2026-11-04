@@ -20,7 +20,28 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: [ubuntu-24.04, windows-2025, macos-26]
+        include:
+          - os: ubuntu-24.04
+            supervisor_python: python3
+            supervisor_cc_argument: '--cc /usr/bin/cc'
+            supervisor_cc_property: '-PnativeSupervisorCc=/usr/bin/cc'
+            library_profile: supported
+            library_opt_in: 'true'
+            evidence_profile: checker-host-supported-library-controls
+          - os: windows-2025
+            supervisor_python: python
+            supervisor_cc_argument: ''
+            supervisor_cc_property: ''
+            library_profile: windows-portability
+            library_opt_in: 'false'
+            evidence_profile: checker-host-windows-portability
+          - os: macos-26
+            supervisor_python: python3
+            supervisor_cc_argument: '--cc /usr/bin/cc'
+            supervisor_cc_property: '-PnativeSupervisorCc=/usr/bin/cc'
+            library_profile: supported
+            library_opt_in: 'true'
+            evidence_profile: checker-host-supported-library-controls
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -40,6 +61,11 @@ jobs:
           java-version: '21'
       - name: Verify the evidence harness failure paths
         run: python -m unittest discover -s scripts/ci -p "test_*.py" -v
+      - name: Verify synthetic Lint receipt privacy without relying on Python assertions
+        if: runner.os == 'Linux'
+        run: |
+          python providers/platform-fixtures/test_retain_lint_evidence.py -q
+          python -O providers/platform-fixtures/test_retain_lint_evidence.py -q
       - name: Record initial host and pinned wrapper
         run: python scripts/ci/record_environment.py --output build/ci-evidence/environment-initial.json --require-java-major 21
       - name: Execute the checksum-pinned Gradle wrapper
@@ -47,13 +73,58 @@ jobs:
       - name: Bind observed Gradle to the selected JVM
         if: always()
         run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 21 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+      - name: Observe exact helper build inputs and compiler or explicit unsupported host
+        if: always()
+        # Version probes only, under the builder's minimal environment. No
+        # compiler/toolchain download, helper run or transitive closure claim.
+        run: >-
+          python scripts/ci/run_supervisor_checks.py --phase preflight
+          --output build/ci-evidence/supervisor-prerequisites.json
+          --environment build/ci-evidence/environment.json
+          --python-command ${{ matrix.supervisor_python }}
+          ${{ matrix.supervisor_cc_argument }}
+      - name: Execute exact tiny native controls or record Windows native unavailability
+        if: always()
+        # Linux requires existing /usr/bin/strace: absence is a visible failure.
+        # Darwin has two explicit Linux-only skips, never a syscall/owner-death
+        # proof. Windows executes no compiler/helper; policy success is not a
+        # native-test pass. These C/Python fixtures are not provider qualification.
+        run: >-
+          python scripts/ci/run_supervisor_checks.py --phase controls
+          --output build/ci-evidence/supervisor-controls.json
+          --prerequisites build/ci-evidence/supervisor-prerequisites.json
+          --python-command ${{ matrix.supervisor_python }}
+          ${{ matrix.supervisor_cc_argument }}
+      - name: Provision pinned optional provider libraries or record Windows unavailability
+        # Only supported POSIX hosts download the five Detekt and three Ktlint pins.
+        # Windows remains a build/test/package lane, not a fictitious provider pass.
+        run: >-
+          python scripts/ci/run_library_checks.py --phase provision
+          --profile ${{ matrix.library_profile }}
+          --output build/ci-evidence/library-prerequisites.json
+          --environment build/ci-evidence/environment.json
       - name: Build and test actual modules; assemble preview distributions
         run: >-
           python scripts/ci/run_gradle.py
           --output build/ci-evidence/host-build.json --timeout 1200
           --require-task :contracts:test --require-task :audit:test
+          --require-task :kernel:test --require-task :project-model:test
+          --require-task :provider-architecture:test --require-task :review-controller:test
+          --require-task :provider-runtime:buildOwnedProcessSupervisor --require-task :provider-runtime:test
+          --require-task :provider-detekt:test --require-task :provider-ktlint:test
           --require-task :cli:installDist --require-task :cli:distZip --require-task :cli:distTar
           -- --rerun-tasks --no-build-cache test :cli:installDist :cli:distZip :cli:distTar
+          -PdetektIntegration=${{ matrix.library_opt_in }} -PktlintIntegration=${{ matrix.library_opt_in }}
+          -PlibraryFixtureEvidenceRoot=build/ci-evidence/raw/library-fixtures
+          -PnativeSupervisorPython=${{ matrix.supervisor_python }} ${{ matrix.supervisor_cc_property }}
+      - name: Verify exact genuine library controls or visible Windows opt-out skips
+        if: always()
+        run: >-
+          python scripts/ci/run_library_checks.py --phase collect
+          --profile ${{ matrix.library_profile }}
+          --output build/ci-evidence/library-controls.json
+          --prerequisites build/ci-evidence/library-prerequisites.json
+          --build build/ci-evidence/host-build.json
       - name: Resolve actual installed distribution coordinates and Maven POMs
         run: >-
           python scripts/ci/run_gradle.py
@@ -63,6 +134,17 @@ jobs:
           :cli:writeDistributionDependencyManifest
       - name: Execute installed native launcher from a spaces and Unicode path
         run: python scripts/ci/smoke_distribution.py --output build/ci-evidence/distribution-smoke.json
+      - name: Verify actual host-specific helper receipt and installed doctor bytes
+        if: always()
+        # The preview archive is host-specific, not universal. Bundled byte
+        # inspection never becomes native ABI, process or release qualification.
+        run: >-
+          python scripts/ci/run_supervisor_checks.py --phase collect
+          --output build/ci-evidence/supervisor-installed-bytes.json
+          --prerequisites build/ci-evidence/supervisor-prerequisites.json
+          --controls build/ci-evidence/supervisor-controls.json
+          --build build/ci-evidence/host-build.json
+          --smoke build/ci-evidence/distribution-smoke.json
       - name: Inventory actual dependency bytes, declared licenses and retained notices
         if: always()
         # Preview inventory may pass while legal review is explicitly blocked.
@@ -79,19 +161,32 @@ jobs:
           KT_CI_JOB_STATUS: ${{ job.status }}
         run: >-
           python scripts/ci/collect_evidence.py
-          --output build/ci-evidence/evidence.json --profile checker-host
+          --output build/ci-evidence/evidence.json --profile ${{ matrix.evidence_profile }}
           --environment build/ci-evidence/environment.json
           --reports "modules/*/build/test-results/**/*.xml"
           --reports "tests/audit/build/test-results/**/*.xml"
           --require-report "modules/contracts/build/test-results/test/*.xml"
           --require-report "tests/audit/build/test-results/test/*.xml"
+          --require-report "modules/kernel/build/test-results/test/*.xml"
+          --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelPlanIntegrationTest.xml"
+          --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelStressTest.xml"
+          --require-report "modules/project-model/build/test-results/test/*.xml"
+          --require-report "modules/provider-architecture/build/test-results/test/*.xml"
+          --require-report "modules/review-controller/build/test-results/test/*.xml"
+          --require-report "modules/provider-runtime/build/test-results/test/*.xml"
           --require-tests
+          --require-artifact "modules/kernel/build/reports/stress/kernel-100-patches.json"
           --require-artifact "modules/cli/build/distributions/*.zip"
           --require-artifact "modules/cli/build/distributions/*.tar"
           --command-result build/ci-evidence/gradle-version.json
+          --command-result build/ci-evidence/supervisor-prerequisites.json
+          --command-result build/ci-evidence/supervisor-controls.json
+          --command-result build/ci-evidence/library-prerequisites.json
           --command-result build/ci-evidence/host-build.json
+          --command-result build/ci-evidence/library-controls.json
           --command-result build/ci-evidence/dependency-manifest-command.json
           --command-result build/ci-evidence/distribution-smoke.json
+          --command-result build/ci-evidence/supervisor-installed-bytes.json
           --command-result build/ci-evidence/package-report.json
       - name: Retain sanitized observed evidence (not terminal transcripts)
         if: always()

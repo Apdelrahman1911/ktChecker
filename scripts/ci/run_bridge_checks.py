@@ -9,6 +9,7 @@ import platform
 import re
 import shutil
 import tarfile
+import xml.etree.ElementTree as ET
 
 if __package__:
     from .ci_common import REPO_ROOT, digest_bytes, digest_file, read_bounded, run_logged, source_identity, utc_now, write_json
@@ -27,6 +28,15 @@ PINS = {
 }
 TEST_SUMMARY = re.compile(r"^(?:#|ℹ)\s+(tests|suites|pass|fail|cancelled|skipped|todo)\s+(\d+)\s*$", re.MULTILINE)
 ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+PUBLIC_TEST = re.compile(r"(?m)^\s*test\(\s*(['\"])([^'\"\\\r\n]{1,512})\1\s*,")
+MAX_JUNIT_BYTES = 8 * 1024 * 1024
+MAX_FAILED_IDENTITIES = 64
+FAILURE_CODES = {"private_state_platform_unqualified", "ERR_TEST_FAILURE", "ERR_ASSERTION", "ENOENT", "EACCES", "EPERM",
+                 "private_path_unsupported", "private_path_alias_unsupported", "private_acl_unavailable", "unsafe_state_path",
+                 "state_permissions", "private_parent_permissions", "state_directory_in_use", "private_operation_unsupported",
+                 "native_windows_required", "private_helper_command_bound", "native_windows_control_setup_failed"}
+FAILURE_TYPES = {"testCodeFailure", "cancelledByParent", "testTimeoutFailure", "subtestsFailed",
+                 "testAborted", "uncaughtException", "unhandledRejection"}
 
 
 def node_npm_argv() -> tuple[list[str], list[str]]:
@@ -81,9 +91,12 @@ def lock_profile(directory: Path, name: str) -> tuple[dict, list[str]]:
 
 
 def test_counts(output: str) -> tuple[dict, list[str]]:
-    counts = {match[1]: int(match[2]) for match in TEST_SUMMARY.finditer(ANSI.sub("", output))}
+    observations = list(TEST_SUMMARY.finditer(ANSI.sub("", output)))
+    counts = {match[1]: int(match[2]) for match in observations}
     keys = ("tests", "suites", "pass", "fail", "cancelled", "skipped", "todo")
     errors = []
+    if len(observations) != len(counts):
+        errors.append("npm test emitted duplicate/ambiguous Node summary counters")
     if any(key not in counts for key in keys):
         errors.append("npm test omitted the actual Node test-runner summary")
     elif counts["tests"] != sum(counts[key] for key in ("pass", "fail", "cancelled", "skipped", "todo")):
@@ -93,6 +106,87 @@ def test_counts(output: str) -> tuple[dict, list[str]]:
     if counts.get("fail") or counts.get("cancelled"):
         errors.append("Node tests contain failures/cancellations")
     return counts, errors
+
+
+def public_test_cases(name: str) -> dict[str, str]:
+    """Only literal names from the public authored test entries may be uploaded."""
+    known = {}
+    ambiguous = set()
+    for path in sorted((REPO_ROOT / "bridges" / name / "test").glob("*.test.ts")):
+        if path.is_symlink() or not re.fullmatch(r"[A-Za-z0-9_.-]+\.test\.ts", path.name):
+            raise ValueError("Public Node test entry path is unsupported")
+        text = path.read_bytes()
+        if len(text) > 1024 * 1024:
+            raise ValueError("Public Node test entry exceeds its name-inventory bound")
+        for match in PUBLIC_TEST.finditer(text.decode("utf-8")):
+            label = match[2]
+            if re.search(r"[\x00-\x1f\x7f]", label):
+                continue
+            if label in known:
+                ambiguous.add(label)
+            known[label] = path.relative_to(REPO_ROOT).as_posix()
+    return {label: source for label, source in known.items() if label not in ambiguous}
+
+
+def test_report_environment(environment: dict[str, str], report: Path) -> dict[str, str]:
+    # Dual built-in reporters preserve the ordinary real npm-test summary and
+    # retain raw JUnit only below unuploaded raw/. Quoting is NODE_OPTIONS syntax,
+    # not a shell command; npm and tsc processes do not enable Node's test mode.
+    destination = report.resolve().as_posix()
+    if re.search(r"[\x00-\x1f\x7f]", destination):
+        raise ValueError("Unsupported Node reporter destination")
+    options = "--test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit " \
+        "--test-reporter-destination=" + json.dumps(destination, ensure_ascii=False)
+    return {**environment, "NODE_OPTIONS": (environment.get("NODE_OPTIONS", "") + " " + options).strip()}
+
+
+def junit_failures(path: Path, public_cases: dict[str, str], node_counts: dict) -> tuple[dict, list[str]]:
+    """Bounded case identities/codes only; never publish failure bodies or streams."""
+    if path.stat().st_size > MAX_JUNIT_BYTES:
+        raise ValueError("Unsafe/oversized Node JUnit report")
+    with path.open("rb") as handle:
+        raw = handle.read(MAX_JUNIT_BYTES + 1)
+    if len(raw) > MAX_JUNIT_BYTES or re.search(br"<!\s*(?:DOCTYPE|ENTITY)\b", raw, re.IGNORECASE):
+        raise ValueError("Unsafe/oversized Node JUnit report")
+    document = ET.fromstring(raw)
+    if document.tag not in {"testsuites", "testsuite"}:
+        raise ValueError("Not a Node JUnit suite report")
+    cases = list(document.iter("testcase"))
+    if len(cases) > 10000:
+        raise ValueError("Node JUnit case occurrences exceed their bound")
+    counts = {"tests": len(cases), "passed": 0, "failure": 0, "error": 0, "skipped": 0}
+    failed = []
+    unknown = omitted = 0
+    for case in cases:
+        problems = case.findall("failure") + case.findall("error")
+        state = "failure" if case.find("failure") is not None else "error" if case.find("error") is not None \
+            else "skipped" if case.find("skipped") is not None else "passed"
+        counts[state] += 1
+        if not problems:
+            continue
+        label = case.get("name")
+        if label not in public_cases:
+            unknown += 1
+            continue
+        if len(failed) >= MAX_FAILED_IDENTITIES:
+            omitted += 1
+            continue
+        # Known error codes help identify a fail-closed privacy guard. Neither
+        # arbitrary messages nor unknown test/class names enter this projection.
+        detail = "\n".join(problem.get("message", "") + "\n" + "".join(problem.itertext()) for problem in problems)
+        codes = sorted(code for code in FAILURE_CODES if re.search(r"(?<![A-Za-z0-9_])" + re.escape(code) + r"(?![A-Za-z0-9_])", detail))
+        types = sorted({problem.get("type") for problem in problems if problem.get("type") in FAILURE_TYPES})
+        failed.append({"name": label, "public_source_path": public_cases[label], "state": state,
+                       "failure_types": types, "reason_codes": codes})
+    errors = []
+    if counts["tests"] != node_counts.get("tests") or counts["passed"] != node_counts.get("pass") or \
+            counts["failure"] + counts["error"] != node_counts.get("fail", 0) + node_counts.get("cancelled", 0) or \
+            counts["skipped"] != node_counts.get("skipped", 0) + node_counts.get("todo", 0):
+        errors.append("Actual Node JUnit occurrences differ from the ordinary test summary")
+    return {"report_digest": digest_bytes(raw), "case_counts": counts, "failed_cases": failed,
+            "unknown_failed_case_occurrences": unknown, "bounded_omitted_failed_case_occurrences": omitted,
+            "failure_messages_stdout_stderr_and_unknown_names_omitted": True,
+            "raw_report_uploaded": False}, errors
 
 
 def audit_summary(output: str) -> tuple[dict, list[str]]:
@@ -201,14 +295,27 @@ def execute(args: argparse.Namespace) -> dict:
     environment = dict(os.environ, NO_COLOR="1", FORCE_COLOR="0", npm_config_fund="false", npm_config_update_notifier="false")
 
     def stage(name: str, argv: list[str], cwd: Path, mode: str | None = None) -> dict:
+        stage_environment = environment
+        if mode == "test":
+            report = args.output.parent / "raw" / (name + ".junit.xml")
+            report.parent.mkdir(parents=True, exist_ok=True)
+            report.unlink(missing_ok=True)
+            stage_environment = test_report_environment(environment, report)
         value, stdout, _ = run_logged(argv, cwd=cwd, log_base=args.output.parent / "raw" / name,
-                                     timeout=args.timeout, env=environment, separate_stderr=True)
+                                     timeout=args.timeout, env=stage_environment, separate_stderr=True,
+                                     additional_output_paths=(report,) if mode == "test" else ())
         errors = []
         if value["state"] != "completed" or value["return_code"] != 0:
             errors.append("Actual npm/Node command did not complete successfully")
         if mode == "test":
             value["test_counts"], test_errors = test_counts(stdout)
             errors.extend(test_errors)
+            try:
+                value["test_failures"], report_errors = junit_failures(
+                    report, public_test_cases(name.removesuffix("-test")), value["test_counts"])
+                errors.extend(report_errors)
+            except (OSError, ValueError, ET.ParseError):
+                errors.append("Actual Node JUnit report is absent/unsafe/malformed")
             value["test_count_scope"] = "Actual Node test-case occurrences; not qualified rules or authenticated model observations"
         elif mode == "audit":
             try:
@@ -236,6 +343,10 @@ def execute(args: argparse.Namespace) -> dict:
         result["errors"].extend(f"{name}: {error}" for error in errors)
         write_json(args.output, result)
         print(f"Bridge stage {name}: {value['state']}", flush=True)
+        if mode == "test":
+            for failed in value.get("test_failures", {}).get("failed_cases", []):
+                print(f"Public Node test failed: {failed['public_source_path']}: {failed['name']}"
+                      + (" [" + ", ".join(failed["reason_codes"]) + "]" if failed["reason_codes"] else ""), flush=True)
         return value
 
     stage("node-version", node + ["--version"], REPO_ROOT, "node-version")

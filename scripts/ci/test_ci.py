@@ -5,11 +5,12 @@ import copy
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 try:
     from . import ci_common, collect_evidence, record_environment, run_platform_checks, run_provider_checks, smoke_distribution
@@ -26,9 +27,18 @@ IDENTITY = {"commit": "1" * 40, "dirty": False, "working_tree_digest": "sha256:"
 
 
 def doctor():
+    target = smoke_distribution.supervisor_target(smoke_distribution.platform.system(), smoke_distribution.platform.machine())
+    supported = target in smoke_distribution.SUPERVISOR_TARGETS
+    containment = {"state": "available" if supported else "unavailable", "target": target,
+                   "bundledBytesVerified": supported, "executionVerified": False, "releaseQualified": False,
+                   "reasons": [] if supported else ["process_group_containment_unavailable"], "scope": smoke_distribution.CONTAINMENT_SCOPE}
+    if supported:
+        containment["identity"] = {"protocolVersion": smoke_distribution.SUPERVISOR_PROTOCOL, "target": target,
+                                   "sourceDigest": "sha256:" + "3" * 64, "binaryDigest": "sha256:" + "4" * 64}
     return {"contractVersion": "ktchecker/preview-1", "command": "doctor", "status": "preview",
             "version": "0.1.0-dev.1", "releaseQualified": False,
             "runtime": {"javaVersion": "21.0.12", "os": "Linux", "arch": "amd64"},
+            "installedProvidersInspected": False, "processContainment": containment,
             "capabilities": [], "gaps": ["Actual host observation has not run"]}
 
 
@@ -95,6 +105,20 @@ BUILD SUCCESSFUL
             self.assertEqual("timeout", result["state"])
             self.assertNotEqual(0, result["return_code"])
 
+    def test_side_report_output_is_bounded_and_monitored_not_silently_unlimited(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            report = root / "large.xml"
+            result, _, _ = ci_common.run_logged(
+                [sys.executable, "-c", "from pathlib import Path; import sys,time; Path(sys.argv[1]).write_bytes(b'x'*2048); time.sleep(30)", str(report)],
+                cwd=root, log_base=root / "bounded-report", timeout=10, max_output_bytes=1024,
+                additional_output_paths=(report,),
+            )
+            self.assertEqual("output_limit", result["state"])
+            self.assertEqual(2048, result["additional_output_bytes"])
+            self.assertTrue(result["additional_output_paths_monitored"])
+            self.assertFalse(result["raw_logs_uploaded"])
+
     def test_even_fast_output_overrun_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -105,12 +129,91 @@ BUILD SUCCESSFUL
             self.assertEqual("output_limit", result["state"])
             self.assertLessEqual(len(stdout.encode()), 64)
 
+    def test_oversized_log_preview_never_allocates_the_entire_file(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch.object(Path, "read_bytes", side_effect=AssertionError("unbounded logfile read")):
+                result, stdout, stderr = ci_common.run_logged(
+                    [sys.executable, "-c", "import sys; sys.stdout.write('x' * 4096); sys.stderr.write('y' * 4096)"],
+                    cwd=root, log_base=root / "large-preview", timeout=10,
+                    max_output_bytes=32, separate_stderr=True,
+                )
+            self.assertEqual("output_limit", result["state"])
+            self.assertEqual("x" * 32, stdout)
+            self.assertEqual("y" * 32, stderr)
+            self.assertEqual(ci_common.digest_bytes(b"x" * 4096), result["stdout_digest"])
+            self.assertEqual(ci_common.digest_bytes(b"y" * 4096), result["stderr_digest"])
+
     def test_missing_executable_is_unavailable(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             result, _, _ = ci_common.run_logged([str(root / "absent")], cwd=root, log_base=root / "absent")
             self.assertEqual("unavailable", result["state"])
             self.assertIsNone(result["return_code"])
+
+    def test_completed_child_with_fast_output_overrun_is_never_group_signaled(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            process = Mock(pid=12345)
+            process.poll.return_value = 0
+            process.wait.return_value = 0
+
+            def start(*_, **kwargs):
+                kwargs["stdout"].write(b"x" * 256)
+                kwargs["stdout"].flush()
+                return process
+
+            with patch.object(ci_common.subprocess, "Popen", side_effect=start), \
+                 patch.object(ci_common, "terminate_tree") as terminate:
+                result, _, _ = ci_common.run_logged(
+                    ["synthetic-child"], cwd=root, log_base=root / "fast", max_output_bytes=32,
+                )
+            self.assertEqual("output_limit", result["state"])
+            self.assertEqual(0, result["return_code"])
+            terminate.assert_not_called()
+            process.wait.assert_called_once_with(timeout=5)
+
+    def test_final_direct_child_wait_is_bounded_without_post_wait_group_retry(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            process = Mock(pid=12345, returncode=None)
+            process.poll.return_value = None
+            process.wait.side_effect = subprocess.TimeoutExpired("synthetic-child", 5)
+            with patch.object(ci_common.subprocess, "Popen", return_value=process), \
+                 patch.object(ci_common.time, "monotonic", side_effect=(0, 2, 3)), \
+                 patch.object(ci_common, "terminate_tree") as terminate:
+                result, _, _ = ci_common.run_logged(
+                    ["synthetic-child"], cwd=root, log_base=root / "unverified", timeout=1,
+                )
+            self.assertEqual("cleanup_unverified", result["state"])
+            self.assertIsNone(result["return_code"])
+            process.wait.assert_called_once_with(timeout=5)
+            terminate.assert_called_once_with(process)
+
+    def test_ci_posix_group_signal_sequence_ends_at_successful_wait(self):
+        # Synthetic call ordering only: not real signal delivery or native proof.
+        kill_signal = getattr(signal, "SIGKILL", 9)
+        for first_wait_times_out in (False, True):
+            with self.subTest(first_wait_times_out=first_wait_times_out):
+                events = []
+                process = Mock(pid=12345)
+
+                def wait(*, timeout):
+                    events.append(("wait", timeout))
+                    if first_wait_times_out and len(events) == 2:
+                        raise subprocess.TimeoutExpired("synthetic-child", timeout)
+                    return 0
+
+                process.wait.side_effect = wait
+                with patch.object(ci_common.os, "name", "posix"), \
+                     patch.object(ci_common.os, "killpg", create=True,
+                                  side_effect=lambda pid, sig: events.append((pid, sig))), \
+                     patch.object(ci_common.signal, "SIGKILL", kill_signal, create=True):
+                    ci_common.terminate_tree(process)
+                expected = [(12345, signal.SIGTERM), ("wait", 5)]
+                if first_wait_times_out:
+                    expected.extend([(12345, kill_signal), ("wait", 5)])
+                self.assertEqual(expected, events)
 
     def gradle_control(self, stdout, return_code=1, **kwargs):
         execution = {"state": "completed", "return_code": return_code}
@@ -192,8 +295,9 @@ class ReportTests(unittest.TestCase):
             self.assertEqual(1, before["file_count"])
 
     def test_evidence_path_traversal_is_rejected(self):
-        for pattern in ("../secret", "/etc/passwd", "build/../../secret"):
-            with self.assertRaises(ValueError):
+        for pattern in ("../secret", "/etc/passwd", "build/../../secret", "C:/private", "C:private",
+                        "\\\\server\\private", "build\\..\\private", "build/private:stream", "private\x00"):
+            with self.subTest(pattern=pattern), self.assertRaises(ValueError):
                 collect_evidence.expand(pattern)
 
     def test_missing_reports_or_artifacts_do_not_pass(self):
@@ -236,6 +340,35 @@ class SmokeAndEnvironmentTests(unittest.TestCase):
             self.assertTrue(smoke_distribution.validate_doctor(value), key)
         self.assertTrue(smoke_distribution.validate_doctor([]))
         self.assertTrue(smoke_distribution.validate_doctor({"arbitrary": "JSON"}))
+
+    def test_doctor_containment_is_exact_byte_inspection_never_execution_or_release(self):
+        value = doctor()
+        value["processContainment"] = {"state": "available", "target": "linux-x86_64", "bundledBytesVerified": True,
+                                       "executionVerified": False, "releaseQualified": False, "reasons": [],
+                                       "scope": smoke_distribution.CONTAINMENT_SCOPE,
+                                       "identity": {"protocolVersion": smoke_distribution.SUPERVISOR_PROTOCOL, "target": "linux-x86_64",
+                                                    "sourceDigest": "sha256:" + "3" * 64, "binaryDigest": "sha256:" + "4" * 64}}
+        self.assertEqual([], smoke_distribution.validate_doctor(value, require_containment=True, expected_target="linux-x86_64"))
+        for key, replacement in (("executionVerified", True), ("releaseQualified", True), ("bundledBytesVerified", 1),
+                                 ("target", "macos-aarch64"), ("reasons", ["PRIVATE path and message"]), ("identity", {})):
+            invalid = copy.deepcopy(value)
+            invalid["processContainment"][key] = replacement
+            with self.subTest(key=key):
+                self.assertTrue(smoke_distribution.validate_doctor(invalid, require_containment=True, expected_target="linux-x86_64"))
+        value["installedProvidersInspected"] = True
+        self.assertTrue(smoke_distribution.validate_doctor(value))
+        del value["processContainment"]
+        self.assertTrue(smoke_distribution.validate_doctor(value, require_containment=True))
+
+    def test_doctor_windows_unavailability_is_portable_not_native_execution(self):
+        value = {"state": "unavailable", "target": "windows-x86_64", "bundledBytesVerified": False,
+                 "executionVerified": False, "releaseQualified": False, "reasons": ["process_group_containment_unavailable"],
+                 "scope": smoke_distribution.CONTAINMENT_SCOPE}
+        self.assertEqual([], smoke_distribution.validate_containment(value, "windows-x86_64"))
+        self.assertTrue(smoke_distribution.validate_containment(value, "linux-x86_64"))
+        for key, replacement in (("state", "available"), ("identity", {}), ("reasons", []), ("executionVerified", True)):
+            with self.subTest(key=key):
+                self.assertTrue(smoke_distribution.validate_containment(dict(value, **{key: replacement}), "windows-x86_64"))
 
     def test_fixed_windows_batch_quoting_supports_spaces_and_unicode(self):
         command = smoke_distribution.windows_batch_command(Path("C:/Temp/CI Δ fixture/bin/ktchecker.bat"), "C:/Windows/System32/cmd.exe")
@@ -329,12 +462,17 @@ class ProviderEvidenceTests(unittest.TestCase):
         provider_id = "kotlin-native" if profile == "ios" else "android-lint"
         upstream = next(iter(run_provider_checks.EXPECTED_NATIVE[case])) if profile == "ios" and case != "positive" else "NewApi"
         rule_id = run_provider_checks.CANONICAL_IDS[upstream]
-        context = {"target": target, "sourceSet": "commonMain" if profile == "ios" else "androidMain", "module": ":fixture", "compilation": "main"}
+        context = run_provider_checks.fixture_scope(profile, target)
+        members = run_provider_checks.fixture_membership(profile, case, target)
+        tasks = run_provider_checks.fixture_tasks(profile, target)
+        snapshot = "sha256:" + "3" * 64
+        path = "negative/new-api/androidMain/dev/ktchecker/fixture/Notification.kt" if profile == "android" else "src/commonMain/kotlin/dev/ktchecker/fixture/Envelope.kt"
         finding = {"ruleId": rule_id, "providerId": provider_id, "upstreamId": upstream, "severity": "error",
                    "context": context, "fingerprint": "sha256:" + "4" * 64,
-                   "location": {"path": "negative/new-api/androidMain/dev/ktchecker/fixture/Notification.kt" if profile == "android" else "src/commonMain/kotlin/dev/ktchecker/fixture/Envelope.kt",
-                                "fileDigest": "sha256:" + "5" * 64, "line": 3, "column": 0}}
-        return {"schemaVersion": 1, "state": "passed", "case": case, "target": target, "snapshotId": "sha256:" + "3" * 64,
+                   "location": {"path": path, "fileDigest": ci_common.digest_file(run_provider_checks.FIXTURE_ROOT / path), "line": 3, "column": 0}}
+        return {"schemaVersion": 1, "state": "passed", "case": case, "target": target, "snapshotId": snapshot,
+                "modelBinding": {"scope": copy.deepcopy(context), "modelDigest": run_provider_checks.fixture_model_digest(profile, case, snapshot, context, members, tasks),
+                                 "sourceSetByFile": members, "requiredTaskPaths": tasks, "provenance": run_provider_checks.MODEL_PROVENANCE},
                 "artifactIdentities": [{"coordinate": "fixture-tool:1", "path": "/public/tool.jar", "digest": "sha256:" + "6" * 64}],
                 "providerResult": {"providerId": provider_id, "providerVersion": "2.4.21" if profile == "ios" else "32.3.1", "status": "incomplete",
                                    "rawDiagnostics": [], "findings": [] if case == "positive" else [finding], "reasons": ["qualification_pending"],
@@ -354,6 +492,85 @@ class ProviderEvidenceTests(unittest.TestCase):
             value = self.driver()
             value["state"] = state
             self.assertTrue(run_provider_checks.validate_driver(value, "android", "positive", "android"))
+
+    def test_model_requires_root_scope_exact_members_and_bound_digest(self):
+        original = self.driver(case="new-api")
+        for mutate in (
+            lambda row: row.pop("modelBinding"),
+            lambda row: row["modelBinding"].update(scope={**row["modelBinding"]["scope"], "module": ":fixture"}),
+            lambda row: row["modelBinding"].update(provenance="general_gradle_model_imported"),
+            lambda row: row["modelBinding"].update(modelDigest="sha256:" + "9" * 64),
+            lambda row: row["modelBinding"].update(sourceSetByFile={}),
+            lambda row: row["modelBinding"]["sourceSetByFile"].update({"src/desktopMain/kotlin/dev/ktchecker/fixture/Platform.kt": "androidMain"}),
+            lambda row: row["modelBinding"]["sourceSetByFile"].update({"negative/new-api/androidMain/dev/ktchecker/fixture/Notification.kt": "commonMain"}),
+            lambda row: row["providerResult"]["coverage"][0]["context"].update(module=":other"),
+            lambda row: row["providerResult"]["coverage"][0]["context"].update(compilation="main"),
+        ):
+            value = copy.deepcopy(original)
+            mutate(value)
+            self.assertTrue(run_provider_checks.validate_driver(value, "android", "new-api", "android"))
+
+    def test_model_exact_task_paths_reject_basename_child_module_extra_and_duplicates(self):
+        for paths in (("lintAnalyzeAndroidMain", ":lintReportAndroidMain"),
+                      (":other:lintAnalyzeAndroidMain", ":lintReportAndroidMain"),
+                      (":lintAnalyzeAndroidMain",),
+                      (":lintAnalyzeAndroidMain", ":lintAnalyzeAndroidMain"),
+                      (":lintAnalyzeAndroidMain", ":lintReportAndroidMain", ":other"),
+                      (":lintAnalyzeAndroidMain", None)):
+            value = self.driver()
+            value["modelBinding"]["requiredTaskPaths"] = list(paths)
+            self.assertTrue(run_provider_checks.validate_driver(value, "android", "positive", "android"))
+        native = self.driver("ios", "positive", "iosArm64")
+        native["modelBinding"]["requiredTaskPaths"] = [":compileKotlinIosArm64"]
+        self.assertTrue(run_provider_checks.validate_driver(native, "ios", "positive", "iosArm64"))
+
+    def test_fixture_case_membership_excludes_other_targets_and_inactive_negative_roots(self):
+        positive = run_provider_checks.fixture_membership("ios", "positive", "iosArm64")
+        missing = run_provider_checks.fixture_membership("ios", "missing-actual", "iosArm64")
+        wrong = run_provider_checks.fixture_membership("ios", "wrong-actual", "iosSimulatorArm64")
+        actual = "src/iosMain/kotlin/dev/ktchecker/fixture/Platform.kt"
+        replacement = "negative/wrong-actual/iosMain/dev/ktchecker/fixture/Platform.kt"
+        self.assertIn(actual, positive)
+        self.assertNotIn(actual, missing)
+        self.assertNotIn(actual, wrong)
+        self.assertIn(replacement, wrong)
+        self.assertTrue(all("androidMain" not in path and "desktopMain" not in path for path in wrong))
+        for path in ("/etc/passwd", "C:/private.kt", "C:private.kt", "//host/share/private.kt", "src\\private.kt",
+                     "src/../private.kt", "src//private.kt", "src/./private.kt", "src/private.kt:secret", "src/private\x00.kt"):
+            self.assertFalse(run_provider_checks.relative_source_path(path), path)
+
+    def test_findings_bind_exact_file_source_set_and_bytes_not_merely_target(self):
+        original = self.driver(case="new-api")
+        for mutate in (
+            lambda row: row["providerResult"]["findings"][0]["context"].update(sourceSet="commonMain"),
+            lambda row: row["providerResult"]["findings"][0]["context"].update(module=":other"),
+            lambda row: row["providerResult"]["findings"][0]["context"].update(compilation="main"),
+            lambda row: row["providerResult"]["findings"][0]["location"].update(fileDigest="sha256:" + "9" * 64),
+            lambda row: row["providerResult"]["findings"][0]["location"].update(path="src/desktopMain/kotlin/dev/ktchecker/fixture/Platform.kt"),
+        ):
+            value = copy.deepcopy(original)
+            mutate(value)
+            self.assertTrue(run_provider_checks.validate_driver(value, "android", "new-api", "android"))
+
+    def test_native_source_origin_does_not_expand_selected_analysis_scope(self):
+        value = self.driver("ios", "wrong-actual", "iosArm64")
+        path = "negative/wrong-actual/iosMain/dev/ktchecker/fixture/Platform.kt"
+        value["providerResult"]["findings"][0]["location"].update(
+            path=path, fileDigest=ci_common.digest_file(run_provider_checks.FIXTURE_ROOT / path))
+        self.assertEqual("iosMain", value["modelBinding"]["sourceSetByFile"][path])
+        self.assertEqual("commonMain", value["providerResult"]["findings"][0]["context"]["sourceSet"])
+        self.assertEqual([], run_provider_checks.validate_driver(value, "ios", "wrong-actual", "iosArm64"))
+        value["providerResult"]["findings"][0]["context"]["sourceSet"] = "iosMain"
+        self.assertTrue(run_provider_checks.validate_driver(value, "ios", "wrong-actual", "iosArm64"))
+
+    def test_driver_json_rejects_duplicate_keys_invalid_utf8_and_nonfinite_values(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "driver.json"
+            for raw in (b'{"state":"failed","state":"passed"}', b'{"secret":"\xff"}', b'{"metric":NaN}',
+                        b'{"modelBinding":{"scope":{},"scope":null}}'):
+                path.write_bytes(raw)
+                with self.assertRaises(ValueError):
+                    run_provider_checks.read_driver(path)
 
     def test_exact_provider_version_target_and_snapshot_are_required(self):
         original = self.driver()
@@ -404,11 +621,17 @@ class ProviderEvidenceTests(unittest.TestCase):
         finding.update(title="PRIVATE title", diagnosis="PRIVATE diagnosis", evidence=[{"summary": "PRIVATE source"}])
         finding["location"]["excerpt"] = "PRIVATE excerpt"
         finding["context"]["transcript"] = "PRIVATE context"
+        binding = value["modelBinding"]
+        binding["transcript"] = "PRIVATE model"
+        binding["scope"]["transcript"] = "PRIVATE scope"
+        binding["sourceSetByFile"]["PRIVATE unsubmitted source.kt"] = "PRIVATE set"
         value["providerResult"]["metrics"] = {"outputBytes": 12, "transcript": "PRIVATE output"}
         value["artifactIdentities"][0]["raw"] = "PRIVATE artifact"
         sanitized = run_provider_checks.sanitized_driver(value)
         self.assertNotIn("PRIVATE", json.dumps(sanitized))
         self.assertTrue(sanitized["source_excerpts_messages_and_raw_diagnostics_omitted"])
+        self.assertEqual(run_provider_checks.MODEL_PROVENANCE, sanitized["modelBinding"]["provenance"])
+        self.assertEqual(run_provider_checks.fixture_membership("android", "new-api", "android"), sanitized["modelBinding"]["sourceSetByFile"])
 
     def test_unavailable_prerequisites_never_invoke_gradle(self):
         with tempfile.TemporaryDirectory() as temporary, \
@@ -431,6 +654,8 @@ class ProviderEvidenceTests(unittest.TestCase):
             def gradle(arguments, **_):
                 self.assertIn(f"-PplatformJavaHome={Path('/public/project-jdk').resolve()}", arguments)
                 self.assertIn("-Porg.gradle.java.installations.fromEnv=JAVA_HOME,JAVA_HOME_21_X64,JAVA_HOME_21_ARM64", arguments)
+                self.assertIn("-PplatformLintAnalysisTask=:lintAnalyzeAndroidMain", arguments)
+                self.assertIn("-PplatformLintReportTask=:lintReportAndroidMain", arguments)
                 case = next(arg.split("=", 1)[1] for arg in arguments if arg.startswith("-PplatformCase="))
                 path = Path(next(arg.split("=", 1)[1] for arg in arguments if arg.startswith("-PplatformResult=")))
                 value = self.driver(case=case)

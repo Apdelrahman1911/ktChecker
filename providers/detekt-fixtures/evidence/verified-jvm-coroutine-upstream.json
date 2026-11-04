@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "context": {
+    "id": "current-edited-detekt-coroutine-raw-jvm-unexecuted-native-preview1",
+    "target": "jvm",
+    "source_set": "main",
+    "kotlin_version": "2.4.21",
+    "jdk_version": "unknown",
+    "library_versions": {
+      "kotlin-stdlib": "2.4.21"
+    },
+    "analysis_mode": "full",
+    "stdlib_sha256": "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3",
+    "evidence_state": "current_sources_not_executed_after_native_supervisor_and_test_provenance_changes",
+    "current_source_attribution": "Current adapter code exists, but per-rule executed/tested attribution is withheld until a fresh verified native-supervised run; original historical tuple is separately retained.",
+    "scope_note": "Authored synthetic controls only. Historical test receipts are not current-source/native backend evidence or compatibility/precision/release qualification."
+  },
+  "provenance_evidence": [],
+  "historical_run_evidence": {
+    "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence/verified-jvm-coroutine-upstream.json",
+    "sha256": "ec9a6af18ac9fc3e76619dd8710baa155bfd0c337a3d2a0b3f98a8e2b8cb9d2b"
+  },
+  "historical_tuple_archive": {
+    "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/historical-tuple.json",
+    "sha256": "77121224b38812b268cb228e5db315a07961f7dc827635ed54cf9f8c93ecd025"
+  },
+  "historical_run_summary": {
+    "implemented_rules": 0,
+    "tested_all_six_rules": 0,
+    "qualified_rules": 0,
+    "scope": "Original immutable historical tuple only; not current-source or native-supervisor execution."
+  },
+  "rules": [
+    {
+      "rule_id": "ktc.coroutines.sleep-in-coroutine",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "attempted": false,
+      "provider_status": "not_executed_current_library_controls",
+      "cases": [],
+      "implementation_evidence": [],
+      "qualification_evidence": [],
+      "gaps": [
+        "Current library test/provenance sources and shared Execution.kt changed after the preserved run; no actual native helper identity or native exec-confirmed per-rule execution is attested for current sources.",
+        "Original historical attempts, raw reports, successful/failed cases and START artifacts remain in historical_run_evidence/historical_tuple_archive; none are current-code or native-supervisor receipts.",
+        "Raw upstream positive/negative replay is not refined catalog implementation or qualification.",
+        "No configuration/version/suppression/regression refinement suite; embedded compiler mismatch remains unqualified."
+      ]
+    }
+  ]
+}

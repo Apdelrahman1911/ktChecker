@@ -1,0 +1,208 @@
+{
+  "caseId": "jvm-owner-export",
+  "compilations": [
+    {
+      "associatedCompilationIds": [],
+      "compileTaskPath": ":consumer:compileKotlin",
+      "defaultSourceSetId": ":consumer|main",
+      "dependencyConfiguration": "compileClasspath",
+      "id": ":consumer|jvm|main",
+      "moduleId": ":consumer",
+      "name": "main",
+      "platform": "jvm",
+      "projectProducerIds": [
+        ":lib|jvm|main"
+      ],
+      "sourceSetIds": [
+        ":consumer|main"
+      ],
+      "target": "jvm"
+    },
+    {
+      "associatedCompilationIds": [
+        ":consumer|jvm|main"
+      ],
+      "compileTaskPath": ":consumer:compileTestKotlin",
+      "defaultSourceSetId": ":consumer|test",
+      "dependencyConfiguration": "testCompileClasspath",
+      "id": ":consumer|jvm|test",
+      "moduleId": ":consumer",
+      "name": "test",
+      "platform": "jvm",
+      "projectProducerIds": [
+        ":lib|jvm|main"
+      ],
+      "sourceSetIds": [
+        ":consumer|test"
+      ],
+      "target": "jvm"
+    },
+    {
+      "associatedCompilationIds": [],
+      "compileTaskPath": ":lib:compileKotlin",
+      "defaultSourceSetId": ":lib|main",
+      "dependencyConfiguration": "compileClasspath",
+      "id": ":lib|jvm|main",
+      "moduleId": ":lib",
+      "name": "main",
+      "platform": "jvm",
+      "projectProducerIds": [],
+      "sourceSetIds": [
+        ":lib|main"
+      ],
+      "target": "jvm"
+    },
+    {
+      "associatedCompilationIds": [
+        ":lib|jvm|main"
+      ],
+      "compileTaskPath": ":lib:compileTestKotlin",
+      "defaultSourceSetId": ":lib|test",
+      "dependencyConfiguration": "testCompileClasspath",
+      "id": ":lib|jvm|test",
+      "moduleId": ":lib",
+      "name": "test",
+      "platform": "jvm",
+      "projectProducerIds": [],
+      "sourceSetIds": [
+        ":lib|test"
+      ],
+      "target": "jvm"
+    }
+  ],
+  "configurationPaths": [
+    "build.gradle.kts",
+    "consumer/build.gradle.kts",
+    "gradle.properties",
+    "lib/build.gradle.kts",
+    "settings.gradle.kts"
+  ],
+  "files": [
+    {
+      "digest": "sha256:5afbe14caea81ed3095aa249069559d861d195a2a475b08767bf80f938fbe861",
+      "path": "build.gradle.kts",
+      "size": 235
+    },
+    {
+      "digest": "sha256:2d2afd69895813dcb3124ac47096d50a1a8611a58bf46d9271129c39ac6d44f5",
+      "path": "consumer/build.gradle.kts",
+      "size": 248
+    },
+    {
+      "digest": "sha256:6f10c7443a092ea8aca79dcc21e18e476daaf33d7871350c6a632068d3d98f93",
+      "path": "consumer/src/main/kotlin/Consumer.kt",
+      "size": 95
+    },
+    {
+      "digest": "sha256:8324fcf65d0a6306214d7c57919eafaa958fe377ae3638346cc8267f57eaa5b1",
+      "path": "consumer/src/main/resources/consumer.txt",
+      "size": 37
+    },
+    {
+      "digest": "sha256:912e3e63ea3b5db3d23354e2b71e2812451cf7a01da565b24e819edc7e84a06b",
+      "path": "consumer/src/test/kotlin/ConsumerCheck.kt",
+      "size": 83
+    },
+    {
+      "digest": "sha256:5fac9393de799bea3440790accc054cf2a608a1725bf413381da9f41a631d697",
+      "path": "gradle.properties",
+      "size": 194
+    },
+    {
+      "digest": "sha256:378fbb96d168addd4a6251bfd1a91b7ffbb18079cbab266e48f034f78c180697",
+      "path": "lib/build.gradle.kts",
+      "size": 199
+    },
+    {
+      "digest": "sha256:88cabd9e9dc1a46be119a938d7972475e32b341f041b14b6ed9f92d3a3fdfde7",
+      "path": "lib/src/main/kotlin/Library.kt",
+      "size": 58
+    },
+    {
+      "digest": "sha256:f4b4419bf0e8e7b499d646ec667d738ce7ae67d2675f71f7f116406b62987222",
+      "path": "lib/src/main/resources/library.txt",
+      "size": 36
+    },
+    {
+      "digest": "sha256:98f6d7d012f63c1b52503fd4d8c4cf44c0132b070038d07d47fd9116979c30f7",
+      "path": "lib/src/test/kotlin/LibraryCheck.kt",
+      "size": 80
+    },
+    {
+      "digest": "sha256:248e98b61f6343122cbc1cfd49250e896b589685281ff1669665874640b6521b",
+      "path": "settings.gradle.kts",
+      "size": 145
+    }
+  ],
+  "gradleVersion": "9.6.1",
+  "javaMajor": 21,
+  "kotlinVersion": "2.4.21",
+  "modules": [
+    {
+      "buildFile": "build.gradle.kts",
+      "directory": "",
+      "id": ":"
+    },
+    {
+      "buildFile": "consumer/build.gradle.kts",
+      "directory": "consumer",
+      "id": ":consumer"
+    },
+    {
+      "buildFile": "lib/build.gradle.kts",
+      "directory": "lib",
+      "id": ":lib"
+    }
+  ],
+  "schemaVersion": 1,
+  "sourceSets": [
+    {
+      "dependsOn": [],
+      "id": ":consumer|main",
+      "moduleId": ":consumer",
+      "name": "main",
+      "resourceRoots": [
+        "consumer/src/main/resources"
+      ],
+      "sourceRoots": [
+        "consumer/src/main/kotlin"
+      ]
+    },
+    {
+      "dependsOn": [],
+      "id": ":consumer|test",
+      "moduleId": ":consumer",
+      "name": "test",
+      "resourceRoots": [
+        "consumer/src/test/resources"
+      ],
+      "sourceRoots": [
+        "consumer/src/test/kotlin"
+      ]
+    },
+    {
+      "dependsOn": [],
+      "id": ":lib|main",
+      "moduleId": ":lib",
+      "name": "main",
+      "resourceRoots": [
+        "lib/src/main/resources"
+      ],
+      "sourceRoots": [
+        "lib/src/main/kotlin"
+      ]
+    },
+    {
+      "dependsOn": [],
+      "id": ":lib|test",
+      "moduleId": ":lib",
+      "name": "test",
+      "resourceRoots": [
+        "lib/src/test/resources"
+      ],
+      "sourceRoots": [
+        "lib/src/test/kotlin"
+      ]
+    }
+  ]
+}

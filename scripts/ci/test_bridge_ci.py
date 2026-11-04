@@ -90,6 +90,89 @@ class BridgeInfrastructureTests(unittest.TestCase):
         self.assertTrue(run_bridge_checks.test_counts("npm test succeeded")[1])
         self.assertTrue(run_bridge_checks.test_counts(output.replace("tests 4", "tests 100"))[1])
         self.assertTrue(run_bridge_checks.test_counts(output.replace("pass 2", "pass 1").replace("fail 0", "fail 1"))[1])
+        self.assertTrue(run_bridge_checks.test_counts(output + "\n# tests 4")[1])
+
+    def test_node_junit_retains_public_failed_identity_and_known_code_not_private_details(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "node.xml"
+            path.write_text('<testsuites><testsuite tests="999"><testcase name="public protocol case" classname="PRIVATE class">'
+                            '<failure type="testCodeFailure" message="PRIVATE token private_state_platform_unqualified">'
+                            'PRIVATE stack source terminal credential</failure><system-out>PRIVATE stdout</system-out></testcase>'
+                            '<testcase name="public pass"/><testcase name="public skip"><skipped/></testcase></testsuite></testsuites>',
+                            encoding="utf-8")
+            result, errors = run_bridge_checks.junit_failures(path, {"public protocol case": "bridges/mcp/test/protocol.test.ts"},
+                                                             {"tests": 3, "pass": 1, "fail": 1, "skipped": 1})
+            self.assertEqual([], errors)
+            self.assertEqual(ci_common.digest_file(path), result["report_digest"])
+            self.assertEqual(3, result["case_counts"]["tests"])
+            self.assertEqual(["private_state_platform_unqualified"], result["failed_cases"][0]["reason_codes"])
+            self.assertEqual(["testCodeFailure"], result["failed_cases"][0]["failure_types"])
+            self.assertNotIn("PRIVATE", json.dumps(result))
+            self.assertFalse(result["raw_report_uploaded"])
+
+    def test_unknown_or_excess_failed_node_names_are_omitted_not_uploaded(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "node.xml"
+            known = {"public " + str(index): "bridges/mcp/test/protocol.test.ts" for index in range(70)}
+            cases = ['<testcase name="' + name + '"><failure message="PRIVATE secret"/></testcase>' for name in known]
+            cases.append('<testcase name="PRIVATE unknown runtime name"><error type="PRIVATE type"/></testcase>')
+            path.write_text("<testsuite>" + "".join(cases) + "</testsuite>", encoding="utf-8")
+            result, errors = run_bridge_checks.junit_failures(path, known, {"tests": 71, "pass": 0, "fail": 71})
+            self.assertEqual([], errors)
+            self.assertEqual(64, len(result["failed_cases"]))
+            self.assertEqual(1, result["unknown_failed_case_occurrences"])
+            self.assertEqual(6, result["bounded_omitted_failed_case_occurrences"])
+            self.assertNotIn("PRIVATE", json.dumps(result))
+
+    def test_native_helper_fixed_failure_codes_do_not_upload_lookalikes_or_private_details(self):
+        codes = {"private_path_unsupported", "private_path_alias_unsupported", "private_acl_unavailable", "unsafe_state_path",
+                 "state_permissions", "private_parent_permissions", "state_directory_in_use", "private_operation_unsupported",
+                 "native_windows_required", "private_helper_command_bound", "native_windows_control_setup_failed"}
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "native.xml"
+            path.write_text('<testsuite><testcase name="public native ACL case"><failure message="PRIVATE token">'
+                            + " ".join(sorted(codes)) + ' PRIVATE_private_acl_unavailable_suffix PRIVATE source path'
+                            + '</failure></testcase></testsuite>', encoding="utf-8")
+            result, errors = run_bridge_checks.junit_failures(path, {"public native ACL case": "bridges/mcp/test/windows-private-state.test.ts"},
+                                                             {"tests": 1, "pass": 0, "fail": 1})
+            self.assertEqual([], errors)
+            self.assertEqual(sorted(codes), result["failed_cases"][0]["reason_codes"])
+            self.assertNotIn("PRIVATE", json.dumps(result))
+
+    def test_node_junit_count_mismatch_unsafe_xml_and_wrong_roots_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "node.xml"
+            path.write_text('<testsuite><testcase name="public case"/></testsuite>', encoding="utf-8")
+            self.assertTrue(run_bridge_checks.junit_failures(path, {}, {"tests": 100, "pass": 100})[1])
+            for raw in (b'<!DOCTYPE testsuite [<!ENTITY private SYSTEM "file:///private">]><testsuite/>',
+                        b'<arbitrary/>', b'x' * (run_bridge_checks.MAX_JUNIT_BYTES + 1)):
+                path.write_bytes(raw)
+                with self.assertRaises(ValueError):
+                    run_bridge_checks.junit_failures(path, {}, {})
+
+    def test_node_report_options_are_quoted_data_not_shell_or_newline_interpolation(self):
+        path = Path("public Node Δ reports/node.junit.xml")
+        result = run_bridge_checks.test_report_environment({"TOKEN_SECRET": "PRIVATE", "NODE_OPTIONS": "--max-old-space-size=512"}, path)
+        self.assertIn("--test-reporter=spec", result["NODE_OPTIONS"])
+        self.assertIn("--test-reporter=junit", result["NODE_OPTIONS"])
+        self.assertIn(json.dumps(path.resolve().as_posix(), ensure_ascii=False), result["NODE_OPTIONS"])
+        self.assertTrue(result["NODE_OPTIONS"].startswith("--max-old-space-size=512 "))
+        self.assertNotIn("PRIVATE", result["NODE_OPTIONS"])
+        with self.assertRaises(ValueError):
+            run_bridge_checks.test_report_environment({}, Path("report\nmalicious.xml"))
+
+    def test_only_unique_authored_literal_public_node_cases_are_inventoried(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            test_dir = root / "bridges/mcp/test"
+            test_dir.mkdir(parents=True)
+            (test_dir / "first.test.ts").write_text("test('public case',()=>{});\ntest('ambiguous',()=>{});\n"
+                                                 "test(dynamicPrivateName,()=>{});\n", encoding="utf-8")
+            (test_dir / "second.test.ts").write_text("test('ambiguous',()=>{});\n", encoding="utf-8")
+            with patch.object(run_bridge_checks, "REPO_ROOT", root):
+                cases = run_bridge_checks.public_test_cases("mcp")
+            self.assertEqual({"public case": "bridges/mcp/test/first.test.ts"}, cases)
+            self.assertNotIn("ambiguous", cases)
 
     def test_actual_audit_must_have_zero_consistent_vulnerability_counts(self):
         audit = {"auditReportVersion": 2, "metadata": {"vulnerabilities": {key: 0 for key in ("info", "low", "moderate", "high", "critical", "total")}}}

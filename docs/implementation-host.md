@@ -134,7 +134,7 @@ are supported; new contexts use the explicit projection schema.
 
 | Evidence | Verified scope | Not established |
 |---|---|---|
-| MCP SDK tests | 15 tests: current discovery/tools, legacy rejection, privilege/argument boundaries, transport bounds/reconnect, strict UTF-8, unqualified Windows privacy rejection | Host background wakeup or model observation |
+| MCP SDK tests | 17 local tests: current discovery/tools, legacy rejection, privilege/argument boundaries, transport bounds/reconnect, strict UTF-8, unqualified Windows privacy rejection, fixed Windows helper invocation/result decoding | Native Windows ACL qualification, host background wakeup or model observation |
 | Reference-host tests | 40 local tests: durable replay, independent clients, stale routing, receipt/fence negatives, synthetic Codex recovery, coverage/redundant-reason projection and proof negatives, complete parent vectors, strict UTF-8, private-safe failure telemetry, owned-thread cleanup, independent retained application-evidence validation | Live inference/compiler behavior from test doubles |
 | [Live projected Codex evidence](../bridges/reference-host/evidence/codex-inbox-projected-synthetic-events.json) | Real Codex 0.160.0, `gpt-6-astra`: background synthetic result delivered while a real turn was active; exact request joined that turn; subsequent adapter/app-server restart resumed only the owned thread and consumed a second result; explicit projected-context scope | Actual Kotlin kernel/compiler, internal inference input trace, a final guarded action |
 | [Actual CLI/kernel/compiler delivery](../bridges/reference-host/evidence/cli-kernel-codex-public-fixture.json) | Real installed CLI/kernel/compiler and Codex 0.160.0 `gpt-6-astra`, three verified public diagnostic observations: active consumer A, independent consumer B, and repaired P2 after A/broker restart; exact public lexical text retained | Full-project qualification, stock-client universality, internal inference tracing, original full-coverage-byte reconstruction offline, final guarded action |
@@ -192,6 +192,9 @@ coverage digest, but not every original coverage row. After disposable-state
 cleanup, original full-event/coverage digests cannot be independently recomputed
 offline from this artifact alone. Exact application requests, projected contexts
 and original lexical public-response bytes **can** be independently recomputed.
+The future-run driver now retains the original public synthetic payload after
+checking its digest and the public-only boundary. That source change has not had
+a new live run and does not add missing bytes to the historical artifact.
 Deterministic representation failures stop promptly and
 retain only fixed-field byte/count/hash telemetry, never private diagnostics or
 credentials. Both success and failure attempt deletion once for the exact known
@@ -232,6 +235,9 @@ behavior. `probe:codex` only checks protocol/account metadata: `account=null` an
   checks. Windows private credential/session storage remains an open release
   blocker until native ACL creation/verification and hosted tests are qualified;
   platform-neutral protocol tests cannot establish that protection.
+  A fixed-program PowerShell/.NET helper candidate and eleven Windows-only native
+  controls are present, but have not executed on Windows and are not wired into
+  production. The two local construction/decoder controls are not native evidence.
 * Persistent queues are bounded. Capacity, permission, oversized-data, binding,
   stale-generation and unknown-outcome failures remain visible and fail closed.
   There is no silent drop-to-clean or unlimited retry loop.

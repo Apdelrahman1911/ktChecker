@@ -1,0 +1,1 @@
+{"status":"unavailable","exit_code":null,"execution_confirmed":false,"executed":false,"successful_execution":false,"output_directory":null,"stdout":"","stderr":"","reasons":["execution_not_authorized"],"cancelled":false,"timed_out":false,"truncated":false,"metrics":{"elapsedMillis":0,"cpuMillis":null,"peakRssBytes":null,"outputBytes":0},"command":[],"supervisor_identity":null}

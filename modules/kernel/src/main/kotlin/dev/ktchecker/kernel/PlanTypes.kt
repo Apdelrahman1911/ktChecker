@@ -69,7 +69,10 @@ fun interface ReviewPlanAuthority {
     val reasons: List<String>,
 )
 
-/** complete means child computations finished; it is NOT a final-answer/gate authorization. */
+/**
+ * complete means this client's child computations finished, NOT a final-answer/gate authorization.
+ * Routed recipients see only their own local vector; no status authorizes combined finalization.
+ */
 @Serializable data class ParentPlanStatus(
     val planId: String,
     val clientId: String,

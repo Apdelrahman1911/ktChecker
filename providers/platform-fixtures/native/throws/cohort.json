@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "native-throws-2.4.21",
+  "kotlinVersion": "2.4.21",
+  "targets": [
+    "iosArm64",
+    "iosSimulatorArm64"
+  ],
+  "sourceProvenance": "authored_unexecuted",
+  "rules": [
+    {
+      "ruleId": "ktc.compiler.native.throws_list_empty",
+      "upstreamId": "THROWS_LIST_EMPTY",
+      "factory": "FirNativeErrors",
+      "factoryLine": 34,
+      "declaredSeverity": "ERROR"
+    },
+    {
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "factory": "FirNativeErrors",
+      "factoryLine": 35,
+      "declaredSeverity": "ERROR"
+    },
+    {
+      "ruleId": "ktc.compiler.native.incompatible_throws_inherited",
+      "upstreamId": "INCOMPATIBLE_THROWS_INHERITED",
+      "factory": "FirNativeErrors",
+      "factoryLine": 36,
+      "declaredSeverity": "ERROR"
+    },
+    {
+      "ruleId": "ktc.compiler.native.missing_exception_in_throws_on_suspend",
+      "upstreamId": "MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND",
+      "factory": "FirNativeErrors",
+      "factoryLine": 37,
+      "declaredSeverity": "ERROR"
+    }
+  ],
+  "cases": [
+    {
+      "name": "empty-list",
+      "ruleId": "ktc.compiler.native.throws_list_empty",
+      "upstreamId": "THROWS_LIST_EMPTY",
+      "sourcePath": "cases/empty-list/iosMain/Contract.kt",
+      "expectation": "named_error",
+      "anchors": [
+        {
+          "line": 5,
+          "firstColumn": 0,
+          "lastColumn": 9
+        }
+      ],
+      "compilerArguments": [],
+      "intent": "An empty exception-export filter is a Native compiler error."
+    },
+    {
+      "name": "empty-list-nonempty",
+      "ruleId": "ktc.compiler.native.throws_list_empty",
+      "upstreamId": "THROWS_LIST_EMPTY",
+      "sourcePath": "cases/empty-list-nonempty/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "A real nonempty stdlib exception filter is a legal alternative."
+    },
+    {
+      "name": "empty-list-omitted",
+      "ruleId": "ktc.compiler.native.throws_list_empty",
+      "upstreamId": "THROWS_LIST_EMPTY",
+      "sourcePath": "cases/empty-list-omitted/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "Intentional annotation omission is not an empty Throws list."
+    },
+    {
+      "name": "override-filter",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/override-filter/iosMain/Contract.kt",
+      "expectation": "named_error",
+      "anchors": [
+        {
+          "line": 14,
+          "firstColumn": 4,
+          "lastColumn": 32
+        }
+      ],
+      "compilerArguments": [],
+      "intent": "An override cannot replace the exact inherited Native exception filter."
+    },
+    {
+      "name": "override-filter-matching",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/override-filter-matching/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "A matching explicit filter preserves the inherited Native contract."
+    },
+    {
+      "name": "override-filter-inherited",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/override-filter-inherited/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "A legitimate unannotated override inherits its annotated base contract."
+    },
+    {
+      "name": "override-filter-reordered",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/override-filter-reordered/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "Throws filters are sets: reversing annotation order is a legitimate compatible override."
+    },
+    {
+      "name": "override-filter-subtype",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/override-filter-subtype/iosMain/Contract.kt",
+      "expectation": "named_error",
+      "anchors": [
+        {
+          "line": 13,
+          "firstColumn": 4,
+          "lastColumn": 33
+        }
+      ],
+      "compilerArguments": [],
+      "intent": "Java-style narrowing does not satisfy Native's exact ClassId-set equality."
+    },
+    {
+      "name": "inherited-filter",
+      "ruleId": "ktc.compiler.native.incompatible_throws_inherited",
+      "upstreamId": "INCOMPATIBLE_THROWS_INHERITED",
+      "sourcePath": "cases/inherited-filter/iosMain/Contract.kt",
+      "expectation": "named_error",
+      "anchors": [
+        {
+          "line": 19,
+          "firstColumn": 4,
+          "lastColumn": 41
+        }
+      ],
+      "compilerArguments": [],
+      "intent": "A diamond with distinct inherited exception filters has no consistent Native contract."
+    },
+    {
+      "name": "inherited-filter-matching",
+      "ruleId": "ktc.compiler.native.incompatible_throws_inherited",
+      "upstreamId": "INCOMPATIBLE_THROWS_INHERITED",
+      "sourcePath": "cases/inherited-filter-matching/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "Matching filters from two distinct interfaces are a legitimate no-emission counterpart."
+    },
+    {
+      "name": "inherited-filter-diamond",
+      "ruleId": "ktc.compiler.native.incompatible_throws_inherited",
+      "upstreamId": "INCOMPATIBLE_THROWS_INHERITED",
+      "sourcePath": "cases/inherited-filter-diamond/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "A shared-root diamond with the same inherited filter remains legal."
+    },
+    {
+      "name": "suspend-cancellation",
+      "ruleId": "ktc.compiler.native.missing_exception_in_throws_on_suspend",
+      "upstreamId": "MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND",
+      "sourcePath": "cases/suspend-cancellation/iosMain/Contract.kt",
+      "expectation": "named_error",
+      "anchors": [
+        {
+          "line": 5,
+          "firstColumn": 0,
+          "lastColumn": 40
+        }
+      ],
+      "compilerArguments": [],
+      "intent": "A nonempty suspend filter that lacks CancellationException or a recognized superclass is invalid."
+    },
+    {
+      "name": "suspend-cancellation-exact",
+      "ruleId": "ktc.compiler.native.missing_exception_in_throws_on_suspend",
+      "upstreamId": "MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND",
+      "sourcePath": "cases/suspend-cancellation-exact/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "The exact real stdlib CancellationException and its expanded typealias are legitimate suspend contracts."
+    },
+    {
+      "name": "suspend-cancellation-superclass",
+      "ruleId": "ktc.compiler.native.missing_exception_in_throws_on_suspend",
+      "upstreamId": "MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND",
+      "sourcePath": "cases/suspend-cancellation-superclass/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "All four recognized real stdlib superclasses cover suspend cancellation; unrelated subclasses are not substituted."
+    },
+    {
+      "name": "suspend-cancellation-nonsuspend",
+      "ruleId": "ktc.compiler.native.missing_exception_in_throws_on_suspend",
+      "upstreamId": "MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND",
+      "sourcePath": "cases/suspend-cancellation-nonsuspend/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "The same filter is legal on an ordinary nonsuspend function."
+    },
+    {
+      "name": "suspend-implicit-override",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/suspend-implicit-override/iosMain/Contract.kt",
+      "expectation": "named_error",
+      "anchors": [
+        {
+          "line": 10,
+          "firstColumn": 4,
+          "lastColumn": 72
+        }
+      ],
+      "compilerArguments": [],
+      "intent": "An explicit cancellation filter differs from a base's absent annotation, despite equivalent implicit suspend behavior."
+    },
+    {
+      "name": "suspend-implicit-inherited",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/suspend-implicit-inherited/iosMain/Contract.kt",
+      "expectation": "compatible",
+      "anchors": [],
+      "compilerArguments": [],
+      "intent": "An unannotated suspend override legitimately inherits the implicit contract."
+    },
+    {
+      "name": "override-filter-nowarn",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/override-filter-nowarn/iosMain/Contract.kt",
+      "expectation": "named_error",
+      "anchors": [
+        {
+          "line": 14,
+          "firstColumn": 4,
+          "lastColumn": 32
+        }
+      ],
+      "compilerArguments": [
+        "-nowarn"
+      ],
+      "intent": "Warning suppression does not make an ERROR override contract legal."
+    },
+    {
+      "name": "override-filter-suppression",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/override-filter-suppression/iosMain/Contract.kt",
+      "expectation": "observation_only",
+      "anchors": [
+        {
+          "line": 15,
+          "firstColumn": 4,
+          "lastColumn": 32
+        },
+        {
+          "line": 20,
+          "firstColumn": 4,
+          "lastColumn": 32
+        }
+      ],
+      "compilerArguments": [],
+      "intent": "Observe actual compiler error-suppression behavior and the adjacent unsuppressed violation; never infer clean compilation or a passing control."
+    },
+    {
+      "name": "override-filter-demotion-denied",
+      "ruleId": "ktc.compiler.native.incompatible_throws_override",
+      "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "sourcePath": "cases/override-filter-demotion-denied/iosMain/Contract.kt",
+      "expectation": "observation_only",
+      "anchors": [
+        {
+          "line": 14,
+          "firstColumn": 4,
+          "lastColumn": 32
+        }
+      ],
+      "compilerArguments": [
+        "-Xwarning-level=INCOMPATIBLE_THROWS_OVERRIDE:warning"
+      ],
+      "intent": "Observe the pinned compiler's prohibited ERROR-severity change and retain any global/backend diagnostic or missing Native task."
+    }
+  ],
+  "upstream": {
+    "archiveUrl": "https://codeload.github.com/JetBrains/kotlin/tar.gz/refs/tags/v2.4.21",
+    "archiveDigest": "sha256:6ee2c2026ab8fdde96e6f14b84262dfa3ac22ea7510e82b42489d846735b9202",
+    "sourceEvidence": [
+      {
+        "path": "compiler/fir/checkers/checkers.native/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/native/FirNativeErrors.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.native/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/native/FirNativeErrors.kt",
+        "digest": "sha256:bc7e18149eb625f6f5d8ce77e7130a57df67eec10b076e1e02b63c58a7300baa",
+        "size": 12115
+      },
+      {
+        "path": "compiler/fir/checkers/checkers.native/src/org/jetbrains/kotlin/fir/analysis/native/checkers/FirNativeThrowsChecker.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.native/src/org/jetbrains/kotlin/fir/analysis/native/checkers/FirNativeThrowsChecker.kt",
+        "digest": "sha256:83ffb19a833ac8684defc994a1560aca2b15e094e8d3221141e11be4a02e7b3e",
+        "size": 9457
+      },
+      {
+        "path": "compiler/fir/checkers/checkers.native/src/org/jetbrains/kotlin/fir/analysis/native/checkers/NativeDeclarationCheckers.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.native/src/org/jetbrains/kotlin/fir/analysis/native/checkers/NativeDeclarationCheckers.kt",
+        "digest": "sha256:3c9c7f528caab71c49e7e97e90f068f268e46d0b0e8f56a961ef6376dbc022cf",
+        "size": 2089
+      },
+      {
+        "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirNonSuppressibleErrorNames.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirNonSuppressibleErrorNames.kt",
+        "digest": "sha256:fd5164f14a4efb62a0c5c2d1c3a53252c1bd95331d90046b7d41a2cc481f31a7",
+        "size": 39235
+      },
+      {
+        "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/config/FirSuppressedDiagnosticsCheckers.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/config/FirSuppressedDiagnosticsCheckers.kt",
+        "digest": "sha256:39fd562d220fc54ec7e5468ff814695ba80e9fee4cec5542c55d755d2187e1a6",
+        "size": 2048
+      },
+      {
+        "path": "compiler/testData/diagnostics/nativeTests/throws.kt",
+        "url": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/nativeTests/throws.kt",
+        "digest": "sha256:7ea18a035c5f390cc72ad8bf950495551e8981448b08924093c80c5364d5c46c",
+        "size": 13161
+      }
+    ],
+    "evidenceKind": "read pinned source from existing archive; not compiler or adapter execution",
+    "testSeedHarness": [
+      "RUN_PIPELINE_TILL: FRONTEND",
+      "IGNORE_FIR_DIAGNOSTICS",
+      "ALLOW_KOTLIN_PACKAGE",
+      "synthetic kotlin stdlib declarations"
+    ],
+    "testSeedMarkers": {
+      "THROWS_LIST_EMPTY": 39,
+      "INCOMPATIBLE_THROWS_OVERRIDE": 95,
+      "INCOMPATIBLE_THROWS_INHERITED": 103,
+      "MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND": 291
+    },
+    "checkerFacts": [
+      "Exact exception ClassId sets are compared; annotation order is immaterial and assignability is not used.",
+      "Distinct inherited filters are diagnosed before an explicit override filter.",
+      "An absent annotation differs from an explicit cancellation filter on a suspend override.",
+      "Suspend cancellation admits the fixed real stdlib CancellationException and its listed superclass ClassIds.",
+      "All four IDs occur in FirNonSuppressibleErrorNames; ERROR severity changes are prohibited by FirSuppressedDiagnosticsCheckers."
+    ],
+    "license": "Kotlin Apache-2.0; exact upstream attribution and repository third-party notices apply; fixture bodies are independently authored."
+  },
+  "ownerDisposition": {
+    "state": "planned_downstream_control_not_implemented_by_native_driver",
+    "compilerSourceCase": "override-filter",
+    "reportAlias": "ktc.compiler.native.incompatible_throws_override",
+    "requirement": "Owner report disposition must preserve the actual failing compiler result and adjacent unsuppressed findings; it cannot grant a compiler exemption, successful coverage or cross-context authority."
+  },
+  "limitations": [
+    "Authored source controls are unexecuted until separately observed through this exact pinned driver/model on actual Apple-host iOS tasks.",
+    "Fixture assertion success is not provider/rule/target precision or release qualification; all four IDs remain tested false and qualified false.",
+    "Only a one-rule subset is requested for each explicit owner fixture compilation, not full-release or general project import coverage.",
+    "Suppression and prohibited ERROR-severity changes are observation-only and never passing/clean controls.",
+    "No JVM stand-in, linking, framework export, ObjC/Swift header/interop verification, simulator/device execution or latency qualification.",
+    "Selected Native artifact fingerprints do not qualify the complete Apple SDK/LLVM/libffi/cinterop/external dependency closure.",
+    "Cooperative bundled owned-child supervision is not a sandbox and cannot guarantee cleanup after forced helper loss, host death or escaped descendants.",
+    "Historical source and execution attribution remains immutable; new authored bytes do not upgrade older evidence."
+  ]
+}

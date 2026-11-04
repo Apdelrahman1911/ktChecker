@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-corpus-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.exceptions.not-implemented-declaration",
+  "upstream_id": "exceptions:NotImplementedDeclaration",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "062f5ae7b82edeaf1d1f2c825cd3e987654824a419ddd7a20efaebfa97de1b80",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-exceptions/src/main/kotlin/dev/detekt/rules/exceptions/NotImplementedDeclaration.kt",
+    "source_file_sha256": "d605d1414e0766bc709bbe563605c07380d98f63cd91803fcb66395f1668f97e",
+    "predicate_line_numbers": [
+      36,
+      43
+    ],
+    "research_only": true
+  },
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.notimplemented\n\nfun emptyStub(): Nothing = TODO()\n\nfun messageStub(): Nothing = TODO(\"pending\")\n\nfun thrownStub(): Nothing = throw NotImplementedError(\"pending\")\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 27,
+        "end_line": 3,
+        "end_column": 33,
+        "span": "TODO()",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 29,
+        "end_line": 5,
+        "end_column": 44,
+        "span": "TODO(\"pending\")",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 7,
+        "column": 28,
+        "end_line": 7,
+        "end_column": 64,
+        "span": "throw NotImplementedError(\"pending\")",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Actual call/throw syntax, not TODO comments, in synthetic selected production scope."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.notimplemented\n\n// TODO: Documentation note only; this is not a runtime stub.\nfun documented(): String = \"TODO() and NotImplementedError are text\"\n"
+    },
+    "expected": [],
+    "intent": "Comments and string literals with stub spellings are not executable stub calls."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.notimplemented\n\nfun emptyStub(): Nothing = TODO()\n\nfun messageStub(): Nothing = TODO(\"pending\")\n\nfun thrownStub(): Nothing = throw NotImplementedError(\"pending\")\n",
+      "SuppressedCase.kt": "@file:Suppress(\"NotImplementedDeclaration\")\n\npackage suppressed.corpus.notimplemented\n\nfun emptyStub(): Nothing = TODO()\n\nfun messageStub(): Nothing = TODO(\"pending\")\n\nfun thrownStub(): Nothing = throw NotImplementedError(\"pending\")\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 27,
+        "end_line": 3,
+        "end_column": 33,
+        "span": "TODO()",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 29,
+        "end_line": 5,
+        "end_column": 44,
+        "span": "TODO(\"pending\")",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 7,
+        "column": 28,
+        "end_line": 7,
+        "end_column": 64,
+        "span": "throw NotImplementedError(\"pending\")",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine upstream file annotation on an otherwise identical, independently named package; neighboring original file must retain every positive finding. No ktChecker-ID or declaration-scope suppression claim."
+  },
+  "controls": [
+    {
+      "id": "shadowed-todo-symbol",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive",
+      "sources": {
+        "Case.kt": "package corpus.notimplemented\n\nfun TODO(message: String): String = message\n\nfun domainLabel(): String = TODO(\"valid label\")\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 28,
+          "end_line": 5,
+          "end_column": 47,
+          "span": "TODO(\"valid label\")",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Custom TODO returns normally; a literal callee-name detector must retain its false positive without treating it as a proven stdlib stub."
+    },
+    {
+      "id": "shadowed-error-type",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive",
+      "sources": {
+        "Case.kt": "package corpus.notimplemented\n\nclass NotImplementedError : RuntimeException(\"intentional domain rejection\")\n\nfun reject(): Nothing = throw NotImplementedError()\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 24,
+          "end_line": 5,
+          "end_column": 51,
+          "span": "throw NotImplementedError()",
+          "occurrence": 0
+        }
+      ],
+      "intent": "This custom domain exception is deliberately unrelated to Kotlin temporary stub semantics; preserve any name-only alert."
+    },
+    {
+      "id": "two-argument-custom-todo",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.notimplemented\n\nfun TODO(prefix: String, value: String): String = prefix + value\n\nfun label(): String = TODO(\"domain:\", \"value\")\n"
+      },
+      "expected": [],
+      "intent": "Two-argument custom call is outside the exact zero/one-argument predicate; no invented numeric threshold."
+    }
+  ],
+  "limitations": [
+    "TODO is matched by callee spelling and zero/one arguments; NotImplementedError is matched by constructor spelling, without symbol identity.",
+    "Generated skeletons, tests, previews, unreachable paths and custom shadowed names may be valid. Production scope/reachability is not established by a syntax fixture."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact selected route on positive immutable snapshot bytes.",
+    "negative": "Run legal alternative bytes with the same route still active.",
+    "configuration": "Run the original positive bytes with the owner-selected rule disabled; separately replay genuine options below when applicable.",
+    "version": "Replay positive bytes under the pinned CLI, retain actual CLI version output, and verify Common/Native requests never reach the runner. Declared Kotlin2.4.21/embedded2.4.10 stays unqualified.",
+    "suppression": "Use actual file-scoped upstream annotation with an unsuppressed neighboring file; never suppress/filter in host code.",
+    "regression": "Seal the negative correction as a child of the suppression snapshot, delete obsolete files, and verify both registered parent and child materializations."
+  },
+  "qualification_note": "Authored expected results are not observed behavior. Actual assertions, immutable materialization checks, raw SARIF/process receipts and START witnesses are required before a sidecar is emitted; no compatibility/precision/performance/release qualification is proposed."
+}

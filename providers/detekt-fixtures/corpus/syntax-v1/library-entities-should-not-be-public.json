@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-corpus-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public",
+  "upstream_id": "libraries:LibraryEntitiesShouldNotBePublic",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "catalog_record_sha256": "bce32caa2626187e854b1a881e88470966f62abf97acd78fbf0b427f8ab0d915",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-libraries/src/main/kotlin/dev/detekt/rules/libraries/LibraryEntitiesShouldNotBePublic.kt",
+    "source_file_sha256": "ebaa198044c0bdab8cbcf92d75080beb7a302f3d1a23ee7a4133b23c6136f0e5",
+    "predicate_line_numbers": [
+      29,
+      39,
+      50
+    ],
+    "research_only": true
+  },
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.libraryvisibility\n\npublic class Exported(val value: Int)\n\npublic typealias ExportedAlias = Exported\n\npublic fun exportedFactory(): Exported = Exported(1)\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 0,
+        "end_line": 3,
+        "end_column": 37,
+        "span": "public class Exported(val value: Int)",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 0,
+        "end_line": 5,
+        "end_column": 41,
+        "span": "public typealias ExportedAlias = Exported",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 7,
+        "column": 0,
+        "end_line": 7,
+        "end_column": 52,
+        "span": "public fun exportedFactory(): Exported = Exported(1)",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Three public declaration forms trigger an explicitly selected library visibility policy; the API itself may be legitimate."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.libraryvisibility\n\ninternal class Implementation(val value: Int)\n\ninternal typealias ImplementationAlias = Implementation\n\ninternal fun implementationFactory(): Implementation = Implementation(1)\n"
+    },
+    "expected": [],
+    "intent": "Implementation-only class, alias and top-level factory are deliberately internal."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.libraryvisibility\n\npublic class Exported(val value: Int)\n\npublic typealias ExportedAlias = Exported\n\npublic fun exportedFactory(): Exported = Exported(1)\n",
+      "SuppressedCase.kt": "@file:Suppress(\"LibraryEntitiesShouldNotBePublic\")\n\npackage suppressed.corpus.libraryvisibility\n\npublic class Exported(val value: Int)\n\npublic typealias ExportedAlias = Exported\n\npublic fun exportedFactory(): Exported = Exported(1)\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 0,
+        "end_line": 3,
+        "end_column": 37,
+        "span": "public class Exported(val value: Int)",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 0,
+        "end_line": 5,
+        "end_column": 41,
+        "span": "public typealias ExportedAlias = Exported",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 7,
+        "column": 0,
+        "end_line": 7,
+        "end_column": 52,
+        "span": "public fun exportedFactory(): Exported = Exported(1)",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine upstream file annotation on an otherwise identical, independently named package; neighboring original file must retain every positive finding. No ktChecker-ID or declaration-scope suppression claim."
+  },
+  "controls": [
+    {
+      "id": "deliberate-immutable-public-api",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit",
+      "sources": {
+        "Case.kt": "package corpus.libraryvisibility\n\npublic data class PublicRecord(val count: Int)\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 0,
+          "end_line": 3,
+          "end_column": 46,
+          "span": "public data class PublicRecord(val count: Int)",
+          "occurrence": 0
+        }
+      ],
+      "intent": "A required exported immutable public API is valid. An owner opting into this policy receives a policy alert, not a correctness defect."
+    },
+    {
+      "id": "public-property-outside-predicate",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.libraryvisibility\n\npublic val apiVersion: Int = 1\n"
+      },
+      "expected": [],
+      "intent": "Top-level properties are not among the exact class/typealias/function predicates."
+    },
+    {
+      "id": "inner-class-boundary",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.libraryvisibility\n\ninternal class Holder {\n    public inner class ExportedInner\n}\n"
+      },
+      "expected": [],
+      "intent": "Inner classes are outside the visited top-level library-class predicate."
+    }
+  ],
+  "limitations": [
+    "Explicit opt-in API visibility convention. Public/exported library APIs can be required and must not be turned internal by default.",
+    "Class/typealias/top-level function PSI visits are bounded; public properties, inner/nested traversal and actual source-set/export policy are not general API qualification."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact selected route on positive immutable snapshot bytes.",
+    "negative": "Run legal alternative bytes with the same route still active.",
+    "configuration": "Run the original positive bytes with the owner-selected rule disabled; separately replay genuine options below when applicable.",
+    "version": "Replay positive bytes under the pinned CLI, retain actual CLI version output, and verify Common/Native requests never reach the runner. Declared Kotlin2.4.21/embedded2.4.10 stays unqualified.",
+    "suppression": "Use actual file-scoped upstream annotation with an unsuppressed neighboring file; never suppress/filter in host code.",
+    "regression": "Seal the negative correction as a child of the suppression snapshot, delete obsolete files, and verify both registered parent and child materializations."
+  },
+  "qualification_note": "Authored expected results are not observed behavior. Actual assertions, immutable materialization checks, raw SARIF/process receipts and START witnesses are required before a sidecar is emitted; no compatibility/precision/performance/release qualification is proposed."
+}

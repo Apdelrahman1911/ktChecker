@@ -1,0 +1,67 @@
+{
+  "compiler": {
+    "driverSha256": "sha256:1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+    "resolvedPath": "/usr/bin/x86_64-linux-gnu-gcc-13",
+    "selectedPath": "/usr/bin/cc",
+    "versionFirstLine": "<redacted>",
+    "versionOutputBytes": 245,
+    "versionOutputSha256": "sha256:3e8cc208c40f60832f67377aa1b03c3e7e858f20cd5d365464944700c0bd7ad1"
+  },
+  "compilerDriverIdentityOnly": true,
+  "host": {
+    "architecture": "x86_64",
+    "os": "linux",
+    "target": "linux-x86_64"
+  },
+  "inputs": {
+    "builder": {
+      "path": "native/build_supervisor.py",
+      "sha256": "sha256:897d0c8752a7d496cf2a45168603d6f6bc4b14442374a8beb438416cf9e1abbf"
+    },
+    "source": {
+      "path": "native/owned_process_supervisor.c",
+      "sha256": "sha256:453468d9b07489c79ac4a061e9ae9fc6d00d58d98c473670bb6885e3f23ea0fe"
+    }
+  },
+  "invocation": {
+    "argv": [
+      "<compiler>",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic",
+      "<source>",
+      "-o",
+      "<output>"
+    ],
+    "exactArgvEncoding": "utf8-json-compact-ascii",
+    "exactArgvSha256": "sha256:e9384ad3ef5020713f9f2e468507d31d6260084dd2ff008ce7a4603fdc6ee046",
+    "flags": [
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-pedantic"
+    ],
+    "privateArgvRetained": false
+  },
+  "output": {
+    "bytes": 25832,
+    "path": "dev/ktchecker/providers/runtime/native/linux-x86_64/supervisor",
+    "sha256": "sha256:c6f16891a34b53847c780d1af7972d78f613e631341e621404ca121c6332fb63"
+  },
+  "privacy": {
+    "privatePathsRetained": false,
+    "rawCompilerTranscriptRetained": false,
+    "versionFirstLineRedacted": true
+  },
+  "protocolVersion": "ktchecker-owned-child-supervisor/preview-1",
+  "reason": null,
+  "schemaVersion": "ktchecker-owned-child-supervisor-build/1",
+  "sourceToBinaryReproducibilityEstablished": false,
+  "status": "built",
+  "transitiveCompilerToolchainVerified": false
+}

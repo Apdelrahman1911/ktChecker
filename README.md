@@ -8,18 +8,25 @@ preview analysis cannot grant full-project completion.
 
 ## Build and try the preview
 
-Requires **JDK 21**, Python 3.12 for the example, and network access during the
-explicit build to resolve pinned dependencies. Project target fixtures separately
-use JDK 25 and their Android/Xcode toolchains.
+Requires **JDK 21**, Python 3.12, and a C11 compiler at `/usr/bin/cc` on Linux/macOS
+for the explicit build. Dependency resolution may need network access. The small
+host-specific process supervisor is compiled at build time, never during reviews.
+Project target fixtures separately use JDK 25 and their Android/Xcode toolchains.
 
 ```bash
 ./gradlew --no-daemon --max-workers=1 test :cli:installDist
 modules/cli/build/install/ktchecker/bin/ktchecker doctor --format json
-python3 scripts/run_preview_example.py --output /tmp/ktchecker-example
+python3 scripts/run_preview_example.py --compiler-java-home /owner/prepared-jdk21 \
+  --output /tmp/ktchecker-example
 ```
 
-On Windows use `gradlew.bat`, `bin\ktchecker.bat` and a **new** output directory.
-The example creates synthetic immutable inputs and two independent clients. It
+On Windows use `gradlew.bat` and `bin\ktchecker.bat` for the checker. Native
+provider-process containment is still unavailable there, not a passing check.
+The Python two-client example is **POSIX-only** and requires a **new** private
+output directory. Use a preview archive built for your own OS and architecture.
+Compiler execution separately requires an owner-selected complete link-free JDK 21
+image; a missing/unsupported image is unavailable, never a passing check. The
+example creates synthetic immutable inputs and two independent clients. It
 does not touch an existing project's source. It selects an experimental compiler
 rule explicitly and reports incomplete/unqualified coverage honestly. See
 [installation and actual commands](docs/implementation-usage.md),

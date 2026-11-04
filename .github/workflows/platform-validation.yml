@@ -6,6 +6,8 @@ on:
     paths:
       - 'fixtures/kmp/**'
       - 'modules/**'
+      - 'providers/platform-fixtures/**'
+      - 'providers/semantic-fixtures/**'
       - 'scripts/ci/**'
       - '.github/workflows/platform-validation.yml'
       - 'gradle/**'
@@ -16,6 +18,8 @@ on:
     paths:
       - 'fixtures/kmp/**'
       - 'modules/**'
+      - 'providers/platform-fixtures/**'
+      - 'providers/semantic-fixtures/**'
       - 'scripts/ci/**'
       - '.github/workflows/platform-validation.yml'
       - 'gradle/**'
@@ -207,6 +211,16 @@ jobs:
         run: python scripts/ci/run_platform_checks.py --profile ios --timeout 1200 --output build/ci-evidence/ios.json
       - name: Exercise actual Native adapter against immutable common/iOS captures
         run: python scripts/ci/run_provider_checks.py --profile ios --timeout 1200 --output build/ci-evidence/ios-provider.json
+      - name: Execute Native FIR library feasibility with the existing exact distribution
+        # This independent ABI/library gate needs neither Android nor simulator
+        # runtime availability. It never downloads a duplicate Native toolchain.
+        # Failed earlier target controls do not suppress its structured attempt.
+        if: ${{ !cancelled() }}
+        run: >-
+          python scripts/ci/run_semantic_checks.py
+          --target iosSimulatorArm64 --timeout 1800
+          --environment build/ci-evidence/environment.json
+          --output build/ci-evidence/ios-semantic.json
       - name: Collect exact simulator reports, linked frameworks and provider outcomes
         if: always()
         env:
@@ -222,6 +236,7 @@ jobs:
           --command-result build/ci-evidence/gradle-version.json
           --command-result build/ci-evidence/ios.json
           --command-result build/ci-evidence/ios-provider.json
+          --command-result build/ci-evidence/ios-semantic.json
       - name: Retain sanitized Apple target evidence even on failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

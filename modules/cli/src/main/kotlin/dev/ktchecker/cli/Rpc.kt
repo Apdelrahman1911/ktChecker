@@ -14,6 +14,14 @@ fun interface RpcHandler { fun call(method: String, params: JsonObject): JsonObj
 
 class CliProblem(val code: String, override val message: String) : RuntimeException(message)
 
+internal fun strictJsonDocument(bytes: ByteArray, errorCode: String): String = try {
+    Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+        .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString()
+        .also { StrictJsonInput(it).check() }
+} catch (_: Exception) {
+    throw CliProblem(errorCode, "Expected bounded unambiguous UTF-8 JSON with unique object keys.")
+}
+
 class RpcServer(
     private val handler: RpcHandler,
     private val maxRequestBytes: Int = 16_777_216,

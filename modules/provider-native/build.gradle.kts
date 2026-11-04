@@ -22,3 +22,23 @@ tasks.register<JavaExec>("nativeFixture") {
             providers.gradleProperty("platformJavaHome").orNull?.let { listOf("--java-home", it) }.orEmpty()
     }
 }
+
+// Separate opt-in authored batch. The historical nativeFixture/case contract is unchanged.
+tasks.register<JavaExec>("nativeThrowsFixture") {
+    group = "verification"
+    description = "Run one pinned Native-only throws contract control on an explicitly provisioned Apple host."
+    dependsOn(tasks.named("classes"))
+    classpath = project.extensions.getByType<SourceSetContainer>()["main"].runtimeClasspath
+    mainClass.set("dev.ktchecker.providers.native.NativeThrowsFixtureMain")
+    doFirst {
+        args = listOf(
+            "--fixture", providers.gradleProperty("platformThrowsFixture").get(),
+            "--gradle", providers.gradleProperty("platformGradle").get(),
+            "--target", providers.gradleProperty("platformTarget").get(),
+            "--case", providers.gradleProperty("platformThrowsCase").get(),
+            "--result", providers.gradleProperty("platformResult").get(),
+            "--native-home", providers.gradleProperty("platformNativeHome").get(),
+            "--java-home", providers.gradleProperty("platformJavaHome").get(),
+        )
+    }
+}

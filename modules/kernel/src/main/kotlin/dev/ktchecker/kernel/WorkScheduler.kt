@@ -43,7 +43,7 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
         ledger.transaction { c ->
             c.execute("INSERT INTO instances(instance_id,pid,process_start,heartbeat) VALUES(?,?,?,?)",
                 instanceId, process.pid(), instanceStart, System.currentTimeMillis())
-            // Additive preview-schema upgrade for accepted work from before client-level fairness.
+            // Restore durable sponsors if needed within schema2; this is not a schema upgrade.
             // New admission creates these rows atomically with the individual subscription.
             c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
                 SELECT DISTINCT r.client_id,w.fair_key,
@@ -121,12 +121,15 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
         if (stopped.get()) { release(claim); return }
         var effective = claim.frozen
         var result: ProviderResult
+        var preparationStarted = false
+        var preparationCleanupFailed = false
         try {
             InputArchive.verifyFrozen(claim.frozen, config.maxSnapshotBytes)
             val output = service.root.resolve("outputs").resolve(claim.key.removePrefix("sha256:"))
                 .resolve("attempt-${claim.attempt}-$instanceId")
             privateDirectory(output)
             effective = claim.frozen.copy(outputRoot = output.toString())
+            preparationStarted = true
             service.preparedInputObserver.prepared(claim.original, effective) { InputArchive.verifyFrozen(claim.frozen, config.maxSnapshotBytes) }
             val token = CancellationToken { stopped.get() || deadlineExceeded(claim) }
             token.throwIfCancelled()
@@ -145,6 +148,15 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
             result = failure(if (e is KernelException) e.code else "provider_exception")
         } catch (_: AssertionError) {
             result = failure("provider_assertion_failed")
+        } finally {
+            // Coordinator/provider finally blocks cannot clean up a permit when preparation only
+            // partly succeeds or cancellation prevents provider entry. Teardown is exact-attempt
+            // scoped and never runs while a ledger/config/source lock is held.
+            if (preparationStarted) {
+                try { service.preparedInputObserver.finished(effective) }
+                catch (_: Exception) { preparationCleanupFailed = true }
+                catch (_: AssertionError) { preparationCleanupFailed = true }
+            }
         }
         if (stopped.get()) { release(claim); return }
         var json = try { canonical(result) } catch (_: Exception) {
@@ -157,7 +169,9 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
         }
         // Freeze all provider-owned collections before publishing to multiple consumers.
         result = ContractJson.decodeFromString(json)
-        val validation = validateFinal(effective, result)
+        // A teardown error must not erase an earlier provider result, finding or execution
+        // failure. Keep raw evidence intact and fail this attempt's broker validation closed.
+        val validation = validateFinal(effective, result) + if (preparationCleanupFailed) listOf("prepared_input_cleanup_failed") else emptyList()
         while (!stopped.get()) {
             try {
                 complete(claim, effective, result, json, validation)

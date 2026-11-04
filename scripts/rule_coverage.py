@@ -13,8 +13,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
 import sys
+import tempfile
 from typing import Any
 
 CASE_KINDS = frozenset(("positive", "negative", "configuration", "version", "suppression", "regression"))
@@ -138,8 +140,9 @@ def context_key(context: Any) -> str:
     libraries = context.get("library_versions", {})
     if not isinstance(libraries, dict) or any(not isinstance(k, str) or not isinstance(v, str) for k, v in libraries.items()):
         raise CoverageError("context.library_versions must be a string-to-string object")
-    # Same display id with a different version/classpath/configuration is a
-    # separate tuple, never a merged qualification claim.
+    # Every context field participates, including native helper and runtime
+    # image/source digests. Different filenames do not isolate identical tuples,
+    # even when a prior sidecar's current-stage flags have been withdrawn.
     return canonical(context)
 
 
@@ -359,6 +362,7 @@ def generate_coverage(root: Path, mapping_paths: list[Path] | None = None,
     active = [row for row in rows if row["default_activation"] != "excluded"]
     return {
         "schema_version": 1, "kind": "ktchecker_evidence_inventory",
+        "inventory_status": "valid", "inventory_valid": True,
         "all_requested_cells_qualified": bool(active) and all(row["qualified"] for row in active),
         # This inventory has no authenticated required release plan, matrix
         # completeness proof or release-gate inputs. A selected local JVM
@@ -373,6 +377,44 @@ def generate_coverage(root: Path, mapping_paths: list[Path] | None = None,
     }
 
 
+def publish_inventory(path: Path, output: dict) -> None:
+    """Replace one explicitly selected report atomically, never expose half a JSON file.
+
+    This is a report publisher, not a crash-durable evidence ledger. Concurrent
+    invocations must select distinct output paths. Callers must still check the
+    command result and inventory_valid; an old file is not evidence of a new run.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", newline="\n",
+                                         prefix=".ktchecker-coverage-", suffix=".tmp",
+                                         dir=path.parent, delete=False) as stream:
+            temporary = Path(stream.name)
+            json.dump(output, stream, indent=2, sort_keys=True, ensure_ascii=False)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def unavailable_inventory(status: str) -> dict:
+    """No zero denominators or inherited counts when the current inventory is unknown."""
+    return {
+        "schema_version": 1, "kind": "ktchecker_evidence_inventory",
+        "inventory_status": status, "inventory_valid": False,
+        "all_requested_cells_qualified": False, "release_qualified": False,
+        "release_qualification_reason": "The current evidence inventory has not been validated.",
+        "catalog_records": None, "contexts": None, "row_count": None,
+        "summary": None, "states": None, "rows": None,
+        "gaps": ["coverage_inventory_generation_pending" if status == "pending"
+                 else "coverage_inputs_invalid_or_unreadable"],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -384,21 +426,31 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--require-qualified", action="store_true", help="Fail unless all nonexcluded requested report cells are explicitly qualified; this never certifies a release.")
     args = parser.parse_args(argv)
     try:
+        # Invalidate a previous run BEFORE inspecting inputs. A crash or rejected
+        # digest must not leave yesterday's counts masquerading as this attempt.
+        # Publishing failure itself is an error; no filesystem success is assumed.
+        if args.output:
+            publish_inventory(args.output, unavailable_inventory("pending"))
         contexts = [read_json(path) for path in args.context] if args.context is not None else None
         output = generate_coverage(args.root, args.mapping, args.evidence, contexts)
-        rendered = json.dumps(output, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
         if args.output:
-            args.output.parent.mkdir(parents=True, exist_ok=True)
-            args.output.write_text(rendered, encoding="utf-8")
+            publish_inventory(args.output, output)
         else:
-            sys.stdout.write(rendered)
+            sys.stdout.write(json.dumps(output, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
         required = [row for row in output["rows"] if row["default_activation"] != "excluded"]
         if args.require_qualified and not output["all_requested_cells_qualified"]:
             return 1
         if args.require_tested and any(not row["tested"] for row in required):
             return 1
         return 0
-    except (CoverageError, OSError, TypeError) as error:
+    except (CoverageError, OSError, TypeError, UnicodeError) as error:
+        if args.output:
+            try:
+                # The public report intentionally does not retain paths, input
+                # excerpts or exception text. Exact diagnostics stay on stderr.
+                publish_inventory(args.output, unavailable_inventory("unavailable"))
+            except (OSError, TypeError, UnicodeError):
+                print("rule coverage error: report publication failed; do not use an existing output as current evidence", file=sys.stderr)
         print(f"rule coverage error: {error}", file=sys.stderr)
         return 2
 

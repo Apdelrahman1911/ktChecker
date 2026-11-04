@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.ktchecker.providers.ktlint.KtlintIntegrationTest" tests="2" skipped="0" failures="1" errors="0" timestamp="2026-11-04T09:55:21.532Z" hostname="(none)" time="20.607">
+  <properties/>
+  <testcase name="real editorconfig inheritance exemptions and parse errors never produce clean semantic coverage()" classname="dev.ktchecker.providers.ktlint.KtlintIntegrationTest" time="7.312"/>
+  <testcase name="four selected syntax rules execute positive negative config version scoped suppression and immutable regression()" classname="dev.ktchecker.providers.ktlint.KtlintIntegrationTest" time="13.254">
+    <failure message="org.opentest4j.AssertionFailedError: suppression must retain exactly one adjacent unsuppressed finding per selected rule ==&gt; expected: &lt;4&gt; but was: &lt;5&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: suppression must retain exactly one adjacent unsuppressed finding per selected rule ==&gt; expected: &lt;4&gt; but was: &lt;5&gt;
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)
+	at kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:83)
+	at kotlin.test.AssertionsKt.assertEquals(Unknown Source)
+	at dev.ktchecker.providers.ktlint.KtlintIntegrationTest.four selected syntax rules execute positive negative config version scoped suppression and immutable regression(KtlintIntegrationTest.kt:124)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+</failure>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

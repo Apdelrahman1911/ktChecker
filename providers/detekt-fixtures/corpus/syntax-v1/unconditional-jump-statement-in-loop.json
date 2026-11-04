@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-corpus-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.potential-bugs.unconditional-jump-statement-in-loop",
+  "upstream_id": "potential-bugs:UnconditionalJumpStatementInLoop",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "30efea4fc6dc8757b2e3339cc3b9c92f1cef306bb9da7bdb7b44041864ec7273",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-potential-bugs/src/main/kotlin/dev/detekt/rules/potentialbugs/UnconditionalJumpStatementInLoop.kt",
+    "source_file_sha256": "2026a9244b7736eb3e33c8a512aaf97b5c36dba707c33a3125aff9d8b5595a55",
+    "predicate_line_numbers": [
+      38,
+      52,
+      72,
+      77,
+      80,
+      83,
+      86
+    ],
+    "research_only": true
+  },
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.loopjump\n\nfun firstValue(): Int {\n    for (value in 1..3) {\n        return value\n    }\n    return 0\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 4,
+        "end_line": 6,
+        "end_column": 5,
+        "span": "for (value in 1..3) {\n        return value\n    }",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Immediate direct return terminates the selected loop during its first iteration."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.loopjump\n\nfun conditionalValue(): Int {\n    for (value in 1..3) {\n        if (value > 1) return value\n    }\n    return 0\n}\n"
+    },
+    "expected": [],
+    "intent": "Conditional return cannot be treated as an unconditional one-iteration loop."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.loopjump\n\nfun firstValue(): Int {\n    for (value in 1..3) {\n        return value\n    }\n    return 0\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"UnconditionalJumpStatementInLoop\")\n\npackage suppressed.corpus.loopjump\n\nfun firstValue(): Int {\n    for (value in 1..3) {\n        return value\n    }\n    return 0\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 4,
+        "end_line": 6,
+        "end_column": 5,
+        "span": "for (value in 1..3) {\n        return value\n    }",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine upstream file annotation on an otherwise identical, independently named package; neighboring original file must retain every positive finding. No ktChecker-ID or declaration-scope suppression claim."
+  },
+  "controls": [
+    {
+      "id": "single-expression-loop",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.loopjump\n\nfun stop() {\n    for (value in 1..3) break\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 29,
+          "span": "for (value in 1..3) break",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Single-expression break is covered as well as block bodies."
+    },
+    {
+      "id": "labeled-conditional-continue",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.loopjump\n\nfun labeledSearch() {\n    search@ for (value in 1..3) {\n        if (value == 1) continue@search\n        break@search\n    }\n}\n"
+      },
+      "expected": [],
+      "intent": "A matching conditional labeled continue can keep the loop alive; preserve the actual labeled-boundary exception."
+    },
+    {
+      "id": "elvis-continue-return",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.loopjump\n\nfun firstPresent(values: List<Int?>): Int {\n    for (value in values) return value ?: continue\n    return 0\n}\n"
+      },
+      "expected": [],
+      "intent": "A return expression whose Elvis arm continues the loop is not unconditional termination."
+    },
+    {
+      "id": "continue-is-not-loop-exit",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_semantic_message_gap",
+      "sources": {
+        "Case.kt": "package corpus.loopjump\n\nfun iterateWithoutBody() {\n    for (value in 1..3) continue\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 32,
+          "span": "for (value in 1..3) continue",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Continue proceeds to later iterations; any alert/message saying the loop exits after one iteration is a heuristic limitation, not a proven runtime fact."
+    }
+  ],
+  "limitations": [
+    "Top-level PSI jump shapes and limited labeled/Elvis exceptions are used, without complete CFG or resolved label targets.",
+    "An unconditional continue is reported despite not terminating the loop; retain the actual diagnostic and its scope caveat."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact selected route on positive immutable snapshot bytes.",
+    "negative": "Run legal alternative bytes with the same route still active.",
+    "configuration": "Run the original positive bytes with the owner-selected rule disabled; separately replay genuine options below when applicable.",
+    "version": "Replay positive bytes under the pinned CLI, retain actual CLI version output, and verify Common/Native requests never reach the runner. Declared Kotlin2.4.21/embedded2.4.10 stays unqualified.",
+    "suppression": "Use actual file-scoped upstream annotation with an unsuppressed neighboring file; never suppress/filter in host code.",
+    "regression": "Seal the negative correction as a child of the suppression snapshot, delete obsolete files, and verify both registered parent and child materializations."
+  },
+  "qualification_note": "Authored expected results are not observed behavior. Actual assertions, immutable materialization checks, raw SARIF/process receipts and START witnesses are required before a sidecar is emitted; no compatibility/precision/performance/release qualification is proposed."
+}

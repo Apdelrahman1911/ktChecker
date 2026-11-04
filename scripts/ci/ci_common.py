@@ -104,6 +104,14 @@ def parse_gradle_tasks(output: str) -> dict[str, str]:
 
 
 def terminate_tree(process: subprocess.Popen) -> None:
+    """Best-effort CI group termination, not production ownership/cleanup proof.
+
+    Call only while this caller has not observed/reaped direct-child completion.
+    In run_logged, poll returning None precedes this call; successful poll/wait
+    ends the signal path. A wait timeout does not reap the child. Do not add a
+    group signal after a successful wait: this uses a numeric PGID, not a native
+    supervisor's held-leader protocol, and cannot prove descendants are absent.
+    """
     if os.name == "nt":
         subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15, check=False)
@@ -128,12 +136,17 @@ def terminate_tree(process: subprocess.Popen) -> None:
 def run_logged(
     argv: list[str] | str, *, cwd: Path, log_base: Path, timeout: int = 1200,
     max_output_bytes: int = MAX_LOG_BYTES, env: dict[str, str] | None = None,
-    separate_stderr: bool = False,
+    separate_stderr: bool = False, additional_output_paths: tuple[Path, ...] = (),
 ) -> tuple[dict, str, str]:
     """Keep bounded raw logs locally; callers emit sanitized JSON, not transcripts.
 
     A string is only used for the explicitly quoted, fixed Windows batch-launcher
     smoke command. All Gradle/tool commands use argv lists, without a shell.
+    This is a trusted CI harness, not a sandbox or reviewed-runtime containment.
+    Timeout/output checks are polled best-effort limits; neither direct-child
+    completion nor termination proves that descendants or inherited log writers
+    are gone. File-backed logs have no pipe-drain loop; streaming their digests
+    does not establish an immutable snapshot if an unowned writer survives.
     """
     log_base.parent.mkdir(parents=True, exist_ok=True)
     stdout_path = log_base.with_suffix(".stdout.log")
@@ -141,6 +154,16 @@ def run_logged(
     started = time.monotonic()
     result = {"started_at": utc_now(), "command": argv, "state": "not_started",
               "return_code": None, "elapsed_seconds": 0.0}
+
+    def additional_bytes() -> int:
+        total = 0
+        for path in additional_output_paths:
+            try:
+                total += path.stat().st_size
+            except FileNotFoundError:
+                pass
+        return total
+
     with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
         try:
             process = subprocess.Popen(
@@ -157,25 +180,41 @@ def run_logged(
                     result.update(state="timeout", reason=f"Exceeded {timeout} seconds")
                     terminate_tree(process)
                     break
-                if stdout_path.stat().st_size + stderr_path.stat().st_size > max_output_bytes:
+                if stdout_path.stat().st_size + stderr_path.stat().st_size + additional_bytes() > max_output_bytes:
                     result.update(state="output_limit", reason=f"Exceeded {max_output_bytes} output bytes")
                     terminate_tree(process)
                     break
                 time.sleep(0.2)
-            result["return_code"] = process.wait()
+            # Normally this retrieves cached completion, not a pipe drain.
+            # Even a missing group is not itself a completion proof, so keep
+            # this last wait bounded. Never retry numeric-group signaling here:
+            # an earlier successful poll/wait may already have reaped the leader.
+            try:
+                result["return_code"] = process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                result.update(state="cleanup_unverified", reason="Final direct-child wait exceeded 5 seconds")
+                result["return_code"] = process.returncode
             if result["state"] == "not_started":
                 result["state"] = "completed"
     result["elapsed_seconds"] = round(time.monotonic() - started, 3)
     # A single fast child can exceed the bound before the polling interval.
-    total_bytes = stdout_path.stat().st_size + stderr_path.stat().st_size
+    extra_bytes = additional_bytes()
+    total_bytes = stdout_path.stat().st_size + stderr_path.stat().st_size + extra_bytes
     if total_bytes > max_output_bytes:
         result.update(state="output_limit", reason=f"Exceeded {max_output_bytes} output bytes")
     result["output_bytes"] = total_bytes
+    if additional_output_paths:
+        result["additional_output_bytes"] = extra_bytes
+        result["additional_output_paths_monitored"] = True
     result["stdout_digest"] = digest_file(stdout_path)
     result["stderr_digest"] = digest_file(stderr_path)
     result["raw_logs_uploaded"] = False
-    stdout_text = stdout_path.read_bytes()[:max_output_bytes].decode("utf-8", errors="replace")
-    stderr_text = stderr_path.read_bytes()[:max_output_bytes].decode("utf-8", errors="replace")
+    # A fast child can overrun before the polling interval. Do not allocate its
+    # entire logfile merely to return the bounded preview; digests above stream.
+    with stdout_path.open("rb") as stdout:
+        stdout_text = stdout.read(max_output_bytes).decode("utf-8", errors="replace")
+    with stderr_path.open("rb") as stderr:
+        stderr_text = stderr.read(max_output_bytes).decode("utf-8", errors="replace")
     return result, stdout_text, stderr_text
 
 
@@ -198,6 +237,7 @@ def gradle_result(
     arguments: list[str], *, log_base: Path, root: Path = REPO_ROOT, timeout: int = 1200,
     require_tasks: tuple[str, ...] = (), expected_failure: bool = False,
     diagnostic_pattern: str | None = None, failed_task: str | tuple[str, ...] | None = None,
+    additional_output_paths: tuple[Path, ...] = (),
 ) -> tuple[dict, str]:
     try:
         command = wrapper_argv(root) + ["--no-daemon", "--console=plain", "--max-workers=2",
@@ -206,7 +246,8 @@ def gradle_result(
         return {"state": "failed", "reason": str(error), "return_code": None,
                 "errors": [str(error)], "tasks": {}, "expected_failure": expected_failure,
                 "required_tasks": list(require_tasks)}, ""
-    result, output, _ = run_logged(command, cwd=root, log_base=log_base, timeout=timeout)
+    result, output, _ = run_logged(command, cwd=root, log_base=log_base, timeout=timeout,
+                                  additional_output_paths=additional_output_paths)
     result["tasks"] = parse_gradle_tasks(output)
     failed_tasks = (failed_task,) if isinstance(failed_task, str) else failed_task or ()
     errors = []

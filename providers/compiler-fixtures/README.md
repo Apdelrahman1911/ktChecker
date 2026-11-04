@@ -5,12 +5,65 @@ loads compiler internals into the host. The 443 exact catalog mappings are a
 transport ledger: 400 are JVM candidates; 43 Native mappings are **not executed
 or supported by this JVM provider**. A mapping is not a fixture result.
 
+## Authored inputs and current evidence
+
+`manifest.json` now lists **92 ordinary JVM positive/corrected-negative pairs**:
+the original 42 are unchanged, and 50 newly authored pairs cover overrides (13),
+visibility (8), types/conventions (11), inline/constructors (5), opt-in (4), and
+JVM interop (9). Each new pair has explicit plans for all six assessment kinds
+and a valid or intentional/advisory alternative. These are **unexecuted source
+plans**, not observed diagnostics, clean compilations, or qualification.
+
+`planned-kmp-manifest.json` separately records **16 planned, unsupported**
+expect/actual candidates: eight declaration checks and eight matching checks.
+Their common/JVM source files and explicit JVM-refines-common graph remain
+outside the ordinary runner. Execution awaits a capability binding sealed
+copied files to their common/actual fragment roles and refinement edges.
+Concatenating files or using same-module pseudo-KMP is prohibited. Even a future
+JVM graph success would not prove metadata, Android, Native/iOS, linking, or
+simulator support. `NO_ACTUAL_FOR_EXPECT` also requires the IR/FIR2IR path.
+
+The current sidecar retains all **443 rules with implementation, tested,
+qualified, and attempted flags false**. No real compiler corpus has run against
+the new full-runtime/native-supervisor/model-bridge/fixture sources. Current
+mapping source references were refreshed only after the engine source freeze;
+that source-only refresh is not execution evidence. Historical tuples below
+remain immutable and are not attributed to these edits.
+
 ## Run
 
 ```sh
-./gradlew --no-daemon --max-workers=1 :provider-compiler:test :provider-compiler:compilerFixtures \
+./gradlew --no-daemon --max-workers=1 :provider-compiler:compilerFixtures \
+  --args="--cohort=overrides" \
   -PcompilerFixtureJavaHome=/absolute/owner-prepared/link-free-jdk21
 ```
+
+An explicit named `--cohort=` is required: `original`, `overrides`, `visibility`,
+`types_conventions`, `inline_constructors`, `opt_in`, `jvm`, or explicit `all`.
+There is no default-all run. These are trusted harness scheduling choices, not
+project-policy JSON or execution authority. Every invocation creates a fresh
+UUID/cohort run directory; resuming or merging prior runs is prohibited.
+
+Hard maximums (also the defaults) are **48 reserved provider attempts, 20 minutes
+overall, 90 seconds per job, and 256 MiB retained evidence**. Smaller bounds use
+`--max-attempts=`, `--overall-seconds=`, `--per-job-seconds=`, and `--evidence-mib=`
+(minimum 24 MiB). Startup, materialization and checkpoints consume the monotonic
+overall budget. Each job gets a fresh exact permit and timeout no larger than
+the per-job limit or remaining overall time. Denied provider calls consume
+attempts without claiming compiler execution. Even explicit `all` stays capped;
+an exhausted bound or missing/failed selected assessment makes the task fail
+partial, not silently successful. The elapsed-time bound is cooperative, not an
+OS hard-kill or performance certificate. The final clock decision follows the
+last bounded completion-selector write; all bulk serialization, reference
+hashing and checkpoint writes count before it. Later terminal notices do not
+make a second, contradictory completion decision.
+
+The runner prints its owner-private `runs/<run>/control/stop` path. Creating a
+regular, non-linked file of at most 4 KiB there requests stop before the next
+admission; it neither reads the contents nor signals a PID, and the current job
+keeps its deadline. Unsafe/replaced control paths fail closed. Owner stop,
+deadline, attempts, evidence exhaustion and cleanup failure remain distinct
+receipt reasons.
 
 The fixture host uses JDK21. The task requires an explicit owner-selected,
 link-free JDK21 home via `compilerFixtureJavaHome`; it never silently selects
@@ -50,6 +103,44 @@ stdout/stderr, provider results and explicit assessments. The sidecar
 `evidence/compiler-jvm-2.4.21.json` references those real files with SHA-256 and
 reports **every** mapped rule, including unrun and Native gaps.
 
+All **92 ordinary pairs, 16 unsupported graph plans, and 443 mappings** remain
+visible before cohort selection. Unselected, not-run, incomplete and failed
+states are explicit gaps, never exclusions. Raw job receipts, compact job
+indices, assessment receipts and ledger checkpoints are immutable; full
+sidecar/provenance/summary checkpoints are retained at startup, each assessment
+phase, controls and terminal publication. Only explicitly named latest
+convenience files are replaced, and immutable receipts never hash-reference
+them. Evidence writes use owned no-link directories, SHA-checked atomic moves
+with no non-atomic fallback, and quota accounting for temporary-write peaks,
+16 MiB prelaunch raw-evidence reservations and 8 MiB terminal headroom.
+Bulk immutable checkpoints and latest sidecars/summaries remain explicitly
+`candidate_only`, with `run_complete:false`. Only the settled small final
+`latest-checkpoint.json` selector **together with successful harness return**
+can establish bounded completion. It is clock-checked after publication;
+overrun/error writes an immutable incomplete decision and corrects the selector.
+Each terminal record is capped at 64 KiB, with 256 KiB headroom checked before
+a positive selector for that write, corrections and one distinct fallback.
+A failed correction or unknown harness return leaves even a positive selector
+unconfirmed, never standalone success evidence. Atomic moves are not a
+power-loss durability certificate.
+
+Scratch roots are registered at creation; provider output is registered by the
+original permit's pre-write callback, not by a subsequently observed pathname.
+Cleanup inventories at most 20,000 entries/depth 32, then uses secure no-follow
+reverse-depth deletion with file-key and disappearance checks. Replaced,
+linked, special, unknown or reappeared retired roots are not deleted. Unsupported
+secure directory streams are a failure/explicit host gap, never an unsafe
+recursive-delete fallback. Cleanup receipts are retained, and failed cleanup
+prevents further admission before final terminal evidence.
+Unverified native group shutdown, a missing/mismatching actual supervisor
+identity, or a provider throw after entry without an observer outcome instead
+irreversibly quarantines the **whole private scratch tree**. No job subtree or
+final ancestor is inventoried/deleted, and no later job is admitted; output
+created before its registration callback is retained too. Exec confirmation or
+an exit code is not a cleanup acknowledgement. This retains the original
+failure when cleanup/reporting also fails and remains limited to the native
+supervisor's cooperative owned-group boundary, not escaped-child attestation.
+
 Before reading the manifest/cases, the runner preserves startup copies of the
 provider, fixture, runtime and contracts sources plus relevant build metadata.
 It separately preserves actual provider/runner/contracts class directories or
@@ -61,6 +152,27 @@ implementation/test attribution while keeping original copies and actual
 attempt results. Each run also keeps its own sidecar so later runs cannot erase
 historical failures. Raw stdout/stderr and bytecode remain byte-preserving Git
 evidence, not whitespace-cleaned text.
+
+The runner also preserves the native C source, builder and README, plus the
+exact installed supervisor manifest, binary and informational build receipt at
+START. Resource reads are bound to the internal `OwnedProcessSupervisor`
+class's actual CodeSource: the exact ordinary JAR (bounded archive/entry reads)
+or the literal same-module `build/classes/kotlin/main` to `build/resources/main`
+mapping, with no linked descendants or context-classloader first match.
+The whole actual runtime class directory/JAR is independently preserved.
+Manifest (512 bytes), binary (1 MiB), and build receipt (16 KiB) bytes are
+reverified before every job and at END. The manifest's source digest is a build
+claim, **not** independently established source-to-binary reproducibility.
+
+Every new `process.json` retains the actual observer outcome's
+`execution_confirmed`, `executed`, and supervisor identity and compares that
+identity to START-captured bytes. Inspection/availability is not a launch
+witness. A nonnull/nonzero fork-child exit or nonempty output alone cannot
+prove that the compiler executable started. Confirmed compiler diagnostic
+failures retain their real nonzero exits. Jobs and raw outcomes are recorded
+before receipt invariants can throw; failed/unconfirmed attempts remain in the
+job ledger, while implementation/test attribution is withheld. None of these
+new receipt fields is retrofitted onto historical process files.
 
 Configured repository and actual class-source outer directories are canonicalized
 once to accept operating-system ancestor aliases such as macOS `/var` versus
@@ -92,12 +204,22 @@ preservation label; it is not a startup receipt or evidence for the new sources.
 The new runtime-identity tests use tiny non-executed synthetic layouts, never a
 fake JVM/compiler execution. The central `2026-11-04T10:22:16Z` compiler unit
 reports independently verified **28 passed, one explicit native-Windows junction
-skip, zero failures/errors**; exact XML and matching frozen sources are preserved
+skip, zero failures/errors** for the frozen pre-native-supervisor/model-bridge
+source tuple only; exact XML and matching frozen sources are preserved
 under `unit-evidence/2026-11-04T102216Z-central-compiler-units/`, labeled post-run
 rather than startup bytecode attestation. The overall central batch failed in
-other modules; it is not an all-modules passing receipt. No current-source real
-compiler child/corpus has run yet, so unit success does not reattribute the
-historical per-ID results or create qualification.
+other modules; it is not an all-modules passing receipt. These reports do not validate later runtime/native/model-bridge/fixture edits.
+The nine byte-only native resource/receipt tests passed in the central
+pre-bounded fixture freeze only. The first bounded source freeze actually
+compiled and ran **106 cases: 103 passed, two final-root scratch cleanup tests
+failed, and one explicit Windows skip**; those reports are retained under
+`build/evidence/compiler-bounded-units/20261104-first/`. The subsequent
+quarantine/terminal-publication/final-root fixes bring the bounded controls,
+evidence and scratch tests to **40 (21/9/10)**, including 15 new non-executing
+regressions. These fixes/tests are authored but not yet compiled or run; the
+earlier receipt does not validate them. No current-source real
+compiler child/corpus has run yet, so frozen unit success
+does not reattribute historical per-ID results or create qualification.
 
 ## Boundaries
 

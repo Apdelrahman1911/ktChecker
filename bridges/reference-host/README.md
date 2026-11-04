@@ -87,10 +87,15 @@ execution against disposable public Kotlin source, not a fake broker:
 ```sh
 npm --prefix bridges/reference-host run demo:cli:codex -- \
   --allow-inference --cli /absolute/path/to/ktchecker \
+  --compiler-java-home /owner/prepared-link-free-jdk21 \
   --evidence /owner/approved-output/cli-kernel-codex.json
 ```
 
-This explicit flag authorizes three diagnostic observations, including an
+The evidence path must be **new**; existing evidence is never overwritten. The
+explicit compiler JDK is used by every owner command and broker restart, with no
+ambient-JDK fallback. The CLI validates its contents; a path alone is not proof.
+
+`--allow-inference` authorizes three diagnostic observations, including an
 active-turn barrier, two independent consumers and a disconnected/resumed P2
 repair. Owner-side preparation enables only the selected experimental compiler
 rule; the full candidate coverage inventory remains visible and unqualified.

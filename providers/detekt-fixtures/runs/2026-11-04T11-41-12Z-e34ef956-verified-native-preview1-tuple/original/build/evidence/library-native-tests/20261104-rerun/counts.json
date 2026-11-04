@@ -1,0 +1,18 @@
+[
+  {
+    "tests": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 14,
+    "module": "provider-detekt"
+  },
+  {
+    "tests": 18,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 18,
+    "module": "provider-ktlint"
+  }
+]

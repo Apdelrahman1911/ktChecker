@@ -9,6 +9,8 @@ internal fun doctor(): JsonObject = buildJsonObject {
     put("version", "0.1.0-dev.1")
     put("status", "preview")
     put("releaseQualified", false)
+    put("installedProvidersInspected", false)
+    put("processContainment", containmentAvailability())
     putJsonObject("runtime") {
         put("javaVersion", System.getProperty("java.version"))
         put("os", System.getProperty("os.name"))
@@ -25,6 +27,7 @@ internal fun doctor(): JsonObject = buildJsonObject {
     putJsonArray("gaps") {
         add("Full included rule inventory has not passed per-context qualification gates.")
         add("Provider availability and execution require explicit owner-selected toolchain profiles.")
+        add("Compiler execution requires an identified complete link-free JDK 21 image; use providers --compiler-java-home DIR to inspect selection.")
         add("No arbitrary project model or caller fullProject flag establishes complete target coverage.")
         add("Strict live-source completion needs a tested cooperative edit controller and actual host model-request observation.")
         add("This doctor invocation does not compile Android, Desktop or iOS targets.")

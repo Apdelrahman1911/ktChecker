@@ -549,6 +549,1206 @@
       ],
       "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L135",
       "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.abstract_member_not_implemented",
+      "upstream_id": "ABSTRACT_MEMBER_NOT_IMPLEMENTED",
+      "positive": "cases/abstract_member_not_implemented/positive.kt",
+      "negative": "cases/abstract_member_not_implemented/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L679",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual ABSTRACT_MEMBER_NOT_IMPLEMENTED at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit ABSTRACT_MEMBER_NOT_IMPLEMENTED under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An intentionally abstract implementing class may leave the member abstract; invalid compile-negative examples still remain compiler errors.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.abstract_class_member_not_implemented",
+      "upstream_id": "ABSTRACT_CLASS_MEMBER_NOT_IMPLEMENTED",
+      "positive": "cases/abstract_class_member_not_implemented/positive.kt",
+      "negative": "cases/abstract_class_member_not_implemented/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L682",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual ABSTRACT_CLASS_MEMBER_NOT_IMPLEMENTED at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit ABSTRACT_CLASS_MEMBER_NOT_IMPLEMENTED under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Making the child abstract is also legitimate when it is not instantiated; no missing member is inferred from incomplete classpath data.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.nothing_to_override",
+      "upstream_id": "NOTHING_TO_OVERRIDE",
+      "positive": "cases/nothing_to_override/positive.kt",
+      "negative": "cases/nothing_to_override/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L653",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual NOTHING_TO_OVERRIDE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit NOTHING_TO_OVERRIDE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An inherited declaration supplied by the real dependency graph can make override valid; a missing dependency is unsupported context, not a guessed defect.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.overriding_final_member",
+      "upstream_id": "OVERRIDING_FINAL_MEMBER",
+      "positive": "cases/overriding_final_member/positive.kt",
+      "negative": "cases/overriding_final_member/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L668",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual OVERRIDING_FINAL_MEMBER at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit OVERRIDING_FINAL_MEMBER under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A plugin or different source version can change finality; only the exact selected compiler/plugin context may decide that.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_weaken_access_privilege",
+      "upstream_id": "CANNOT_WEAKEN_ACCESS_PRIVILEGE",
+      "positive": "cases/cannot_weaken_access_privilege/positive.kt",
+      "negative": "cases/cannot_weaken_access_privilege/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L657",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual CANNOT_WEAKEN_ACCESS_PRIVILEGE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit CANNOT_WEAKEN_ACCESS_PRIVILEGE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Visibility widening is valid; a protected base API should not be treated as a public API copied from another module.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_type_mismatch_on_override",
+      "upstream_id": "RETURN_TYPE_MISMATCH_ON_OVERRIDE",
+      "positive": "cases/return_type_mismatch_on_override/positive.kt",
+      "negative": "cases/return_type_mismatch_on_override/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L669",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual RETURN_TYPE_MISMATCH_ON_OVERRIDE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit RETURN_TYPE_MISMATCH_ON_OVERRIDE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Covariant subtype returns are legitimate; the corrected Int override deliberately exercises that allowed alternative.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.property_type_mismatch_on_override",
+      "upstream_id": "PROPERTY_TYPE_MISMATCH_ON_OVERRIDE",
+      "positive": "cases/property_type_mismatch_on_override/positive.kt",
+      "negative": "cases/property_type_mismatch_on_override/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L670",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual PROPERTY_TYPE_MISMATCH_ON_OVERRIDE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit PROPERTY_TYPE_MISMATCH_ON_OVERRIDE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Read-only property type covariance may be legal, but mutable properties and unrelated type changes cannot be guessed compatible.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.var_overridden_by_val",
+      "upstream_id": "VAR_OVERRIDDEN_BY_VAL",
+      "positive": "cases/var_overridden_by_val/positive.kt",
+      "negative": "cases/var_overridden_by_val/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L689",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual VAR_OVERRIDDEN_BY_VAL at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit VAR_OVERRIDDEN_BY_VAL under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A var implementing an expected val is an allowed capability widening; this pair tests the prohibited opposite direction only.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.virtual_member_hidden",
+      "upstream_id": "VIRTUAL_MEMBER_HIDDEN",
+      "positive": "cases/virtual_member_hidden/positive.kt",
+      "negative": "cases/virtual_member_hidden/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L693",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual VIRTUAL_MEMBER_HIDDEN at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit VIRTUAL_MEMBER_HIDDEN under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Genuine overloads with different parameter signatures are valid; no textual same-name hiding rule is introduced.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.suspend_overridden_by_non_suspend",
+      "upstream_id": "SUSPEND_OVERRIDDEN_BY_NON_SUSPEND",
+      "positive": "cases/suspend_overridden_by_non_suspend/positive.kt",
+      "negative": "cases/suspend_overridden_by_non_suspend/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L696",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual SUSPEND_OVERRIDDEN_BY_NON_SUSPEND at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit SUSPEND_OVERRIDDEN_BY_NON_SUSPEND under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A separate non-suspend overload is not an implementation of the suspended callable; preserve any additional actual diagnostics.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_suspend_overridden_by_suspend",
+      "upstream_id": "NON_SUSPEND_OVERRIDDEN_BY_SUSPEND",
+      "positive": "cases/non_suspend_overridden_by_suspend/positive.kt",
+      "negative": "cases/non_suspend_overridden_by_suspend/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L697",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual NON_SUSPEND_OVERRIDDEN_BY_SUSPEND at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit NON_SUSPEND_OVERRIDDEN_BY_SUSPEND under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Independent suspend APIs are legitimate when they do not claim to override this non-suspend declaration.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_final_member_in_final_class",
+      "upstream_id": "NON_FINAL_MEMBER_IN_FINAL_CLASS",
+      "positive": "cases/non_final_member_in_final_class/positive.kt",
+      "negative": "cases/non_final_member_in_final_class/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L691",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual NON_FINAL_MEMBER_IN_FINAL_CLASS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote NON_FINAL_MEMBER_IN_FINAL_CLASS to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Open members may be deliberate for a future hierarchy or an all-open plugin; a genuine warning is advisory and intent does not require absence.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.parameter_name_changed_on_override",
+      "upstream_id": "PARAMETER_NAME_CHANGED_ON_OVERRIDE",
+      "positive": "cases/parameter_name_changed_on_override/positive.kt",
+      "negative": "cases/parameter_name_changed_on_override/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L694",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-overrides",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual PARAMETER_NAME_CHANGED_ON_OVERRIDE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote PARAMETER_NAME_CHANGED_ON_OVERRIDE to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A deliberate descriptive parameter rename can still warn because named-call compatibility matters; retain the warning without inferring an unintended bug.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.invisible_reference",
+      "upstream_id": "INVISIBLE_REFERENCE",
+      "positive": "cases/invisible_reference/positive.kt",
+      "negative": "cases/invisible_reference/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L210",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-visibility",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual INVISIBLE_REFERENCE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit INVISIBLE_REFERENCE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Calls from an actual authorized lexical owner are valid; wrong owner/module membership cannot be substituted by a source-name heuristic.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.invisible_setter",
+      "upstream_id": "INVISIBLE_SETTER",
+      "positive": "cases/invisible_setter/positive.kt",
+      "negative": "cases/invisible_setter/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L212",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-visibility",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual INVISIBLE_SETTER at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit INVISIBLE_SETTER under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A readable public property can intentionally expose only a private setter; reads and internal owner writes are legitimate controls.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_parameter_type",
+      "upstream_id": "EXPOSED_PARAMETER_TYPE",
+      "positive": "cases/exposed_parameter_type/positive.kt",
+      "negative": "cases/exposed_parameter_type/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L408",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-visibility",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual EXPOSED_PARAMETER_TYPE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPOSED_PARAMETER_TYPE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Private/internal implementation APIs need not expose a type to a broader audience; the exact declaration visibility is authoritative.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_property_type",
+      "upstream_id": "EXPOSED_PROPERTY_TYPE",
+      "positive": "cases/exposed_property_type/positive.kt",
+      "negative": "cases/exposed_property_type/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L406",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-visibility",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual EXPOSED_PROPERTY_TYPE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPOSED_PROPERTY_TYPE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A private property may legitimately retain an implementation-only type without a public exposure diagnostic.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_super_class",
+      "upstream_id": "EXPOSED_SUPER_CLASS",
+      "positive": "cases/exposed_super_class/positive.kt",
+      "negative": "cases/exposed_super_class/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L410",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-visibility",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual EXPOSED_SUPER_CLASS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPOSED_SUPER_CLASS under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A non-public subclass or an actually public resolved superclass is legitimate; no hierarchy is inferred from missing dependency artifacts.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_receiver_type",
+      "upstream_id": "EXPOSED_RECEIVER_TYPE",
+      "positive": "cases/exposed_receiver_type/positive.kt",
+      "negative": "cases/exposed_receiver_type/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L405",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-visibility",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual EXPOSED_RECEIVER_TYPE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPOSED_RECEIVER_TYPE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Private extension receivers may be implementation-only; lowering extension visibility is a real compiler-approved counterpart.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_type_parameter_bound",
+      "upstream_id": "EXPOSED_TYPE_PARAMETER_BOUND",
+      "positive": "cases/exposed_type_parameter_bound/positive.kt",
+      "negative": "cases/exposed_type_parameter_bound/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L411",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-visibility",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual EXPOSED_TYPE_PARAMETER_BOUND at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPOSED_TYPE_PARAMETER_BOUND under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Bounds on non-exported generic APIs are legitimate; a public interface with a semantically broader bound is another allowed design.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_typealias_expanded_type",
+      "upstream_id": "EXPOSED_TYPEALIAS_EXPANDED_TYPE",
+      "positive": "cases/exposed_typealias_expanded_type/positive.kt",
+      "negative": "cases/exposed_typealias_expanded_type/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L403",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-visibility",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual EXPOSED_TYPEALIAS_EXPANDED_TYPE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPOSED_TYPEALIAS_EXPANDED_TYPE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A private implementation typealias is legitimate; aliases are resolved by the compiler rather than a name-pattern check.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.condition_type_mismatch",
+      "upstream_id": "CONDITION_TYPE_MISMATCH",
+      "positive": "cases/condition_type_mismatch/positive.kt",
+      "negative": "cases/condition_type_mismatch/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L512",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual CONDITION_TYPE_MISMATCH at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit CONDITION_TYPE_MISMATCH under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A numeric test must express its real predicate such as value != 0; no C-style truthiness exemption is invented.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.throwable_type_mismatch",
+      "upstream_id": "THROWABLE_TYPE_MISMATCH",
+      "positive": "cases/throwable_type_mismatch/positive.kt",
+      "negative": "cases/throwable_type_mismatch/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L513",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual THROWABLE_TYPE_MISMATCH at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit THROWABLE_TYPE_MISMATCH under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A real Throwable subclass is valid; deliberate invalid compile-negative source remains a failing compiler task.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.iterator_missing",
+      "upstream_id": "ITERATOR_MISSING",
+      "positive": "cases/iterator_missing/positive.kt",
+      "negative": "cases/iterator_missing/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L979",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual ITERATOR_MISSING at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit ITERATOR_MISSING under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A properly resolved operator extension iterator is also valid; omitted extension/dependency files make the context incomplete, not a source-level defect proof.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.component_function_missing",
+      "upstream_id": "COMPONENT_FUNCTION_MISSING",
+      "positive": "cases/component_function_missing/positive.kt",
+      "negative": "cases/component_function_missing/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L982",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual COMPONENT_FUNCTION_MISSING at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit COMPONENT_FUNCTION_MISSING under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "User-defined component operators or unused underscore components can be valid; only actual compiler resolution determines needed component functions.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_get_method",
+      "upstream_id": "NO_GET_METHOD",
+      "positive": "cases/no_get_method/positive.kt",
+      "negative": "cases/no_get_method/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L977",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual NO_GET_METHOD at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit NO_GET_METHOD under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An applicable operator extension or a normal method call is a legitimate alternative; missing source-set imports cannot be treated as a compiler exemption.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_set_method",
+      "upstream_id": "NO_SET_METHOD",
+      "positive": "cases/no_set_method/positive.kt",
+      "negative": "cases/no_set_method/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L978",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual NO_SET_METHOD at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit NO_SET_METHOD under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A read-only indexed API intentionally has no setter; reads are legitimate and a deliberate attempted write still stays an actual compiler error.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.unchecked_cast",
+      "upstream_id": "UNCHECKED_CAST",
+      "positive": "cases/unchecked_cast/positive.kt",
+      "negative": "cases/unchecked_cast/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L940",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual UNCHECKED_CAST at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote UNCHECKED_CAST to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An externally validated generic invariant can make the cast intentional, but erasure still genuinely warns; retain advisory intent rather than require no warning.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_is_check",
+      "upstream_id": "USELESS_IS_CHECK",
+      "positive": "cases/useless_is_check/positive.kt",
+      "negative": "cases/useless_is_check/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L945",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual USELESS_IS_CHECK at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote USELESS_IS_CHECK to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Uniform generic scaffolding can intentionally retain an always-true is check; actual warning transport does not prove an unintended behavior change.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_elvis",
+      "upstream_id": "USELESS_ELVIS",
+      "positive": "cases/useless_elvis/positive.kt",
+      "negative": "cases/useless_elvis/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L930",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual USELESS_ELVIS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote USELESS_ELVIS to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A redundant fallback may be deliberately retained for a future nullable contract; genuine advisory warnings remain visible.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.smartcast_impossible",
+      "upstream_id": "SMARTCAST_IMPOSSIBLE",
+      "positive": "cases/smartcast_impossible/positive.kt",
+      "negative": "cases/smartcast_impossible/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L621",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual SMARTCAST_IMPOSSIBLE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit SMARTCAST_IMPOSSIBLE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A stable local snapshot is a real control; concurrent mutation or a custom getter cannot be guessed stable from a preceding null check.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.equality_not_applicable",
+      "upstream_id": "EQUALITY_NOT_APPLICABLE",
+      "positive": "cases/equality_not_applicable/positive.kt",
+      "negative": "cases/equality_not_applicable/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L988",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-conventions_types_nullability",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual EQUALITY_NOT_APPLICABLE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EQUALITY_NOT_APPLICABLE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Explicitly widening both operands to Any permits a deliberately heterogeneous equality contract; no universal ban on cross-type names is introduced.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.recursion_in_inline",
+      "upstream_id": "RECURSION_IN_INLINE",
+      "positive": "cases/recursion_in_inline/positive.kt",
+      "negative": "cases/recursion_in_inline/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1049",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-inline_constructors",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual RECURSION_IN_INLINE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit RECURSION_IN_INLINE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A non-inline recursive function is legitimate; the pair retains an actually used lambda to avoid unrelated NOTHING_TO_INLINE output.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_public_call_from_public_inline",
+      "upstream_id": "NON_PUBLIC_CALL_FROM_PUBLIC_INLINE",
+      "positive": "cases/non_public_call_from_public_inline/positive.kt",
+      "negative": "cases/non_public_call_from_public_inline/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1050",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-inline_constructors",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual NON_PUBLIC_CALL_FROM_PUBLIC_INLINE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit NON_PUBLIC_CALL_FROM_PUBLIC_INLINE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "PublishedApi internal helpers or a non-public/non-inline caller can be legitimate; the selected public inline API must not expose inaccessible bytecode.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.inline_property_with_backing_field",
+      "upstream_id": "INLINE_PROPERTY_WITH_BACKING_FIELD",
+      "positive": "cases/inline_property_with_backing_field/positive.kt",
+      "negative": "cases/inline_property_with_backing_field/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1064",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-inline_constructors",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual INLINE_PROPERTY_WITH_BACKING_FIELD at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit INLINE_PROPERTY_WITH_BACKING_FIELD under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An inline computed accessor with no field is legitimate; a normal non-inline stored property is also an allowed design.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.cyclic_constructor_delegation_call",
+      "upstream_id": "CYCLIC_CONSTRUCTOR_DELEGATION_CALL",
+      "positive": "cases/cyclic_constructor_delegation_call/positive.kt",
+      "negative": "cases/cyclic_constructor_delegation_call/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L294",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-inline_constructors",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual CYCLIC_CONSTRUCTOR_DELEGATION_CALL at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit CYCLIC_CONSTRUCTOR_DELEGATION_CALL under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An acyclic constructor chain is legitimate; deliberately cyclic compile-negative source remains a failed task rather than report suppression.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.supertype_not_initialized",
+      "upstream_id": "SUPERTYPE_NOT_INITIALIZED",
+      "positive": "cases/supertype_not_initialized/positive.kt",
+      "negative": "cases/supertype_not_initialized/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L297",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-inline_constructors",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual SUPERTYPE_NOT_INITIALIZED at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit SUPERTYPE_NOT_INITIALIZED under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Interfaces do not need constructor calls; secondary-constructor initialization is another legitimate graph that must be resolved by the actual compiler.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_usage",
+      "upstream_id": "OPT_IN_USAGE",
+      "positive": "cases/opt_in_usage/positive.kt",
+      "negative": "cases/opt_in_usage/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L384",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-opt_in",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual OPT_IN_USAGE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote OPT_IN_USAGE to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A deliberately experimental caller can propagate the marker or explicitly opt in; an unacknowledged warning may still be advisory and is not automatically unintended.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_usage_error",
+      "upstream_id": "OPT_IN_USAGE_ERROR",
+      "positive": "cases/opt_in_usage_error/positive.kt",
+      "negative": "cases/opt_in_usage_error/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L385",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-opt_in",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual OPT_IN_USAGE_ERROR at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit OPT_IN_USAGE_ERROR under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An explicit OptIn or marker propagation is legitimate under the selected contract; a failing error-level usage cannot be made clean by a baseline.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_without_arguments",
+      "upstream_id": "OPT_IN_WITHOUT_ARGUMENTS",
+      "positive": "cases/opt_in_without_arguments/positive.kt",
+      "negative": "cases/opt_in_without_arguments/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L392",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-opt_in",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual OPT_IN_WITHOUT_ARGUMENTS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote OPT_IN_WITHOUT_ARGUMENTS to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An empty annotation may be intentional scaffolding but genuinely has no effect; removing it is another valid no-emission control.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_argument_is_not_marker",
+      "upstream_id": "OPT_IN_ARGUMENT_IS_NOT_MARKER",
+      "positive": "cases/opt_in_argument_is_not_marker/positive.kt",
+      "negative": "cases/opt_in_argument_is_not_marker/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L393",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-opt_in",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual OPT_IN_ARGUMENT_IS_NOT_MARKER at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote OPT_IN_ARGUMENT_IS_NOT_MARKER to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Ordinary annotations can be legitimate annotations but are not opt-in markers; use them normally or make a real RequiresOptIn contract.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.illegal_jvm_name",
+      "upstream_id": "ILLEGAL_JVM_NAME",
+      "positive": "cases/illegal_jvm_name/positive.kt",
+      "negative": "cases/illegal_jvm_name/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L59",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual ILLEGAL_JVM_NAME at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit ILLEGAL_JVM_NAME under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Kotlin source backtick names and JVM symbol names have different contracts; no naive source-identifier restriction is inferred.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.inapplicable_jvm_name",
+      "upstream_id": "INAPPLICABLE_JVM_NAME",
+      "positive": "cases/inapplicable_jvm_name/positive.kt",
+      "negative": "cases/inapplicable_jvm_name/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L58",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual INAPPLICABLE_JVM_NAME at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit INAPPLICABLE_JVM_NAME under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "JvmName on supported top-level/non-overriding declarations is legitimate; overriding JVM dispatch must keep the applicable inherited name.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.overloads_private",
+      "upstream_id": "OVERLOADS_PRIVATE",
+      "positive": "cases/overloads_private/positive.kt",
+      "negative": "cases/overloads_private/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L109",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual OVERLOADS_PRIVATE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: explicitly promote OVERLOADS_PRIVATE to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A private Kotlin helper may intentionally retain a no-effect annotation; the genuine warning is advisory, not a Java API defect inferred from intent.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.overloads_local",
+      "upstream_id": "OVERLOADS_LOCAL",
+      "positive": "cases/overloads_local/positive.kt",
+      "negative": "cases/overloads_local/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L107",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual OVERLOADS_LOCAL at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit OVERLOADS_LOCAL under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A local helper with Kotlin defaults is legitimate without JvmOverloads; the corrected counterpart instead makes a real top-level Java-facing API.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.jvm_static_on_const_or_jvm_field",
+      "upstream_id": "JVM_STATIC_ON_CONST_OR_JVM_FIELD",
+      "positive": "cases/jvm_static_on_const_or_jvm_field/positive.kt",
+      "negative": "cases/jvm_static_on_const_or_jvm_field/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L56",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual JVM_STATIC_ON_CONST_OR_JVM_FIELD at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit JVM_STATIC_ON_CONST_OR_JVM_FIELD under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Const/JvmField properties already expose fields; removing the redundant static annotation preserves the intended valid JVM API.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.jvm_record_extends_class",
+      "upstream_id": "JVM_RECORD_EXTENDS_CLASS",
+      "positive": "cases/jvm_record_extends_class/positive.kt",
+      "negative": "cases/jvm_record_extends_class/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L137",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual JVM_RECORD_EXTENDS_CLASS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit JVM_RECORD_EXTENDS_CLASS under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Record interface implementation is legitimate; an explicit class supertype cannot be silently accepted even if it is Any.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.delegation_by_in_jvm_record",
+      "upstream_id": "DELEGATION_BY_IN_JVM_RECORD",
+      "positive": "cases/delegation_by_in_jvm_record/positive.kt",
+      "negative": "cases/delegation_by_in_jvm_record/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L136",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual DELEGATION_BY_IN_JVM_RECORD at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit DELEGATION_BY_IN_JVM_RECORD under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Explicit forwarding without generated delegation storage is legitimate; non-record classes may validly use delegation.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.external_declaration_in_interface",
+      "upstream_id": "EXTERNAL_DECLARATION_IN_INTERFACE",
+      "positive": "cases/external_declaration_in_interface/positive.kt",
+      "negative": "cases/external_declaration_in_interface/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L153",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual EXTERNAL_DECLARATION_IN_INTERFACE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXTERNAL_DECLARATION_IN_INTERFACE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A bodyless ordinary interface property is legitimate; an external native implementation belongs to a supported non-interface declaration context.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.concurrent_hash_map_contains_operator_error",
+      "upstream_id": "CONCURRENT_HASH_MAP_CONTAINS_OPERATOR_ERROR",
+      "positive": "cases/concurrent_hash_map_contains_operator_error/positive.kt",
+      "negative": "cases/concurrent_hash_map_contains_operator_error/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L179",
+      "status": "unrun_synthetic_input",
+      "authored_cohort": "2026-11-04-jvm_record_external",
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the same explicit original JVM source/dependency batch; require actual CONCURRENT_HASH_MAP_CONTAINS_OPERATOR_ERROR at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the same explicit original JVM source/dependency batch; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit CONCURRENT_HASH_MAP_CONTAINS_OPERATOR_ERROR under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the same explicit original JVM source/dependency batch; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Explicit containsValue/contains calls can intentionally test values; an actual Map-typed receiver has key membership semantics. Preserve the compiler contract, not an inferred policy exemption.",
+        "evidence_state": "not_run; source-only authorship"
+      }
     }
   ]
 }

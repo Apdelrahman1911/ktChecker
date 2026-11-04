@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-corpus-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.potential-bugs.iterator-has-next-calls-next-method",
+  "upstream_id": "potential-bugs:IteratorHasNextCallsNextMethod",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "e5bcb9acdb2d2b8a1c33052e4361457e9ca0a94e78a9fe33b3a3e8f707d80052",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-potential-bugs/src/main/kotlin/dev/detekt/rules/potentialbugs/IteratorHasNextCallsNextMethod.kt",
+    "source_file_sha256": "55e89cf044cee155ed5c180bfcc1777948f6a9616d0f7e1c2afbc136006c9b5b",
+    "predicate_line_numbers": [
+      38,
+      54
+    ],
+    "research_only": true
+  },
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.iteratorhasnext\n\nclass AdvancingIterator : Iterator<Int> {\n    private var value = 0\n    override fun hasNext(): Boolean = next() >= 0\n    override fun next(): Int = value++\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 6,
+        "end_line": 3,
+        "end_column": 23,
+        "span": "AdvancingIterator",
+        "occurrence": 0
+      }
+    ],
+    "intent": "The selected Iterator implementation advances its own next method while probing."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.iteratorhasnext\n\nclass BoundedIterator : Iterator<Int> {\n    private var value = 0\n    override fun hasNext(): Boolean = value < 2\n    override fun next(): Int {\n        if (!hasNext()) throw NoSuchElementException()\n        return value++\n    }\n}\n"
+    },
+    "expected": [],
+    "intent": "hasNext only observes state; next performs lawful exhaustion checking and advancement."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.iteratorhasnext\n\nclass AdvancingIterator : Iterator<Int> {\n    private var value = 0\n    override fun hasNext(): Boolean = next() >= 0\n    override fun next(): Int = value++\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"IteratorHasNextCallsNextMethod\")\n\npackage suppressed.corpus.iteratorhasnext\n\nclass AdvancingIterator : Iterator<Int> {\n    private var value = 0\n    override fun hasNext(): Boolean = next() >= 0\n    override fun next(): Int = value++\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 6,
+        "end_line": 3,
+        "end_column": 23,
+        "span": "AdvancingIterator",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine upstream file annotation on an otherwise identical, independently named package; neighboring original file must retain every positive finding. No ktChecker-ID or declaration-scope suppression claim."
+  },
+  "controls": [
+    {
+      "id": "helper-based-legal-iterator",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.iteratorhasnext\n\nclass HelperIterator : Iterator<Int> {\n    private var value = 0\n    override fun hasNext(): Boolean = remaining()\n    override fun next(): Int = read()\n    private fun remaining(): Boolean = value < 2\n    private fun read(): Int {\n        if (!remaining()) throw NoSuchElementException()\n        return value++\n    }\n}\n"
+      },
+      "expected": [],
+      "intent": "Legal helper-based implementation is not incorrectly required to spell all logic inline."
+    },
+    {
+      "id": "reading-a-different-iterator",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive",
+      "sources": {
+        "Case.kt": "package corpus.iteratorhasnext\n\nclass ConstantIterator : Iterator<Int> {\n    override fun hasNext(): Boolean = listOf(1).iterator().next() == 1\n    override fun next(): Int = 1\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 6,
+          "end_line": 3,
+          "end_column": 22,
+          "span": "ConstantIterator",
+          "occurrence": 0
+        }
+      ],
+      "intent": "An infinite constant Iterator reads a newly created, unrelated Iterator in hasNext; no own state changes. Retain the receiver-insensitive finding if observed."
+    },
+    {
+      "id": "shadowed-iterator-contract",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive",
+      "sources": {
+        "Case.kt": "package corpus.iteratorhasnext\n\ninterface Iterator<T> {\n    fun hasNext(): Boolean\n    fun next(): T\n}\n\nclass StatelessProbe : Iterator<Int> {\n    override fun hasNext(): Boolean = next() == 1\n    override fun next(): Int = 1\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 6,
+          "end_line": 8,
+          "end_column": 20,
+          "span": "StatelessProbe",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Custom stateless protocol named Iterator is not the Kotlin/Java advancing Iterator contract. Preserve the name-only alert."
+    }
+  ],
+  "limitations": [
+    "Textual supertype Iterator and any descendant call named next are matched without receiver/symbol identity.",
+    "Helper calls and other aliases are not traversed interprocedurally. No general hasNext side-effect proof or Iterator contract qualification."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact selected route on positive immutable snapshot bytes.",
+    "negative": "Run legal alternative bytes with the same route still active.",
+    "configuration": "Run the original positive bytes with the owner-selected rule disabled; separately replay genuine options below when applicable.",
+    "version": "Replay positive bytes under the pinned CLI, retain actual CLI version output, and verify Common/Native requests never reach the runner. Declared Kotlin2.4.21/embedded2.4.10 stays unqualified.",
+    "suppression": "Use actual file-scoped upstream annotation with an unsuppressed neighboring file; never suppress/filter in host code.",
+    "regression": "Seal the negative correction as a child of the suppression snapshot, delete obsolete files, and verify both registered parent and child materializations."
+  },
+  "qualification_note": "Authored expected results are not observed behavior. Actual assertions, immutable materialization checks, raw SARIF/process receipts and START witnesses are required before a sidecar is emitted; no compatibility/precision/performance/release qualification is proposed."
+}

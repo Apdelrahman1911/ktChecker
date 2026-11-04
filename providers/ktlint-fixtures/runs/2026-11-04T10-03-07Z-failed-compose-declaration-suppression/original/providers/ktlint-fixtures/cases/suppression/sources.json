@@ -1,0 +1,11 @@
+{
+  ".editorconfig": "root = true\n\n[*.{kt,kts}]\nktlint_code_style = ktlint_official\n",
+  "Composable.kt": "package androidx.compose.runtime\n\n// Explicit syntax stub, not real Compose runtime/compiler compatibility evidence.\n@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)\nannotation class Composable\n",
+  "Wildcard.kt": "package fixture\n\nimport java.io.*\n\nfun wildcard() = Unit\n",
+  "Whitespace.kt": "package fixture\n\nfun whitespace() = Unit  \n",
+  "Newline.kt": "package fixture\n\nfun newline() = Unit",
+  "Compose.kt": "package fixture\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun Example(optional: String = \"\", required: Int) {}\n\n@Suppress(\"ktlint:compose:param-order-check\")\n@Composable\nfun SuppressedExample(optional: String = \"\", required: Int) {}\n",
+  "SuppressedWildcard.kt": "@file:Suppress(\"ktlint:standard:no-wildcard-imports\")\n\npackage fixture\n\nimport java.io.*\n\nfun suppressedWildcard() = Unit\n",
+  "SuppressedWhitespace.kt": "@file:Suppress(\"ktlint:standard:no-trailing-spaces\")\n\npackage fixture\n\nfun suppressedWhitespace() = Unit  \n",
+  "SuppressedNewline.kt": "@file:Suppress(\"ktlint:standard:final-newline\")\n\npackage fixture\n\nfun suppressedNewline() = Unit"
+}

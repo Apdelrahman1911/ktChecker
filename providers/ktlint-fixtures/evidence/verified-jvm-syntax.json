@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "provider_id": "ktlint",
+  "provider_version": "1.8.0",
+  "context": {
+    "id": "current-edited-ktlint-syntax-jvm-unexecuted-native-preview1",
+    "target": "jvm",
+    "source_set": "main",
+    "module": ":ktlint-fixture",
+    "compilation": "main",
+    "kotlin_version": "2.2.21",
+    "embedded_parser_version": "2.2.21",
+    "jdk_version": "unknown",
+    "host_compiler_version": "2.4.21",
+    "library_versions": {
+      "compose-rules": "0.6.8"
+    },
+    "scope_note": "Authored synthetic controls only. Historical test receipts are not current-source/native backend evidence or compatibility/precision/release qualification.",
+    "evidence_state": "current_sources_not_executed_after_native_supervisor_and_test_provenance_changes",
+    "current_source_attribution": "Current adapter code exists, but per-rule executed/tested attribution is withheld until a fresh verified native-supervised run; original historical tuple is separately retained."
+  },
+  "provenance_evidence": [],
+  "historical_run_evidence": {
+    "path": "providers/ktlint-fixtures/runs/2026-11-04T11-09-38Z-e2998f0c-historical-pre-native-attribution-withdrawal/original/providers/ktlint-fixtures/evidence/verified-jvm-syntax.json",
+    "sha256": "3147a73ac73d519fbce3de2280d9c3840ce2f21b81e6ba8368cc3454698fd9a7"
+  },
+  "historical_tuple_archive": {
+    "path": "providers/ktlint-fixtures/runs/2026-11-04T11-09-38Z-e2998f0c-historical-pre-native-attribution-withdrawal/historical-tuple.json",
+    "sha256": "86f7d43cc4f35a3c0b97466f0690dbdf7939e232fd9f733b0edbfc5e45c1f988"
+  },
+  "historical_run_summary": {
+    "implemented_rules": 4,
+    "tested_all_six_rules": 4,
+    "qualified_rules": 0,
+    "scope": "Original immutable historical tuple only; not current-source or native-supervisor execution."
+  },
+  "rules": [
+    {
+      "rule_id": "ktc.maintainability.ktlint.no-wildcard-imports",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "attempted": false,
+      "provider_status": "not_executed_current_library_controls",
+      "cases": [],
+      "implementation_evidence": [],
+      "qualification_evidence": [],
+      "gaps": [
+        "Current library test/provenance sources and shared Execution.kt changed after the preserved run; no actual native helper identity or native exec-confirmed per-rule execution is attested for current sources.",
+        "Original historical attempts, raw reports, successful/failed cases and START artifacts remain in historical_run_evidence/historical_tuple_archive; none are current-code or native-supervisor receipts.",
+        "Only selected synthetic syntax cases executed. Suppression evidence is file-scoped only; Compose ParameterOrder declaration suppression remains unsupported by the upstream file visitor. No KGP2.4.21/common/Native/Android or actual Compose compiler/API, precision/performance/release qualification; ktChecker-ID suppression aliases remain unimplemented."
+      ]
+    },
+    {
+      "rule_id": "ktc.maintainability.ktlint.no-trailing-spaces",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "attempted": false,
+      "provider_status": "not_executed_current_library_controls",
+      "cases": [],
+      "implementation_evidence": [],
+      "qualification_evidence": [],
+      "gaps": [
+        "Current library test/provenance sources and shared Execution.kt changed after the preserved run; no actual native helper identity or native exec-confirmed per-rule execution is attested for current sources.",
+        "Original historical attempts, raw reports, successful/failed cases and START artifacts remain in historical_run_evidence/historical_tuple_archive; none are current-code or native-supervisor receipts.",
+        "Only selected synthetic syntax cases executed. Suppression evidence is file-scoped only; Compose ParameterOrder declaration suppression remains unsupported by the upstream file visitor. No KGP2.4.21/common/Native/Android or actual Compose compiler/API, precision/performance/release qualification; ktChecker-ID suppression aliases remain unimplemented."
+      ]
+    },
+    {
+      "rule_id": "ktc.maintainability.ktlint.final-newline",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "attempted": false,
+      "provider_status": "not_executed_current_library_controls",
+      "cases": [],
+      "implementation_evidence": [],
+      "qualification_evidence": [],
+      "gaps": [
+        "Current library test/provenance sources and shared Execution.kt changed after the preserved run; no actual native helper identity or native exec-confirmed per-rule execution is attested for current sources.",
+        "Original historical attempts, raw reports, successful/failed cases and START artifacts remain in historical_run_evidence/historical_tuple_archive; none are current-code or native-supervisor receipts.",
+        "Only selected synthetic syntax cases executed. Suppression evidence is file-scoped only; Compose ParameterOrder declaration suppression remains unsupported by the upstream file visitor. No KGP2.4.21/common/Native/Android or actual Compose compiler/API, precision/performance/release qualification; ktChecker-ID suppression aliases remain unimplemented."
+      ]
+    },
+    {
+      "rule_id": "ktc.compose.pack.ComposableParamOrder",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "attempted": false,
+      "provider_status": "not_executed_current_library_controls",
+      "cases": [],
+      "implementation_evidence": [],
+      "qualification_evidence": [],
+      "gaps": [
+        "Current library test/provenance sources and shared Execution.kt changed after the preserved run; no actual native helper identity or native exec-confirmed per-rule execution is attested for current sources.",
+        "Original historical attempts, raw reports, successful/failed cases and START artifacts remain in historical_run_evidence/historical_tuple_archive; none are current-code or native-supervisor receipts.",
+        "Only selected synthetic syntax cases executed. Suppression evidence is file-scoped only; Compose ParameterOrder declaration suppression remains unsupported by the upstream file visitor. No KGP2.4.21/common/Native/Android or actual Compose compiler/API, precision/performance/release qualification; ktChecker-ID suppression aliases remain unimplemented."
+      ]
+    }
+  ]
+}

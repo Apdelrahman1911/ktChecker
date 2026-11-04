@@ -1,0 +1,58 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "results": [
+        {
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Sleep.kt",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "endColumn": 29,
+                  "endLine": 7,
+                  "startColumn": 20,
+                  "startLine": 7
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "This use of Thread.sleep() inside a suspend function should be replaced by delay()."
+          },
+          "partialFingerprints": {
+            "signature/v1": "880b74fc362d098dce37992ee48e0c0ba5f02fe3"
+          },
+          "ruleId": "detekt.coroutines.SleepInsteadOfDelay"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "guid": "022ca8c2-f6a2-4c95-b107-bb72c43263f3",
+          "informationUri": "https://detekt.dev",
+          "language": "en",
+          "name": "detekt",
+          "organization": "detekt",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error"
+              },
+              "helpUri": "https://detekt.dev/docs/2.0.0-alpha.6/rules/coroutines#sleepinsteadofdelay",
+              "id": "detekt.coroutines.SleepInsteadOfDelay",
+              "name": "SleepInsteadOfDelay",
+              "shortDescription": {
+                "text": "Usage of `Thread.sleep()` in coroutines can potentially halt multiple coroutines at once."
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

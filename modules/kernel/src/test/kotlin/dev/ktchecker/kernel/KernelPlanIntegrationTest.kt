@@ -536,20 +536,32 @@ class KernelPlanIntegrationTest {
             val client = service.registerClient(binding("recipient"))
             val request = request("recipients")
             val good = definition(client.binding, request, inputs)
-            listOf(listOf(client.binding.clientId, "other-client"), listOf("other-client")).forEach { recipients ->
-                registry.put(good.copy(requiredRecipientClientIds = recipients))
-                assertCode("cross_client_routing_unavailable") { service.submitPlan(client.client, request) }
-                assertNoAcceptance(service, client)
-            }
-            listOf(emptyList(), listOf(client.binding.clientId, client.binding.clientId)).forEach { recipients ->
-                registry.put(good.copy(requiredRecipientClientIds = recipients))
-                assertCode("plan_recipients_invalid") { service.submitPlan(client.client, request) }
-                assertNoAcceptance(service, client)
-            }
+            registry.put(good.copy(requiredRecipientClientIds = listOf(client.binding.clientId, "other-client").sorted()))
+            assertCode("cross_client_routing_unavailable") { service.submitPlan(client.client, request) }
+            assertNoAcceptance(service, client)
             KernelService.open(database, PlanTestProvider(), config.copy(workerCount = 0)).use { noAuthority ->
                 assertCode("plan_authority_unavailable") { noAuthority.submitPlan(client.client, request) }
                 assertNoAcceptance(noAuthority, client)
             }
+        }
+    }
+
+    @Test fun malformedRecipientVectorsMissingInitiatorEmptyOrDuplicatedFailBeforeRoutingAuthorityOrAcceptance() {
+        val inputs = inputs("malformed-recipients")
+        val registry = Registry()
+        val routingCalls = AtomicInteger()
+        val routing = ReviewPlanRoutingAuthority { _, _, _ -> routingCalls.incrementAndGet(); null }
+        KernelService.open(temp.resolve("ledger"), PlanTestProvider(), config.copy(workerCount = 0),
+            planAuthority = registry, routingAuthority = routing).use { service ->
+            val client = service.registerClient(binding("recipient"))
+            val request = request("malformed-recipients")
+            val good = definition(client.binding, request, inputs)
+            listOf(listOf("other-client"), emptyList(), listOf(client.binding.clientId, client.binding.clientId)).forEach { recipients ->
+                registry.put(good.copy(requiredRecipientClientIds = recipients))
+                assertCode("plan_recipients_invalid") { service.submitPlan(client.client, request) }
+                assertNoAcceptance(service, client)
+            }
+            assertEquals(0, routingCalls.get())
         }
     }
 

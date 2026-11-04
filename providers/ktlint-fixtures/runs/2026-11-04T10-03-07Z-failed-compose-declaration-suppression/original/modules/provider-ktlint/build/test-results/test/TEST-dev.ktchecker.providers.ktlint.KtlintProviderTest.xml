@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.ktchecker.providers.ktlint.KtlintProviderTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-11-04T09:55:42.147Z" hostname="(none)" time="0.06">
+  <properties/>
+  <testcase name="malformed schema ranges rule IDs and parse failures are not clean()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.009"/>
+  <testcase name="genuine JSON one based point maps only to frozen bytes()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.002"/>
+  <testcase name="all 137 routes are retained but five exclusions cannot activate()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.002"/>
+  <testcase name="safe selected rule config passes policy but missing installation still abstains()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.003"/>
+  <testcase name="missing duplicate and glob compilation memberships do not expand scope()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.002"/>
+  <testcase name="three official pins do not imply compatible Kotlin 2 point 4()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.002"/>
+  <testcase name="captured root true is mandatory before artifact lookup()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.005"/>
+  <testcase name="empty report requires matching genuine scan count and exit()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.003"/>
+  <testcase name="permit cannot be relabeled to another exact context()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.003"/>
+  <testcase name="project cannot activate groups unselected IDs exclusions or obsolete aliases()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.005"/>
+  <testcase name="duplicate report files keys escaped aliases and invalid UTF8 are refused()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.004"/>
+  <testcase name="empty owner selection never activates style by default()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.002"/>
+  <testcase name="preauthorization cancellation is visible()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.002"/>
+  <testcase name="default provider and transport approval cannot execute()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.001"/>
+  <testcase name="outside unmanifested and different compilation locations are refused()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.003"/>
+  <testcase name="newer unknown and non JVM tuples abstain without clean coverage()" classname="dev.ktchecker.providers.ktlint.KtlintProviderTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

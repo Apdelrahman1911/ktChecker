@@ -5,7 +5,7 @@ import argparse
 import glob
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import xml.etree.ElementTree as ET
 
@@ -86,8 +86,13 @@ def artifact(path: Path, root: Path = REPO_ROOT) -> dict:
 
 
 def expand(pattern: str, root: Path = REPO_ROOT) -> list[Path]:
-    if Path(pattern).is_absolute() or ".." in Path(pattern).parts:
-        raise ValueError("Evidence paths must be repository-relative, without traversal")
+    # A drive-less /private path is not WindowsPath.is_absolute(), and a Windows
+    # drive/UNC path is not PosixPath.is_absolute(). Validate the wire grammar
+    # independently of the current host; never silently accept another flavor.
+    if not isinstance(pattern, str) or not pattern or "\\" in pattern or ":" in pattern \
+            or re.search(r"[\x00-\x1f\x7f]", pattern) or PurePosixPath(pattern).is_absolute() \
+            or PureWindowsPath(pattern).drive or ".." in PurePosixPath(pattern).parts:
+        raise ValueError("Evidence paths must be portable repository-relative globs, without traversal")
     paths = [Path(value) for value in glob.glob(str(root / pattern), recursive=True)]
     for path in paths:
         # Do not allow an intermediate symlink to expose files outside the checkout.

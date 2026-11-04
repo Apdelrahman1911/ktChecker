@@ -1,12 +1,15 @@
 """Coverage bookkeeping tests; these are not detector integration fixtures."""
 
 import copy
+import contextlib
+import io
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from rule_coverage import CASE_KINDS, QUALIFICATION_DIGESTS, QUALIFICATION_IDENTITIES, CoverageError, digest, generate_coverage, main, read_json
+from rule_coverage import CASE_KINDS, QUALIFICATION_DIGESTS, QUALIFICATION_IDENTITIES, CoverageError, digest, generate_coverage, main, publish_inventory, read_json
 
 
 CONTEXT = {
@@ -141,6 +144,69 @@ class CoverageTests(unittest.TestCase):
         versions = {row["context"]["kotlin_version"]: row for row in output["rows"]}
         self.assertTrue(versions["2.4.21"]["tested"])
         self.assertFalse(versions["2.4.10"]["tested"])
+
+    def test_withdrawn_and_native_digest_bound_sidecars_coexist_without_renewal(self):
+        native = copy.deepcopy(self.sidecar)
+        native["context"] = {
+            **CONTEXT, "execution_backend": "owned_child_native_supervisor_preview1",
+            "supervisor_protocol_version": "ktchecker-owned-child-supervisor/preview-1",
+            "supervisor_target": "linux-x86_64",
+            **{name: "sha256:" + digest(name.encode()) for name in (
+                "supervisor_source_digest", "supervisor_binary_digest",
+                "runtime_execution_source_digest", "runtime_code_image_digest",
+            )},
+        }
+        original_native_context = copy.deepcopy(native["context"])
+        for stage in ("implemented", "tested", "qualified", "attempted"):
+            self.sidecar["rules"][0][stage] = False
+        self.sidecar["rules"][0]["cases"] = []
+        self.sidecar["rules"][0]["implementation_evidence"] = []
+        self.emit()
+        self.write("providers/example-fixtures/evidence/run-native-preview1.json", native)
+        output = generate_coverage(self.root)
+        self.assertEqual(2, output["row_count"])
+        withdrawn, executed = sorted(output["rows"], key=lambda row: row["tested"])
+        self.assertEqual(CONTEXT, withdrawn["context"])
+        self.assertFalse(withdrawn["implemented"])
+        self.assertFalse(withdrawn["tested"])
+        self.assertEqual(original_native_context, executed["context"])
+        self.assertTrue(executed["implemented"])
+        self.assertTrue(executed["tested"])
+        self.assertEqual(1, output["summary"]["tested"])
+        self.assertFalse(output["release_qualified"])
+
+    def test_a_new_filename_does_not_isolate_duplicate_withdrawn_context(self):
+        for stage in ("implemented", "tested", "qualified", "attempted"):
+            self.sidecar["rules"][0][stage] = False
+        self.sidecar["rules"][0]["cases"] = []
+        self.sidecar["rules"][0]["implementation_evidence"] = []
+        self.emit()
+        self.write("providers/example-fixtures/evidence/a-different-name.json", copy.deepcopy(self.sidecar))
+        with self.assertRaisesRegex(CoverageError, "duplicate evidence"):
+            generate_coverage(self.root)
+
+    def test_changed_native_or_runtime_digests_cannot_borrow_tested_evidence(self):
+        digest_names = (
+            "supervisor_source_digest", "supervisor_binary_digest",
+            "runtime_execution_source_digest", "runtime_code_image_digest",
+        )
+        self.sidecar["context"] = {
+            **CONTEXT, "execution_backend": "owned_child_native_supervisor_preview1",
+            "supervisor_protocol_version": "ktchecker-owned-child-supervisor/preview-1",
+            "supervisor_target": "linux-x86_64",
+            **{name: "sha256:" + digest(name.encode()) for name in digest_names},
+        }
+        original = copy.deepcopy(self.sidecar["context"])
+        self.emit()
+        for name in digest_names:
+            with self.subTest(changed_digest=name):
+                changed = {**original, name: "sha256:" + digest((name + " changed").encode())}
+                rows = generate_coverage(self.root, contexts=[original, changed])["rows"]
+                by_context = {row["context"][name]: row for row in rows}
+                self.assertTrue(by_context[original[name]]["tested"])
+                self.assertFalse(by_context[changed[name]]["implemented"])
+                self.assertFalse(by_context[changed[name]]["tested"])
+                self.assertFalse(by_context[changed[name]]["qualified"])
 
     def test_provider_version_cannot_borrow_evidence(self):
         self.sidecar["provider_version"] = "2.0"
@@ -323,6 +389,84 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(1, read_json(output_path)["row_count"])
         self.assertEqual(1, main(["--root", str(self.root), "--require-tested", "--output", str(output_path)]))
         self.assertEqual(0, main(["--root", str(self.root), "--output", str(output_path)]))
+
+    def test_failed_refresh_replaces_previous_counts_with_explicit_unavailable(self):
+        self.emit()
+        output_path = self.root / "coverage.json"
+        args = ["--root", str(self.root), "--output", str(output_path)]
+        self.assertEqual(0, main(args))
+        self.assertTrue(read_json(output_path)["inventory_valid"])
+        self.assertEqual(1, read_json(output_path)["summary"]["tested"])
+        (self.root / "src/implementation.kt").write_text("changed after the attested run")
+        with contextlib.redirect_stderr(io.StringIO()) as error:
+            self.assertEqual(2, main(args))
+        self.assertIn("digest mismatch", error.getvalue())
+        failed = read_json(output_path)
+        self.assertEqual("unavailable", failed["inventory_status"])
+        self.assertFalse(failed["inventory_valid"])
+        self.assertFalse(failed["all_requested_cells_qualified"])
+        self.assertFalse(failed["release_qualified"])
+        for key in ("summary", "row_count", "rows", "contexts", "catalog_records", "states"):
+            self.assertIsNone(failed[key], key)
+        self.assertNotIn(str(self.root), output_path.read_text())
+        self.assertNotIn("implementation.kt", output_path.read_text())
+
+    def test_interrupted_generation_leaves_pending_not_previous_success(self):
+        output_path = self.root / "coverage.json"
+        output_path.write_text('{"inventory_valid":true,"summary":{"qualified":999}}')
+        with patch("rule_coverage.generate_coverage", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                main(["--root", str(self.root), "--output", str(output_path)])
+        pending = read_json(output_path)
+        self.assertEqual("pending", pending["inventory_status"])
+        self.assertFalse(pending["inventory_valid"])
+        self.assertIsNone(pending["summary"])
+        self.assertIsNone(pending["rows"])
+
+    def test_missing_context_invalidates_old_output_before_input_read(self):
+        output_path = self.root / "coverage.json"
+        self.assertEqual(0, main(["--root", str(self.root), "--output", str(output_path)]))
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(2, main(["--root", str(self.root), "--context", str(self.root / "missing-context.json"),
+                                      "--output", str(output_path)]))
+        self.assertEqual("unavailable", read_json(output_path)["inventory_status"])
+        self.assertFalse(read_json(output_path)["inventory_valid"])
+
+    def test_valid_but_incomplete_requirement_gate_keeps_truthful_inventory(self):
+        output_path = self.root / "coverage.json"
+        self.assertEqual(1, main(["--root", str(self.root), "--require-tested", "--output", str(output_path)]))
+        report = read_json(output_path)
+        self.assertEqual("valid", report["inventory_status"])
+        self.assertTrue(report["inventory_valid"])
+        self.assertEqual(1, report["row_count"])
+        self.assertFalse(report["rows"][0]["tested"])
+        self.assertFalse(report["release_qualified"])
+
+    def test_atomic_report_replace_failure_does_not_expose_partial_json_or_leave_temp(self):
+        output_path = self.root / "coverage.json"
+        original = b'{"inventory_status":"pending","inventory_valid":false}\n'
+        output_path.write_bytes(original)
+        with patch("rule_coverage.os.replace", side_effect=OSError("injected publication failure")):
+            with self.assertRaises(OSError):
+                publish_inventory(output_path, {"inventory_valid": True, "rows": ["new"]})
+        self.assertEqual(original, output_path.read_bytes())
+        self.assertEqual([], list(self.root.glob(".ktchecker-coverage-*.tmp")))
+
+    def test_failed_output_publication_is_reported_not_assumed_to_invalidate_file(self):
+        output_path = self.root / "coverage.json"
+        output_path.write_text('{"historical":true}')
+        with patch("rule_coverage.os.replace", side_effect=OSError("injected failure")), \
+                contextlib.redirect_stderr(io.StringIO()) as error:
+            self.assertEqual(2, main(["--root", str(self.root), "--output", str(output_path)]))
+        self.assertIn("do not use an existing output as current evidence", error.getvalue())
+        self.assertEqual({"historical": True}, read_json(output_path))
+        self.assertEqual([], list(self.root.glob(".ktchecker-coverage-*.tmp")))
+
+    def test_invalid_input_without_output_does_not_emit_success_shaped_json(self):
+        with contextlib.redirect_stdout(io.StringIO()) as out, contextlib.redirect_stderr(io.StringIO()) as error:
+            self.assertEqual(2, main(["--root", str(self.root / "missing-repository")]))
+        self.assertEqual("", out.getvalue())
+        self.assertIn("rule coverage error", error.getvalue())
 
     def test_repository_inventory_retains_all_1663_records(self):
         root = Path(__file__).resolve().parents[1]

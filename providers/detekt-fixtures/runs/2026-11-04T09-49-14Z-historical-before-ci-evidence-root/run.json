@@ -1,0 +1,452 @@
+{
+  "schema_version": 1,
+  "preserved_at_utc": "2026-11-04T09:49:14.298383+00:00",
+  "state": "historical_successful_detekt_suite_preserved_before_ci_output_root_source_edit",
+  "purpose": "Preserve original successful Detekt evidence and matching START witnesses before editing integration source for CI-only archival destinations.",
+  "original_gradle_command": "./gradlew :provider-ktlint:test :provider-detekt:test :config:test :provider-runtime:test -PktlintIntegration=true -PdetektIntegration=true --rerun-tasks --no-daemon --console=plain --continue",
+  "original_combined_gradle_exit_code": 1,
+  "combined_failure_note": "Combined invocation failed in Ktlint; original Detekt JUnit independently records 14 tests with zero failures/errors/skips.",
+  "detekt_junit": {
+    "tests": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "qualified": false,
+  "new_execution": false,
+  "source_provenance": "Original test START references were checked against matching existing source/resource/fixture and archived loaded-class bytes before preservation. No hashes were refreshed, and no additional source-to-bytecode proof is inferred.",
+  "unique_original_start_and_evidence_references_verified": 66,
+  "live_sidecars_withdrawn": [
+    "providers/detekt-fixtures/evidence/verified-jvm-syntax.json",
+    "providers/detekt-fixtures/evidence/verified-jvm-coroutine-upstream.json"
+  ],
+  "original_sidecar_bytes_unmodified": true,
+  "files": [
+    {
+      "original_path": "modules/provider-detekt/build/test-results/test/TEST-dev.ktchecker.providers.detekt.DetektIntegrationTest.xml",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/modules/provider-detekt/build/test-results/test/TEST-dev.ktchecker.providers.detekt.DetektIntegrationTest.xml",
+      "sha256": "581ebc8d95974d82a1c643d42ef5857f5f76bf6ce497df53f8d13edcc02a26b2",
+      "size": 721
+    },
+    {
+      "original_path": "modules/provider-detekt/build/test-results/test/TEST-dev.ktchecker.providers.detekt.DetektProviderTest.xml",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/modules/provider-detekt/build/test-results/test/TEST-dev.ktchecker.providers.detekt.DetektProviderTest.xml",
+      "sha256": "89386d24917e8d11f0d0486b7ed4cbbac80bcd097756b45c5f1ec6b89f80a0d0",
+      "size": 2248
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektCatalog.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektCatalog.kt",
+      "sha256": "fb697c39dd95d9d98854d56f7f365baf431aeb33dc303624f4ce266cb5b00640",
+      "size": 4300
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektProvider.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektProvider.kt",
+      "sha256": "35acaa2a4414194c3b44316ec11ecd731e6712268f7357046217c7b3dfab4b52",
+      "size": 16676
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektReport.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektReport.kt",
+      "sha256": "5c2a647cfffe3b3f550faf3f65face5bdb104d2f506c3e2f6c9a067cb0b2c7f8",
+      "size": 4905
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/resources/detekt-artifacts.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/modules/provider-detekt/src/main/resources/detekt-artifacts.json",
+      "sha256": "09575c9dfdd6d1cbb751532edbae0f5408113102240a6f2220c1e45c63a4b937",
+      "size": 2849
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/resources/detekt-rule-map.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/modules/provider-detekt/src/main/resources/detekt-rule-map.json",
+      "sha256": "47ce5a08d971f8174441a578130188915a141e3c80724f3553609e3672aa1202",
+      "size": 285207
+    },
+    {
+      "original_path": "modules/provider-detekt/src/test/kotlin/dev/ktchecker/providers/detekt/DetektIntegrationTest.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/modules/provider-detekt/src/test/kotlin/dev/ktchecker/providers/detekt/DetektIntegrationTest.kt",
+      "sha256": "cc4372f1625eaac35c3e74f79713d4e4d7c12441aa085c811590c1a30e3a013e",
+      "size": 25704
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/coroutines/negative/Sleep.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/coroutines/negative/Sleep.kt",
+      "sha256": "3dc0f0cbba90a41072c76c4b9d90ac0c3db68c0564140fe3919325a9d84274fa",
+      "size": 394
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/coroutines/positive/Sleep.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/coroutines/positive/Sleep.kt",
+      "sha256": "21a8b98999cab088e3bb5b63737cd71939313ad522ff2ca6ac9a20603f562808",
+      "size": 203
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/negative/ComposeExample.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/negative/ComposeExample.kt",
+      "sha256": "aef0f1ba07bf74bc5743691442475c1c60a4be445120e3278454594e38985aea",
+      "size": 160
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/negative/EmptyCatch.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/negative/EmptyCatch.kt",
+      "sha256": "c60df4fd0b7945113155765a7314d21084d150ea040757a277cc515f59c45793",
+      "size": 261
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/negative/EntityFixture.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/negative/EntityFixture.kt",
+      "sha256": "59259fc209cc4d5f1b3f5955cb2bcb4267ed31e247bf5e322f323f54474742a8",
+      "size": 290
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/negative/Exported.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/negative/Exported.kt",
+      "sha256": "b57413b7afe75d7c7d9bf43a72f02e30f95dd661eefcd65aebf0d4d2b474d26e",
+      "size": 112
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/Composable.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/positive/Composable.kt",
+      "sha256": "654325e3fa47b135372863e5290d14dff24c38e6cbc4a1a92b64900b7103a0b4",
+      "size": 253
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/ComposeExample.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/positive/ComposeExample.kt",
+      "sha256": "4eb48d3017e13b8cff77fd8be00ad2891d1beb99451f650f149ae4a8cf9e66f6",
+      "size": 160
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/EmptyCatch.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/positive/EmptyCatch.kt",
+      "sha256": "686ff2812020c1d47bc3b2ea1da86db96f1f8d52fa2a9ca78dc88361fe9fcceb",
+      "size": 114
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/EntityFixture.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/positive/EntityFixture.kt",
+      "sha256": "3162a35c0d4f6c5c3a401cdc8cc1e594f223c782689268e5f25d8e2990e3d0c4",
+      "size": 445
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/Exported.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/positive/Exported.kt",
+      "sha256": "1fc214b3f1d654c5877677fc6f866a302753e68b6eedd6ac7dbfc8ab2d2cc3f2",
+      "size": 63
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/suppression/ComposeExample.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/suppression/ComposeExample.kt",
+      "sha256": "3e0712540871783a4c071c2d81e7357f8ed255e026ba92b259e6b2d1e1e741ca",
+      "size": 312
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/suppression/EmptyCatch.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/suppression/EmptyCatch.kt",
+      "sha256": "36bafe0a73f77153305ffbcb1fe7eaa797398791eb19790aec3dc7c356c12c5c",
+      "size": 249
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/suppression/EntityFixture.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/suppression/EntityFixture.kt",
+      "sha256": "fca0db5c7046cd9beb26522ba33607c10cd846c606cf4feb443b5954be6b8d10",
+      "size": 431
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/suppression/Exported.kt",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/cases/syntax/suppression/Exported.kt",
+      "sha256": "94ea6d18ee511a03ae5738b0d53554ea0277ea6869ac33baa6f5d6924249ea31",
+      "size": 166
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence/verified-jvm-coroutine-upstream.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence/verified-jvm-coroutine-upstream.json",
+      "sha256": "9639693133736d1535396906546df278dc79462db225c6a028b06c46b1b44f4e",
+      "size": 6390
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence/verified-jvm-syntax.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence/verified-jvm-syntax.json",
+      "sha256": "f431c252c99cff27bb1508c23533b2e2ab976776229491b4b45e05357409612e",
+      "size": 27730
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-DetektCatalog.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-DetektCatalog.class",
+      "sha256": "adf770c2d77080cfbfa8d9d23457d9b6a68cfcb433b11b46562b51e95b04878b",
+      "size": 15414
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-DetektIntegrationTest.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-DetektIntegrationTest.class",
+      "sha256": "d5de2718c6596c91a96aaf759999f334f8b0f450212548432d7027e094ba7dc6",
+      "size": 73591
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-DetektProvider.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-DetektProvider.class",
+      "sha256": "8a45d6e072ff20ef108814c922f900be7610354b1239e61725f4b10e4933b013",
+      "size": 46911
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-DetektReportParser.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-DetektReportParser.class",
+      "sha256": "f4761054f5372bfc5597051fb40068b50957e19e3a4986f06843d8a9338e00ea",
+      "size": 16841
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-ExactExecutionAuthority.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-ExactExecutionAuthority.class",
+      "sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270",
+      "size": 2441
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-ExecutionPermit.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-ExecutionPermit.class",
+      "sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724",
+      "size": 4940
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-IsolatedProcessRunner.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-IsolatedProcessRunner.class",
+      "sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0",
+      "size": 40583
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-negative-provider-result.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-negative-provider-result.json",
+      "sha256": "f7e58299fed319cbac95e721f8728bf89c5d6d4249d67ffc399dfda2a5e0138f",
+      "size": 802
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-negative-receipt.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-negative-receipt.json",
+      "sha256": "7d3774c1f95b6b15e484890672eacfa12e4403d1bd0c9e82612975a6b4ac461b",
+      "size": 1032
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-negative.sarif",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-negative.sarif",
+      "sha256": "516387c6b9a7fe798c60015063a08ab6117368f2c45b6f69076640390b7007aa",
+      "size": 997
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-positive-provider-result.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-positive-provider-result.json",
+      "sha256": "7854a78c186b449d1f488119d0378ac8771984a0414a1b8dc294fe7cddc7fbe4",
+      "size": 1240
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-positive-receipt.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-positive-receipt.json",
+      "sha256": "83faf3fe2211000035b2003895aed2a604d4ae0efaf6f9e463dd93f3533fdc91",
+      "size": 1032
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-positive.sarif",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/coroutine-positive.sarif",
+      "sha256": "8ed7e1d76ee97781dc6c9869cc2ed772c7c45a82587030ba2e68bca366edff50",
+      "size": 1783
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-DetektCatalog.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-DetektCatalog.class",
+      "sha256": "adf770c2d77080cfbfa8d9d23457d9b6a68cfcb433b11b46562b51e95b04878b",
+      "size": 15414
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-DetektIntegrationTest.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-DetektIntegrationTest.class",
+      "sha256": "d5de2718c6596c91a96aaf759999f334f8b0f450212548432d7027e094ba7dc6",
+      "size": 73591
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-DetektProvider.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-DetektProvider.class",
+      "sha256": "8a45d6e072ff20ef108814c922f900be7610354b1239e61725f4b10e4933b013",
+      "size": 46911
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-DetektReportParser.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-DetektReportParser.class",
+      "sha256": "f4761054f5372bfc5597051fb40068b50957e19e3a4986f06843d8a9338e00ea",
+      "size": 16841
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270",
+      "size": 2441
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-ExecutionPermit.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-ExecutionPermit.class",
+      "sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724",
+      "size": 4940
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0",
+      "size": 40583
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-configuration-config.yml",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-configuration-config.yml",
+      "sha256": "8b8a59521cea3bd532eca26e1563e7f642d005547efbf6da1db5afc1c0e1f1c1",
+      "size": 442
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-configuration-provider-result.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-configuration-provider-result.json",
+      "sha256": "951ee71cc23bda75129e31acad00ef684f0f1951f4fd1ff68f738e2dda26cabe",
+      "size": 1497
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-configuration-receipt.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-configuration-receipt.json",
+      "sha256": "7512b19214862e88dc75bef74b6192f88e8f60c0ce57f14822c3764a9c3531ae",
+      "size": 3167
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-configuration.sarif",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-configuration.sarif",
+      "sha256": "c859adbc4c3cf7faf7013a3083787bb618402e2ec1d00601e33e9afe2636eead",
+      "size": 458
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-negative-config.yml",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-negative-config.yml",
+      "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "size": 561
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-negative-provider-result.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-negative-provider-result.json",
+      "sha256": "d88753dff503b2f281a12bc2b7c2c30804b5f81924d5a5f291102794af309a1e",
+      "size": 1536
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-negative-receipt.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-negative-receipt.json",
+      "sha256": "9ee3f0e1aff2c89062d88a13de4a49bb48a3085773276593af50e507b3fb0c15",
+      "size": 3147
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-negative.sarif",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-negative.sarif",
+      "sha256": "aded215c5c8300c4d620a8032c38368c203c8743f3a3b5ac0bce4756717466a9",
+      "size": 2030
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-positive-config.yml",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-positive-config.yml",
+      "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "size": 561
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-positive-provider-result.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-positive-provider-result.json",
+      "sha256": "b1598074cc00cdb78b53d8f9259eb59be7a60597942dfd12178b7812eb64b7e1",
+      "size": 8190
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-positive-receipt.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-positive-receipt.json",
+      "sha256": "cee868f3acd53656fa0020484238349293baa3327bc84b9fb8446de3e7219d73",
+      "size": 3147
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-positive.sarif",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-positive.sarif",
+      "sha256": "e925337f48ff2f480e3daff77e799f5449b6286618cb854566eea92e2a98b617",
+      "size": 4761
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-regression-config.yml",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-regression-config.yml",
+      "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "size": 561
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-regression-provider-result.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-regression-provider-result.json",
+      "sha256": "4f771fb8a20f5eb57532b5773fda0a2caedf82428e77e793ae06e72fe44614e6",
+      "size": 1536
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-regression-receipt.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-regression-receipt.json",
+      "sha256": "cbd0d54154577b613b182cac0a7692d632b22b65ba5df982753b40bf683fdf5a",
+      "size": 3155
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-regression.sarif",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-regression.sarif",
+      "sha256": "aded215c5c8300c4d620a8032c38368c203c8743f3a3b5ac0bce4756717466a9",
+      "size": 2030
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-suppression-config.yml",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-suppression-config.yml",
+      "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "size": 561
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-suppression-provider-result.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-suppression-provider-result.json",
+      "sha256": "f36e109cb48989a6002977bdcf767fb0af0d36b962d9a1e33ec71ddd26c00e90",
+      "size": 6643
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-suppression-receipt.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-suppression-receipt.json",
+      "sha256": "d03a51ac30584ec57fbedd3cd7d858b4062c519a5fa71f726d889c8220ae4490",
+      "size": 3159
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-suppression.sarif",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-suppression.sarif",
+      "sha256": "7fd716e6dbd08f9ccc09caaef0b519275b8e96aaf7eba2e34933c5889006b73f",
+      "size": 4765
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version-cli.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-version-cli.json",
+      "sha256": "a4d9415c1be02c231bac70bba0c9706d26dfadd62f231056460f9f3e8de92b20",
+      "size": 235
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version-config.yml",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-version-config.yml",
+      "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "size": 561
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version-provider-result.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-version-provider-result.json",
+      "sha256": "3a807a71a83c5b352ab8221af38ccc0c3b3ba6863ff1fc6612d8fa23caf6e0de",
+      "size": 6623
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version-receipt.json",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-version-receipt.json",
+      "sha256": "a6a97704af751a2a6aeaa549527ae59af74a8624d7444fb0427eaf3f0fb57a3c",
+      "size": 3143
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version.sarif",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/original/providers/detekt-fixtures/evidence-artifacts/syntax-version.sarif",
+      "sha256": "e925337f48ff2f480e3daff77e799f5449b6286618cb854566eea92e2a98b617",
+      "size": 4761
+    },
+    {
+      "original_path": "build/library-validation/2026-11-04T09-18-00Z.log",
+      "path": "providers/detekt-fixtures/runs/2026-11-04T09-49-14Z-historical-before-ci-evidence-root/gradle-output.log",
+      "sha256": "47c5ea47a44135266fd1498368871637b4f07d5fd1f3d86243173b99c1c6de35",
+      "size": 4260
+    }
+  ]
+}

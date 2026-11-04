@@ -1,0 +1,205 @@
+{
+  "schema": "ktchecker-benchmark-inputs/preview-1",
+  "scope": "single actual public synthetic two-client observation; not representative or qualified",
+  "recordedAt": "2026-11-04T12:27:53.060937+00:00",
+  "executionOS": "Linux",
+  "executionArchitecture": "x86_64",
+  "sourceState": {
+    "parentCommit": "80231008f5b4f515a37fb420dadc20062079c34a",
+    "dirty": true,
+    "script": "scripts/run_preview_example.py",
+    "scriptSha256": "6af5bdb1fdd694ba8a7d5cfd0669cf49e82b9cea8c211fd27848b5b687b928c4"
+  },
+  "observationSha256": "92e5f5ea7738a4fc45662bcd45449738ba197ac5832fbb3356b0eb7f35c88738",
+  "archives": [
+    {
+      "file": "ktchecker-0.1.0-dev.1.tar",
+      "bytes": 84071424,
+      "sha256": "16d48e3f7cf792606b8754adc927ca2d7c5c372358eb78153104465f14c128e8"
+    },
+    {
+      "file": "ktchecker-0.1.0-dev.1.zip",
+      "bytes": 77838264,
+      "sha256": "b4824c43134c37b134844421bbcb93a32f3fc0864692d9c7fd80b06bf0452721"
+    }
+  ],
+  "installedFiles": [
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "bytes": 5434,
+      "sha256": "778e59e79b3ce954e27de12eb6e855890e5a004fc9d8e87ec30afc4b10f69df0"
+    },
+    {
+      "path": "bin/ktchecker",
+      "bytes": 9499,
+      "sha256": "1fbd3fcb160270fd0afa10e92ae86097e0ea2b785fff8e9c7783ad886e763b45"
+    },
+    {
+      "path": "bin/ktchecker.bat",
+      "bytes": 3653,
+      "sha256": "b52575192e48f8578c041ab25491c97e2b40d0a660d071dce3cf76fff446dd45"
+    },
+    {
+      "path": "docs/implementation-contract.md",
+      "bytes": 7242,
+      "sha256": "2898aefbe51d9b0c258075a1b1a7a733e10bfb9b47e6f0224a586321c136abb9"
+    },
+    {
+      "path": "lib/annotations-13.0.jar",
+      "bytes": 17536,
+      "sha256": "ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478"
+    },
+    {
+      "path": "lib/cli-0.1.0-dev.1.jar",
+      "bytes": 977234,
+      "sha256": "8b775f0a61f21919095c7fb8e51dc1bd63847e33410ecf8d04f5ddf9791376d2"
+    },
+    {
+      "path": "lib/config-0.1.0-dev.1.jar",
+      "bytes": 399493,
+      "sha256": "ccb45329d130c34676732e13f4e7d139b079f5aa39f132a7c40e441bf81e7e24"
+    },
+    {
+      "path": "lib/contracts-0.1.0-dev.1.jar",
+      "bytes": 133059,
+      "sha256": "380ad8afe410dd1a324a683bd01e05a220b76982ec751f54a221ff2ecb364057"
+    },
+    {
+      "path": "lib/kernel-0.1.0-dev.1.jar",
+      "bytes": 374753,
+      "sha256": "57af0bde2c2c9dadb6ed475a31222561a63a456d2034b4f66ce718639a9833ee"
+    },
+    {
+      "path": "lib/kotlin-stdlib-2.4.21.jar",
+      "bytes": 1853315,
+      "sha256": "bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3"
+    },
+    {
+      "path": "lib/kotlinx-serialization-core-jvm-1.11.0.jar",
+      "bytes": 404509,
+      "sha256": "f4a801c647d4351327cd9e1ac4113e2be9ea37a64ab0abae269c25a52e28f35d"
+    },
+    {
+      "path": "lib/kotlinx-serialization-json-jvm-1.11.0.jar",
+      "bytes": 294166,
+      "sha256": "563a25b4eb5c9128ae9c2479f3d1a5c44dcd176112b91cf03682e906eba5c935"
+    },
+    {
+      "path": "lib/project-model-0.1.0-dev.1.jar",
+      "bytes": 192025,
+      "sha256": "6fdfe73ccfc11815c2ce2855a5a425de05bdb3a3ee26c138c52611534dde25f7"
+    },
+    {
+      "path": "lib/provider-compiler-0.1.0-dev.1.jar",
+      "bytes": 214997,
+      "sha256": "2a0661d11aa630740ceb75872423a297ee7e6c061f9963c2f7310e7af54a5bfb"
+    },
+    {
+      "path": "lib/provider-detekt-0.1.0-dev.1.jar",
+      "bytes": 109766,
+      "sha256": "0085915b7b89966c2f212be0af684a1c20dcb8f2b316a62d63a6c3baebb0e837"
+    },
+    {
+      "path": "lib/provider-ktlint-0.1.0-dev.1.jar",
+      "bytes": 93110,
+      "sha256": "baff68e8d520c384e8d870dceee6963dda100784f61b3d70a213efecce4d8c4a"
+    },
+    {
+      "path": "lib/provider-lint-0.1.0-dev.1.jar",
+      "bytes": 125112,
+      "sha256": "5f5a298601e1327d4eeb52c9bf686777937dda57d1871327352c1b31c789044d"
+    },
+    {
+      "path": "lib/provider-native-0.1.0-dev.1.jar",
+      "bytes": 185593,
+      "sha256": "4f43f76b34ce97ba1c4846e23f90dbf1f49d452f253052534de5acaf1d389ede"
+    },
+    {
+      "path": "lib/provider-runtime-0.1.0-dev.1.jar",
+      "bytes": 153129,
+      "sha256": "5f99764b4c3e6fadc0f2080e5299ab1a1d8562f80a0be9b7d88eeaa59d1b7309"
+    },
+    {
+      "path": "lib/review-controller-0.1.0-dev.1.jar",
+      "bytes": 78133,
+      "sha256": "aa65dded122735b83be74989262ab57b9760ffb5d3c4aa0ef202019748045dca"
+    },
+    {
+      "path": "lib/snapshot-0.1.0-dev.1.jar",
+      "bytes": 291051,
+      "sha256": "3c8914de64c6bc46cbf331a6f871d9836228b2696934505152625ff3be51e18a"
+    },
+    {
+      "path": "lib/sqlite-jdbc-3.54.1.0.jar",
+      "bytes": 12132578,
+      "sha256": "f8dce420a6016278497f4f0560f65602b9db858de141b541cf91a4644ebe4639"
+    },
+    {
+      "path": "providers/compiler/annotations-13.0.jar",
+      "bytes": 17536,
+      "sha256": "ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478"
+    },
+    {
+      "path": "providers/compiler/kotlin-build-tools-api-2.4.21.jar",
+      "bytes": 468126,
+      "sha256": "c5cd6a49bd072b529ae10809111c16a7aa0f92147e95d288354017fd65799461"
+    },
+    {
+      "path": "providers/compiler/kotlin-compiler-embeddable-2.4.21.jar",
+      "bytes": 58593291,
+      "sha256": "ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02"
+    },
+    {
+      "path": "providers/compiler/kotlin-daemon-embeddable-2.4.21.jar",
+      "bytes": 393410,
+      "sha256": "7b3ef24674e5bcffcadfc4e43202ea314194939ecbcdd90a4770b2f1b04e0d07"
+    },
+    {
+      "path": "providers/compiler/kotlin-reflect-1.6.10.jar",
+      "bytes": 3038560,
+      "sha256": "3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203"
+    },
+    {
+      "path": "providers/compiler/kotlin-script-runtime-2.4.21.jar",
+      "bytes": 46533,
+      "sha256": "a658cf5902a1525a06c264a5e42b437e97a6679ddeef8ca641246f270cf6a013"
+    },
+    {
+      "path": "providers/compiler/kotlin-stdlib-2.4.21.jar",
+      "bytes": 1853315,
+      "sha256": "bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3"
+    },
+    {
+      "path": "providers/compiler/kotlinx-coroutines-core-jvm-1.8.0.jar",
+      "bytes": 1548360,
+      "sha256": "9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5"
+    },
+    {
+      "path": "third_party/licenses/AOSP-Lint-NOTICE.txt",
+      "bytes": 10689,
+      "sha256": "a6b37a8add7ad2caa3741eb0b0c2a6d45e4dd9daab97ea74dcf985bbfc572dda"
+    },
+    {
+      "path": "third_party/licenses/Apache-2.0.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "third_party/licenses/Kotlin-COPYRIGHT.txt",
+      "bytes": 647,
+      "sha256": "8f1a1700adb5490604c6094fb137bf73f6c28d3ee554b58f3ff8ef975a79672d"
+    },
+    {
+      "path": "third_party/licenses/Kotlin-NOTICE.txt",
+      "bytes": 482,
+      "sha256": "0b09a83d3ef7795c7dec65e815866597c066c53898f2852a76599b8f5552941a"
+    },
+    {
+      "path": "third_party/licenses/Ktlint-MIT.txt",
+      "bytes": 1090,
+      "sha256": "b45bdb3357e761d4b1300470833cf5e5e9fafc32a5f98efef214ba926b0120d5"
+    }
+  ],
+  "releaseQualified": false,
+  "warmTargetDemonstrated": false
+}

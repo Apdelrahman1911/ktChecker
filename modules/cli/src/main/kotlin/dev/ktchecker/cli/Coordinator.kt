@@ -3,14 +3,26 @@ package dev.ktchecker.cli
 import dev.ktchecker.contracts.*
 import dev.ktchecker.providers.runtime.*
 import java.nio.file.Path
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.serialization.json.*
 
 /** Owner-installed code chooses profiles; project JSON cannot install a provider or a generator. */
 internal data class ProviderRoute(
     val provider: AnalysisProvider,
     val applicable: (AnalysisInput) -> Boolean,
     val executionProfile: ((AnalysisInput) -> TrustedExecution)? = null,
-)
+    /** Actual adapter + selected upstream byte identity, not a catalog or qualification claim. */
+    val implementationIdentity: String? = null,
+    /** Owner-only LIVE attempt projection; never regenerate a model profile from archived DTOs. */
+    val preparedChild: ((AnalysisInput, List<String>) -> AnalysisInput)? = null,
+    val finishAttempt: ((AnalysisInput) -> Unit)? = null,
+) {
+    init {
+        require((preparedChild == null) == (finishAttempt == null))
+        require(preparedChild == null || executionProfile == null) { "A retained model route cannot fall back to a profile generator" }
+    }
+}
 
 internal data class AuthorizedAttempt(
     val original: AnalysisInput,
@@ -52,13 +64,13 @@ internal class ExecutionGrants : ExecutionAuthority {
 /** Conservative whole declared-compilation scheduling; no unsound edited-line-only shortcut. */
 internal class ReviewCoordinator(
     private val catalog: Catalog,
-    val routes: List<ProviderRoute>,
+    routes: List<ProviderRoute>,
     private val grants: ExecutionGrants,
+    private val codeImage: CodeImage,
 ) : ProgressiveAnalysisProvider {
+    val routes: List<ProviderRoute> = Collections.unmodifiableList(routes.toList())
     override val id: String = "ktchecker-coordinator"
-    override val version: String = "0.1.0-dev.1/" + Digests.sha256(routes.joinToString("\n") {
-        "${it.provider.id}:${it.provider.version}"
-    }).removePrefix("sha256:").take(16)
+    override val version: String = coordinatorVersion(codeImage.digest, this.routes)
     override val supportedRuleIds: Set<String> = catalog.ids
     val findingProviders: Map<String, Set<String>> = supportedRuleIds.associateWith { rule ->
         routes.filter { rule in it.provider.supportedRuleIds }.map { it.provider.id }.toSet()
@@ -85,13 +97,18 @@ internal class ReviewCoordinator(
         val started = System.nanoTime()
         val all = mutableListOf<ProviderResult>()
         val claimed = mutableSetOf<String>()
-        val activation = validatedActivation(input, catalog)
         try {
+            // The version covers actual selected adapter/coordinator code and resource bytes,
+            // not merely upstream labels. In-place upgrades are unsupported; persistent drift
+            // invalidates this execution rather than reusing a cached implementation identity.
+            codeImage.verify()
+            val activation = validatedActivation(input, catalog)
             for ((route, ids) in plannedRoutes(input)) {
                 if (cancellation.isCancelled()) break
                 var child = input.copy(requiredRuleIds = ids, execution = null)
                 val observed = try {
-                    child = grants.grant(input, child, route)
+                    val retained = route.preparedChild
+                    child = if (retained == null) grants.grant(input, child, route) else retained(input, ids)
                     route.provider.analyze(child, cancellation)
                 } catch (_: Exception) {
                     ProviderResult(route.provider.id, "failed", coverage = ids.map {
@@ -104,6 +121,7 @@ internal class ReviewCoordinator(
                 // A partial result is intentionally incomplete and must not satisfy a final barrier.
                 onProgress(verified.copy(providerId = id, providerVersion = version, status = "partial"))
             }
+            codeImage.verify()
             val missing = (input.requiredRuleIds.toSet() - claimed).sorted().map { rule ->
                 val decision = activation[rule]
                 Coverage(rule, input.context.scope, when {
@@ -141,7 +159,10 @@ internal class ReviewCoordinator(
                     cpuMillis = all.mapNotNull { it.metrics.cpuMillis }.takeIf { it.size == all.size && it.isNotEmpty() }?.sum(),
                     peakRssBytes = null, outputBytes = all.sumOf { it.metrics.outputBytes }),
                 providerVersion = version)
-        } finally { grants.finish(input) }
+        } finally {
+            grants.finish(input)
+            routes.forEach { it.finishAttempt?.invoke(input) }
+        }
     }
 
     private fun normalizeChild(result: ProviderResult, route: ProviderRoute, input: AnalysisInput): ProviderResult {
@@ -162,4 +183,23 @@ internal class ReviewCoordinator(
             rows[rule]?.single() ?: Coverage(rule, input.context.scope, "incomplete", "provider_omitted_required_rule_context")
         })
     }
+}
+
+/** Ordered routing is semantic: changing precedence, installation bytes or normalization breaks reuse. */
+internal fun coordinatorVersion(codeDigest: String, routes: List<ProviderRoute>): String {
+    require(Digests.valid(codeDigest))
+    val descriptor = buildJsonObject {
+        put("schema", "ktchecker-coordinator-identity/1")
+        put("codeImage", codeDigest)
+        putJsonArray("routes") {
+            routes.forEach { route -> add(buildJsonObject {
+                put("id", route.provider.id)
+                put("version", route.provider.version)
+                put("implementation", route.implementationIdentity?.let(::JsonPrimitive) ?: JsonNull)
+                put("authorization", if (route.preparedChild == null) "ordinary-owner-profile" else "live-retained-model-attempt")
+                put("supportedRuleIds", ContractJson.encodeToJsonElement(route.provider.supportedRuleIds.sorted()))
+            }) }
+        }
+    }
+    return "0.1.0-dev.1/" + Digests.sha256(Digests.canonical(descriptor)).removePrefix("sha256:")
 }

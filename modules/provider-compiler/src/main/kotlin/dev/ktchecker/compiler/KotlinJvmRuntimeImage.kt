@@ -67,6 +67,13 @@ class KotlinJvmRuntimeImage private constructor(
     val byteCount: Long get() = image.byteCount
     val executableDigest: String get() = image.entries.single { it.path == "bin/${image.layout.javaName}" }.digest!!
 
+    /** Immutable typed projection of this capture, never a JSON inventory-to-authority API. */
+    fun view(): JvmRuntimeImageView = JvmRuntimeImageView(root, javaExecutable, digest, executableDigest,
+        image.layout.javaVersion, image.layout.osName, image.layout.architecture, image.entries.map { entry ->
+            JvmRuntimeEntryView(entry.path, if (entry.kind == "file") JvmRuntimeEntryKind.FILE else JvmRuntimeEntryKind.DIRECTORY,
+                entry.size, entry.digest, entry.executable, entry.executableBits)
+        })
+
     fun description(): Map<String, Any?> = mapOf(
         "schema" to "ktchecker/jdk-runtime-image-1", "root" to root.toString(), "digest" to digest,
         "java_version" to image.layout.javaVersion, "os_name" to image.layout.osName,

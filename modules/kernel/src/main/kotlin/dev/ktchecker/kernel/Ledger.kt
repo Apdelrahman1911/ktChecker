@@ -3,6 +3,7 @@ package dev.ktchecker.kernel
 import dev.ktchecker.contracts.ContractJson
 import dev.ktchecker.contracts.Digests
 import java.nio.file.Files
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
@@ -21,33 +22,65 @@ internal class Ledger(val root: Path, config: KernelConfig) {
         privateDirectory(root)
         if (Files.isSymbolicLink(database)) fail("unsafe_store", "Ledger must not be a symbolic link")
         Class.forName("org.sqlite.JDBC")
-        connection().use { c ->
-            c.createStatement().use { it.execute("PRAGMA journal_mode=WAL") }
+        // Reserve only a genuinely new file. An existing empty/unversioned store (including a
+        // first opener that has not committed yet) is NOT permission to initialize or repair it.
+        // Its owner can retry after that opener commits; abandoned stores need offline review.
+        val fresh = try { Files.createFile(database); true } catch (_: FileAlreadyExistsException) { false }
+        if (!Files.isRegularFile(database, LinkOption.NOFOLLOW_LINKS)) fail("unsafe_store", "Ledger must be a regular private file")
+        if (fresh) privateFile(database)
+        else {
+            // A normal read-only WAL snapshot is mandatory: immutable=1 would ignore locks
+            // while other instances checkpoint the main file. Never open a separate raw DB
+            // descriptor either: closing it can release this process's SQLite POSIX locks.
+            // SQLite may maintain transient SHM/read marks or empty sidecars for this read;
+            // rejected durable database/WAL contents and obligations are not rewritten.
+            read(readOnly = true) { c -> verifyRequiredTables(c) }
         }
-        transaction { c ->
-            SCHEMA.forEach { sql -> c.createStatement().use { it.execute(sql) } }
-            val storedVersion = c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) }
-            if (storedVersion != null && storedVersion != "1") fail("unsupported_schema", "Unsupported preview ledger schema")
-            c.execute("INSERT OR IGNORE INTO metadata(key,value) VALUES('schema_version','1')")
+        // No writer connection, WAL mode change, DDL or migration runs against a rejected v1
+        // store. Schema2 has NO migration/reset path and never discharges historical obligations.
+        write(checkVersion = false) { c ->
+            if (fresh) {
+                if (c.count("SELECT COUNT(*) FROM sqlite_schema") != 0L) unsupportedVersion()
+                SCHEMA.forEach { sql -> c.createStatement().use { it.execute(sql) } }
+                c.execute("INSERT INTO metadata(key,value) VALUES('schema_version',?)", SCHEMA_VERSION)
+            } else { verifyVersion(c); verifyRequiredTables(c) }
             // Scheduling/coverage policy is one durable authority, not a per-process mutable preference.
             val sharedPolicy = config.copy(workerCount = 0, pollMillis = 1, heartbeatMillis = 1, leaseMillis = 3)
             val digest = Digests.sha256(ContractJson.encodeToString(sharedPolicy))
             val existing = c.one("SELECT value FROM metadata WHERE key='policy_digest'") { it.getString(1) }
-            if (existing != null && existing != digest) fail("policy_mismatch", "Service configuration differs from durable ledger policy")
-            c.execute("INSERT OR IGNORE INTO metadata(key,value) VALUES('policy_digest',?)", digest)
-            c.execute("INSERT OR IGNORE INTO metadata(key,value) VALUES('dispatch_counter','0')")
+            if (fresh) {
+                c.execute("INSERT INTO metadata(key,value) VALUES('policy_digest',?)", digest)
+                c.execute("INSERT INTO metadata(key,value) VALUES('dispatch_counter','0')")
+            } else {
+                if (existing != digest) fail("policy_mismatch", "Service configuration differs from durable ledger policy")
+                if (c.count("SELECT COUNT(*) FROM metadata WHERE key='dispatch_counter'") != 1L) {
+                    fail("ledger_corrupt", "Durable scheduling metadata is unavailable")
+                }
+            }
         }
-        privateFile(database)
-        listOf("ledger.sqlite-wal", "ledger.sqlite-shm").forEach { file ->
-            val p = root.resolve(file)
-            if (Files.exists(p, LinkOption.NOFOLLOW_LINKS)) privateFile(p)
+        connection().use { c ->
+            verifyVersion(c)
+            c.createStatement().use { it.execute("PRAGMA journal_mode=WAL") }
+            // Read after enabling WAL so even a fresh DELETE-mode store attaches this
+            // connection to WAL. Keep it open through permission checks: otherwise another
+            // instance's last close can remove a sidecar between exists() and chmod().
+            // Permission/symlink failures still propagate, and use closes on every failure.
+            verifyVersion(c)
+            privateFile(database)
+            listOf("ledger.sqlite-wal", "ledger.sqlite-shm").forEach { file ->
+                val p = root.resolve(file)
+                if (Files.exists(p, LinkOption.NOFOLLOW_LINKS)) privateFile(p)
+            }
         }
     }
 
-    private fun connection(): Connection {
+    private fun connection(readOnly: Boolean = false): Connection {
         val started = System.nanoTime()
         try {
-            return DriverManager.getConnection("jdbc:sqlite:$database").also { c ->
+            // All reads retain SQLite's live WAL/locking guarantees. rw never recreates a
+            // removed store; ro preflight cannot write or migrate an unsupported ledger.
+            val url = "jdbc:sqlite:${database.toUri()}?mode=${if (readOnly) "ro" else "rw"}"
+            return DriverManager.getConnection(url).also { c ->
                 try {
                     c.createStatement().use { s ->
                         s.execute("PRAGMA busy_timeout=15000")
@@ -64,10 +97,13 @@ internal class Ledger(val root: Path, config: KernelConfig) {
         }
     }
 
-    fun <T> read(block: (Connection) -> T): T = connection().use { c ->
+    fun <T> read(block: (Connection) -> T): T = read(readOnly = false, block = block)
+
+    private fun <T> read(readOnly: Boolean, block: (Connection) -> T): T = connection(readOnly).use { c ->
         val started = System.nanoTime()
         c.createStatement().use { it.execute("BEGIN") }
         try {
+            verifyVersion(c)
             val result = block(c)
             c.createStatement().use { it.execute("COMMIT") }
             result
@@ -79,7 +115,9 @@ internal class Ledger(val root: Path, config: KernelConfig) {
         }
     }
 
-    fun <T> transaction(block: (Connection) -> T): T = connection().use { c ->
+    fun <T> transaction(block: (Connection) -> T): T = write(checkVersion = true, block = block)
+
+    private fun <T> write(checkVersion: Boolean, block: (Connection) -> T): T = connection().use { c ->
         val waiting = System.nanoTime()
         try {
             c.createStatement().use { it.execute("BEGIN IMMEDIATE") }
@@ -88,6 +126,7 @@ internal class Ledger(val root: Path, config: KernelConfig) {
         }
         val started = System.nanoTime()
         try {
+            if (checkVersion) verifyVersion(c)
             val result = block(c)
             c.createStatement().use { it.execute("COMMIT") }
             result
@@ -99,14 +138,36 @@ internal class Ledger(val root: Path, config: KernelConfig) {
         }
     }
 
+    private fun verifyVersion(c: Connection) {
+        if (c.count("SELECT COUNT(*) FROM sqlite_schema WHERE type='table' AND name='metadata'") != 1L) unsupportedVersion()
+        val version = c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) }
+        if (version != SCHEMA_VERSION) unsupportedVersion()
+    }
+
+    private fun verifyRequiredTables(c: Connection) {
+        val present = c.query("SELECT name FROM sqlite_schema WHERE type='table'") { it.getString(1) }.toSet()
+        if (!present.containsAll(REQUIRED_TABLES)) fail("ledger_corrupt",
+            "Required schema2 ledger tables are missing; offline owner reconciliation is required, not automatic repair")
+    }
+
+    private fun unsupportedVersion(): Nothing = fail("unsupported_schema",
+        "Only ledger schema2 is supported; stop all old processes and reconcile old obligations offline; no migration or reset is available")
+
     companion object {
+        private const val SCHEMA_VERSION = "2"
+        private val REQUIRED_TABLES = setOf(
+            "metadata", "clients", "instances", "fair_queues", "fair_clients", "work", "reviews",
+            "parent_plans", "plan_slots", "routing_batches", "routing_members", "work_progress",
+            "work_certificates", "events", "receipts", "acknowledgements", "observations", "gate_cuts",
+        )
         private val SCHEMA = listOf(
             "CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)",
             """CREATE TABLE IF NOT EXISTS clients(
                 client_id TEXT PRIMARY KEY,binding_json TEXT NOT NULL,client_hash TEXT NOT NULL UNIQUE,
                 adapter_hash TEXT NOT NULL UNIQUE,epoch INTEGER NOT NULL DEFAULT 0,
                 next_review INTEGER NOT NULL DEFAULT 1,next_event INTEGER NOT NULL DEFAULT 1,
-                gate_state TEXT NOT NULL DEFAULT 'open',active_cut_id TEXT)""",
+                gate_state TEXT NOT NULL DEFAULT 'open',active_cut_id TEXT,
+                routed_obligations INTEGER NOT NULL DEFAULT 0 CHECK(routed_obligations IN (0,1)))""",
             """CREATE TABLE IF NOT EXISTS instances(
                 instance_id TEXT PRIMARY KEY,pid INTEGER NOT NULL,process_start TEXT,
                 heartbeat INTEGER NOT NULL,closed INTEGER NOT NULL DEFAULT 0)""",
@@ -135,13 +196,22 @@ internal class Ledger(val root: Path, config: KernelConfig) {
             """CREATE TABLE IF NOT EXISTS parent_plans(
                 plan_id TEXT PRIMARY KEY,client_id TEXT NOT NULL,patch_id TEXT NOT NULL,idempotency_key TEXT NOT NULL,
                 request_hash TEXT NOT NULL,definition_json TEXT NOT NULL,plan_digest TEXT NOT NULL,
-                review_frontier INTEGER NOT NULL,cancelled INTEGER NOT NULL DEFAULT 0,
+                review_frontier INTEGER NOT NULL,cancelled INTEGER NOT NULL DEFAULT 0,routing_id TEXT,
                 UNIQUE(client_id,patch_id),UNIQUE(client_id,idempotency_key),
                 FOREIGN KEY(client_id) REFERENCES clients(client_id))""",
             """CREATE TABLE IF NOT EXISTS plan_slots(
                 plan_id TEXT NOT NULL,slot_id TEXT NOT NULL,review_id TEXT NOT NULL UNIQUE,
                 PRIMARY KEY(plan_id,slot_id),FOREIGN KEY(plan_id) REFERENCES parent_plans(plan_id),
                 FOREIGN KEY(review_id) REFERENCES reviews(review_id))""",
+            """CREATE TABLE IF NOT EXISTS routing_batches(
+                routing_id TEXT PRIMARY KEY,origin_client_id TEXT NOT NULL,origin_plan_id TEXT NOT NULL UNIQUE,
+                definition_json TEXT NOT NULL,routing_digest TEXT NOT NULL,
+                FOREIGN KEY(origin_client_id) REFERENCES clients(client_id),
+                FOREIGN KEY(origin_plan_id) REFERENCES parent_plans(plan_id))""",
+            """CREATE TABLE IF NOT EXISTS routing_members(
+                routing_id TEXT NOT NULL,client_id TEXT NOT NULL,plan_id TEXT NOT NULL UNIQUE,
+                PRIMARY KEY(routing_id,client_id),FOREIGN KEY(routing_id) REFERENCES routing_batches(routing_id),
+                FOREIGN KEY(client_id) REFERENCES clients(client_id),FOREIGN KEY(plan_id) REFERENCES parent_plans(plan_id))""",
             """CREATE TABLE IF NOT EXISTS work_progress(
                 work_key TEXT NOT NULL,payload_digest TEXT NOT NULL,payload_json TEXT NOT NULL,
                 sequence INTEGER NOT NULL,byte_count INTEGER NOT NULL,

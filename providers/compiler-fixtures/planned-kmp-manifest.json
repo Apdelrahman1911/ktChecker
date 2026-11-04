@@ -1,0 +1,882 @@
+{
+  "schema_version": 1,
+  "kotlin_version": "2.4.21",
+  "target": "jvm",
+  "status": "planned_unsupported_sealed_source_roles_not_available",
+  "execution_policy": "Do not merge/concatenate these inputs into one module or execute them through the ordinary fixture runner. Requires owner-approved sealed source roles, refines and provider-generated copied-source path flags first.",
+  "not_demonstrated": [
+    "common metadata compilation",
+    "Android",
+    "Native/iOS actualization",
+    "linking",
+    "simulator execution",
+    "full project graph",
+    "qualification"
+  ],
+  "fixtures": [
+    {
+      "rule_id": "ktc.compiler.common.expected_declaration_with_body",
+      "upstream_id": "EXPECTED_DECLARATION_WITH_BODY",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_declarations",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L826",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expected_declaration_with_body/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_declaration_with_body/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expected_declaration_with_body/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_declaration_with_body/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECTED_DECLARATION_WITH_BODY at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECTED_DECLARATION_WITH_BODY under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A bodyless expect with the implementation in its actual fragment is valid; this is not demonstrated by placing both files in one module.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_property_initializer",
+      "upstream_id": "EXPECTED_PROPERTY_INITIALIZER",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_declarations",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L831",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expected_property_initializer/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_property_initializer/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expected_property_initializer/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_property_initializer/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECTED_PROPERTY_INITIALIZER at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECTED_PROPERTY_INITIALIZER under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An actual property initializer is legitimate; an expected common property describes a contract without storage.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_private_declaration",
+      "upstream_id": "EXPECTED_PRIVATE_DECLARATION",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_declarations",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L835",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expected_private_declaration/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_private_declaration/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expected_private_declaration/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_private_declaration/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECTED_PRIVATE_DECLARATION at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECTED_PRIVATE_DECLARATION under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A private ordinary common helper is legitimate; a cross-fragment expected contract uses accessible matching declarations. Preserve any actual positive visibility/matching diagnostics.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_lateinit_property",
+      "upstream_id": "EXPECTED_LATEINIT_PROPERTY",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_declarations",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L833",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expected_lateinit_property/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_lateinit_property/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expected_lateinit_property/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_lateinit_property/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECTED_LATEINIT_PROPERTY at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECTED_LATEINIT_PROPERTY under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "The actual implementation may own storage/initialization; common expect declarations must not claim lateinit storage semantics.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_delegated_property",
+      "upstream_id": "EXPECTED_DELEGATED_PROPERTY",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_declarations",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L832",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expected_delegated_property/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_delegated_property/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expected_delegated_property/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_delegated_property/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECTED_DELEGATED_PROPERTY at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECTED_DELEGATED_PROPERTY under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Property delegation belongs to the implementation; a bodyless common expect with an ordinary actual initializer is a genuine counterpart.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_class_constructor_property_parameter",
+      "upstream_id": "EXPECTED_CLASS_CONSTRUCTOR_PROPERTY_PARAMETER",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_declarations",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L828",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expected_class_constructor_property_parameter/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_class_constructor_property_parameter/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expected_class_constructor_property_parameter/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expected_class_constructor_property_parameter/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECTED_CLASS_CONSTRUCTOR_PROPERTY_PARAMETER at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECTED_CLASS_CONSTRUCTOR_PROPERTY_PARAMETER under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Separate expected constructor parameters and expected properties are legitimate; an actual class may implement storage in its body.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.supertype_initialized_in_expected_class",
+      "upstream_id": "SUPERTYPE_INITIALIZED_IN_EXPECTED_CLASS",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_declarations",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L834",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/supertype_initialized_in_expected_class/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/supertype_initialized_in_expected_class/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/supertype_initialized_in_expected_class/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/supertype_initialized_in_expected_class/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual SUPERTYPE_INITIALIZED_IN_EXPECTED_CLASS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit SUPERTYPE_INITIALIZED_IN_EXPECTED_CLASS under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Superclass initialization belongs to the actual class; common non-expect support classes are not falsely omitted from the fragment graph.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.implementation_by_delegation_in_expect_class",
+      "upstream_id": "IMPLEMENTATION_BY_DELEGATION_IN_EXPECT_CLASS",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_declarations",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L838",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/implementation_by_delegation_in_expect_class/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/implementation_by_delegation_in_expect_class/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/implementation_by_delegation_in_expect_class/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/implementation_by_delegation_in_expect_class/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual IMPLEMENTATION_BY_DELEGATION_IN_EXPECT_CLASS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit IMPLEMENTATION_BY_DELEGATION_IN_EXPECT_CLASS under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Delegation in the actual implementation is a legitimate control; inherited/fake-override actualization must be checked by the pinned matching semantics.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_missing",
+      "upstream_id": "ACTUAL_MISSING",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_matching",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L881",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/actual_missing/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/actual_missing/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/actual_missing/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/actual_missing/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual ACTUAL_MISSING at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit ACTUAL_MISSING under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "The matching class must be actual, but legitimate inherited fake-override members are not required to repeat actual mechanically.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_without_expect",
+      "upstream_id": "ACTUAL_WITHOUT_EXPECT",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_matching",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L849",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/actual_without_expect/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/actual_without_expect/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/actual_without_expect/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/actual_without_expect/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual ACTUAL_WITHOUT_EXPECT at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit ACTUAL_WITHOUT_EXPECT under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Additional platform-only ordinary declarations are legitimate and do not require an expect; the invalid control alone claims actual.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_function_with_default_arguments",
+      "upstream_id": "ACTUAL_FUNCTION_WITH_DEFAULT_ARGUMENTS",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_matching",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L845",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/actual_function_with_default_arguments/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/actual_function_with_default_arguments/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/actual_function_with_default_arguments/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/actual_function_with_default_arguments/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual ACTUAL_FUNCTION_WITH_DEFAULT_ARGUMENTS at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit ACTUAL_FUNCTION_WITH_DEFAULT_ARGUMENTS under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Defaults owned by the expect remain usable in the platform compilation; actual declarations must not redeclare them.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_type_alias_to_nullable_type",
+      "upstream_id": "ACTUAL_TYPE_ALIAS_TO_NULLABLE_TYPE",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_matching",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L843",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/actual_type_alias_to_nullable_type/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/actual_type_alias_to_nullable_type/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/actual_type_alias_to_nullable_type/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/actual_type_alias_to_nullable_type/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual ACTUAL_TYPE_ALIAS_TO_NULLABLE_TYPE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit ACTUAL_TYPE_ALIAS_TO_NULLABLE_TYPE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "A supported non-null actual class typealias can be valid; ordinary nullable aliases without an expect/actual claim remain legitimate.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_return_type",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_RETURN_TYPE",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_matching",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L851",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_return_type/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_return_type/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_return_type/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_return_type/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECT_ACTUAL_INCOMPATIBLE_RETURN_TYPE at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECT_ACTUAL_INCOMPATIBLE_RETURN_TYPE under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Same-name functions with unrelated return contracts are not actual matches; target-specific ordinary overloads may still be legitimate without actual.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_parameter_names",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_PARAMETER_NAMES",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_matching",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L852",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_parameter_names/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_parameter_names/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_parameter_names/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_parameter_names/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECT_ACTUAL_INCOMPATIBLE_PARAMETER_NAMES at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECT_ACTUAL_INCOMPATIBLE_PARAMETER_NAMES under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Parameter-name compatibility protects expected named calls; inherited/fake overrides need separately reviewed pinned exceptions rather than blanket name matching.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_property_kind",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_KIND",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_matching",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L861",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_property_kind/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_property_kind/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_property_kind/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/expect_actual_incompatible_property_kind/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_KIND at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_KIND under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "An actual var for an expected val is legitimate capability widening; this candidate tests the prohibited read-only actual for a mutable contract.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    },
+    {
+      "rule_id": "ktc.compiler.ir.no_actual_for_expect",
+      "upstream_id": "NO_ACTUAL_FOR_EXPECT",
+      "declared_severity": "error",
+      "authored_cohort": "2026-11-04-kmp_matching",
+      "status": "planned_unsupported_sealed_source_roles_not_available",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xmulti-platform",
+        "-Xexpect-actual-classes"
+      ],
+      "fragments": [
+        "common",
+        "jvm"
+      ],
+      "refines": [
+        {
+          "from": "jvm",
+          "on": "common"
+        }
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/ir/ir.actualization/src/main/kotlin/org/jetbrains/kotlin/backend/common/actualizer/IrActualizationErrors.kt#L27",
+      "positive_sources": [
+        {
+          "path": "planned-kmp-cases/no_actual_for_expect/positive/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/no_actual_for_expect/positive/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "negative_sources": [
+        {
+          "path": "planned-kmp-cases/no_actual_for_expect/negative/common.kt",
+          "fragment": "common"
+        },
+        {
+          "path": "planned-kmp-cases/no_actual_for_expect/negative/jvm.kt",
+          "fragment": "jvm"
+        }
+      ],
+      "validation_plan": {
+        "positive": "Proposed: execute Kotlin2.4.21 on the complete explicit common -> JVM source-role/refines graph; require actual NO_ACTUAL_FOR_EXPECT at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.",
+        "negative": "Proposed: execute the independently corrected counterpart in the complete explicit common -> JVM source-role/refines graph; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.",
+        "configuration": "Proposed: re-emit NO_ACTUAL_FOR_EXPECT under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.",
+        "version": "Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.",
+        "suppression": "Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.",
+        "regression": "Proposed: independently moved/changed positive and corrected counterpart within the complete explicit common -> JVM source-role/refines graph; verify new point/file/snapshot binding. Authored source is not an executed receipt.",
+        "legitimate_or_intentional_alternative": "Missing actualization must be observed through FIR2IR in the selected final JVM fragment; a common-only metadata compilation does not require every final-target actual.",
+        "evidence_state": "not_run; source-only authorship"
+      }
+    }
+  ]
+}

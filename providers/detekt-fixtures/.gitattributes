@@ -1,0 +1,5 @@
+# Preserve the exact bytes bound by report, receipt and historical witness hashes.
+evidence-artifacts/** -text
+runs/** -text
+# Preserve upstream console bytes without weakening authored source checks.
+runs/**/gradle-output.log -whitespace

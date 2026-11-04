@@ -1,0 +1,78 @@
+[
+  {
+    "path": "modules/provider-detekt/build.gradle.kts",
+    "sha256": "a0904d94efbd633775c63a24b1072f09b62d3b3bcb2561f87f3de8bb3e34c38f"
+  },
+  {
+    "path": "modules/provider-detekt/src/corpusTest/kotlin/dev/ktchecker/providers/detekt/DetektSyntaxCorpusIntegrationTest.kt",
+    "sha256": "eca502280f75322b41029ead300ed4e7bc3e43ac7ed58f8eefdd2b4c88f36b41"
+  },
+  {
+    "path": "modules/provider-detekt/src/test/kotlin/dev/ktchecker/providers/detekt/NativeFixtureEvidence.kt",
+    "sha256": "a3f0153fb224f0f981859f4ec338cbb81ff6e24d820b208b94f8593e6a083253"
+  },
+  {
+    "path": "modules/provider-detekt/src/test/kotlin/dev/ktchecker/providers/detekt/DetektIntegrationTest.kt",
+    "sha256": "b2beace838d234f12667a4d8a22ce31146769db99c4c38f6abe2591d1c211b9f"
+  },
+  {
+    "path": "modules/provider-detekt/src/test/kotlin/dev/ktchecker/providers/detekt/DetektProviderTest.kt",
+    "sha256": "ed60621b2794df34067e2918d91144ec1009394d71201170aa1e3e78b9c5e791"
+  },
+  {
+    "path": "modules/provider-detekt/src/main/resources/detekt-artifacts.json",
+    "sha256": "09575c9dfdd6d1cbb751532edbae0f5408113102240a6f2220c1e45c63a4b937"
+  },
+  {
+    "path": "modules/provider-detekt/src/main/resources/detekt-rule-map.json",
+    "sha256": "47ce5a08d971f8174441a578130188915a141e3c80724f3553609e3672aa1202"
+  },
+  {
+    "path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektReport.kt",
+    "sha256": "5c2a647cfffe3b3f550faf3f65face5bdb104d2f506c3e2f6c9a067cb0b2c7f8"
+  },
+  {
+    "path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektProvider.kt",
+    "sha256": "35acaa2a4414194c3b44316ec11ecd731e6712268f7357046217c7b3dfab4b52"
+  },
+  {
+    "path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektCatalog.kt",
+    "sha256": "fb697c39dd95d9d98854d56f7f365baf431aeb33dc303624f4ce266cb5b00640"
+  },
+  {
+    "path": "modules/provider-ktlint/build.gradle.kts",
+    "sha256": "b60347d9cf66cbb25d7362ad1b239024e13c5bfc32f91039fa62461e236d73b3"
+  },
+  {
+    "path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/NativeFixtureEvidence.kt",
+    "sha256": "f32e8142f89445f9c870f416087410575ac76272347a98ed9095e67809006fd7"
+  },
+  {
+    "path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintIntegrationTest.kt",
+    "sha256": "7d3aace55f4a308502d9085ee13fb4a03c944ff76737a4373b925569951c871f"
+  },
+  {
+    "path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintProviderTest.kt",
+    "sha256": "1634c3fcf03d1f7d56574c407af300fed054024ac854cd6c0a99e17d6a6db0db"
+  },
+  {
+    "path": "modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+    "sha256": "d4b008829ee945561ad1d2867a094746158a1aac67e499f9450c02774a1f4dad"
+  },
+  {
+    "path": "modules/provider-ktlint/src/main/resources/ktlint-artifacts.json",
+    "sha256": "183dc473c053df6fe15d78441fac315d887e9bf8d3fcef5643ef1727a0a66c22"
+  },
+  {
+    "path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintCatalog.kt",
+    "sha256": "5d77dc2584647ae03aed17f9279ae239ff03c5ed214c84a2b093ad35cfdec678"
+  },
+  {
+    "path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintProvider.kt",
+    "sha256": "140144d434736f97530037e35f3a03a4fd2b8c0350d5224f3d90ea70ec7ea6c6"
+  },
+  {
+    "path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintReport.kt",
+    "sha256": "e0c1dea267a69fbd87223e76ac1901fc35c11faf06faa3f339c415d1246b7e57"
+  }
+]

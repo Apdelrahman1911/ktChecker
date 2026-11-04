@@ -1,0 +1,410 @@
+{
+  "schema_version": 1,
+  "preserved_at_utc": "2026-11-04T10:03:07.652723+00:00",
+  "state": "failed_real_suite_no_passing_sidecar",
+  "original_command": "./gradlew --no-daemon --max-workers=1 :contracts:test :snapshot:test :kernel:test :config:test :provider-runtime:test :semantic-facts:test :project-model:test :provider-architecture:test :audit:test :provider-lint:test :provider-native:test :provider-detekt:test :provider-ktlint:test -PdetektIntegration=true -PktlintIntegration=true --continue",
+  "original_exit_code": 1,
+  "ktlint_junit": {
+    "tests": 18,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0
+  },
+  "failure": "Six-case integration stopped at suppression: expected exactly four adjacent unsuppressed findings, actual five; Compose.kt line 10 SuppressedExample was additionally emitted despite declaration @Suppress(\"ktlint:compose:param-order-check\").",
+  "completed_cases": [
+    "positive",
+    "negative",
+    "configuration",
+    "version"
+  ],
+  "failed_case": "suppression",
+  "unreached_cases": [
+    "regression"
+  ],
+  "additional_configuration_parse_integration_passed": true,
+  "original_suppression_report": [
+    {
+      "file": "Compose.kt",
+      "errors": [
+        {
+          "line": 6,
+          "column": 5,
+          "message": "Parameters in a composable function should be ordered following this pattern: params without defaults, modifiers, params with defaults and optionally, a trailing function that might not have a default param.\nCurrent params are: [optional: String = \"\", required: Int] but could be [required: Int, optional: String = \"\"].\nSee https://mrmans0n.github.io/compose-rules/rules/#ordering-composable-parameters-properly for more information.",
+          "rule": "compose:param-order-check"
+        },
+        {
+          "line": 10,
+          "column": 5,
+          "message": "Parameters in a composable function should be ordered following this pattern: params without defaults, modifiers, params with defaults and optionally, a trailing function that might not have a default param.\nCurrent params are: [optional: String = \"\", required: Int] but could be [required: Int, optional: String = \"\"].\nSee https://mrmans0n.github.io/compose-rules/rules/#ordering-composable-parameters-properly for more information.",
+          "rule": "compose:param-order-check"
+        }
+      ]
+    },
+    {
+      "file": "Newline.kt",
+      "errors": [
+        {
+          "line": 3,
+          "column": 20,
+          "message": "File must end with a newline (\\n)",
+          "rule": "standard:final-newline"
+        }
+      ]
+    },
+    {
+      "file": "Whitespace.kt",
+      "errors": [
+        {
+          "line": 3,
+          "column": 24,
+          "message": "Trailing space(s)",
+          "rule": "standard:no-trailing-spaces"
+        }
+      ]
+    },
+    {
+      "file": "Wildcard.kt",
+      "errors": [
+        {
+          "line": 3,
+          "column": 1,
+          "message": "Wildcard import",
+          "rule": "standard:no-wildcard-imports"
+        }
+      ]
+    }
+  ],
+  "expected_suppression_findings": 4,
+  "actual_suppression_findings": 5,
+  "passing_live_sidecar": false,
+  "qualified": false,
+  "new_execution": false,
+  "source_provenance": "All 17 genuine START source/resource/fixture/loaded-class references matched before any edit. Original bytes and refs are preserved unchanged; module build file is supplementary post-run association, not a START witness. No source-to-bytecode proof is inferred.",
+  "verified_original_start_reference_count": 17,
+  "files": [
+    {
+      "original_path": "modules/provider-ktlint/build/test-results/test/TEST-dev.ktchecker.providers.ktlint.KtlintIntegrationTest.xml",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/build/test-results/test/TEST-dev.ktchecker.providers.ktlint.KtlintIntegrationTest.xml",
+      "sha256": "c5ae41481e1a603dfb37e13c2d5676f8d134ef3d5dd65972dedb9756f78f15c2",
+      "size": 2171
+    },
+    {
+      "original_path": "modules/provider-ktlint/build/test-results/test/TEST-dev.ktchecker.providers.ktlint.KtlintProviderTest.xml",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/build/test-results/test/TEST-dev.ktchecker.providers.ktlint.KtlintProviderTest.xml",
+      "sha256": "07fec86a23a9db34dc87b9c5b9c025ac64aca36b57c5b38d433cf13328c9bbfb",
+      "size": 2896
+    },
+    {
+      "original_path": "modules/provider-ktlint/build.gradle.kts",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/build.gradle.kts",
+      "sha256": "b60347d9cf66cbb25d7362ad1b239024e13c5bfc32f91039fa62461e236d73b3",
+      "size": 639
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintCatalog.kt",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintCatalog.kt",
+      "sha256": "5d77dc2584647ae03aed17f9279ae239ff03c5ed214c84a2b093ad35cfdec678",
+      "size": 4525
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintProvider.kt",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintProvider.kt",
+      "sha256": "140144d434736f97530037e35f3a03a4fd2b8c0350d5224f3d90ea70ec7ea6c6",
+      "size": 20331
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintReport.kt",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintReport.kt",
+      "sha256": "e0c1dea267a69fbd87223e76ac1901fc35c11faf06faa3f339c415d1246b7e57",
+      "size": 5760
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/resources/ktlint-artifacts.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/src/main/resources/ktlint-artifacts.json",
+      "sha256": "183dc473c053df6fe15d78441fac315d887e9bf8d3fcef5643ef1727a0a66c22",
+      "size": 1555
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+      "sha256": "d4b008829ee945561ad1d2867a094746158a1aac67e499f9450c02774a1f4dad",
+      "size": 119199
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintIntegrationTest.kt",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintIntegrationTest.kt",
+      "sha256": "3040985ae0ead5354d7f660df971932b17e464b2876e987a79e2a7f83d230045",
+      "size": 22833
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintProviderTest.kt",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintProviderTest.kt",
+      "sha256": "1634c3fcf03d1f7d56574c407af300fed054024ac854cd6c0a99e17d6a6db0db",
+      "size": 10750
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/cases/negative/sources.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/cases/negative/sources.json",
+      "sha256": "9780f00dab2d12189647ef8ee4d9a1504a66e788f44b382f6878bd1c773145b3",
+      "size": 691
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/cases/positive/sources.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/cases/positive/sources.json",
+      "sha256": "cf425cea08ffd73cd0fb8d3c5d22fa1022eef75e968e652ab7b303cdb34d5786",
+      "size": 688
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/cases/suppression/sources.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/cases/suppression/sources.json",
+      "sha256": "b518d6ada3882dcca17b564ab3b4eaa73b76d96b66e7bebd7afc8fb07f65044b",
+      "size": 1259
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-exemption-provider-result.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/configuration-exemption-provider-result.json",
+      "sha256": "9369357f18f6aca8c89b58ac4143075533f2f4602541fe5f1db431c4b1c383f2",
+      "size": 9265
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-exemption-report.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/configuration-exemption-report.json",
+      "sha256": "3fbbd4c6d76130399b0c79cdf41758669224a91e05b7b216953f0c9728750865",
+      "size": 4
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-inheritance-provider-result.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/configuration-inheritance-provider-result.json",
+      "sha256": "9ad8b82070750dea70a15d9c428cc48df5664bfe5a53883b461de8106d5fcb83",
+      "size": 10671
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-inheritance-report.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/configuration-inheritance-report.json",
+      "sha256": "a462e73fb37cacda679022365344b983de098920e757d6d551257107c3b16a36",
+      "size": 260
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-parse-failure-provider-result.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/configuration-parse-failure-provider-result.json",
+      "sha256": "3d036b21d57ca8bda0fb0e1099b77046b090c27b63b996259cdd627c58d555d9",
+      "size": 9106
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-parse-failure-report.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/configuration-parse-failure-report.json",
+      "sha256": "1b7f419249d53b7c3e3c035beb43ddd3cd3bef3cd4db0f9b36d32f3871b83ccc",
+      "size": 270
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270",
+      "size": 2441
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-ExecutionPermit.class",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-ExecutionPermit.class",
+      "sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724",
+      "size": 4940
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0",
+      "size": 40583
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintCatalog.class",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintCatalog.class",
+      "sha256": "1b4939b92c468eac68a59035f9fffc6b07064ccaf34f6a96fda357db871aec02",
+      "size": 15551
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintIntegrationTest.class",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintIntegrationTest.class",
+      "sha256": "6aa7c0a92cf2a79848baa577b5b6acbf4bec57211084203e89e83b83ed15e473",
+      "size": 76030
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintProvider.class",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintProvider.class",
+      "sha256": "e2fd8fc54ccfbb8b2f63e8258bc337a6f5d7b127557e5bfc879411dbb06221cf",
+      "size": 50069
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintReportParser.class",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintReportParser.class",
+      "sha256": "a294aeeab29ae6c22d1e4be0a6fc71ffc96c03aaf2dbddc89514c2ba32258341",
+      "size": 15326
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-editorconfig",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-editorconfig",
+      "sha256": "049382fa52576747a64dcf7d1b9c77cc3673361ce75ef38a6e2bb08626e15e68",
+      "size": 6871
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-process.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-process.json",
+      "sha256": "489c9cbb9904b1499af669a572abe0036ec2c3e1a0ba3a7a2b67a2c8090cd5d3",
+      "size": 49353
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-provider-result.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-provider-result.json",
+      "sha256": "a60a8eb7c26155d46acd16e2a483c66d7091b000ad1303c195de0ff1273dff4b",
+      "size": 10298
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-receipt.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-receipt.json",
+      "sha256": "ba153ff23b9ed358f9f955f610552443cf6c08425f1d6d0ad4e70bf5a5c67d47",
+      "size": 6122
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-report.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-report.json",
+      "sha256": "3fbbd4c6d76130399b0c79cdf41758669224a91e05b7b216953f0c9728750865",
+      "size": 4
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-editorconfig",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-negative-editorconfig",
+      "sha256": "6c0c6885d0656ace28b7341106748e0429d636c28c96e9a0031c27d215e8bfe8",
+      "size": 6867
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-process.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-negative-process.json",
+      "sha256": "3edb2565dfb5b7b84ff34c3f852bc3b23de02357619762467da6697c5e2c6289",
+      "size": 49463
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-provider-result.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-negative-provider-result.json",
+      "sha256": "53f563b036fb1d0fb77d43988293732f88b2d24f57e1999fa7737b96e5369d35",
+      "size": 10462
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-receipt.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-negative-receipt.json",
+      "sha256": "cdd6abfa38a94b1c3872dca8dcbb30d4aeb17f406571577ae3cb308f1d61dbf6",
+      "size": 6097
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-report.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-negative-report.json",
+      "sha256": "3fbbd4c6d76130399b0c79cdf41758669224a91e05b7b216953f0c9728750865",
+      "size": 4
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-editorconfig",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-positive-editorconfig",
+      "sha256": "6c0c6885d0656ace28b7341106748e0429d636c28c96e9a0031c27d215e8bfe8",
+      "size": 6867
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-process.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-positive-process.json",
+      "sha256": "66bf35203052fad1f19c64954d27e68e0b27bdde3d212f628745eaf02cc52cb3",
+      "size": 49616
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-provider-result.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-positive-provider-result.json",
+      "sha256": "a9cb12068cc236f9e94bef7cc137d48102284799242fe0a4e125213ff41c3ebf",
+      "size": 18814
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-receipt.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-positive-receipt.json",
+      "sha256": "4206286a5eda70935c1b2ac69d05cf5ffaf228e62f89197dd67492274939c61e",
+      "size": 6097
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-report.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-positive-report.json",
+      "sha256": "c0c0b8b0890c9cd91f3a94e4c081f7d6a4682b8802456c33dc9a847eab41059f",
+      "size": 1476
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-start-witness.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-start-witness.json",
+      "sha256": "e53aee9ab5548515a854833177f7a3ae3276462b05fc3f214bbb73458fc94758",
+      "size": 2860
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-suppression-editorconfig",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-suppression-editorconfig",
+      "sha256": "6c0c6885d0656ace28b7341106748e0429d636c28c96e9a0031c27d215e8bfe8",
+      "size": 6867
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-suppression-process.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-suppression-process.json",
+      "sha256": "d8f923b29bf254f32b9155a3e95174b1786efd1a19aa7c9f90fdfff1ccce53e1",
+      "size": 72575
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-suppression-provider-result.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-suppression-provider-result.json",
+      "sha256": "6d25201bbe6991ec18adb84c9151b286775d9c61eb19614d5c06a4e931fa46b2",
+      "size": 19018
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-suppression-report.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-suppression-report.json",
+      "sha256": "ebeff049c206831ba022f908f62f633a20a6ba53b2479d5dce5687360a7cb47f",
+      "size": 2084
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-cli-process.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-version-cli-process.json",
+      "sha256": "e6fad1d8c82c833337131b72bc4bed7f441147c151ffec08af216ba0a08f0ff2",
+      "size": 113
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-cli.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-version-cli.json",
+      "sha256": "71bb91898c713be1a2debefa1d8dbdc1e7a18e93485d6ec9c7d9bc48ee5e5e15",
+      "size": 1930
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-editorconfig",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-version-editorconfig",
+      "sha256": "6c0c6885d0656ace28b7341106748e0429d636c28c96e9a0031c27d215e8bfe8",
+      "size": 6867
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-process.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-version-process.json",
+      "sha256": "c7f6a775eabbb4c5c860b549d09dc18d99240d068b2c3db184bf141110583bbf",
+      "size": 49608
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-provider-result.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-version-provider-result.json",
+      "sha256": "411d5173c521938362ea6c0d522e66e45fa4e2d5b484496482c5996dac66648d",
+      "size": 16918
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-receipt.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-version-receipt.json",
+      "sha256": "f4d0c2c0c03b2d90bf2e1c239f88fe4f88735214b59033714eeb7cf060ab48f0",
+      "size": 6248
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-report.json",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/original/providers/ktlint-fixtures/evidence-artifacts/syntax-version-report.json",
+      "sha256": "c0c0b8b0890c9cd91f3a94e4c081f7d6a4682b8802456c33dc9a847eab41059f",
+      "size": 1476
+    },
+    {
+      "original_path": "/tmp/ktchecker-integrated-core-20261104.log",
+      "path": "providers/ktlint-fixtures/runs/2026-11-04T10-03-07Z-failed-compose-declaration-suppression/gradle-output.log",
+      "sha256": "b4acb890405b696ba05b8b8c88c3757377cad7e84d6196e40a008c04e66aa903",
+      "size": 10638
+    }
+  ]
+}

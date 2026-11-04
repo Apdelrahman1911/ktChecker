@@ -1,7 +1,8 @@
 # Durable kernel — preview implementation
 
 This module implements `ktchecker/preview-1`, **not** a protocol-1 or production
-model-host certification. Public DTOs are in `KernelTypes.kt` and `PlanTypes.kt`.
+model-host certification. Public DTOs are in `KernelTypes.kt` and `PlanTypes.kt`;
+the trusted, nonserialized routing SPI is in `RoutingTypes.kt`.
 
 ## Implemented boundaries
 
@@ -47,6 +48,12 @@ model-host certification. Public DTOs are in `KernelTypes.kt` and `PlanTypes.kt`
    original registered snapshot/profile and grant a provider's nonserializable
    execution authority over the private effective input. Request booleans never
    grant process-execution permission. Providers own their execution authorization.
+   Its default-no-op `finished(effective)` runs outside locks whenever preparation
+   began, including partial preparation failure and cancellation before provider
+   entry. Implementations must idempotently revoke only that exact attempt's
+   permits, not another client's/equal-input/later attempt's grants. A teardown
+   exception retains raw terminal evidence and blocks broker validation with
+   `prepared_input_cleanup_failed`.
 3. `ResultPolicy` uses an **already captured** immutable per-client policy. It runs
    in a short publication transaction: no I/O, config/source locks or kernel reentry.
    Missing captured policy should throw; that consumer becomes incomplete.
@@ -137,12 +144,73 @@ registering a reference:
    execution dependency itself or report unsupported. Parent membership does not
    grant compiler/process-execution permission.
 
-The full controller-declared required recipient list must currently be exactly the
-submitting client. Any required additional client is rejected with
-`cross_client_routing_unavailable` **before acceptance**. Cross-client atomic
-`RoutingGrant` subscriptions are a release blocker, not an implemented feature.
-Separately accepted same-input plans may share computation, never cancellation,
-policy permissions, client capabilities, insertion receipts or observation duties.
+Same-client plans retain this API and normalization behavior. Additional required
+recipients require the explicit owner-granted routing SPI below; the default
+`ReviewPlanRoutingAuthority.DENY` rejects them with
+`cross_client_routing_unavailable` **before acceptance**. Neither a required client
+ID nor a decoded grant/plan DTO authorizes routing or credential lookup.
+
+### Owner-granted cross-client admission (not combined finalization)
+
+Install `ReviewPlanRoutingAuthority` only in a trusted owner/controller. It must
+resolve an exact privately registered initiating binding/request and return an
+`AuthorizedReviewRoute` whose `origin` equals the entire authoritative declaration,
+including its full required recipient set. Each `AuthorizedPlanRecipient` contains:
+
+- Its own complete canonical **local** `RequiredReviewPlan`, exact request tuple,
+  binding, independently verified model/context and nonempty required-rule vector.
+  Local `requiredRecipientClientIds` names only that client; the private original
+  declaration retains the complete set. The initiator's local plan must be its
+  exact projection with only that list changed. No omitted or additional recipient
+  is accepted. Routed plans must already have canonical input/slot ordering.
+- Its actual independently enrolled `AdapterCredential`. The kernel authenticates
+  all recipients before staging and again within the single commit, checking the
+  entire owner/workspace/worktree/client/lineage/session/generation binding.
+  The SPI does not resolve capabilities from caller/model-supplied client IDs.
+- A `PlanRecipientPreparation` with the canonical local plan digest plus that
+  recipient's captured-policy and execution-approval digests. The latter must bind
+  the exact recipient/revision/approval identity and cannot be shared between
+  recipients just because computation is equal.
+- A mandatory `verifyForAdmission` callback which independently rechecks its live
+  owner-created model/materialization and durably retains its captured policy and
+  execution approval for **every** local slot, including cached-result admission.
+  It runs before and after staging, outside locks, and must return the same exact
+  identity. Null, throw or changed identity denies the entire route. Returning
+  unchecked/copied digests is not an implementation of this trusted SPI.
+
+The kernel bounds a route to 2–64 recipients in one owner/workspace and at most
+512 total slots. Different worktrees require explicit independently prepared
+recipient bindings/materializations; this does **not** integrate their changes.
+The whole private route metadata must fit `maxInputBytes`. Retained-review quotas
+sum every recipient's children; queued work/archive quotas deduplicate only exact
+full provider+analysis identities. Pending limits and gate claims are checked for
+**every** client. A collision with another recipient's existing request rejects the
+whole new route rather than attaching that old plan as a partial second batch.
+
+All local parents, children, route/member records, sticky lineage markers and every
+required acceptance event commit in one SQLite transaction. Each client receives
+only its local `plan_accepted` event/status and its own child IDs. The whole route,
+other clients' references/model/policy/approval metadata, capabilities and private
+route digest are not returned. Clients independently fetch, cancel, ACK and attest
+model observation; one recipient cannot consume another's delivery duty.
+
+Accepted exact origin **and recipient** retries read the durable batch before any
+authority lookup or source staging, including after restart/authority loss. Reads
+validate the private complete route/digest, every registered binding, local parent,
+request, slot/review/work identity and required acceptance outbox. A missing/corrupt
+other recipient cannot make a valid local prefix: `routing_plan_corrupt` fails
+explicitly. No retry can add/remove recipients or recreate a missing owner grant.
+These are corruption checks, not hostile same-UID tamper protection.
+
+**Every lineage which accepted routed obligations is permanently blocked with
+`cross_client_finalization_unavailable`.** Completion, cancellation, delivery,
+restart, and later scalar/local parent plans cannot clear that marker. Local
+`ParentPlanStatus.state == "complete"` means only that client's child computations
+finished. A joint client-indexed current-source/model/captured-policy/approval and
+delivery fence is **UNIMPLEMENTED**; separate local fences are not its substitute.
+Integration still requires a new combined immutable snapshot and fresh complete
+review. This bounded admission SPI is not a production routing controller, a
+combined completion feature, model/import authority, or provider qualification.
 
 ### Owner/controller API sketch
 
@@ -215,7 +283,7 @@ Selection uses durable worktree service age, then sponsoring client service age,
 then that client's oldest eligible review. Only the selected sponsor spends a
 client turn: co-subscribers sharing computation do not lose turns for their unrelated
 older work. New worktree/client queues join the current dispatch round, and service
-ages survive restarts (including backfilling the client table for older ledgers).
+ages survive schema2 restarts.
 Fairness means bounded **dispatch opportunities among finite eligible queues**,
 not equal CPU time, fair SQLite writer acquisition or a submission-latency SLA.
 
@@ -239,21 +307,89 @@ error when corrupting the first slot had already invalidated the source digest.
 The test now checks that exact early digest error and separately corrupts a later
 slot to retain exact whole-snapshot mismatch coverage. No production check was
 weakened. This is targeted preview kernel evidence, not review-controller or
-production host/model qualification.
+production host/model qualification. That is **historical pre-schema2/routing**
+evidence, not verification of the new source. `KernelRoutingIntegrationTest`,
+`KernelSchema2Test` and `KernelPreparedInputLifecycleTest` add synthetic authority
+histories for route atomicity/retries/corruption/independent delivery/sticky denial,
+v1 durable-history refusal, and attempt teardown. The routed crash test starts an
+explicitly synthetic `-Xmx128m` child JVM.
+
+The first owner-coordinated schema2/routing run on 2026-11-04 passed **65/68**
+kernel tests and **27/27** review-controller tests. Its unchanged XML, source
+digests, log and stress receipt are retained under
+`build/evidence/kernel-routing/20261104-first`. Two legacy assertions still
+expected schema repair or the wrong malformed-recipient error; one real failure
+exposed WAL removal between a sidecar existence check and permission hardening.
+The revised source refuses damaged schema2 tables without repairing obligations,
+separates valid default-denied and malformed recipient cases, and holds the short
+initialization SQLite connection through sidecar hardening. A bounded two-producer,
+48-reopen regression was added.
+
+That correction rerun passed **69/70** kernel and **27/27** review-controller
+tests; its original log/XML/source bytes are retained under
+`build/evidence/kernel-routing/20261104-rerun`. All three preceding failures passed,
+but another concurrent reopen failed with `SQLITE_CORRUPT` inside the immutable
+main-file probe. An actively checkpointed WAL database does not satisfy SQLite's
+immutable-file assumption. The new correction removes that probe in favor of one
+normal `mode=ro` WAL read transaction before any writable connection. It neither
+catches/retries corruption nor independently establishes that durable disk bytes
+were corrupt. New JDBC tests cover latest-WAL schema visibility, actual read-only
+write denial, cold legacy refusal and bounded checkpoint/reopen concurrency.
+Legacy byte comparisons now run with all JDBC connections closed and preserve
+durable DB/WAL bytes, not transient SHM/read marks.
+
+Separately, the JDBC pin is now **3.54.1.0**, including SQLite's upstream WAL-reset
+fix absent from the old 3.50.3 pin. That dependency defect is distinct from the
+invalid immutable-probe use; it is not claimed as the observed failure's cause.
+The actual driver/native version and source ID have their own JDBC test.
+
+The subsequent owner-coordinated Linux batch on 2026-11-04 passed **75/75**
+kernel tests: 25 integration, 20 parent-plan, 16 routing, eight schema2, four
+preparation-lifecycle, one stress and one dependency-identity test, with no failures,
+errors or skips. Its log, XML, source bytes/digests and stress receipt are retained
+under `build/evidence/integrated-kernel-cli/20261104-first`; its 20 captured kernel
+source/test/build files match the tested freeze. The JDBC smoke actually loaded driver
+**3.54.1.0** and SQLite **3.54.1**, recording the returned source ID in its XML;
+these runtime identifiers are not source/binary authenticity or platform qualification.
+Both concurrent reopen regressions and all eight schema2 tests passed. The same
+batch freshly passed review-controller **27/27** and audit **58/58**; config's
+existing **35/35** receipt was up-to-date, not rerun. **The overall batch failed**
+at CLI test compilation (`SMARTCAST_IMPOSSIBLE`), so no CLI test execution or
+whole-build success is claimed here. Earlier failed runs remain evidence, not erased
+by this bounded preview correction run.
 
 ## Limits and explicit non-claims
 
 - The trust boundary is a per-user deployment, not hostile same-UID isolation.
   In-process providers/SPIs are trusted code. Source copies are immutable by API;
   digest checks do not make arbitrary external writers ABA-safe.
-- Mixed parent-aware/older broker binaries sharing a ledger are **unsupported**.
-  The additive tables still use preview schema version 1; there is not yet a
-  binary-feature negotiation/guard that prevents an already-running old broker
-  from ignoring parent/vector semantics. Stop every instance/worker and upgrade
-  all brokers/hosts before owner-selecting parent-plan use. Tests cover cooperating
-  instances of the same implementation, not rolling upgrades. A durable mixed-version
-  admission guard remains a release gap; preserving scalar JSON alone is not a
-  compatibility certificate for old brokers processing parent-plan work.
+- Ledger **schema2** is required. Existing v1, unknown-version and unversioned
+  stores are refused before a writable connection, journal-mode change or DDL;
+  **no migration, automatic reset, copy, drop or obligation waiver is implemented**.
+  Normal `mode=ro` preflight checks version and required tables in one live-WAL
+  transaction, and every operation rechecks version in its transaction. For
+  **formats or missing tables refused by preflight**, preexisting durable DB/WAL
+  contents and accepted history are not rewritten or discharged. SQLite may
+  create/manage transient SHM/read marks or empty sidecar infrastructure to establish
+  a read view: this is **not an all-files-byte-identical promise**. This byte-layout
+  guarantee does not cover every later constructor failure: recognized schema2 stores
+  can open writable SQLite before a later policy mismatch is reported. Normal
+  checkpoint layout changes do not discharge logical obligations.
+  No immutable main-file probe, separate raw DB descriptor or format
+  marker substitutes for SQLite's locking and snapshot guarantees. New
+  schema2 creation commits its complete schema/version before enabling WAL.
+  An existing empty/in-progress first-open file is not permission to initialize it:
+  retry only after the creating process commits; abandoned state needs owner review.
+  Missing required schema2 tables fail with `ledger_corrupt`; no table is recreated.
+  Old obligations and bytes must be preserved for offline owner reconciliation.
+  A separately selected fresh store does not discharge them.
+- **Stop every old instance/worker/process before any upgrade or reconciliation.**
+  Mixed binaries, rolling upgrades and in-place replacement of a live ledger are
+  forbidden. A version bump cannot stop an already-open v1 binary; schema2's new
+  checks do not add dynamic fencing to old code. Cross-version migration and
+  compatibility remain **UNIMPLEMENTED**. The unchanged scalar JSON/API is not a
+  mixed-binary compatibility certificate. Tests cover cooperating same-version
+  instances only, not safe concurrent upgrades.
 - Fixed JVM worker counts and durable execution reservations are bounded. A live
   hung provider retains its slot even after a deadline/heartbeat expires. Only
   confirmed process death (PID plus start identity) permits automatic reclamation.

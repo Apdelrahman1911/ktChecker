@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "context": {
+    "id": "current-edited-detekt-syntax-jvm-unexecuted-native-preview1",
+    "target": "jvm",
+    "source_set": "main",
+    "kotlin_version": "2.4.21",
+    "jdk_version": "unknown",
+    "library_versions": {
+      "compose-rules": "0.6.8"
+    },
+    "embedded_kotlin_version": "2.4.10",
+    "analysis_mode": "light",
+    "scope_note": "Authored synthetic controls only. Historical test receipts are not current-source/native backend evidence or compatibility/precision/release qualification.",
+    "evidence_state": "current_sources_not_executed_after_native_supervisor_and_test_provenance_changes",
+    "current_source_attribution": "Current adapter code exists, but per-rule executed/tested attribution is withheld until a fresh verified native-supervised run; original historical tuple is separately retained."
+  },
+  "provenance_evidence": [],
+  "historical_run_evidence": {
+    "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence/verified-jvm-syntax.json",
+    "sha256": "e65c393dcabedfb96392550fda37dc991288b06b4b810033c9fe572f47a5f2d1"
+  },
+  "historical_tuple_archive": {
+    "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/historical-tuple.json",
+    "sha256": "77121224b38812b268cb228e5db315a07961f7dc827635ed54cf9f8c93ecd025"
+  },
+  "historical_run_summary": {
+    "implemented_rules": 3,
+    "tested_all_six_rules": 3,
+    "qualified_rules": 0,
+    "scope": "Original immutable historical tuple only; not current-source or native-supervisor execution."
+  },
+  "rules": [
+    {
+      "rule_id": "ktc.kotlin.detekt.empty-blocks.empty-catch-block",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "attempted": false,
+      "provider_status": "not_executed_current_library_controls",
+      "cases": [],
+      "implementation_evidence": [],
+      "qualification_evidence": [],
+      "gaps": [
+        "Current library test/provenance sources and shared Execution.kt changed after the preserved run; no actual native helper identity or native exec-confirmed per-rule execution is attested for current sources.",
+        "Original historical attempts, raw reports, successful/failed cases and START artifacts remain in historical_run_evidence/historical_tuple_archive; none are current-code or native-supervisor receipts.",
+        "No qualified compatibility/precision/performance tuple; syntax fixtures are not library-semantic evidence."
+      ]
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "attempted": false,
+      "provider_status": "not_executed_current_library_controls",
+      "cases": [],
+      "implementation_evidence": [],
+      "qualification_evidence": [],
+      "gaps": [
+        "Current library test/provenance sources and shared Execution.kt changed after the preserved run; no actual native helper identity or native exec-confirmed per-rule execution is attested for current sources.",
+        "Original historical attempts, raw reports, successful/failed cases and START artifacts remain in historical_run_evidence/historical_tuple_archive; none are current-code or native-supervisor receipts.",
+        "No qualified compatibility/precision/performance tuple; syntax fixtures are not library-semantic evidence."
+      ]
+    },
+    {
+      "rule_id": "ktc.compose.pack.ComposableParamOrder",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "attempted": false,
+      "provider_status": "not_executed_current_library_controls",
+      "cases": [],
+      "implementation_evidence": [],
+      "qualification_evidence": [],
+      "gaps": [
+        "Current library test/provenance sources and shared Execution.kt changed after the preserved run; no actual native helper identity or native exec-confirmed per-rule execution is attested for current sources.",
+        "Original historical attempts, raw reports, successful/failed cases and START artifacts remain in historical_run_evidence/historical_tuple_archive; none are current-code or native-supervisor receipts.",
+        "No qualified compatibility/precision/performance tuple; syntax fixtures are not library-semantic evidence."
+      ]
+    }
+  ]
+}

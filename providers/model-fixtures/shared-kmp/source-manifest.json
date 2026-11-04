@@ -1,0 +1,113 @@
+{
+  "boundaryObligations": [
+    "generation input/output capture",
+    "deleted compilation remains removed_unresolved",
+    "Native/Android/composite unmodeled inputs are never clean coverage"
+  ],
+  "caseId": "shared-kmp",
+  "files": [
+    {
+      "digest": "sha256:0c21a27cc7d63488e887398ebfdd5b50d6526e42f95c3a3674196367f9224620",
+      "path": "app/build.gradle.kts",
+      "size": 433
+    },
+    {
+      "digest": "sha256:4f32ae8aa1f1bcd2f9599c0b65b53222cca9961afc806b214d785cd459efb6c6",
+      "path": "app/src/serverMain/kotlin/App.kt",
+      "size": 91
+    },
+    {
+      "digest": "sha256:0510d6f1948c568cf923f1a8d6e4ae0bbe07fde13e09683ebc17d896e2d9f20c",
+      "path": "build.gradle.kts",
+      "size": 245
+    },
+    {
+      "digest": "sha256:750981c208fdc1cab6820002e1517e247e6295a837f11cbb55fb6ce3a55fa832",
+      "path": "feature/build.gradle.kts",
+      "size": 429
+    },
+    {
+      "digest": "sha256:95f078db8a4a3452d02f90e40e5cc1bb29fcaa576ab06e42a52d21eddce86d49",
+      "path": "feature/src/commonMain/kotlin/Feature.kt",
+      "size": 92
+    },
+    {
+      "digest": "sha256:9eafd2baea52d05895640f57e5ea34b7d6e8d7b56338fe84bfb92092a940c328",
+      "path": "feature/src/serverMain/kotlin/FeatureServer.kt",
+      "size": 98
+    },
+    {
+      "digest": "sha256:39f847f836952461ee27c678e79e21d2956c0227e80558dde66a41fe777b6063",
+      "path": "gradle.properties",
+      "size": 241
+    },
+    {
+      "digest": "sha256:f521ad21b52e77963f5fb599c4604854c14baf0c9c2bae90f658f82bb1c1a5c5",
+      "path": "independent/build.gradle.kts",
+      "size": 314
+    },
+    {
+      "digest": "sha256:33a7aeda3089a21446aa2056cfb5c76f1dc6c14993dda60d419d0bbdfa290574",
+      "path": "independent/src/serverMain/kotlin/Independent.kt",
+      "size": 66
+    },
+    {
+      "digest": "sha256:c0fc6c8aa48282e2abb9ecdc372aae6e51a33311041ebe90cc6ac002716f175c",
+      "path": "lib/build.gradle.kts",
+      "size": 665
+    },
+    {
+      "digest": "sha256:ec644e118d1dc8ffe3f62a5de7a9cb699a96a4fec773da2f124db1ca4e8ca2b4",
+      "path": "lib/src/commonMain/kotlin/Common.kt",
+      "size": 57
+    },
+    {
+      "digest": "sha256:9eeec273cde2763a5588b1544cfab405bd031266c1e498c3167aee1ad5c8a88d",
+      "path": "lib/src/desktopMain/kotlin/Desktop.kt",
+      "size": 70
+    },
+    {
+      "digest": "sha256:e0c4470d451f392873e56eb32eb459de6afefcbc29705635cf96c2a255d6b186",
+      "path": "lib/src/desktopTest/kotlin/DesktopCheck.kt",
+      "size": 80
+    },
+    {
+      "digest": "sha256:19fcf02d869bc8aca1b16e8a8ab407587442159c777553f3c5a44b4b4809559a",
+      "path": "lib/src/serverMain/kotlin/Server.kt",
+      "size": 69
+    },
+    {
+      "digest": "sha256:96139b53cbde9ebe84fc107e65afc82e9a6f0dc5f1166d75a82fca6c93cd3af5",
+      "path": "lib/src/serverTest/kotlin/ServerCheck.kt",
+      "size": 78
+    },
+    {
+      "digest": "sha256:5b6aa1e7eef23c812c0ed0d1f50627c12307821d242b7c3a6aaef8852b7560bc",
+      "path": "lib/src/sharedMain/kotlin/Shared.kt",
+      "size": 69
+    },
+    {
+      "digest": "sha256:1e1a5a72f333bd120447017e3c37228d5cba5aacb15dd5b1413e14b6829209f1",
+      "path": "lib/src/sharedMain/resources/shared.txt",
+      "size": 53
+    },
+    {
+      "digest": "sha256:6647cf6266dd891e2cb9c4c929e31c1b07bb2e15dd8cd7701ea5df7e0a589fe9",
+      "path": "settings.gradle.kts",
+      "size": 173
+    }
+  ],
+  "gradleVersion": "9.6.1",
+  "javaMajor": 21,
+  "kotlinVersion": "2.4.21",
+  "qualified": false,
+  "requiredFeatures": [
+    "commonMain -> sharedMain -> serverMain/desktopMain",
+    "actual server/desktop compilation associations",
+    "shared resource consumed by both targets",
+    "lib -> feature -> app reverse consumers",
+    "independent module outside source-only reverse impact"
+  ],
+  "schemaVersion": 1,
+  "state": "source_inputs_pinned_model_domain_not_yet_executed"
+}

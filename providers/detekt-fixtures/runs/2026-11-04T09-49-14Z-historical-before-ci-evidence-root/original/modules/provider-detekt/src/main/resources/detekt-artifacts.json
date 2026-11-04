@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "detekt_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "compose_rules_version": "0.6.8",
+  "project_kotlin_baseline": "2.4.21",
+  "compatibility_qualified": false,
+  "checksum_note": "Official Maven Central SHA-1 values were fetched and checked. SHA-256 values are locally computed pins, not upstream-published SHA-256 checksums. Revalidate all cached bytes on every use.",
+  "artifacts": [
+    {
+      "coordinate": "dev.detekt:detekt-cli:2.0.0-alpha.6:all",
+      "filename": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "url": "https://repo.maven.apache.org/maven2/dev/detekt/detekt-cli/2.0.0-alpha.6/detekt-cli-2.0.0-alpha.6-all.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "543c524afee8f40330b4bf66e760cb141accb87a",
+      "sha256": "d46ca62ea4d62769b5d5c3ba94d49fa9b80ba11c7dba74ddb6df7fcc2c19c5fd",
+      "size": 84733979
+    },
+    {
+      "coordinate": "io.nlopez.compose.rules:detekt:0.6.8",
+      "filename": "detekt-0.6.8.jar",
+      "url": "https://repo.maven.apache.org/maven2/io/nlopez/compose/rules/detekt/0.6.8/detekt-0.6.8.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "563c0d0bfea4fa7cb941030d0b7d605e8d0bc975",
+      "sha256": "9119e4517f673bac3f511a489bbb073479dbd5bddd044b331547a9e3b07339fb",
+      "size": 334137
+    },
+    {
+      "coordinate": "io.nlopez.compose.rules:common-detekt:0.6.8",
+      "filename": "common-detekt-0.6.8.jar",
+      "url": "https://repo.maven.apache.org/maven2/io/nlopez/compose/rules/common-detekt/0.6.8/common-detekt-0.6.8.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "2306e6547fc34520cc9faed5d0b6447820718707",
+      "sha256": "888287c94182ce4e87553b386ed2bfd785a385865f05a6fcab31e517256e92f3",
+      "size": 380012
+    },
+    {
+      "coordinate": "dev.detekt:detekt-rules-libraries:2.0.0-alpha.6",
+      "filename": "detekt-rules-libraries-2.0.0-alpha.6.jar",
+      "url": "https://repo.maven.apache.org/maven2/dev/detekt/detekt-rules-libraries/2.0.0-alpha.6/detekt-rules-libraries-2.0.0-alpha.6.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "1a9a4bfe5839166a3a2ec9d351ccb5b653da870f",
+      "sha256": "cf4e956f52b42cee39993fc64625aaa24a116c356aed7c3034f7f1ebf66a1004",
+      "size": 15425
+    },
+    {
+      "coordinate": "dev.detekt:detekt-rules-ruleauthors:2.0.0-alpha.6",
+      "filename": "detekt-rules-ruleauthors-2.0.0-alpha.6.jar",
+      "url": "https://repo.maven.apache.org/maven2/dev/detekt/detekt-rules-ruleauthors/2.0.0-alpha.6/detekt-rules-ruleauthors-2.0.0-alpha.6.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "0a67db1bcf680f3d5435ec638e768cd13db149fe",
+      "sha256": "20832e23306d5ea64cc95b9ac82b36d8ae9c8b5988be1e9a22764feee3eaded0",
+      "size": 13159
+    }
+  ]
+}

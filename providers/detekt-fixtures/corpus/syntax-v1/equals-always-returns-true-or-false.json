@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-corpus-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.potential-bugs.equals-always-returns-true-or-false",
+  "upstream_id": "potential-bugs:EqualsAlwaysReturnsTrueOrFalse",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "2f8aee7bf767ed705c50f6cb0dbd0021e0b426e312dc80b968bdc9ea11def5d9",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-potential-bugs/src/main/kotlin/dev/detekt/rules/potentialbugs/EqualsAlwaysReturnsTrueOrFalse.kt",
+    "source_file_sha256": "29fcf3515b211ec119fcef773525feee25a1eefcd17a42bd1eb1d1f605eb8cff",
+    "predicate_line_numbers": [
+      46,
+      58,
+      67,
+      81
+    ],
+    "research_only": true
+  },
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.equalsconstant\n\nclass AlwaysEqual {\n    override fun equals(other: Any?): Boolean = true\n    override fun hashCode(): Int = 0\n}\n\nclass NeverEqual {\n    override fun equals(other: Any?): Boolean {\n        return false\n    }\n    override fun hashCode(): Int = 0\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 1,
+        "column": 15,
+        "end_line": 1,
+        "end_column": 21,
+        "span": "equals",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 17,
+        "end_line": 4,
+        "end_column": 23,
+        "span": "equals",
+        "occurrence": 1
+      }
+    ],
+    "intent": "Proper Any? equals signatures with expression/block Boolean literal returns; hashCode implementations keep examples structurally complete."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.equalsconstant\n\nclass ReferenceEquality {\n    override fun equals(other: Any?): Boolean = this === other\n    override fun hashCode(): Int = System.identityHashCode(this)\n}\n"
+    },
+    "expected": [],
+    "intent": "Identity equality satisfies the exact literal-return negative."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.equalsconstant\n\nclass AlwaysEqual {\n    override fun equals(other: Any?): Boolean = true\n    override fun hashCode(): Int = 0\n}\n\nclass NeverEqual {\n    override fun equals(other: Any?): Boolean {\n        return false\n    }\n    override fun hashCode(): Int = 0\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"EqualsAlwaysReturnsTrueOrFalse\")\n\npackage suppressed.corpus.equalsconstant\n\nclass AlwaysEqual {\n    override fun equals(other: Any?): Boolean = true\n    override fun hashCode(): Int = 0\n}\n\nclass NeverEqual {\n    override fun equals(other: Any?): Boolean {\n        return false\n    }\n    override fun hashCode(): Int = 0\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 1,
+        "column": 15,
+        "end_line": 1,
+        "end_column": 21,
+        "span": "equals",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 17,
+        "end_line": 4,
+        "end_column": 23,
+        "span": "equals",
+        "occurrence": 1
+      }
+    ],
+    "intent": "Genuine upstream file annotation on an otherwise identical, independently named package; neighboring original file must retain every positive finding. No ktChecker-ID or declaration-scope suppression claim."
+  },
+  "controls": [
+    {
+      "id": "conditional-nonconstant-return",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.equalsconstant\n\nclass ConditionalEquality {\n    override fun equals(other: Any?): Boolean {\n        if (other == null) return false\n        return this === other\n    }\n    override fun hashCode(): Int = System.identityHashCode(this)\n}\n"
+      },
+      "expected": [],
+      "intent": "Nested conditional false does not make the final equality result constant."
+    },
+    {
+      "id": "unrelated-equals-overload",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.equalsconstant\n\nclass LabelMatcher {\n    fun equals(other: String): Boolean = true\n}\n"
+      },
+      "expected": [],
+      "intent": "A one-argument String overload is not Any.equals(Any?)."
+    },
+    {
+      "id": "constant-computation-not-literal",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative",
+      "sources": {
+        "Case.kt": "package corpus.equalsconstant\n\nclass ComputedAlwaysEqual {\n    override fun equals(other: Any?): Boolean = 1 == 1\n    override fun hashCode(): Int = 0\n}\n"
+      },
+      "expected": [],
+      "intent": "The result is constant, but not a Boolean literal AST node. Retain the bounded detector miss rather than infer general constant evaluation."
+    }
+  ],
+  "limitations": [
+    "Literal/direct-return shape only, not symbolic evaluation or a proof of every possible equals path.",
+    "Special classes may intentionally choose constant equality; the advisory heuristic is not release precision qualification."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact selected route on positive immutable snapshot bytes.",
+    "negative": "Run legal alternative bytes with the same route still active.",
+    "configuration": "Run the original positive bytes with the owner-selected rule disabled; separately replay genuine options below when applicable.",
+    "version": "Replay positive bytes under the pinned CLI, retain actual CLI version output, and verify Common/Native requests never reach the runner. Declared Kotlin2.4.21/embedded2.4.10 stays unqualified.",
+    "suppression": "Use actual file-scoped upstream annotation with an unsuppressed neighboring file; never suppress/filter in host code.",
+    "regression": "Seal the negative correction as a child of the suppression snapshot, delete obsolete files, and verify both registered parent and child materializations."
+  },
+  "qualification_note": "Authored expected results are not observed behavior. Actual assertions, immutable materialization checks, raw SARIF/process receipts and START witnesses are required before a sidecar is emitted; no compatibility/precision/performance/release qualification is proposed."
+}

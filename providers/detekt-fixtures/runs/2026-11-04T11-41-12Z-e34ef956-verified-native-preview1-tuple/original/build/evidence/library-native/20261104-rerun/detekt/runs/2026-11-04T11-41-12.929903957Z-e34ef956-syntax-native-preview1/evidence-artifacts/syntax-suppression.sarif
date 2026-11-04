@@ -1,0 +1,132 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "results": [
+        {
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ComposeExample.kt",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "endColumn": 20,
+                  "endLine": 12,
+                  "startColumn": 5,
+                  "startLine": 12
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Parameters in a composable function should be ordered following this pattern: params without defaults, modifiers, params with defaults and optionally, a trailing function that might not have a default param.\nCurrent params are: [optional: String = \"\", required: Int] but could be [required: Int, optional: String = \"\"].\nSee https://mrmans0n.github.io/compose-rules/rules/#ordering-composable-parameters-properly for more information."
+          },
+          "partialFingerprints": {
+            "signature/v1": "8272e748b05afbbb9f319b4d9d19b4706aea4a35"
+          },
+          "ruleId": "detekt.Compose.ComposableParamOrder"
+        },
+        {
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "EmptyCatch.kt",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "endColumn": 6,
+                  "endLine": 15,
+                  "startColumn": 34,
+                  "startLine": 14
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Empty catch block detected. If the exception can be safely ignored, name the exception according to one of the exemptions as per the configuration of this rule."
+          },
+          "partialFingerprints": {
+            "signature/v1": "4448e1dbcb7f6e8f55f2f5b257a1169d8c4db209"
+          },
+          "ruleId": "detekt.empty-blocks.EmptyCatchBlock"
+        },
+        {
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "Exported.kt",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "endColumn": 35,
+                  "endLine": 6,
+                  "startColumn": 19,
+                  "startLine": 6
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Don't use data class"
+          },
+          "partialFingerprints": {
+            "signature/v1": "824c418cf1a12b39392c06964104008bdaec6f42"
+          },
+          "ruleId": "detekt.libraries.ForbiddenPublicDataClass"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "guid": "022ca8c2-f6a2-4c95-b107-bb72c43263f3",
+          "informationUri": "https://detekt.dev",
+          "language": "en",
+          "name": "detekt",
+          "organization": "detekt",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error"
+              },
+              "helpUri": "https://detekt.dev/docs/2.0.0-alpha.6/rules/empty-blocks#emptycatchblock",
+              "id": "detekt.empty-blocks.EmptyCatchBlock",
+              "name": "EmptyCatchBlock",
+              "shortDescription": {
+                "text": "Empty catch block detected. Empty catch blocks indicate that an exception is ignored and not handled."
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error"
+              },
+              "helpUri": "https://mrmans0n.github.io/compose-rules/rules/#parameter-order",
+              "id": "detekt.Compose.ComposableParamOrder",
+              "name": "ComposableParamOrder",
+              "shortDescription": {
+                "text": "Parameters in Composable functions should be ordered correctly"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error"
+              },
+              "helpUri": "https://detekt.dev/docs/2.0.0-alpha.6/rules/libraries#forbiddenpublicdataclass",
+              "id": "detekt.libraries.ForbiddenPublicDataClass",
+              "name": "ForbiddenPublicDataClass",
+              "shortDescription": {
+                "text": "The data classes are bad for the binary compatibility in public APIs. Avoid to use it."
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

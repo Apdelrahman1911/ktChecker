@@ -18,6 +18,7 @@ class KotlinJvmToolchain(javaExecutable: Path, compilerClasspath: List<ArtifactI
     val runtimeImage: KotlinJvmRuntimeImage = KotlinJvmRuntimeImage.capture(javaExecutable, runtimeLimits)
     val javaExecutable: Path = runtimeImage.javaExecutable
     val compilerClasspath: List<ArtifactIdentity> = Collections.unmodifiableList(compilerClasspath.map { it.copy() })
+    private val compilerSizes: List<Long> = this.compilerClasspath.map { Files.size(Path.of(it.path)) }
     val executableDigest: String = runtimeImage.executableDigest
     // The compiler sees this exact ordered classpath. JSON frames arbitrary
     // coordinates/paths without delimiter collisions; sorting would change semantics.
@@ -37,10 +38,15 @@ class KotlinJvmToolchain(javaExecutable: Path, compilerClasspath: List<ArtifactI
         verify()
     }
 
+    /** Captured typed data only; callers still need this exact live installation and verify(). */
+    fun installationView(): KotlinJvmInstallationView = KotlinJvmInstallationView(digest, runtimeImage.view(),
+        compilerClasspath.mapIndexed { index, artifact -> InstalledCompilerJarView(index, artifact, compilerSizes[index]) })
+
     fun verify(checkpoint: () -> Unit = {}) {
         checkpoint()
         runtimeImage.verify(checkpoint)
         CompilerSnapshot.classpath(compilerClasspath, checkpoint)
+        require(compilerClasspath.map { Files.size(Path.of(it.path)) } == compilerSizes) { "Installed compiler JAR sizes changed" }
     }
 }
 
@@ -65,9 +71,14 @@ class KotlinJvmCompilerProvider(
     qualifications: List<CompilerQualification> = emptyList(),
     private val compilerHeapMiB: Int = 768,
     private val executionObserver: (AnalysisInput, ProcessOutcome) -> Unit = { _, _ -> },
+    val inputMode: KotlinJvmInputMode = KotlinJvmInputMode.LEGACY_EXPLICIT_INPUT,
+    private val modelAuthority: KotlinJvmModelAuthority = KotlinJvmModelAuthority.DENY,
 ) : AnalysisProvider {
     override val id = CompilerRuleRegistry.PROVIDER_ID
-    override val version = CompilerRuleRegistry.VERSION
+    private val compilerVersion = CompilerRuleRegistry.VERSION
+    // Mode is owner-installed code/routing identity, not a mutable input-policy discriminator.
+    override val version = if (inputMode == KotlinJvmInputMode.LEGACY_EXPLICIT_INPUT) compilerVersion
+        else "$compilerVersion/verified-model-1"
     override val supportedRuleIds: Set<String> = registry.jvmRuleIds
     val availableMappings: List<CompilerRuleMapping> get() = registry.mappings
     private val qualifications = Collections.unmodifiableList(qualifications.toList())
@@ -76,7 +87,12 @@ class KotlinJvmCompilerProvider(
     init {
         require(compilerHeapMiB in 128..2_048) { "Compiler heap must be explicitly bounded" }
         require(this.qualifications.all { it.ruleId in supportedRuleIds }) { "A JVM provider cannot accept a Native qualification" }
+        require(inputMode == KotlinJvmInputMode.VERIFIED_MODEL || modelAuthority === KotlinJvmModelAuthority.DENY) {
+            "A model authority cannot be installed on a legacy/fallback provider route"
+        }
     }
+
+    internal fun usesInstallation(selected: KotlinJvmToolchain): Boolean = toolchain === selected
 
     /**
      * Host configuration can select this exact argv and grant a nonserializable
@@ -84,12 +100,29 @@ class KotlinJvmCompilerProvider(
      * grants nothing: analyze still denies execution without that exact authority.
      */
     fun executionProfile(input: AnalysisInput, timeoutMillis: Long = 60_000, maxOutputBytes: Int = 1_048_576): TrustedExecution {
+        if (inputMode != KotlinJvmInputMode.LEGACY_EXPLICIT_INPUT || modelBearingInput(input)) {
+            throw KotlinJvmModelException("compiler_model_binding_required", "A model-only route requires its live checked model binding, never metadata-selected fallback.")
+        }
+        return generatedProfile(input, timeoutMillis, maxOutputBytes, null)
+    }
+
+    /** Original owner input only. Archived attempts must use the retained prepared profile/permit. */
+    fun executionProfile(input: AnalysisInput, binding: KotlinJvmModelBinding,
+        timeoutMillis: Long = 60_000, maxOutputBytes: Int = 1_048_576): TrustedExecution {
+        binding.requireProvider(this)
+        binding.requireOriginalInput(input)
+        return generatedProfile(input, timeoutMillis, maxOutputBytes, binding.identity.digest)
+    }
+
+    private fun generatedProfile(input: AnalysisInput, timeoutMillis: Long, maxOutputBytes: Int,
+        modelBindingDigest: String?): TrustedExecution {
         val flags = CompilerFlags.validate(input.context.compilerArguments)
         // Installed compiler identities are intrinsic to the approved profile,
         // even for limited requests without an owner-imported toolchain digest.
         val arguments = mutableListOf("-Xmx${compilerHeapMiB}m", "-Dktchecker.compiler.toolchain=${toolchain.digest}",
             "-Dfile.encoding=UTF-8", "-Duser.language=en",
             "-Duser.country=US", "-Djava.io.tmpdir={output}/tmp", "-cp")
+        modelBindingDigest?.let { arguments.add(1, KotlinJvmModelBinding.PROFILE_PROPERTY + it) }
         arguments += toolchain.compilerClasspath.indices.joinToString(File.pathSeparator) { "{output}/compiler/$it.jar" }
         arguments += listOf("org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-version", "-Xrender-internal-diagnostic-names",
             "-no-stdlib", "-no-reflect", "-d", "{output}/classes")
@@ -111,9 +144,19 @@ class KotlinJvmCompilerProvider(
             coverage = Collections.unmodifiableList(required.map { Coverage(it, request.context.scope, "unsupported", reason) }),
             reasons = listOf(reason), providerVersion = version)
         if (cancellation.isCancelled()) return unavailable("cancelled_before_execution", "cancelled")
-        if (request.context.scope.target.lowercase() !in JVM_TARGETS) return unavailable("target_not_jvm")
-        if (request.context.compilerVersion != version) return unavailable("compiler_version_not_pinned_2_4_21")
-        if (request.context.toolchainDigest != null && request.context.toolchainDigest != toolchain.digest) {
+        val modelPermit = if (inputMode == KotlinJvmInputMode.VERIFIED_MODEL) {
+            val selected = runCatching { modelAuthority.authorize(request) }.getOrNull()
+                ?: return unavailable("compiler_model_not_authorized")
+            if (!selected.matches(this, request)) return unavailable("compiler_model_attempt_mismatch")
+            selected
+        } else {
+            if (modelBearingInput(request)) return unavailable("compiler_model_route_required")
+            null
+        }
+        // A model-only route stays model-only even when metadata is removed/digests are replaced.
+        if (modelPermit == null && request.context.scope.target.lowercase() !in JVM_TARGETS) return unavailable("target_not_jvm")
+        if (request.context.compilerVersion != compilerVersion) return unavailable("compiler_version_not_pinned_2_4_21")
+        if (modelPermit == null && request.context.toolchainDigest != null && request.context.toolchainDigest != toolchain.digest) {
             return unavailable("compiler_toolchain_identity_mismatch")
         }
         val permit = runCatching { authority.authorize(request) }.getOrNull()
@@ -124,7 +167,7 @@ class KotlinJvmCompilerProvider(
             return unavailable("execution_identity_binding_mismatch")
         }
         val expectedProfile = runCatching {
-            executionProfile(request, execution.timeoutMillis, execution.maxOutputBytes)
+            generatedProfile(request, execution.timeoutMillis, execution.maxOutputBytes, modelPermit?.bindingIdentity?.digest)
         }.getOrElse { return unavailable("compiler_settings_unsupported") }
         if (execution != expectedProfile || permit.execution != execution) return unavailable("execution_profile_mismatch")
         val deadline = started + execution.timeoutMillis.coerceIn(1, 3_600_000) * 1_000_000
@@ -137,7 +180,7 @@ class KotlinJvmCompilerProvider(
         try {
             checkpoint()
             permit.verifySnapshot()
-            toolchain.verify(checkpoint)
+            if (modelPermit == null) toolchain.verify(checkpoint) else modelPermit.verify(this, request, checkpoint)
             CompilerSnapshot.classpath(request.context.classpath, checkpoint)
             require((toolchain.compilerClasspath + request.context.classpath).sumOf { Files.size(Path.of(it.path)) } <=
                 CompilerSnapshot.MAX_TOTAL_ARTIFACT_BYTES) { "Combined compiler/dependency artifacts exceed job byte bound" }
@@ -148,6 +191,8 @@ class KotlinJvmCompilerProvider(
             return unavailable(problem.code)
         } catch (problem: KotlinJvmRuntimeException) {
             return unavailable(problem.code)
+        } catch (problem: KotlinJvmModelException) {
+            return unavailable(problem.code)
         } catch (_: Exception) {
             return unavailable("sealed_input_or_toolchain_verification_failed")
         }
@@ -156,8 +201,12 @@ class KotlinJvmCompilerProvider(
             permit.verifySnapshot()
             // The runner invokes this both before and after the child. Preserve
             // full-runtime drift codes without discarding actual exit/output.
-            try { toolchain.verify(checkpoint) } catch (problem: KotlinJvmRuntimeException) {
+            try {
+                if (modelPermit == null) toolchain.verify(checkpoint) else modelPermit.verify(this, request, checkpoint)
+            } catch (problem: KotlinJvmRuntimeException) {
                 throw ExecutionProblem(problem.code, problem.message ?: "Selected Java runtime verification failed")
+            } catch (problem: KotlinJvmModelException) {
+                throw ExecutionProblem(problem.code, problem.message ?: "Live model attempt verification failed")
             }
             CompilerSnapshot.classpath(request.context.classpath, checkpoint)
         }, { output ->
@@ -188,8 +237,9 @@ class KotlinJvmCompilerProvider(
         val reasons = outcome.reasons.toMutableList()
         val raw = parsed.rawDiagnostics.toMutableList()
         val findings = mutableListOf<Finding>()
-        val trustedEmission = outcome.successfulExecution && parsed.reportedVersion == version
-        if (parsed.reportedVersion != version) reasons += "compiler_version_transport_mismatch"
+        val trustedEmission = outcome.successfulExecution && parsed.reportedVersion == compilerVersion
+        if (parsed.reportedVersion != compilerVersion) reasons += "compiler_version_transport_mismatch"
+        if (inputMode == KotlinJvmInputMode.VERIFIED_MODEL) reasons += "compiler_model_binding_not_rule_qualification"
         if (parsed.malformed) reasons += "unparsed_or_malformed_compiler_output"
         if (outcome.exitCode != 0) reasons += "compiler_build_failed:${outcome.exitCode ?: "not_exited"}"
         val outputDigest = Digests.sha256(outcome.stderr + "\n" + outcome.stdout)
@@ -219,14 +269,12 @@ class KotlinJvmCompilerProvider(
                 "Actual compiler contract under the selected settings; a warning is not proof of unintended behavior.",
                 diagnostic.location, fingerprint, id, request.context.scope, diagnostic.severity,
                 mapping.kind, mapping.certainty, evidence = Collections.unmodifiableList(listOf(
-                    Evidence("compiler-emission", "Kotlin$version JVM exact diagnostic; phase tag=" +
+                    Evidence("compiler-emission", "Kotlin$compilerVersion JVM exact diagnostic; phase tag=" +
                         (diagnostic.renderedPhase ?: "not rendered; not inferred"), digest = outputDigest),
                     Evidence("snapshot", "Registered immutable ${request.snapshot.snapshotId}; source batch, not inferred Gradle scope",
                         digest = diagnostic.location.fileDigest),
                     Evidence("compiler-options", "Actual explicit flags/classpath/context bound to $key", digest = key),
-                    Evidence("toolchain", "Pinned ordered isolated compiler artifacts and whole selected link-free JDK21 image " +
-                        "${toolchain.runtimeImage.root} (${toolchain.runtimeImage.digest}); disk identity, not loaded-code or OS/JNI attestation",
-                        digest = toolchain.digest),
+                    publicToolchainEvidence(toolchain),
                     Evidence("upstream-factory", mapping.source),
                     Evidence("location-precision", "Reported point: one-based line, zero-based UTF-16 column; no inferred end span"),
                 )), verification = CompilerVerification.recompile(request, diagnostic.upstreamId, toolchain.digest,
@@ -237,16 +285,11 @@ class KotlinJvmCompilerProvider(
             request.snapshot.scopeExclusions.isEmpty() && request.snapshot.unknownInputs.isEmpty() &&
             listOf(request.context.modelDigest,
             request.context.dependencyDigest, request.context.configurationDigest).all { it != null && Digests.valid(it) } &&
-            request.context.toolchainDigest == toolchain.digest
+            (modelPermit != null || request.context.toolchainDigest == toolchain.digest)
         if (!completeModel) reasons += "resolved_compilation_context_incomplete"
         val coverage = required.map { ruleId ->
             val mapping = registry.byRuleId[ruleId]
-            val qualification = qualifications.find { it.ruleId == ruleId && it.contextId == request.context.scope.id &&
-                it.compilerVersion == version && it.toolchainDigest == toolchain.digest &&
-                it.configurationDigest == request.context.configurationDigest && it.modelDigest == request.context.modelDigest &&
-                it.dependencyDigest == request.context.dependencyDigest &&
-                it.compilerArgumentsDigest == Digests.sha256(ContractJson.encodeToString(request.context.compilerArguments)) &&
-                listOf(it.certificateId, it.modelDigest, it.dependencyDigest, it.compilerArgumentsDigest).all(Digests::valid) }
+            val qualification = qualificationFor(ruleId, request)
             val state: String
             val reason: String?
             when {
@@ -281,6 +324,18 @@ class KotlinJvmCompilerProvider(
             outcome.metrics.copy(elapsedMillis = (System.nanoTime() - started) / 1_000_000), version)
     }
 
+    /** Bridge verification is not inherited rule evidence, even if every legacy digest matches. */
+    internal fun qualificationFor(ruleId: String, input: AnalysisInput): CompilerQualification? {
+        if (inputMode != KotlinJvmInputMode.LEGACY_EXPLICIT_INPUT || modelBearingInput(input) ||
+            legacyDeclaredSingleCompilation(input)) return null
+        return qualifications.find { it.ruleId == ruleId && it.contextId == input.context.scope.id &&
+            it.compilerVersion == compilerVersion && it.toolchainDigest == toolchain.digest &&
+            it.configurationDigest == input.context.configurationDigest && it.modelDigest == input.context.modelDigest &&
+            it.dependencyDigest == input.context.dependencyDigest &&
+            it.compilerArgumentsDigest == Digests.sha256(ContractJson.encodeToString(input.context.compilerArguments)) &&
+            listOf(it.certificateId, it.modelDigest, it.dependencyDigest, it.compilerArgumentsDigest).all(Digests::valid) }
+    }
+
     private fun copyArtifacts(artifacts: List<ArtifactIdentity>, root: Path, checkpoint: () -> Unit) {
         Files.createDirectories(root)
         artifacts.forEachIndexed { index, artifact ->
@@ -307,6 +362,15 @@ class KotlinJvmCompilerProvider(
     )
 
     companion object {
+        /** Public finding evidence carries identities, never owner-private installation paths.
+         * The exact selected path stays bound in the private runtime image and execution profile.
+         */
+        internal fun publicToolchainEvidence(toolchain: KotlinJvmToolchain): Evidence = Evidence(
+            "toolchain", "Pinned ordered isolated compiler artifacts and whole selected link-free JDK21 image " +
+                "(${toolchain.runtimeImage.digest}); disk identity, not loaded-code or OS/JNI attestation",
+            digest = toolchain.digest,
+        )
+
         private val JVM_TARGETS = setOf("jvm", "android", "desktop", "desktop-jvm", "desktopjvm", "androidjvm")
         private val SOURCE_SUPPRESSION = Regex("@(?:file\\s*:\\s*)?(?:kotlin\\.)?Suppress\\s*\\(")
     }

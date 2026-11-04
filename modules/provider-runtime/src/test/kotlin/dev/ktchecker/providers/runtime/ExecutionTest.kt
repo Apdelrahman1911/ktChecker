@@ -211,10 +211,34 @@ class ExecutionTest {
     }
 
     private fun unsupported(result: ProcessOutcome): Boolean {
+        val target = SupervisorBundleFormat.target()
+        if (target in SupervisorBundleFormat.targets) {
+            val installed = OwnedProcessContainment.inspect()
+            assertTrue(installed.available, "Supported-host tests require the bundled helper: ${installed.reasons}")
+            assertFalse("process_group_containment_unavailable" in result.reasons,
+                "Missing containment on a supported host is a test failure, not a skip")
+            if (result.status == "executed") {
+                assertNotNull(result.supervisorIdentity)
+                assertTrue(result.executionConfirmed)
+            }
+            return false
+        }
         if (result.reasons != listOf("process_group_containment_unavailable")) return false
         assertEquals("unavailable", result.status)
         assertFalse(result.executed)
+        org.junit.jupiter.api.Assumptions.assumeTrue(false, "Native owned-child containment is unsupported on $target")
         return true
+    }
+
+    @Test fun `fork child exit alone is not proof of selected executable start`() {
+        val unconfirmed = ProcessOutcome("failed", listOf("process_start_unconfirmed"), exitCode = 137)
+        assertFalse(unconfirmed.executed)
+        assertFalse(unconfirmed.successfulExecution)
+        assertEquals(137, unconfirmed.exitCode)
+        val syntheticConfirmed = ProcessOutcome("executed", exitCode = 0, executionConfirmed = true)
+        assertTrue(syntheticConfirmed.executed)
+        assertTrue(syntheticConfirmed.successfulExecution)
+        assertFalse(ProcessOutcome("executed", exitCode = 0).successfulExecution)
     }
 
     @Test fun `locations cannot refer to uncaptured or outside sources`() {

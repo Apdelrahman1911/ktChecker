@@ -11,6 +11,11 @@ apply. This document describes actual commands, not the future protocol-1 CLI.
 Use JDK **21** for the checker, not the independently selected project toolchain.
 The checksum-pinned Gradle **9.6.1** wrapper resolves Kotlin **2.4.21**. Explicit
 builds can download dependencies; reviews do not silently install toolchains.
+Linux/macOS source builds also require Python 3 and an explicitly selected C11
+compiler (default `/usr/bin/cc`; override with
+`-PnativeSupervisorCc=/absolute/compiler`). `-PnativeSupervisorPython=python3`
+selects the build interpreter (`python` is the Windows default). The helper is
+rebuilt locally; it is never downloaded or compiled by a review operation.
 
 ```sh
 ./gradlew --no-daemon --max-workers=1 test :cli:installDist :cli:distZip :cli:distTar
@@ -24,6 +29,45 @@ launcher. Keep **the whole distribution** together: `lib` contains the engine an
 `providers/compiler` contains the isolated compiler, not engine-classloader
 plugins. Java is not bundled. Archives are unsigned previews; check actual
 commit/SHA-256 evidence rather than treating the file name as provenance.
+
+Archives now include a **host-specific** native owned-child supervisor in the
+provider-runtime JAR. Select the correct OS/architecture artifact; this is not a
+universal native binary. `doctor` reports bounded installed-helper inspection
+separately from provider execution. Windows emits an explicit unavailable
+manifest until native Job Objects containment is implemented. A matching binary
+digest does not establish ABI/runtime qualification or a successful analysis.
+The build receipt identifies source, binary and compiler driver, not the entire
+external linker/SDK/shared-library closure. Native cleanup assumes cooperative
+children do not escape their process group/session; it is **not a sandbox** and
+cannot guarantee recovery after the supervisor itself is forcibly killed.
+
+### Compiler runtime selection
+
+The broker JDK and the compiler JDK are separate inputs. The hardened compiler
+requires an explicitly identified **complete, link-free JDK 21 image**, not just a
+hash of `bin/java`. Select it consistently on owner preparation, submissions and
+the persistent broker:
+
+```sh
+ktchecker --compiler-java-home /owner/prepared-jdk21 providers
+ktchecker --compiler-java-home /owner/prepared-jdk21 rpc
+```
+
+`providers` inspects the JVM compiler installation and the bundled process
+supervisor only. `toolchain_bound` is not
+an execution test, rule qualification or target pass. `doctor` without a broker
+does not inspect installed providers. An unsupported or missing compiler runtime
+produces explicit unavailable coverage; registration, capture, suppression
+inspection and other providers remain usable. A rejected explicit JDK **never
+falls back** to the broker's JDK or to a launcher-only identity.
+
+For a trusted vendor image containing links, the POSIX-only explicit owner utility
+`python3 scripts/prepare_jdk_image.py --help` constructs a new bounded copy and a
+private provenance receipt. Link targets outside the source require explicit
+`--external-root` grants; only exact, justified dangling links can be excluded.
+Review never runs this utility, downloads a JDK, or invents these permissions.
+Its optional `--verify-runtime` is a real owner-authorized `java -version` probe,
+not compiler or feature qualification. Do not modify the prepared image in place.
 
 State defaults outside project sources:
 
@@ -53,8 +97,10 @@ certify a final live-worktree action. Do not compile only edited lines.
 ktchecker register --workspace sample --worktree task-tree --client agent-a \
   --session session-a --lineage feature-a --out agent-a-private.json
 ktchecker overlay --request overlay.json --out capture.json
-ktchecker prepare --request compilation.json --authorize-execution --out prepared.json
-ktchecker submit --prepared prepared.json --wait-ms 10000
+ktchecker --compiler-java-home /owner/prepared-jdk21 prepare \
+  --request compilation.json --authorize-execution --out prepared.json
+ktchecker --compiler-java-home /owner/prepared-jdk21 submit \
+  --prepared prepared.json --wait-ms 10000
 ```
 
 Owner-selected output files must be **new**; no implicit overwrite. Registration
@@ -113,13 +159,17 @@ receipts. One agent's ACK does not consume another's observation obligation.
 For a runnable synthetic two-client example:
 
 ```sh
-python3 scripts/run_preview_example.py --output /tmp/ktchecker-example
+python3 scripts/run_preview_example.py --compiler-java-home /owner/prepared-jdk21 \
+  --output /tmp/ktchecker-example
 ```
 
-The Python controller polls outside any model reasoning loop and reports separate
-acknowledgment/observed-findings/terminal times. It explicitly does **not** claim
-model-context delivery. `--prepare-only` creates owner documents for a separate
-host experiment. Do not share credential files when sharing the sanitized report.
+This example is POSIX-only; its transport needs no-follow private files,
+nonblocking pipes and `waitid(WNOWAIT)`. It polls outside any model reasoning loop
+and separately reports startup, acknowledgment, application-observed useful
+findings and terminal times, with explicit unmeasured model-context/resource
+fields. It does **not** claim model-context delivery or full-project success.
+`--prepare-only` creates owner documents for a separate host experiment. Do not
+share credential files when sharing the sanitized report.
 
 Prefer independent worktrees or immutable overlays. Each next patch supplies its
 base snapshot and expected head revision. `STRICT_HEAD` rejects a stale base;
@@ -159,6 +209,8 @@ ktchecker suppressions inspect --client agent-a --out next-revision.json
 ktchecker suppressions remove --client agent-a --id team-review-exception \
   --expected next-revision.json --layer shared --owner-action
 ktchecker suppressions explain --client agent-a --prepared prepared.json --finding finding.json
+ktchecker suppressions selector --client agent-a --prepared prepared.json --finding finding.json \
+  --out exact-selector.json
 ktchecker suppressions export --client agent-a --out shared-policy.json
 ```
 
@@ -170,6 +222,28 @@ For enable/disable, use `suppressions enable|disable --rule STABLE_ID` with the 
 expected revision and explicit owner flag. Shared/local precedence, narrow finding/
 file/range/symbol binding and expiration are specified in [suppressions.md](suppressions.md).
 Compiler/build failures and unavailability cannot be accepted into success.
+
+`selector` is a read-only helper: insert its complete JSON object as the
+`selector` of a separately owner-approved suppression with a reason,
+justification and chosen scope. It checks the captured policy, consumer and
+source identity but does **not** certify that owner-supplied finding JSON came
+from an executed detector. It does not add or activate a suppression. Without a
+selected, byte-identified provider installation it refuses narrow selectors;
+catalog metadata or a plan-less adapter is not an implementation certificate.
+
+Policy controls accept exact provider routing aliases (for example
+`style:MagicNumber`, `detekt.style.MagicNumber`, `ABSTRACT_MEMBER_NOT_IMPLEMENTED`,
+and unique Lint IDs such as `NewApi`) and store the stable ktChecker ID. Ambiguous
+names such as navigation's `WrongStartDestinationType`, excluded duplicates,
+and upstream checks needing a narrower custom detector are not silently merged.
+Use the stable ID when unsure. These aliases do not qualify or enable a rule.
+Registry/provider upgrades change narrow-policy identities; an unavailable
+historical registry is reported, never replaced silently for accepted work.
+
+Owner input documents use bounded, strict UTF-8 JSON: duplicate keys (including
+escaped aliases), unknown DTO fields and malformed Unicode fail closed. Machine
+output is UTF-8 regardless of the console encoding. An invalid wait limit is
+rejected before accepting a patch.
 
 ## Providers, host delivery and honest limitations
 
@@ -191,3 +265,11 @@ Compiler/build failures and unavailability cannot be accepted into success.
 - Coverage/precision: generate `scripts/rule_coverage.py` output; current tuples
   and tests are not a global release matrix. Strict coverage/qualification gates
   intentionally fail while obligations remain unmet.
+
+Coverage-report consumers must check the invocation's exit code and
+`inventory_valid`, not reuse a file from an earlier run. With `--output`, the
+generator atomically publishes `pending` before validation, then a valid inventory
+or explicit `unavailable` with unknown counts. A valid inventory can still fail
+`--require-tested`/`--require-qualified`; that complete gap report is retained.
+Select a dedicated report path, never an input/evidence file, and use distinct
+paths for concurrent invocations. Report-file replacement is not a durable ledger.

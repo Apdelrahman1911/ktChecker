@@ -1,6 +1,7 @@
 package dev.ktchecker.cli
 
 import dev.ktchecker.contracts.*
+import dev.ktchecker.config.ConfigValidationException
 import dev.ktchecker.kernel.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -103,6 +104,116 @@ class WorkbenchTest {
         Workbench(options).use { work ->
             assertEquals(identity, work.register("project", "tree", "intent-client", "session", "lineage"))
             assertEquals(identity, work.kernel.registerClient(identity))
+        }
+    }
+
+    @Test fun catalogAndUninstalledProviderRoutesCannotMintNarrowFindingIdentity() {
+        Workbench(options()).use { work ->
+            val saved = fixture(work)
+            val before = work.inspectConfig("agent-a")
+            val file = saved.input.snapshot.files.single()
+            listOf(
+                "ktc.architecture.allowed_dependency_edge" to "architecture",
+                "ktc.kotlin.detekt.style.magic-number" to "detekt",
+                "ktc.android.lint.NewApi" to "android-lint",
+            ).forEach { (id, provider) ->
+                val finding = Finding(id, "Synthetic warning", "Control", "Identity test only",
+                    SourceLocation(file.path, file.digest), "untrusted-fingerprint", provider, saved.input.context.scope)
+                assertFailsWith<ConfigValidationException> { work.findingSelector("agent-a", saved.input, finding) }
+                assertFailsWith<CliProblem> { work.findingSelector("other-consumer", saved.input, finding) }
+            }
+            assertEquals(before, work.inspectConfig("agent-a"))
+        }
+    }
+
+    @Test fun invalidWaitOptionRejectsBeforeAcceptingPatchOrReadingPreparedInput() {
+        val options = options()
+        lateinit var saved: PreparedReview
+        val path = Files.createTempDirectory("ktchecker-owner-submission-").resolve("prepared.json")
+        Workbench(options).use { work -> saved = fixture(work); saveOwnerFile(path, result(saved)) }
+        listOf("-1", "nonsense", "300001").forEach { wait ->
+            assertEquals(3, runCli(arrayOf("--state", options.state.toString(), "--workers", "0", "submit",
+                "--prepared", path.toString(), "--wait-ms", wait)))
+        }
+        Workbench(options).use { work ->
+            assertTrue(work.kernel.events(work.registration("agent-a").client).events.isEmpty())
+        }
+    }
+
+    @Test fun explicitAlternateParserVersionIsPreservedButCannotBorrowBundledStdlib() {
+        Workbench(options()).use { work ->
+            val base = fixture(work)
+            val spec = PreparationSpec("agent-a", base.input.snapshot.snapshotId, "syntax-patch", "syntax-request",
+                listOf("Main.kt"), requiredRuleIds = listOf("ktc.compose.pack.ComposableParamOrder"),
+                addKotlinStdlib = false, compilerVersion = "2.2.21")
+            val selected = work.prepare(spec, false)
+            assertEquals("2.2.21", selected.input.context.compilerVersion)
+            assertTrue(selected.input.context.classpath.isEmpty())
+            assertNull(selected.input.context.toolchainDigest)
+            assertNotEquals(base.input.context.modelDigest, selected.input.context.modelDigest)
+            assertFalse(selected.input.context.fullProject)
+            assertFalse(selected.executionAuthorized)
+            assertEquals("matching_stdlib_unavailable", assertFailsWith<CliProblem> {
+                work.prepare(spec.copy(addKotlinStdlib = true), false)
+            }.code)
+            listOf("", "latest", "2.2", "2.2.21\n", "2.2.21-" + "x".repeat(65)).forEach { version ->
+                assertEquals("invalid_compiler_version", assertFailsWith<CliProblem> {
+                    work.prepare(spec.copy(compilerVersion = version), false)
+                }.code)
+            }
+        }
+    }
+
+    @Test fun projectClasspathOrderAndRepeatedEntriesRemainInAcceptedModelIdentity() {
+        Workbench(options()).use { work ->
+            val base = fixture(work)
+            val root = Files.createTempDirectory("ktchecker-classpath-order-")
+            fun artifact(name: String, text: String) = ArtifactIdentity("example:$name:1", Digests.sha256(text),
+                root.resolve("$name.jar").also { Files.writeString(it, text) }.toString())
+            // File identities are controls for prepare(), NOT claims of executable valid JARs.
+            val z = artifact("z", "first-definition")
+            val a = artifact("a", "second-definition")
+            val spec = PreparationSpec("agent-a", base.input.snapshot.snapshotId, "classpath-patch", "classpath-request",
+                listOf("Main.kt"), requiredRuleIds = base.input.requiredRuleIds, addKotlinStdlib = false,
+                classpath = listOf(z, a, z))
+            val first = work.prepare(spec, false)
+            val reversed = work.prepare(spec.copy(classpath = listOf(a, z, z)), false)
+            assertEquals(listOf(z, a, z), first.input.context.classpath)
+            assertEquals(listOf(a, z, z), reversed.input.context.classpath)
+            assertNotEquals(first.input.context.dependencyDigest, reversed.input.context.dependencyDigest)
+            assertNotEquals(first.input.analysisKey(), reversed.input.analysisKey())
+            assertEquals("classpath_identity_conflict", assertFailsWith<CliProblem> {
+                work.prepare(spec.copy(classpath = listOf(z, z.copy(digest = Digests.sha256("other")))), false)
+            }.code)
+        }
+    }
+
+    @Test fun invalidExplicitCompilerRuntimeDoesNotBreakCaptureSubmissionOrConcealUnavailableCoverage() {
+        val artifacts = Files.createTempDirectory("ktchecker-unavailable-compiler-")
+        Files.writeString(artifacts.resolve("kotlin-compiler-embeddable-2.4.21.jar"), "not-an-executable-compiler")
+        val options = options().copy(compilerDirectory = artifacts,
+            compilerJavaHome = artifacts.resolve("explicit-missing-jdk"), workerCount = 1)
+        Workbench(options).use { work ->
+            val selected = work.providerAvailability().getValue("compiler").jsonObject
+            assertEquals("unavailable", selected.getValue("state").jsonPrimitive.content)
+            assertTrue(selected.getValue("reason").jsonPrimitive.content.startsWith("compiler_java_runtime_"))
+            assertEquals("explicit_owner_selection", selected.getValue("javaHomeSelection").jsonPrimitive.content)
+            val saved = fixture(work)
+            assertTrue(saved.profiles.isEmpty(), "An unavailable runtime cannot mint an executable profile")
+            assertNull(saved.input.context.toolchainDigest)
+            val credential = work.registration("agent-a").client
+            var status = work.submit(credential, saved.patchId, saved.idempotencyKey, saved.input)
+            val deadline = System.nanoTime() + 10_000_000_000L
+            while (status.result == null && System.nanoTime() < deadline) {
+                Thread.sleep(10)
+                status = work.kernel.status(credential, status.reviewId)
+            }
+            val observed = assertNotNull(status.result, "Unavailable analysis must still reach an explicit terminal result")
+            assertTrue(observed.findings.isEmpty())
+            assertEquals(saved.input.requiredRuleIds, observed.coverage.map { it.ruleId })
+            assertTrue(observed.coverage.all { it.state == "unavailable" && it.reason!!.startsWith("compiler_java_runtime_") })
+            assertFalse(observed.complete())
+            assertEquals(2, reviewExit(status))
         }
     }
 }

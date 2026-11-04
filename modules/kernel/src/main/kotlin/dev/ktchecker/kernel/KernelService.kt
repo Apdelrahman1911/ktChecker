@@ -31,6 +31,7 @@ class KernelService private constructor(
     findingProviders: Map<String, Set<String>>,
     private val resultPolicy: ResultPolicy,
     planAuthority: ReviewPlanAuthority,
+    routingAuthority: ReviewPlanRoutingAuthority,
 ) : AutoCloseable {
     internal val root = dataDir.toAbsolutePath().normalize()
     internal val ledger = Ledger(root, config)
@@ -45,7 +46,7 @@ class KernelService private constructor(
     internal val ingestion = Semaphore(maxOf(1, config.workerCount))
     private val cursorSecret: ByteArray
     private val scheduler: WorkScheduler
-    internal val plans = ParentPlans(this, planAuthority)
+    internal val plans = ParentPlans(this, planAuthority, routingAuthority)
 
     init {
         require(providerId.isNotBlank() && providerVersion.isNotBlank())
@@ -71,8 +72,9 @@ class KernelService private constructor(
             findingProviders: Map<String, Set<String>> = provider.supportedRuleIds.associateWith { setOf(provider.id) },
             resultPolicy: ResultPolicy = ResultPolicy.NONE,
             planAuthority: ReviewPlanAuthority = ReviewPlanAuthority.DENY,
+            routingAuthority: ReviewPlanRoutingAuthority = ReviewPlanRoutingAuthority.DENY,
         ): KernelService = KernelService(dataDir, provider, ContractJson.decodeFromString<KernelConfig>(canonical(config)),
-            snapshotGate, preparedInputObserver, findingProviders, resultPolicy, planAuthority)
+            snapshotGate, preparedInputObserver, findingProviders, resultPolicy, planAuthority, routingAuthority)
     }
 
     fun registerClient(binding: ClientBinding): ClientRegistration = registerClient(ClientRegistration(binding,
@@ -559,7 +561,7 @@ class KernelService private constructor(
 
     internal fun authenticate(c: Connection, credential: ClientCredential): ClientBinding =
         authenticate(c, credential.clientId, credential.token, adapter = false)
-    private fun authenticate(c: Connection, credential: AdapterCredential): ClientBinding =
+    internal fun authenticate(c: Connection, credential: AdapterCredential): ClientBinding =
         authenticate(c, credential.clientId, credential.token, adapter = true)
     private fun authenticate(c: Connection, clientId: String, token: String, adapter: Boolean): ClientBinding {
         val row = c.one("SELECT binding_json,${if (adapter) "adapter_hash" else "client_hash"} FROM clients WHERE client_id=?", clientId) {

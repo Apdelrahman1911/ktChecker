@@ -1,0 +1,1 @@
+Shared resource consumed by both actual JVM targets.

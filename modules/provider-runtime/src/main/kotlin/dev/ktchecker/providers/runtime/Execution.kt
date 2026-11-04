@@ -10,10 +10,6 @@ import java.nio.file.SecureDirectoryStream
 import java.nio.file.StandardOpenOption.READ
 import java.nio.file.attribute.BasicFileAttributeView
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import kotlin.concurrent.thread
 
 /** A transport boolean, project policy or compiler argument is never execution authority. */
 fun interface ExecutionAuthority {
@@ -69,9 +65,12 @@ data class ProcessOutcome(
     val truncated: Boolean = false,
     val metrics: AnalysisMetrics = AnalysisMetrics(),
     internal val outputIdentity: String? = null,
+    val supervisorIdentity: OwnedSupervisorIdentity? = null,
+    val executionConfirmed: Boolean = false,
 ) {
-    val executed: Boolean get() = exitCode != null
-    val successfulExecution: Boolean get() = status == "executed"
+    /** A fork-child exit alone is not proof that the selected executable started. */
+    val executed: Boolean get() = executionConfirmed
+    val successfulExecution: Boolean get() = executionConfirmed && status == "executed"
 
     /** Fresh isolated output only. Symlinks and path traversal are not evidence. */
     fun report(relativePath: String, maxBytes: Int = 8_388_608): ByteArray {
@@ -169,131 +168,31 @@ class IsolatedProcessRunner(private val onComplete: (ProcessOutcome) -> Unit = {
             return outcome("unavailable", problemCode(e, "snapshot_verification_failed"))
         }
 
-        val process: Process
-        val os = System.getProperty("os.name").lowercase()
-        val groupPrefix = when {
-            os.contains("linux") && Files.isExecutable(Path.of("/usr/bin/setsid")) -> listOf("/usr/bin/setsid", "--wait")
-            (os.contains("mac") || os.contains("darwin")) && Files.isExecutable(Path.of("/usr/bin/perl")) ->
-                listOf("/usr/bin/perl", "-MPOSIX", "-e", "POSIX::setsid() >= 0 or die qq(setsid failed: \$!); exec @ARGV; die qq(exec failed: \$!);", "--")
-            else -> emptyList()
-        }
-        if (groupPrefix.isEmpty() || !Files.isExecutable(Path.of("/bin/kill"))) {
-            return ProcessOutcome("unavailable", listOf("process_group_containment_unavailable"), outputDirectory = output,
-                command = command, metrics = AnalysisMetrics(elapsedMillis = elapsed(started)))
-        }
         // Preparation and owner callbacks count against the budget too. A callback is
         // trusted/cooperative and cannot be forcibly time-bounded in this JVM; overrun
         // is still a failed attempt, never evidence of successful execution.
         if (cancellation.isCancelled()) return ProcessOutcome("cancelled", listOf("cancelled_before_execution"),
             outputDirectory = output, command = command, cancelled = true, metrics = AnalysisMetrics(elapsedMillis = elapsed(started)))
-        if (elapsed(started) >= execution.timeoutMillis) return ProcessOutcome("failed", listOf("execution_timeout"),
+        val remainingMillis = execution.timeoutMillis - elapsed(started)
+        if (remainingMillis <= 0) return ProcessOutcome("failed", listOf("execution_timeout"),
             outputDirectory = output, command = command, timedOut = true, metrics = AnalysisMetrics(elapsedMillis = elapsed(started)))
-        try {
-            // Fixed system launcher, never a workspace-controlled command. On Linux descendants
-            // inherit an owned session/process group, including children between polling samples.
-            val launched = groupPrefix + command
-            val builder = ProcessBuilder(launched).directory(sources.root.toFile())
-            builder.environment().clear()
-            // Retain only the system search path needed by explicitly authorized script descendants.
-            System.getenv("PATH")?.let { builder.environment()["PATH"] = it }
-            System.getenv("SystemRoot")?.let { builder.environment()["SystemRoot"] = it }
-            builder.environment().putAll(execution.environment)
-            builder.environment()["TMPDIR"] = output.resolve("tmp").toString()
-            builder.environment()["TMP"] = output.resolve("tmp").toString()
-            builder.environment()["TEMP"] = output.resolve("tmp").toString()
-            process = builder.start()
-            process.outputStream.close()
-        } catch (_: Exception) {
-            return ProcessOutcome("failed", listOf("process_start_failed"), outputDirectory = output,
-                command = command, metrics = AnalysisMetrics(elapsedMillis = elapsed(started)))
-        }
 
-        val total = AtomicLong()
-        val overLimit = AtomicBoolean()
-        val readFailed = AtomicBoolean()
-        val stdout = ByteArrayOutputStream()
-        val stderr = ByteArrayOutputStream()
-        fun drain(stream: java.io.InputStream, buffer: ByteArrayOutputStream) = thread(isDaemon = true) {
-            try {
-                stream.use {
-                    val bytes = ByteArray(8192)
-                    while (true) {
-                        val count = it.read(bytes)
-                        if (count < 0) break
-                        val prior = total.getAndAdd(count.toLong())
-                        val allowed = (execution.maxOutputBytes.toLong() - prior).coerceIn(0, count.toLong()).toInt()
-                        if (allowed > 0) synchronized(buffer) { buffer.write(bytes, 0, allowed) }
-                        if (prior + count > execution.maxOutputBytes) overLimit.set(true)
-                    }
-                }
-            } catch (_: Exception) { readFailed.set(true) }
-        }
-        val readers = listOf(drain(process.inputStream, stdout), drain(process.errorStream, stderr))
-        val children = ConcurrentHashMap<Long, ProcessHandle>()
-        var cancelled = false
-        var timeout = false
-        var interrupted = false
-        var groupQuiescent = false
-        try {
-            while (process.isAlive) {
-                process.toHandle().descendants().use { stream -> stream.forEach { children[it.pid()] = it } }
-                cancelled = cancellation.isCancelled()
-                timeout = elapsed(started) >= execution.timeoutMillis
-                if (cancelled || timeout || overLimit.get()) break
-                Thread.sleep(10)
-            }
-        } catch (_: InterruptedException) {
-            interrupted = true
-            cancelled = true
-        } finally {
-            process.toHandle().descendants().use { stream -> stream.forEach { children[it.pid()] = it } }
-            // A completed parent must not leave owned children writing into this review's outputs.
-            // Signal even if a quick parent has exited: unobserved background descendants remain
-            // in the owned group. A new session can still escape; trusted builds must cooperate.
-            signalGroup(process.pid(), "TERM")
-            if (process.isAlive || children.values.any { it.isAlive }) {
-                children.values.forEach { it.destroy() }
-                if (process.isAlive) process.destroy()
-                val until = System.nanoTime() + 250_000_000
-                while ((process.isAlive || children.values.any { it.isAlive }) && System.nanoTime() < until) {
-                    try { Thread.sleep(10) } catch (_: InterruptedException) { interrupted = true }
-                }
-                children.values.filter { it.isAlive }.forEach { it.destroyForcibly() }
-                signalGroup(process.pid(), "KILL")
-                if (process.isAlive) process.destroyForcibly()
-            }
-            try { process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS) }
-            catch (_: InterruptedException) { interrupted = true }
-            readers.forEach {
-                try { it.join(2000) } catch (_: InterruptedException) { interrupted = true }
-            }
-            // Include a late, TERM-resistant unobserved group member in bounded cleanup.
-            signalGroup(process.pid(), "KILL")
-            val until = System.nanoTime() + 1_000_000_000
-            do {
-                val state = groupIsQuiescent(process.pid())
-                if (state == true) { groupQuiescent = true; break }
-                if (state == null) break
-                try { Thread.sleep(20) } catch (_: InterruptedException) { interrupted = true; break }
-            } while (System.nanoTime() < until)
-        }
-        val reasons = mutableListOf<String>()
-        var status = "executed"
-        if (cancelled) { status = "cancelled"; reasons += "execution_cancelled" }
-        else if (timeout) { status = "failed"; reasons += "execution_timeout" }
-        else if (overLimit.get()) { status = "failed"; reasons += "process_output_limit" }
-        if (readers.any { it.isAlive } || readFailed.get()) {
-            status = "failed"
-            reasons += "process_output_unreliable"
-        }
-        if (process.isAlive || children.values.any { it.isAlive }) {
-            status = "failed"
-            reasons += "owned_process_shutdown_failed"
-        }
-        if (!groupQuiescent) {
-            status = "failed"
-            reasons += "owned_process_group_shutdown_unverified"
-        }
+        // The installed, digest-verified native image owns and retains its actual
+        // fork child through the final group signal. Java only exchanges framed
+        // output and one-shot cancellation with it; it never signals a PID/PGID.
+        val environment = mutableMapOf<String, String>()
+        System.getenv("PATH")?.let { environment["PATH"] = it }
+        System.getenv("SystemRoot")?.let { environment["SystemRoot"] = it }
+        environment.putAll(execution.environment)
+        environment["TMPDIR"] = output.resolve("tmp").toString()
+        environment["TMP"] = output.resolve("tmp").toString()
+        environment["TEMP"] = output.resolve("tmp").toString()
+        val supervised = OwnedProcessSupervisor.run(command, sources.root, environment,
+            remainingMillis, execution.maxOutputBytes, cancellation)
+        val reasons = supervised.reasons.toMutableList()
+        var status = supervised.status
+        var cancelled = supervised.cancelled
+        var timeout = supervised.timedOut
         try {
             sources.verify()
             permit.verifySnapshot()
@@ -309,29 +208,35 @@ class IsolatedProcessRunner(private val onComplete: (ProcessOutcome) -> Unit = {
         }
         var out = ""
         var err = ""
-        try {
-            out = synchronized(stdout) { strictUtf8(stdout.toByteArray()) }
-            err = synchronized(stderr) { strictUtf8(stderr.toByteArray()) }
-        } catch (_: Exception) {
-            status = "failed"
-            reasons += "process_output_invalid_utf8"
-        }
+        try { out = strictUtf8(supervised.stdout) }
+        catch (_: Exception) { status = "failed"; reasons += "process_output_invalid_utf8" }
+        try { err = strictUtf8(supervised.stderr) }
+        catch (_: Exception) { status = "failed"; reasons += "process_output_invalid_utf8" }
         if (cancellation.isCancelled()) {
             cancelled = true
-            status = "cancelled"
+            // A late cancellation cannot erase a protocol/cleanup/snapshot error.
+            if (status == "executed" || status == "cancelled") status = "cancelled"
             reasons += "execution_cancelled"
         } else if (elapsed(started) >= execution.timeoutMillis) {
             timeout = true
             status = "failed"
             reasons += "execution_timeout"
         }
-        if (interrupted) Thread.currentThread().interrupt()
         return ProcessOutcome(
-            status, reasons.distinct(), if (process.isAlive) null else process.exitValue(),
-            out, err, output, command,
-            cancelled, timeout, overLimit.get(),
-            AnalysisMetrics(elapsedMillis = elapsed(started), outputBytes = total.get()),
-            outputIdentity,
+            status = status,
+            reasons = reasons.distinct(),
+            exitCode = supervised.exitCode,
+            stdout = out,
+            stderr = err,
+            outputDirectory = output,
+            command = command,
+            cancelled = cancelled,
+            timedOut = timeout,
+            truncated = supervised.truncated,
+            metrics = AnalysisMetrics(elapsedMillis = elapsed(started), outputBytes = supervised.outputBytes),
+            outputIdentity = outputIdentity,
+            supervisorIdentity = supervised.supervisorIdentity,
+            executionConfirmed = supervised.executionConfirmed,
         )
     }
 }
@@ -359,50 +264,6 @@ private fun readReport(directory: SecureDirectoryStream<Path>, parts: List<Path>
         }
         return bytes.toByteArray()
     }
-}
-
-private fun signalGroup(pid: Long, signal: String) {
-    try {
-        val signaler = ProcessBuilder("/bin/kill", "-$signal", "--", "-$pid").start()
-        if (!signaler.waitFor(250, java.util.concurrent.TimeUnit.MILLISECONDS)) signaler.destroyForcibly()
-        signaler.inputStream.close()
-        signaler.errorStream.close()
-    } catch (_: Exception) { /* Individual owned handles are still stopped and verified. */ }
-}
-
-/** Bounded fixed-system-tool observation; zombies cannot write reports. Unknown fails closed. */
-private fun groupIsQuiescent(group: Long): Boolean? {
-    val ps = listOf(Path.of("/bin/ps"), Path.of("/usr/bin/ps")).firstOrNull { Files.isExecutable(it) } ?: return null
-    var process: Process? = null
-    try {
-        val observed = ProcessBuilder(ps.toString(), "-axo", "pid=,pgid=,stat=").redirectErrorStream(true).start()
-        process = observed
-        val output = ByteArrayOutputStream()
-        val bad = AtomicBoolean()
-        val reader = thread(isDaemon = true) {
-            try {
-                observed.inputStream.use { stream ->
-                    val buffer = ByteArray(8192)
-                    while (true) {
-                        val count = stream.read(buffer)
-                        if (count < 0) break
-                        if (output.size() + count > 1_048_576) { bad.set(true); break }
-                        output.write(buffer, 0, count)
-                    }
-                }
-            } catch (_: Exception) { bad.set(true) }
-        }
-        if (!observed.waitFor(500, java.util.concurrent.TimeUnit.MILLISECONDS)) return null
-        reader.join(500)
-        if (reader.isAlive || bad.get() || observed.exitValue() != 0) return null
-        for (line in strictUtf8(output.toByteArray()).lineSequence().filter { it.isNotBlank() }) {
-            val values = line.trim().split(Regex("\\s+"))
-            if (values.size != 3 || values[0].toLongOrNull() == null || values[1].toLongOrNull() == null) return null
-            if (values[1].toLong() == group && !values[2].startsWith("Z")) return false
-        }
-        return true
-    } catch (_: Exception) { return null }
-    finally { process?.let { if (it.isAlive) it.destroyForcibly() } }
 }
 
 fun strictUtf8(bytes: ByteArray): String = Charsets.UTF_8.newDecoder()

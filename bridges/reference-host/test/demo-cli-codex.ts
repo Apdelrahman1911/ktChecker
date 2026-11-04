@@ -4,9 +4,9 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { BrokerError } from '@ktchecker/mcp-preview/rpc';
 import { ReferenceHost } from '../src/adapter.js';
@@ -15,22 +15,40 @@ import { CodexHostPort } from '../src/codex-host.js';
 import { CodexAppServer } from '../src/codex-app-server.js';
 import { canonical, digest, HostError, InboxJournal } from '../src/journal.js';
 import type { InboxEntry, Registration } from '../src/types.js';
-import { ActualCliFixture, ActualFaultBroker, BROKEN_SOURCE, COMPILER_RULE, FIXTURE_PATH, REPAIRED_SOURCE } from './actual-cli-fixture.js';
+import { ACTUAL_DEMO_USAGE, ActualCliFixture, ActualFaultBroker, BROKEN_SOURCE, COMPILER_RULE, FIXTURE_PATH, REPAIRED_SOURCE,
+  actualDemoCleanupEvidence, parseActualDemoArgs, reserveActualDemoEvidence } from './actual-cli-fixture.js';
 import { captureApplicationEvidence } from './application-evidence.js';
 import { captureRunIdentity } from './run-identity.js';
 import { captureDeliveryTelemetry, permanentDeliveryProblem, safeDeliveryProblem } from './delivery-telemetry.js';
 import { OwnedDemoThreads } from './owned-demo-threads.js';
 
-const args = process.argv.slice(2);
-if (args.length !== 5 || args[0] !== '--allow-inference' || args[1] !== '--cli' || !args[2] || args[3] !== '--evidence' || !args[4]) {
-  process.stderr.write('Explicit approval required: demo-cli-codex --allow-inference --cli KT_CHECKER_LAUNCHER --evidence EVIDENCE_JSON\n');
+const selection = (() => {
+  try { return parseActualDemoArgs(process.argv.slice(2)); }
+  catch {
+    process.stderr.write('Explicit selections and approval required: ' + ACTUAL_DEMO_USAGE + '\n');
+    process.exit(2);
+  }
+})();
+// Refuse a reused evidence pathname BEFORE creating runtime state or starting any subprocess.
+const evidence = await reserveActualDemoEvidence(selection.evidence).catch(error => {
+  process.stderr.write((error instanceof HostError ? error.code : 'actual_demo_evidence_reservation_failed') + '\n');
   process.exit(2);
+});
+const outputPath = evidence.path;
+let directory: string;
+try { directory = await mkdtemp(join(tmpdir(), 'ktchecker-public-actual-delivery-')); }
+catch {
+  try { await evidence.write(JSON.stringify({ verified: false, failure: 'actual_demo_temp_directory_failed' }) + '\n'); }
+  finally { await evidence.close(); }
+  process.stderr.write('actual_demo_temp_directory_failed\n');
+  process.exit(1);
 }
-const outputPath = resolve(args[4]);
-const directory = await mkdtemp(join(tmpdir(), 'ktchecker-public-actual-delivery-'));
+// Never put this private path into public evidence/model context. No automatic tree deletion
+// is safe here: closing an RPC process is not a verified native-group shutdown receipt.
+process.stderr.write('Run tree retained for owner-only manual reconciliation/cleanup; native quiescence is not observed: ' + directory + '\n');
 const publicDirectory = join(directory, 'public-source');
 const privateDirectory = join(directory, 'private-controller');
-const fixture = new ActualCliFixture(args[2], privateDirectory);
+const fixture = new ActualCliFixture(selection.launcher, privateDirectory, selection.compilerJavaHome);
 const rpc = new ActualFaultBroker(fixture);
 const report: Record<string, unknown> = {
   schema: 'ktchecker-host-evidence/preview-1', date: new Date().toISOString(),
@@ -38,8 +56,11 @@ const report: Record<string, unknown> = {
   contractVersion: 'ktchecker/preview-1', model: 'gpt-6-astra', allowProviderModelFallback: false,
   internalInferenceRequestTrace: false, actualKernelIntegration: false, actualKotlinCompilerRun: false,
   sourceAuthority: 'immutable_owner_overlay_not_physical_live_worktree',
+  ...actualDemoCleanupEvidence(),
   fullProjectModel: false, releaseQualified: false, guardedActionPerformed: false, modelPollingCalls: 0,
-  node: process.version, codex: execFileSync('codex', ['--version'], { encoding: 'utf8' }).trim(),
+  node: process.version, codex: null,
+  compilerJdkSelection: 'explicit_owner_path_shared_by_every_owner_command_and_rpc_restart', compilerJdkAmbientFallback: false,
+  compilerJdkValidationBoundary: 'actual_cli_runtime_verifier_not_this_argument_parser',
   sourceFixture: { path: FIXTURE_PATH, p1: BROKEN_SOURCE, p2: REPAIRED_SOURCE },
   ownerExplicitlyEnabledRule: COMPILER_RULE, candidateCoverageScope: 'all-catalog-candidates-for-declared-target',
   phases: [], negatives: {}, verified: false,
@@ -80,12 +101,17 @@ async function waitForResult(consumer: Consumer, patch: string): Promise<InboxEn
   return resultEntry(consumer, patch)!;
 }
 function assertPublicOnly(text: string): void {
-  if (text.includes(privateDirectory)) throw new HostError('private_path_in_public_diagnostic');
+  if (text.includes(privateDirectory) || text.includes(fixture.compilerJavaHome)) throw new HostError('private_path_in_public_diagnostic');
   for (const consumer of consumers) for (const credential of [consumer.registration.client, consumer.registration.adapter]) {
     if (text.includes(credential.token)) throw new HostError('credential_in_public_diagnostic');
   }
 }
 function compilerEvidence(entry: InboxEntry): Record<string, unknown> {
+  // Future runs retain the exact public synthetic original, so the complete
+  // event and coverage digests can be recomputed after disposable-store cleanup.
+  // This does not retroactively add missing bytes to predecessor evidence.
+  assertPublicOnly(entry.event.payload);
+  assert.equal(digest(entry.event.payload), entry.event.payloadDigest);
   const payload = JSON.parse(entry.event.payload);
   const result = payload.result;
   assert(result && Array.isArray(result.coverage) && Array.isArray(result.findings));
@@ -93,6 +119,7 @@ function compilerEvidence(entry: InboxEntry): Record<string, unknown> {
   assert(row);
   return { reviewId: entry.event.reviewId, eventId: entry.event.eventId, sourceSnapshotId: entry.event.sourceSnapshotId,
     payloadDigest: entry.event.payloadDigest, originalPayloadBytes: Buffer.byteLength(entry.event.payload),
+    originalPayload: entry.event.payload, originalPayloadDigestIndependentlyRecomputableOffline: true,
     projectedContextBytes: Buffer.byteLength(entry.item!.text), state: payload.state,
     findings: result.findings, rawDiagnostics: result.rawDiagnostics, selectedCompilerCoverage: row,
     requiredCoverageRows: result.coverage.filter((row: { required: boolean }) => row.required).length,
@@ -121,6 +148,8 @@ async function expectRejection(name: string, operation: () => Promise<unknown>, 
 }
 
 try {
+  report.stage = 'verify_codex_executable_version';
+  report.codex = execFileSync('codex', ['--version'], { encoding: 'utf8' }).trim();
   report.stage = 'capture_actual_application_bytecode_identity';
   report.runIdentity = await captureRunIdentity(fixture.launcher);
   report.stage = 'owner_fixture_enrollment_and_preparation';
@@ -273,23 +302,36 @@ try {
   });
   process.exitCode = 1;
 } finally {
-  releaseTool();
-  for (const consumer of consumers) await closeConsumer(consumer).catch(() => {});
-  await rpc.close();
-  // A fresh control-only connection can delete the exact known IDs even when a
-  // consumer app-server was already disconnected. No resume/list/turn is sent.
-  const cleanup = await ownedThreads.cleanup(() => new CodexAppServer());
-  report.threadCleanup = cleanup; report.ownedDisposableThreadsDeleted = cleanup.allConfirmed;
-  report.privateRecoveryStateRetained = !cleanup.allConfirmed;
-  if (cleanup.allConfirmed) await rm(directory, { recursive: true, force: true });
-  else {
-    report.verified = false; report.failure ??= 'owned_disposable_cleanup_unconfirmed'; process.exitCode = 1;
-    if (report.stage === 'verified') report.stage = 'owned_disposable_cleanup_unconfirmed';
-    process.stderr.write('Disposable demo cleanup unconfirmed; owner-only recovery state retained at ' + directory + '\n');
+  try {
+    releaseTool();
+    for (const consumer of consumers) await closeConsumer(consumer).catch(() => {});
+    await rpc.close();
+    // A fresh control-only connection can delete the exact known IDs even when a
+    // consumer app-server was already disconnected. No resume/list/turn is sent.
+    const cleanup = await ownedThreads.cleanup(() => new CodexAppServer());
+    report.threadCleanup = cleanup;
+    Object.assign(report, actualDemoCleanupEvidence(cleanup));
+    // Thread cleanup cannot authorize deletion of either source or private runtime state.
+    // Delivery verification stays separate from the explicitly unverified runtime cleanup.
+    if (!cleanup.allConfirmed) {
+      report.verified = false; report.failure ??= 'owned_disposable_cleanup_unconfirmed'; process.exitCode = 1;
+      if (report.stage === 'verified') report.stage = 'owned_disposable_cleanup_unconfirmed';
+      process.stderr.write('Disposable demo cleanup unconfirmed; owner-only recovery state retained at ' + directory + '\n');
+    }
+    await evidence.write(JSON.stringify(report, null, 2) + '\n');
+    if (!report.verified) await writeFile(outputPath.replace(/\.json$/, '') + '.failed-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json',
+      JSON.stringify(report, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
+  } catch (error) {
+    report.verified = false; process.exitCode = 1;
+    report.failure = error instanceof HostError ? error.code : 'actual_demo_finalization_failed';
+    process.stderr.write(String(report.failure) + '\n');
+  } finally {
+    try { await evidence.close(); }
+    catch {
+      report.verified = false; report.failure = 'actual_demo_evidence_close_failed'; process.exitCode = 1;
+      process.stderr.write('actual_demo_evidence_close_failed\n');
+    }
   }
-  await mkdir(dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, JSON.stringify(report, null, 2) + '\n');
-  if (!report.verified) await writeFile(outputPath.replace(/\.json$/, '') + '.failed-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json', JSON.stringify(report, null, 2) + '\n');
   process.stdout.write(JSON.stringify({ evidenceScope: report.evidenceScope, verified: report.verified,
     phases: (report.phases as unknown[]).length, failure: report.failure ?? null, actualKotlinCompilerRun: report.actualKotlinCompilerRun }) + '\n');
 }

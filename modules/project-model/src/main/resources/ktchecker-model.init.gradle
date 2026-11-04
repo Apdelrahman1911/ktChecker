@@ -1,0 +1,380 @@
+// Version-isolated Gradle/Kotlin 2.4.21 model exporter. Executable project configuration
+// requires exact authenticated owner subprocess authority; this is not a sandbox/consent.
+import groovy.json.JsonOutput
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.security.MessageDigest
+
+gradle.beforeProject { p ->
+    def buildRoot = p.findProperty('ktcheckerModelBuildRoot')
+    if (buildRoot != null) {
+        def suffix = MessageDigest.getInstance('SHA-256').digest(p.path.getBytes('UTF-8')).encodeHex().toString()
+        p.layout.buildDirectory.set(new File(buildRoot.toString(), suffix))
+    }
+}
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    root.tasks.register('ktCheckerModelExport') {
+        group = 'verification'
+        description = 'Export actual resolved Kotlin roots, refinements, targets, compilations and dependency variants.'
+        doLast {
+            def rootPath = root.projectDir.toPath().toAbsolutePath().normalize()
+            def issues = []
+            def issue = { String kind, String scope, String detail ->
+                issues << [kind: kind, scopeId: scope, detail: detail.take(8192)]
+            }
+            def logical = { File file, String scope ->
+                def path = file.toPath().toAbsolutePath().normalize()
+                if (!path.startsWith(rootPath)) {
+                    issue('external_model_input', scope, 'Model input/root is outside the registered source snapshot: ' + file.name)
+                    return null
+                }
+                rootPath.relativize(path).toString().replace(File.separatorChar, '/' as char)
+            }
+            def hashes = [:]
+            def sha = { File file ->
+                def key = file.absolutePath + ':' + file.length() + ':' + file.lastModified()
+                if (hashes.containsKey(key)) return hashes[key]
+                def hash = MessageDigest.getInstance('SHA-256')
+                file.withInputStream { stream ->
+                    byte[] buffer = new byte[65536]
+                    for (int count = stream.read(buffer); count >= 0; count = stream.read(buffer)) {
+                        if (count > 0) hash.update(buffer, 0, count)
+                    }
+                }
+                def result = 'sha256:' + hash.digest().encodeHex().toString()
+                hashes[key] = result
+                result
+            }
+            def sourceFile = { File file, String scope ->
+                def path = logical(file, scope)
+                if (path == null) return null
+                if (Files.isSymbolicLink(file.toPath()) || !Files.isRegularFile(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+                    issue('model_input_unavailable', scope, 'Missing/nonregular captured input: ' + path)
+                    return null
+                }
+                [path: path, digest: sha(file), size: file.length()]
+            }
+            def artifact = { File file, String coordinate, String scope ->
+                // Record the actual resolved regular-file location, not a symlink claim.
+                def actual = Files.exists(file.toPath()) ? file.toPath().toRealPath().toFile() : file.absoluteFile
+                if (!Files.isRegularFile(actual.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+                    issue('artifact_unavailable', scope, 'Missing/directory resolved artifact: ' + coordinate)
+                    return [coordinate: coordinate, path: actual.absolutePath, digest: null, size: null]
+                }
+                [coordinate: coordinate, path: actual.absolutePath, digest: sha(actual), size: actual.length()]
+            }
+            def known = { Object instance, String getter ->
+                def method = instance.class.methods.find { it.name == getter && it.parameterCount == 0 }
+                if (method == null) throw new IllegalStateException('Unsupported pinned getter ' + getter)
+                method.invoke(instance)
+            }
+            def attributes = { container ->
+                def values = [:]
+                container.keySet().toList().sort { it.name }.each { key ->
+                    values[key.name] = container.getAttribute(key).toString()
+                }
+                values
+            }
+            def capturedTree = { Collection<File> roots, String scope ->
+                def result = []
+                roots.toList().sort { it.absolutePath }.each { file ->
+                    if (Files.isSymbolicLink(file.toPath())) {
+                        issue('model_input_unavailable', scope, 'Symlink tree input is not inferred as a captured source root')
+                    } else if (file.isDirectory()) {
+                        Files.walk(file.toPath()).withCloseable { paths ->
+                            paths.sorted().forEach { path ->
+                                if (Files.isSymbolicLink(path)) issue('model_input_unavailable', scope, 'Symlink member in captured source tree')
+                                else if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+                                    def fact = sourceFile(path.toFile(), scope)
+                                    if (fact != null) result << fact
+                                }
+                            }
+                        }
+                    } else if (file.isFile()) {
+                        def fact = sourceFile(file, scope)
+                        if (fact != null) result << fact
+                    }
+                }
+                result.unique { it.path }.sort { it.path }
+            }
+            def propertyValue
+            propertyValue = { value ->
+                if (value == null || value instanceof String || value instanceof Boolean || value instanceof Number) return value
+                if (value instanceof Enum) return value.name()
+                if (value instanceof Collection) return value.collect { propertyValue(it) }
+                if (value instanceof Map && value.keySet().every { it instanceof String }) {
+                    def map = [:]
+                    value.keySet().sort().each { key -> map[key] = propertyValue(value[key]) }
+                    return map
+                }
+                throw new IllegalStateException('Unqualified non-scalar generation input property')
+            }
+            def runtimeCache = [:]
+            def runtime = { File home, String label, String scope ->
+                def canonical = home.toPath().toRealPath().toFile()
+                if (runtimeCache.containsKey(canonical.absolutePath)) {
+                    return runtimeCache[canonical.absolutePath].collect { it + [coordinate: label + ':' + it.relative] }
+                        .collect { it.findAll { key, value -> key != 'relative' } }
+                }
+                def values = []
+                def seen = [] as Set
+                def visit
+                visit = { File file, String relative ->
+                    if (file.isDirectory()) {
+                        def actual = file.toPath().toRealPath().toString()
+                        if (!seen.add(actual)) throw new IllegalStateException('Cyclic runtime directory aliases')
+                        file.listFiles().toList().sort { it.name }.each { child -> visit(child, relative ? relative + '/' + child.name : child.name) }
+                    } else {
+                        values << (artifact(file, label + ':' + relative, scope) + [relative: relative])
+                    }
+                }
+                visit(canonical, '')
+                runtimeCache[canonical.absolutePath] = values
+                values.collect { it.findAll { key, value -> key != 'relative' } }
+            }
+            def modules = []
+            def sourceSets = []
+            def compilations = []
+            def compilationObjects = []
+            def targetObjects = []
+            def generatedByTask = [:]
+            def configuration = [:]
+            def buildscript = []
+            def externalConfiguration = []
+            root.allprojects.toList().sort { it.path }.each { p ->
+                def moduleDir = logical(p.projectDir, p.path)
+                if (moduleDir == null) return
+                def build = p.buildFile.exists() ? logical(p.buildFile, p.path) : null
+                def pluginIds = []
+                ['org.jetbrains.kotlin.multiplatform', 'org.jetbrains.kotlin.jvm', 'org.jetbrains.kotlin.android',
+                 'com.android.application', 'com.android.library', 'com.google.devtools.ksp',
+                 'org.jetbrains.kotlin.plugin.serialization', 'org.jetbrains.compose', 'org.jetbrains.kotlin.plugin.compose'].each { name ->
+                    if (p.pluginManager.hasPlugin(name)) pluginIds << name
+                }
+                modules << [id: p.path, directory: moduleDir, buildFile: build, pluginIds: pluginIds]
+                if (p.extensions.findByName('android') != null) issue('android_variants_unmodeled', p.path,
+                    'AGP variants/resources/manifest/generated/friend inputs need a separately qualified Android model adapter.')
+                def kotlin = p.extensions.findByName('kotlin')
+                if (kotlin == null) {
+                    if (p != root || p.subprojects.isEmpty()) issue('non_kotlin_project_unmodeled', p.path,
+                        'Non-Kotlin project graph is explicitly outside this KMP exporter vocabulary.')
+                    return
+                }
+                try {
+                    def plugin = p.plugins.find { it.class.methods.any { m -> m.name == 'getPluginVersion' && m.parameterCount == 0 } }
+                    if (plugin == null || known(plugin, 'getPluginVersion') != '2.4.21') {
+                        issue('kotlin_plugin_version_unsupported', p.path, 'The model API is pinned to Kotlin Gradle plugin 2.4.21.')
+                    }
+                    kotlin.sourceSets.toList().sort { it.name }.each { s ->
+                        def id = "${p.path}|${s.name}".toString()
+                        def roots = s.kotlin.srcDirs.collect { logical(it, id) }.findAll { it != null }.unique().sort()
+                        def resourceRoots = s.resources.srcDirs.collect { logical(it, id) }.findAll { it != null }.unique().sort()
+                        def sources = s.kotlin.files.toList().sort { it.absolutePath }.collect { sourceFile(it, id) }.findAll { it != null }
+                        def resources = s.resources.files.toList().sort { it.absolutePath }.collect { sourceFile(it, id) }.findAll { it != null }
+                        sourceSets << [id: id, moduleId: p.path, name: s.name,
+                            dependsOn: s.dependsOn.collect { "${p.path}|${it.name}".toString() }.sort(),
+                            sourceRoots: roots, resourceRoots: resourceRoots, sources: sources, resources: resources]
+                        try {
+                            s.kotlin.sourceDirectories.buildDependencies.getDependencies(null).toList().sort { it.path }.each { producer ->
+                                def outputs = producer.outputs.files.files.toList()
+                                def files = capturedTree(outputs, id)
+                                def inputs = capturedTree(producer.inputs.files.files.toList(), id)
+                                def properties = [:]
+                                producer.inputs.properties.keySet().sort().each { key ->
+                                    try { properties[key] = JsonOutput.toJson(propertyValue(producer.inputs.properties[key])) }
+                                    catch (Exception error) { issue('generation_properties_unmodeled', id, error.class.simpleName + ': generator property vocabulary unavailable') }
+                                }
+                                def fact = [taskPath: producer.path, sourceSetIds: [id], inputFiles: inputs, outputFiles: files,
+                                    outputRoots: outputs.collect { logical(it, id) }.findAll { it != null }.unique().sort(),
+                                    state: files.isEmpty() ? 'pending' : 'captured', inputProperties: properties]
+                                if (generatedByTask.containsKey(producer.path)) {
+                                    generatedByTask[producer.path].sourceSetIds = (generatedByTask[producer.path].sourceSetIds + [id]).unique().sort()
+                                } else generatedByTask[producer.path] = fact
+                            }
+                        } catch (Exception error) { issue('generation_model_unavailable', id, error.class.simpleName + ': source generator provenance unavailable') }
+                    }
+                    def targets = kotlin.hasProperty('targets') ? kotlin.targets.toList() : [kotlin.target]
+                    targets.sort { it.name }.each { target -> targetObjects << [project: p, target: target] }
+                } catch (Exception error) { issue('kotlin_model_unavailable', p.path, error.class.simpleName + ': source-set/target extraction failed') }
+            }
+            targetObjects.each { entry ->
+                def p = entry.project
+                def target = entry.target
+                target.compilations.toList().sort { it.name }.each { c ->
+                    def id = "${p.path}|${target.name}|${c.name}".toString()
+                    def members = c.allKotlinSourceSets.collect { "${p.path}|${it.name}".toString() }.sort()
+                    def actualFiles = []
+                    def task = null
+                    def args = []
+                    def toolchain = null
+                    def friends = []
+                    def cp = []
+                    def auxiliaryFiles = []
+                    def auxiliaryArtifacts = []
+                    try {
+                        task = c.compileTaskProvider.get()
+                        actualFiles = task.sources.files.toList().sort { it.absolutePath }.collect { sourceFile(it, id) }.findAll { it != null }
+                    } catch (Exception error) { issue('compilation_task_inputs_unmodeled', id, error.class.simpleName + ': actual task source membership unavailable') }
+                    try {
+                        args = task.serializedCompilerArguments.collect { it.toString() }
+                        friends = known(task, 'getFriendPathsSet$kotlin_gradle_plugin_common').get().toList()
+                            .collect { artifact(new File(it.toString()), 'friend:' + it.toString(), id) }
+                        def compilerCp = known(task, 'getDefaultCompilerClasspath$kotlin_gradle_plugin_common').files.toList()
+                        def compilerConfiguration = p.configurations.getByName('kotlinCompilerClasspath')
+                        def compilerResolved = compilerConfiguration.resolvedConfiguration.resolvedArtifacts.toList()
+                        def compilerIdentity = compilerResolved.findAll { a -> a.moduleVersion.id.group == 'org.jetbrains.kotlin' &&
+                            a.moduleVersion.id.name == 'kotlin-compiler-embeddable' && compilerCp.any { it.canonicalFile == a.file.canonicalFile } }
+                        if (compilerIdentity.size() != 1) throw new IllegalStateException('No exact resolved Kotlin compiler artifact identity')
+                        def compilerVersion = compilerIdentity[0].moduleVersion.id.version
+                        if (compilerVersion != '2.4.21') issue('kotlin_compiler_version_unsupported', id, 'Compiler artifact version is not pinned Kotlin 2.4.21.')
+                        def kotlinJdk = known(task, 'getDefaultKotlinJavaToolchain$kotlin_gradle_plugin_common').get()
+                        def selectedJvm = known(kotlinJdk, 'getBuildJvm$kotlin_gradle_plugin_common').get()
+                        def selectedHome = selectedJvm.javaHome.toPath().toRealPath().toFile()
+                        def pluginData = known(task, 'getKotlinPluginData$kotlin_gradle_plugin_common').get()
+                        def pluginCp = pluginData.classpath.files.toList()
+                        def pluginInputs = pluginData.inputsOutputsState.inputFiles.toList()
+                        pluginInputs.each { input ->
+                            if (input.toPath().toAbsolutePath().normalize().startsWith(rootPath)) auxiliaryFiles += capturedTree([input], id)
+                            else auxiliaryArtifacts << artifact(input, 'compiler-plugin-input:' + input.name, id)
+                        }
+                        if (task.hasProperty('javaSources')) auxiliaryFiles += capturedTree(task.javaSources.files.toList(), id)
+                        toolchain = [kind: target.platformType.toString(), compilerVersion: compilerVersion,
+                            compilerArtifacts: compilerCp.collect { file ->
+                                def resolved = compilerResolved.find { it.file.canonicalFile == file.canonicalFile }
+                                artifact(file, resolved != null ? resolved.moduleVersion.id.toString() : 'compiler-file:' + file.name, id)
+                            }, runtimeArtifacts: runtime(selectedHome, 'compilation-jdk', id),
+                            compilerPlugins: pluginCp.collect { artifact(it, 'compiler-plugin:' + it.name, id) }]
+                    } catch (Exception error) {
+                        issue(target.platformType.toString().toLowerCase().contains('native') ? 'native_toolchain_unmodeled' : 'compiler_arguments_unmodeled', id,
+                            error.class.simpleName + ': actual compiler/options/plugins/selected-JDK vocabulary unavailable')
+                    }
+                    try { cp = task.libraries.files.toList().collect { artifact(it, 'resolved:' + it.name, id) } }
+                    catch (Exception error) {
+                        try { cp = c.compileDependencyFiles.files.toList().collect { artifact(it, 'resolved:' + it.name, id) } }
+                        catch (Exception ignored) { issue('dependency_resolution_failed', id, 'Actual ordered compiler classpath is unavailable.') }
+                        issue('compile_classpath_membership_unmodeled', id, error.class.simpleName + ': actual compiler classpath vocabulary unavailable')
+                    }
+                    def language = null
+                    def api = null
+                    try { language = task.compilerOptions.languageVersion.orNull?.version; api = task.compilerOptions.apiVersion.orNull?.version }
+                    catch (Exception error) { issue('compiler_options_unavailable', id, error.class.simpleName + ': effective language/API options unavailable') }
+                    def associated = []
+                    try { associated = c.allAssociatedCompilations.collect { a -> "${a.project.path}|${a.target.name}|${a.name}".toString() }.sort() }
+                    catch (Exception error) { issue('associated_compilations_unavailable', id, error.class.simpleName + ': actual friend/association graph unavailable') }
+                    def fact = [id: id, moduleId: p.path, target: target.name, platform: target.platformType.toString(), name: c.name,
+                        defaultSourceSetId: "${p.path}|${c.defaultSourceSet.name}".toString(), sourceSetIds: members, sourceFiles: actualFiles,
+                        compileTaskPath: task != null ? task.path : "${p.path}:<unavailable-${target.name}-${c.name}>".toString(),
+                        dependencyConfiguration: c.compileDependencyConfigurationName, classpath: cp, projectDependencies: [],
+                        toolchain: toolchain, compilerArguments: args, languageVersion: language, apiVersion: api,
+                        friendArtifacts: friends, producedVariants: [], associatedCompilationIds: associated,
+                        auxiliaryInputFiles: auxiliaryFiles.unique { it.path }.sort { it.path }, auxiliaryArtifacts: auxiliaryArtifacts]
+                    compilations << fact
+                    compilationObjects << [project: p, compilation: c, task: task, fact: fact]
+                }
+            }
+            // Derive producer compilations from ACTUAL outgoing artifact build-dependency paths.
+            // Never guess 'main' from a target/variant's name.
+            def compilationByTask = compilationObjects.findAll { it.task != null }.collectEntries { [(it.task.path): it.fact.id] }
+            def compilationModuleById = compilationObjects.collectEntries { [(it.fact.id): it.fact.moduleId] }
+            def producerTasks = { Collection seeds ->
+                def found = [] as Set
+                def seen = [] as Set
+                def queue = new ArrayDeque(seeds)
+                while (!queue.isEmpty()) {
+                    def task = queue.removeFirst()
+                    if (!seen.add(task.path)) continue
+                    if (compilationByTask.containsKey(task.path)) {
+                        found.add(compilationByTask[task.path])
+                        // Compilation prerequisites describe inputs, not additional producers of this artifact.
+                        continue
+                    }
+                    task.taskDependencies.getDependencies(task).toList().sort { it.path }.each { queue.addLast(it) }
+                }
+                found.toList().sort()
+            }
+            def outgoing = []
+            root.allprojects.toList().sort { it.path }.each { p ->
+                p.configurations.findAll { it.canBeConsumed }.sort { it.name }.each { conf ->
+                    def record = { String name, attrs, artifacts ->
+                        try {
+                            def files = artifacts.collect { it.file.canonicalPath }.sort()
+                            def producers = producerTasks(artifacts.collectMany { it.buildDependencies.getDependencies(null).toList() })
+                            if (producers.size() == 1 && !files.isEmpty() && compilationModuleById[producers[0]] == p.path) {
+                                outgoing << [moduleId: p.path, name: name, attrs: attributes(attrs), files: files, compilationId: producers[0]]
+                            } else if (!files.isEmpty() && !producers.isEmpty()) {
+                                issue('produced_variants_unavailable', p.path, 'Outgoing artifact set has no unique same-module compilation producer.')
+                            }
+                        } catch (Exception error) { issue('produced_variants_unavailable', p.path, error.class.simpleName + ': outgoing artifact producer association unavailable') }
+                    }
+                    record(conf.name, conf.attributes, conf.outgoing.artifacts.toList())
+                    conf.outgoing.variants.toList().sort { it.name }.each { variant -> record(variant.name, variant.attributes, variant.artifacts.toList()) }
+                }
+            }
+            compilationObjects.each { entry ->
+                def p = entry.project
+                def fact = entry.fact
+                try {
+                    def conf = p.configurations.getByName(fact.dependencyConfiguration)
+                    def resolvedArtifacts = conf.incoming.artifacts.artifacts.toList()
+                    // These are DIRECT root dependencies. Transitive closure is an explicit owner policy.
+                    conf.incoming.resolutionResult.rootComponent.get().dependencies.each { dependency ->
+                        if (dependency instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
+                            issue('dependency_resolution_failed', fact.id, dependency.attempted.displayName)
+                        } else if (dependency.selected.id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
+                            def selected = dependency.selected.id
+                            if (!selected.build.currentBuild) {
+                                issue('included_project_dependency_unmodeled', fact.id, 'Resolved composite project is outside this root-build vocabulary.')
+                            } else {
+                                def variant = dependency.resolvedVariant
+                                def attrs = attributes(variant.attributes)
+                                def artifactFiles = resolvedArtifacts.findAll { a -> a.id.componentIdentifier == selected && attributes(a.variant.attributes) == attrs }
+                                    .collect { it.file.canonicalPath }.sort()
+                                def candidates = outgoing.findAll { a -> a.moduleId == selected.projectPath && a.attrs == attrs &&
+                                    !artifactFiles.isEmpty() && a.files.containsAll(artifactFiles) }
+                                def producerIds = candidates.collect { it.compilationId }.unique()
+                                def producer = producerIds.size() == 1 ? producerIds[0] : null
+                                if (producer != null) {
+                                    def record = compilations.find { it.id == producer }
+                                    record.producedVariants = (record.producedVariants + [variant.displayName]).unique().sort()
+                                }
+                                fact.projectDependencies << [moduleId: selected.projectPath, selectedVariant: variant.displayName,
+                                    variantAttributes: attrs, compilationId: producer]
+                            }
+                        }
+                    }
+                    fact.projectDependencies = fact.projectDependencies.unique()
+                } catch (Exception error) { issue('dependency_resolution_failed', fact.id, error.class.simpleName + ': complete resolved direct variant graph unavailable') }
+            }
+            root.fileTree(root.projectDir) {
+                exclude '**/.gradle/**', '**/.git/**', '**/build/**'
+                include '**/*.gradle', '**/*.gradle.kts', '**/gradle.properties', '**/*.toml', '**/gradle-wrapper.properties', '**/dependency-locks/**', 'buildSrc/**'
+            }.files.toList().sort { it.absolutePath }.each { file ->
+                def fact = sourceFile(file, null)
+                if (fact != null) configuration[fact.path] = fact
+            }
+            root.allprojects.each { p ->
+                try { p.buildscript.configurations.findByName('classpath')?.files?.toList()?.each {
+                    buildscript << artifact(it, 'buildscript:' + it.name, p.path)
+                } } catch (Exception error) { issue('buildscript_resolution_failed', p.path, error.class.simpleName + ': buildscript identity unavailable') }
+            }
+            // External settings/init scripts are independent pinned inputs, not ignored worktree files.
+            ([new File(gradle.gradleUserHomeDir, 'gradle.properties')] + gradle.startParameter.allInitScripts).unique().each { file ->
+                if (file.isFile()) externalConfiguration << artifact(file, 'gradle-external-config:' + file.name, null)
+            }
+            if (root.file('buildSrc').exists()) issue('build_source_graph_unmodeled', null, 'buildSrc source/executable graph needs its own coherent owner import.')
+            def included = gradle.includedBuilds.collect { it.name }.sort()
+            def document = [schemaVersion: 1, exporterId: 'ktchecker-gradle-kmp-model/1', gradleVersion: gradle.gradleVersion,
+                modules: modules, sourceSets: sourceSets, compilations: compilations,
+                configurationInputs: configuration.values().toList().sort { it.path }, generatedInputs: generatedByTask.values().toList().sort { it.taskPath },
+                buildscriptArtifacts: buildscript.unique { it.path }, includedBuilds: included, issues: issues.unique(),
+                externalConfigurationArtifacts: externalConfiguration.unique { it.path }]
+            def selected = root.findProperty('ktcheckerModelOutput')
+            if (selected == null) throw new GradleException('Owner-selected isolated ktcheckerModelOutput is required')
+            def destination = new File(selected.toString())
+            destination.parentFile.mkdirs()
+            destination.setText(JsonOutput.toJson(document), 'UTF-8')
+        }
+    }
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="dev.ktchecker.providers.detekt.DetektProviderTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-04T11:41:38.168Z" hostname="(none)" time="0.041">
+  <properties/>
+  <testcase name="actual empty results are parseable but not a qualification certificate()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.003"/>
+  <testcase name="cancellation before authorization stays explicit()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.003"/>
+  <testcase name="malformed UTF8 is rejected rather than replaced()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.004"/>
+  <testcase name="serialized approval cannot grant execution()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.002"/>
+  <testcase name="five artifact pins have verified official origins but no qualification()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.002"/>
+  <testcase name="whole prepared context cannot be relabeled using an old permit()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.004"/>
+  <testcase name="native context never receives JVM clean coverage()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.002"/>
+  <testcase name="invalid tool version missing descriptor and quoted ranges are not clean reports()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.004"/>
+  <testcase name="a captured but different compilation member cannot be relabeled()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.002"/>
+  <testcase name="real SARIF identity and one based ranges normalize against frozen bytes()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.002"/>
+  <testcase name="frozen mapping includes every alias and refinement without promotion()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.002"/>
+  <testcase name="unmanifested outside and out of range locations are rejected()" classname="dev.ktchecker.providers.detekt.DetektProviderTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

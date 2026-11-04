@@ -1,0 +1,56 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "results": [],
+      "tool": {
+        "driver": {
+          "guid": "022ca8c2-f6a2-4c95-b107-bb72c43263f3",
+          "informationUri": "https://detekt.dev",
+          "language": "en",
+          "name": "detekt",
+          "organization": "detekt",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error"
+              },
+              "helpUri": "https://detekt.dev/docs/2.0.0-alpha.6/rules/empty-blocks#emptycatchblock",
+              "id": "detekt.empty-blocks.EmptyCatchBlock",
+              "name": "EmptyCatchBlock",
+              "shortDescription": {
+                "text": "Empty catch block detected. Empty catch blocks indicate that an exception is ignored and not handled."
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error"
+              },
+              "helpUri": "https://mrmans0n.github.io/compose-rules/rules/#parameter-order",
+              "id": "detekt.Compose.ComposableParamOrder",
+              "name": "ComposableParamOrder",
+              "shortDescription": {
+                "text": "Parameters in Composable functions should be ordered correctly"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error"
+              },
+              "helpUri": "https://detekt.dev/docs/2.0.0-alpha.6/rules/libraries#forbiddenpublicdataclass",
+              "id": "detekt.libraries.ForbiddenPublicDataClass",
+              "name": "ForbiddenPublicDataClass",
+              "shortDescription": {
+                "text": "The data classes are bad for the binary compatibility in public APIs. Avoid to use it."
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

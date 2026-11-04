@@ -4,7 +4,9 @@ import dev.ktchecker.contracts.ContractJson
 import dev.ktchecker.contracts.Digests
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.io.IOException
+import java.nio.file.FileSystemException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -133,7 +135,7 @@ class PersistenceTest {
         Files.list(paths.shared.parent).use { files -> assertTrue(files.noneMatch { it.fileName.toString().endsWith(".tmp") }) }
     }
 
-    @Test fun malformedUnsupportedOrSymlinkedConfigurationIsUnavailableNotEmpty(): Unit = ConfigFixture().use { fixture ->
+    @Test fun malformedOrUnsupportedConfigurationIsUnavailableNotEmpty(): Unit = ConfigFixture().use { fixture ->
         fixture.suppress()
         val paths = fixture.store.storagePaths(fixture.binding)
         val original = Files.readString(paths.shared)
@@ -141,10 +143,23 @@ class PersistenceTest {
             Files.writeString(paths.shared, bad)
             assertFailsWith<ConfigReadException> { fixture.store.capture(fixture.binding) }
         }
+    }
+
+    @Test fun symlinkedConfigurationIsUnavailableNotEmpty(): Unit = ConfigFixture().use { fixture ->
+        fixture.suppress()
+        val paths = fixture.store.storagePaths(fixture.binding)
+        val original = Files.readString(paths.shared)
         Files.delete(paths.shared)
         val outside = fixture.root.resolve("untrusted.json")
         Files.writeString(outside, original)
-        Files.createSymbolicLink(paths.shared, outside)
+        try { Files.createSymbolicLink(paths.shared, outside) }
+        catch (_: UnsupportedOperationException) {
+            assumeTrue(false, "Filesystem symbolic-link creation unavailable; no configuration alias-control execution coverage is claimed")
+        } catch (error: FileSystemException) {
+            if (System.getProperty("os.name").startsWith("Windows") && error.reason?.contains("privilege", ignoreCase = true) == true) {
+                assumeTrue(false, "Windows symbolic-link privilege unavailable; no configuration alias-control execution coverage is claimed")
+            } else throw error
+        }
         assertFailsWith<ConfigReadException> { fixture.store.capture(fixture.binding) }
     }
 

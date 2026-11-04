@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-corpus-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally",
+  "upstream_id": "exceptions:ThrowingExceptionFromFinally",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "7ea925b5c526289f8be32cb9d849fa24aef84c2d6b6857cfdeeb6bc4266de8d8",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-exceptions/src/main/kotlin/dev/detekt/rules/exceptions/ThrowingExceptionFromFinally.kt",
+    "source_file_sha256": "6fa081570aa27113a2d895726179ca5da0eef91f8c02e12fe76825c0cfb1f68c",
+    "predicate_line_numbers": [
+      33
+    ],
+    "research_only": true
+  },
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.finallythrow\n\nfun failure() {\n    try {\n        println(\"work\")\n    } finally {\n        throw IllegalStateException(\"finally\")\n    }\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 7,
+        "column": 8,
+        "end_line": 7,
+        "end_column": 46,
+        "span": "throw IllegalStateException(\"finally\")",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Immediate throw can replace a pending exception; syntax is not proof of reachability."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.finallythrow\n\nfun retainedCause() {\n    try {\n        println(\"work\")\n    } catch (caught: Exception) {\n        throw caught\n    } finally {\n        println(\"cleanup\")\n    }\n}\n"
+    },
+    "expected": [],
+    "intent": "Rethrow is in catch, not finally; cleanup itself has no throw."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.finallythrow\n\nfun failure() {\n    try {\n        println(\"work\")\n    } finally {\n        throw IllegalStateException(\"finally\")\n    }\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"ThrowingExceptionFromFinally\")\n\npackage suppressed.corpus.finallythrow\n\nfun failure() {\n    try {\n        println(\"work\")\n    } finally {\n        throw IllegalStateException(\"finally\")\n    }\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 7,
+        "column": 8,
+        "end_line": 7,
+        "end_column": 46,
+        "span": "throw IllegalStateException(\"finally\")",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine upstream file annotation on an otherwise identical, independently named package; neighboring original file must retain every positive finding. No ktChecker-ID or declaration-scope suppression claim."
+  },
+  "controls": [
+    {
+      "id": "deferred-throw-in-callback",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive",
+      "sources": {
+        "Case.kt": "package corpus.finallythrow\n\nfun registerCleanup(callbacks: MutableList<() -> Unit>) {\n    try {\n        println(\"work\")\n    } finally {\n        callbacks += { throw IllegalStateException(\"later\") }\n    }\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 7,
+          "column": 23,
+          "end_line": 7,
+          "end_column": 59,
+          "span": "throw IllegalStateException(\"later\")",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Registering a deferred callback does not throw during finally. Preserve the descendant-only finding if observed."
+    },
+    {
+      "id": "throw-handled-inside-finally",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive",
+      "sources": {
+        "Case.kt": "package corpus.finallythrow\n\nfun locallyHandled() {\n    try {\n        println(\"work\")\n    } finally {\n        try {\n            throw IllegalStateException(\"handled\")\n        } catch (caught: IllegalStateException) {\n            println(caught.message)\n        }\n    }\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 12,
+          "end_line": 8,
+          "end_column": 50,
+          "span": "throw IllegalStateException(\"handled\")",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The throw is caught entirely inside finally and does not discard an outer exception. Preserve the syntax alert rather than infer propagated failure."
+    }
+  ],
+  "limitations": [
+    "All descendant throw expressions are visited, including deferred lambdas and locally handled throws; no control-flow or effect proof.",
+    "Advisory only; intentional exception replacement and reachability require owner/project context."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact selected route on positive immutable snapshot bytes.",
+    "negative": "Run legal alternative bytes with the same route still active.",
+    "configuration": "Run the original positive bytes with the owner-selected rule disabled; separately replay genuine options below when applicable.",
+    "version": "Replay positive bytes under the pinned CLI, retain actual CLI version output, and verify Common/Native requests never reach the runner. Declared Kotlin2.4.21/embedded2.4.10 stays unqualified.",
+    "suppression": "Use actual file-scoped upstream annotation with an unsuppressed neighboring file; never suppress/filter in host code.",
+    "regression": "Seal the negative correction as a child of the suppression snapshot, delete obsolete files, and verify both registered parent and child materializations."
+  },
+  "qualification_note": "Authored expected results are not observed behavior. Actual assertions, immutable materialization checks, raw SARIF/process receipts and START witnesses are required before a sidecar is emitted; no compatibility/precision/performance/release qualification is proposed."
+}

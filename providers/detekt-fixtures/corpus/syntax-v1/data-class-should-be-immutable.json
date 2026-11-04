@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-corpus-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.style.data-class-should-be-immutable",
+  "upstream_id": "style:DataClassShouldBeImmutable",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "catalog_record_sha256": "df43e96dfecc7e78bc542842d509bb1fd9455a03f8394d3d65360925771ed3f8",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-style/src/main/kotlin/dev/detekt/rules/style/DataClassShouldBeImmutable.kt",
+    "source_file_sha256": "da129e66af567dbd00963ea0821e771853479499b9b466e37663978ef84cddae",
+    "predicate_line_numbers": [
+      36,
+      49
+    ],
+    "research_only": true
+  },
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.dataimmutable\n\ndata class MutableRecord(var count: Int) {\n    var label: String = \"initial\"\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 25,
+        "end_line": 3,
+        "end_column": 39,
+        "span": "var count: Int",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 4,
+        "end_line": 4,
+        "end_column": 33,
+        "span": "var label: String = \"initial\"",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Owner-selected immutability convention has two mutable data properties; not a universal Kotlin defect."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.dataimmutable\n\ndata class ImmutableRecord(val count: Int, val label: String)\n"
+    },
+    "expected": [],
+    "intent": "Primitive/String val properties satisfy the selected shallow convention."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.dataimmutable\n\ndata class MutableRecord(var count: Int) {\n    var label: String = \"initial\"\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"DataClassShouldBeImmutable\")\n\npackage suppressed.corpus.dataimmutable\n\ndata class MutableRecord(var count: Int) {\n    var label: String = \"initial\"\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 25,
+        "end_line": 3,
+        "end_column": 39,
+        "span": "var count: Int",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 4,
+        "end_line": 4,
+        "end_column": 33,
+        "span": "var label: String = \"initial\"",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine upstream file annotation on an otherwise identical, independently named package; neighboring original file must retain every positive finding. No ktChecker-ID or declaration-scope suppression claim."
+  },
+  "controls": [
+    {
+      "id": "mutable-reference-held-by-val",
+      "case_kind": "regression",
+      "assessment": "shallow_predicate_limitation",
+      "sources": {
+        "Case.kt": "package corpus.dataimmutable\n\ndata class ShallowRecord(val values: MutableList<Int>)\n"
+      },
+      "expected": [],
+      "intent": "No var is present, but the referenced list remains mutable; absence is not proof of deep immutability."
+    },
+    {
+      "id": "ordinary-class-var",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.dataimmutable\n\nclass MutableService(var state: Int)\n"
+      },
+      "expected": [],
+      "intent": "Ordinary class mutation is outside the data-class-only convention."
+    },
+    {
+      "id": "deliberate-mutable-data-api",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit",
+      "sources": {
+        "Case.kt": "package corpus.dataimmutable\n\ndata class MutableRequest(var requestedCount: Int)\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 26,
+          "end_line": 3,
+          "end_column": 49,
+          "span": "var requestedCount: Int",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The owner may intentionally expose a mutable DTO; an opted-in convention still reports, but it must not be presented as universal correctness."
+    }
+  ],
+  "limitations": [
+    "Explicit opt-in repository/API convention only, not a defect on all mutable data classes.",
+    "Only var constructor/body properties are detected; val mutable objects are not deeply immutable."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact selected route on positive immutable snapshot bytes.",
+    "negative": "Run legal alternative bytes with the same route still active.",
+    "configuration": "Run the original positive bytes with the owner-selected rule disabled; separately replay genuine options below when applicable.",
+    "version": "Replay positive bytes under the pinned CLI, retain actual CLI version output, and verify Common/Native requests never reach the runner. Declared Kotlin2.4.21/embedded2.4.10 stays unqualified.",
+    "suppression": "Use actual file-scoped upstream annotation with an unsuppressed neighboring file; never suppress/filter in host code.",
+    "regression": "Seal the negative correction as a child of the suppression snapshot, delete obsolete files, and verify both registered parent and child materializations."
+  },
+  "qualification_note": "Authored expected results are not observed behavior. Actual assertions, immutable materialization checks, raw SARIF/process receipts and START witnesses are required before a sidecar is emitted; no compatibility/precision/performance/release qualification is proposed."
+}

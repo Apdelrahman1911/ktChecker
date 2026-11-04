@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "provider_id": "ktlint",
+  "provider_version": "1.8.0",
+  "recorded_at_utc": "2026-11-04T09-23-07Z",
+  "status": "failed_real_integration_no_passing_sidecar",
+  "qualified": false,
+  "release_qualified": false,
+  "tests": {
+    "unit": {
+      "total": 16,
+      "failures": 0
+    },
+    "integration": {
+      "total": 2,
+      "failures": 2
+    }
+  },
+  "failure": "Genuine Ktlint loader rejected common-ktlint-0.6.8.jar supplied as a --ruleset because it contains no RuleSetProviderV3 implementation. Actual provider logs, process result and START class artifacts retained. No report was emitted, no tested claims were created.",
+  "source_attribution": "Test captured source hashes and archived top-level provider/parser/catalog/test/runtime class bytes at START. The failed assertion prevented a source-verification or passing receipt. Source files copied here after the failed run and before any fix, manually associated with that frozen-source run; they are not fabricated START receipts or passing evidence.",
+  "preserved_files": [
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-inheritance-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/configuration-inheritance-provider-result.json",
+      "sha256": "ee06f9f8185f28301810790a0c826561e3901ff69f421bf645037f3617eaeb17"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-ExecutionPermit.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-ExecutionPermit.class",
+      "sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintCatalog.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-KtlintCatalog.class",
+      "sha256": "1b4939b92c468eac68a59035f9fffc6b07064ccaf34f6a96fda357db871aec02"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintIntegrationTest.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-KtlintIntegrationTest.class",
+      "sha256": "abccebe32cd5e36c0ef0297df788869a75976ed3aad91ac40633fcde39c68311"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintProvider.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-KtlintProvider.class",
+      "sha256": "e08f66bbfcbc443e5cf10a81e9ce0c0a40d01714dbdd6af74eff011f9f65430d"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintReportParser.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-KtlintReportParser.class",
+      "sha256": "a294aeeab29ae6c22d1e4be0a6fc71ffc96c03aaf2dbddc89514c2ba32258341"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-editorconfig",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-positive-editorconfig",
+      "sha256": "6c0c6885d0656ace28b7341106748e0429d636c28c96e9a0031c27d215e8bfe8"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-process.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-positive-process.json",
+      "sha256": "93e0f362da6619691e9c8969bd3e9450435a6e16e19a535b4872090cc15e9c35"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/evidence-artifacts/syntax-positive-provider-result.json",
+      "sha256": "4ab91b73f3c5118a5f3eec22b7ef43479594c2b08b990b82fe6d8169eece3af8"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintCatalog.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/post-run-source-before-fix/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintCatalog.kt",
+      "sha256": "5d77dc2584647ae03aed17f9279ae239ff03c5ed214c84a2b093ad35cfdec678"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintProvider.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/post-run-source-before-fix/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintProvider.kt",
+      "sha256": "e765f853ddf6a060b1eb961038425530330f6055dc67eb790d5a0b8d423d9843"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintReport.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/post-run-source-before-fix/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintReport.kt",
+      "sha256": "e0c1dea267a69fbd87223e76ac1901fc35c11faf06faa3f339c415d1246b7e57"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/resources/ktlint-artifacts.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/post-run-source-before-fix/modules/provider-ktlint/src/main/resources/ktlint-artifacts.json",
+      "sha256": "183dc473c053df6fe15d78441fac315d887e9bf8d3fcef5643ef1727a0a66c22"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/post-run-source-before-fix/modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+      "sha256": "d4b008829ee945561ad1d2867a094746158a1aac67e499f9450c02774a1f4dad"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintIntegrationTest.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/post-run-source-before-fix/modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintIntegrationTest.kt",
+      "sha256": "46f3b0599a97a1d410ba641ce92a3dcc2839d8330ed875d9fd4c3733c5cb2c38"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintProviderTest.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/post-run-source-before-fix/modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintProviderTest.kt",
+      "sha256": "1634c3fcf03d1f7d56574c407af300fed054024ac854cd6c0a99e17d6a6db0db"
+    },
+    {
+      "original_path": "modules/provider-ktlint/build/test-results/test/TEST-dev.ktchecker.providers.ktlint.KtlintIntegrationTest.xml",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/test-results/TEST-dev.ktchecker.providers.ktlint.KtlintIntegrationTest.xml",
+      "sha256": "35bb4ff2c972849dab31ce51bbc8de8abbf6811cf7037558f510d40a822d8c53"
+    },
+    {
+      "original_path": "modules/provider-ktlint/build/test-results/test/TEST-dev.ktchecker.providers.ktlint.KtlintProviderTest.xml",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/test-results/TEST-dev.ktchecker.providers.ktlint.KtlintProviderTest.xml",
+      "sha256": "4ad283dea0ab52f0bd80ef5e0b20c642ea3b49f8efe255779063668e3d5ab894"
+    },
+    {
+      "original_path": "build/library-validation/2026-11-04T09-18-00Z.log",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-23-07Z-failed-dependency-as-ruleset/gradle-output.log",
+      "sha256": "47c5ea47a44135266fd1498368871637b4f07d5fd1f3d86243173b99c1c6de35"
+    }
+  ]
+}

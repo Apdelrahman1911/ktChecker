@@ -90,7 +90,7 @@ internal class PrivateState(path: Path) {
         return Files.newInputStream(path, NOFOLLOW_LINKS).use {
             val bytes = it.readNBytes(8_388_609)
             if (bytes.size > 8_388_608) throw CliProblem("state_invalid", "Controller-state file exceeds the limit.")
-            bytes.toString(Charsets.UTF_8)
+            strictJsonDocument(bytes, "state_invalid")
         }
     }
 

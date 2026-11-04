@@ -1,0 +1,3 @@
+package fixtures.planned_kmp.actual_type_alias_to_nullable_type
+
+actual typealias Reader = String?

@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "provider_id": "ktlint",
+  "provider_version": "1.8.0",
+  "shaded_dependency_notice": "The external CLI-all contains upstream transitive dependencies, including Kotlin 2.2.21. This direct artifact inventory is not an exhaustive shaded-license inventory. Any distribution that bundles that JAR must retain and review its complete upstream notices/transitive licenses. Current ktChecker distribution does not bundle these bytes.",
+  "artifacts": [
+    {
+      "coordinate": "com.pinterest.ktlint:ktlint-cli:1.8.0:all",
+      "filename": "ktlint-cli-1.8.0-all.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/pinterest/ktlint/ktlint-cli/1.8.0/ktlint-cli-1.8.0-all.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "e6eb21468a7d321c436b7b191bb2cf5ed4585489",
+      "sha256": "369ad2b789f95a011f807e1fcb690ccef80bd7cd014fd139e73ae82dcc0baeab",
+      "size": 71470431,
+      "distribution": "optional external developer/owner installation; not bundled in ktChecker module",
+      "license": "MIT",
+      "license_source": "https://github.com/ktlint/ktlint/blob/1.8.0/LICENSE"
+    },
+    {
+      "coordinate": "io.nlopez.compose.rules:ktlint:0.6.8",
+      "filename": "ktlint-0.6.8.jar",
+      "url": "https://repo.maven.apache.org/maven2/io/nlopez/compose/rules/ktlint/0.6.8/ktlint-0.6.8.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "3524e2a9b9bbadbab4d628123a6211f457c87d34",
+      "sha256": "be00995f535e866a075200bf8c385962438603c3a17254bb255b3c2c07a951ef",
+      "size": 71504,
+      "distribution": "optional external developer/owner installation; not bundled in ktChecker module",
+      "license": "Apache-2.0",
+      "license_source": "https://github.com/mrmans0n/compose-rules/blob/v0.6.8/LICENSE.md"
+    },
+    {
+      "coordinate": "io.nlopez.compose.rules:common-ktlint:0.6.8",
+      "filename": "common-ktlint-0.6.8.jar",
+      "url": "https://repo.maven.apache.org/maven2/io/nlopez/compose/rules/common-ktlint/0.6.8/common-ktlint-0.6.8.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "5787991c028cb2eb8139825d2943b449086b991a",
+      "sha256": "ecd04db72cc8ce20cc9c99a84450443906f81f20553e1aa4c9b7b2b6638ed549",
+      "size": 380845,
+      "distribution": "optional external developer/owner installation; not bundled in ktChecker module",
+      "license": "Apache-2.0",
+      "license_source": "https://github.com/mrmans0n/compose-rules/blob/v0.6.8/LICENSE.md"
+    }
+  ]
+}

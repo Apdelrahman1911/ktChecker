@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "ktlint_version": "1.8.0",
+  "embedded_kotlin_version": "2.2.21",
+  "compose_rules_version": "0.6.8",
+  "compatibility_qualified": false,
+  "artifacts": [
+    {
+      "coordinate": "com.pinterest.ktlint:ktlint-cli:1.8.0:all",
+      "filename": "ktlint-cli-1.8.0-all.jar",
+      "url": "https://repo.maven.apache.org/maven2/com/pinterest/ktlint/ktlint-cli/1.8.0/ktlint-cli-1.8.0-all.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "e6eb21468a7d321c436b7b191bb2cf5ed4585489",
+      "sha256": "369ad2b789f95a011f807e1fcb690ccef80bd7cd014fd139e73ae82dcc0baeab",
+      "size": 71470431
+    },
+    {
+      "coordinate": "io.nlopez.compose.rules:ktlint:0.6.8",
+      "filename": "ktlint-0.6.8.jar",
+      "url": "https://repo.maven.apache.org/maven2/io/nlopez/compose/rules/ktlint/0.6.8/ktlint-0.6.8.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "3524e2a9b9bbadbab4d628123a6211f457c87d34",
+      "sha256": "be00995f535e866a075200bf8c385962438603c3a17254bb255b3c2c07a951ef",
+      "size": 71504
+    },
+    {
+      "coordinate": "io.nlopez.compose.rules:common-ktlint:0.6.8",
+      "filename": "common-ktlint-0.6.8.jar",
+      "url": "https://repo.maven.apache.org/maven2/io/nlopez/compose/rules/common-ktlint/0.6.8/common-ktlint-0.6.8.jar",
+      "upstream_checksum_algorithm": "sha1",
+      "upstream_checksum": "5787991c028cb2eb8139825d2943b449086b991a",
+      "sha256": "ecd04db72cc8ce20cc9c99a84450443906f81f20553e1aa4c9b7b2b6638ed549",
+      "size": 380845
+    }
+  ]
+}

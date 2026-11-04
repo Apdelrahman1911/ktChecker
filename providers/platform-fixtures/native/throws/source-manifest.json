@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "cohortId": "native-throws-2.4.21",
+  "kotlinVersion": "2.4.21",
+  "targets": [
+    "iosArm64",
+    "iosSimulatorArm64"
+  ],
+  "sourceProvenance": "authored_unexecuted",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "digest": "sha256:a79691a93b46e49ce460c26ef22afcc03d6eca1e63bf2edbc20e96159510f6c9",
+      "size": 14
+    },
+    {
+      "path": "README.md",
+      "digest": "sha256:71467154c773076c641e69e1d01e85ed7dcc3140c33831ab2b74990e3878ecb7",
+      "size": 8426
+    },
+    {
+      "path": "build.gradle.kts",
+      "digest": "sha256:c6a696cd6ec77b31e6739d28e81cd6da5b195c25f4beb49e7b191667221fcc6e",
+      "size": 2257
+    },
+    {
+      "path": "cases/empty-list-nonempty/iosMain/Contract.kt",
+      "digest": "sha256:17885756bb4d3e13da6a02a8def1191bb1bf122b9041298a1dee35c5d6cfde44",
+      "size": 159
+    },
+    {
+      "path": "cases/empty-list-omitted/iosMain/Contract.kt",
+      "digest": "sha256:7ef41d26d22eff1aeb021469e82294085e85c5687898ac3d4ee7264e9a20143f",
+      "size": 132
+    },
+    {
+      "path": "cases/empty-list/iosMain/Contract.kt",
+      "digest": "sha256:81710e38a8f7fb6e0206ab71f64a734163127d90f75d59b0afae4c00bb3d1d94",
+      "size": 128
+    },
+    {
+      "path": "cases/inherited-filter-diamond/iosMain/Contract.kt",
+      "digest": "sha256:8db3d2733bd7176ed45a3cdd54588077b057f59660e7c9a3843dcde1e1230664",
+      "size": 393
+    },
+    {
+      "path": "cases/inherited-filter-matching/iosMain/Contract.kt",
+      "digest": "sha256:0aac95a0dbf9a28d55d38666e4a1299a1e1e780a05f4f4825c073e5d011bd462",
+      "size": 459
+    },
+    {
+      "path": "cases/inherited-filter/iosMain/Contract.kt",
+      "digest": "sha256:8e8d0933e103afe79e40de213998e141e3188cb89b5fd7131c6738a3c3412b3a",
+      "size": 452
+    },
+    {
+      "path": "cases/override-filter-demotion-denied/iosMain/Contract.kt",
+      "digest": "sha256:8ab1f1029ef75795cc0bdb8963bf685470d1cb87fbf58c27b857901dc101a07a",
+      "size": 358
+    },
+    {
+      "path": "cases/override-filter-inherited/iosMain/Contract.kt",
+      "digest": "sha256:5cd5cfa020bfbdeb7122db781036d9c46a745607d04109c3d52b37db23e3d1ac",
+      "size": 328
+    },
+    {
+      "path": "cases/override-filter-matching/iosMain/Contract.kt",
+      "digest": "sha256:0473b183e9e2b574f3d46a6e98e9a4a166974e8e5f9ae9b0c307cd56a1c51a2f",
+      "size": 361
+    },
+    {
+      "path": "cases/override-filter-nowarn/iosMain/Contract.kt",
+      "digest": "sha256:8ab1f1029ef75795cc0bdb8963bf685470d1cb87fbf58c27b857901dc101a07a",
+      "size": 358
+    },
+    {
+      "path": "cases/override-filter-reordered/iosMain/Contract.kt",
+      "digest": "sha256:ce4ee9ef031bbdf671d832f793a6fb42cc8966a8144bef312340704207ca8a3e",
+      "size": 404
+    },
+    {
+      "path": "cases/override-filter-subtype/iosMain/Contract.kt",
+      "digest": "sha256:468f63cb27d7e45b1bd26b39067d7ee2a4759d8aef2c2b654754d50e8bb08257",
+      "size": 317
+    },
+    {
+      "path": "cases/override-filter-suppression/iosMain/Contract.kt",
+      "digest": "sha256:4b0dbe852deba42d248b112eaafd6ace460602699d4592ddc093bcdf7cc61cca",
+      "size": 530
+    },
+    {
+      "path": "cases/override-filter/iosMain/Contract.kt",
+      "digest": "sha256:8ab1f1029ef75795cc0bdb8963bf685470d1cb87fbf58c27b857901dc101a07a",
+      "size": 358
+    },
+    {
+      "path": "cases/suspend-cancellation-exact/iosMain/Contract.kt",
+      "digest": "sha256:7cd12a0c3451f9bf33af877c1c6c406625e2fc27b440c75f63a6ff69517c8458",
+      "size": 389
+    },
+    {
+      "path": "cases/suspend-cancellation-nonsuspend/iosMain/Contract.kt",
+      "digest": "sha256:2c1ae1d53e7ff76e5e1ae726d82cfbb9bb23cbef3f8c0c63b0060d09d763cf0f",
+      "size": 154
+    },
+    {
+      "path": "cases/suspend-cancellation-superclass/iosMain/Contract.kt",
+      "digest": "sha256:7d13fe09fd8b49e2a5aaae927b8ad8b24aa9c96ce4306bd16a3a2a64f94704ce",
+      "size": 443
+    },
+    {
+      "path": "cases/suspend-cancellation/iosMain/Contract.kt",
+      "digest": "sha256:d57ce879fc6c146ba7d7f6c75c9ec3204605580457a943e03074165df398c3b8",
+      "size": 173
+    },
+    {
+      "path": "cases/suspend-implicit-inherited/iosMain/Contract.kt",
+      "digest": "sha256:8fe17ade26198870bca3677443c7c02f387e42f299821e9647af8335a18e6ba9",
+      "size": 239
+    },
+    {
+      "path": "cases/suspend-implicit-override/iosMain/Contract.kt",
+      "digest": "sha256:19bff820174f285b2dc1ba167eabbb0128e0bafd29a07035971ccee8c8fa92c1",
+      "size": 312
+    },
+    {
+      "path": "cohort.json",
+      "digest": "sha256:59d525b7e8c16bcaf868e3bbe067afdb87fbcc18c8a6153a6fba5fb9467c7b1b",
+      "size": 16686
+    },
+    {
+      "path": "gradle.properties",
+      "digest": "sha256:22aa006b3e26da669fa01d51a6f9de063f40919af80602936f2139e60bc9cd77",
+      "size": 149
+    },
+    {
+      "path": "settings.gradle.kts",
+      "digest": "sha256:623eb8d7b509aa3201cd870535677fb1f75655edcdb6ac0dc04003c18b6c1f6c",
+      "size": 203
+    },
+    {
+      "path": "src/commonMain/kotlin/CommonBoundary.kt",
+      "digest": "sha256:6ccc529f4d79da4ff7f42def1563fb9eced053107b6fb41f06e8bea62a0a5999",
+      "size": 194
+    },
+    {
+      "path": "test_sources.py",
+      "digest": "sha256:92264696b69b4fdebd1939cb49627706bd4a3ac8a7ed611be97e5c2320163c0e",
+      "size": 10099
+    }
+  ]
+}

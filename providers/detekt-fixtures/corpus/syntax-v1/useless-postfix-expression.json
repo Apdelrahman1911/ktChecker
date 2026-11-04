@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-corpus-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression",
+  "upstream_id": "potential-bugs:UselessPostfixExpression",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "5f7e88c4a7a5ca15a587593e43e96377b76e772b26497c46ebf34c0cdb6fa6f4",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-potential-bugs/src/main/kotlin/dev/detekt/rules/potentialbugs/UselessPostfixExpression.kt",
+    "source_file_sha256": "011ce49816f8c8d84edfe9dc57602221a2875b53386402d0d4098793071301b3",
+    "predicate_line_numbers": [
+      60,
+      67,
+      80,
+      89,
+      98,
+      104,
+      111,
+      121
+    ],
+    "research_only": true
+  },
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.postfix\n\nfun lostAssignment(): Int {\n    var value = 1\n    value = value++\n    return value\n}\n\nfun lostReturn(): Int {\n    var local = 1\n    return local++\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 12,
+        "end_line": 5,
+        "end_column": 19,
+        "span": "value++",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 11,
+        "column": 11,
+        "end_line": 11,
+        "end_column": 18,
+        "span": "local++",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Same-name assignment discards Int increment; returning a local postfix result loses the incremented local value."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.postfix\n\nfun retainedIncrement(): Int {\n    var value = 1\n    value++\n    return value\n}\n"
+    },
+    "expected": [],
+    "intent": "Standalone Int increment followed by value use is meaningful."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.postfix\n\nfun lostAssignment(): Int {\n    var value = 1\n    value = value++\n    return value\n}\n\nfun lostReturn(): Int {\n    var local = 1\n    return local++\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"UselessPostfixExpression\")\n\npackage suppressed.corpus.postfix\n\nfun lostAssignment(): Int {\n    var value = 1\n    value = value++\n    return value\n}\n\nfun lostReturn(): Int {\n    var local = 1\n    return local++\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 12,
+        "end_line": 5,
+        "end_column": 19,
+        "span": "value++",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 11,
+        "column": 11,
+        "end_line": 11,
+        "end_column": 18,
+        "span": "local++",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine upstream file annotation on an otherwise identical, independently named package; neighboring original file must retain every positive finding. No ktChecker-ID or declaration-scope suppression claim."
+  },
+  "controls": [
+    {
+      "id": "persistent-class-property",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary",
+      "sources": {
+        "Case.kt": "package corpus.postfix\n\nclass SequenceCounter {\n    private var value = 0\n    fun next(): Int = value++\n}\n"
+      },
+      "expected": [],
+      "intent": "Postfix mutates persistent object state and returns the old value; this is valid, unlike a discarded local."
+    },
+    {
+      "id": "overloaded-inc-retains-side-effect",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive",
+      "sources": {
+        "Case.kt": "package corpus.postfix\n\nclass MutableCounter(var value: Int) {\n    operator fun inc(): MutableCounter {\n        value += 1\n        return this\n    }\n}\n\nfun updatedReference(): MutableCounter {\n    var counter = MutableCounter(0)\n    return counter++\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 12,
+          "column": 11,
+          "end_line": 12,
+          "end_column": 20,
+          "span": "counter++",
+          "occurrence": 0
+        }
+      ],
+      "intent": "An overloaded inc mutates the same returned object; the local spelling alone cannot prove an unused effect. Preserve a syntax-only false positive."
+    }
+  ],
+  "limitations": [
+    "Same identifier text and local property presence are tested, without resolving operators, aliases, scope shadowing or escape behavior.",
+    "Overloaded inc/dec may preserve side effects or mutate the returned reference; advisory only."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact selected route on positive immutable snapshot bytes.",
+    "negative": "Run legal alternative bytes with the same route still active.",
+    "configuration": "Run the original positive bytes with the owner-selected rule disabled; separately replay genuine options below when applicable.",
+    "version": "Replay positive bytes under the pinned CLI, retain actual CLI version output, and verify Common/Native requests never reach the runner. Declared Kotlin2.4.21/embedded2.4.10 stays unqualified.",
+    "suppression": "Use actual file-scoped upstream annotation with an unsuppressed neighboring file; never suppress/filter in host code.",
+    "regression": "Seal the negative correction as a child of the suppression snapshot, delete obsolete files, and verify both registered parent and child materializations."
+  },
+  "qualification_note": "Authored expected results are not observed behavior. Actual assertions, immutable materialization checks, raw SARIF/process receipts and START witnesses are required before a sidecar is emitted; no compatibility/precision/performance/release qualification is proposed."
+}

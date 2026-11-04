@@ -1,0 +1,37 @@
+config:
+  validation: true
+  warningsAsErrors: true
+processors:
+  active: false
+console-reports:
+  active: false
+Compose:
+  active: true
+  ComposableParamOrder:
+    active: true
+comments:
+  active: false
+complexity:
+  active: false
+coroutines:
+  active: false
+empty-blocks:
+  active: true
+  EmptyCatchBlock:
+    active: true
+exceptions:
+  active: false
+libraries:
+  active: true
+  ForbiddenPublicDataClass:
+    active: true
+naming:
+  active: false
+performance:
+  active: false
+potential-bugs:
+  active: false
+ruleauthors:
+  active: false
+style:
+  active: false

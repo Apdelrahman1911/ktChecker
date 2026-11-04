@@ -1,0 +1,33 @@
+config:
+  validation: true
+  warningsAsErrors: true
+processors:
+  active: false
+console-reports:
+  active: false
+Compose:
+  active: false
+comments:
+  active: false
+complexity:
+  active: false
+coroutines:
+  active: true
+  SleepInsteadOfDelay:
+    active: true
+empty-blocks:
+  active: false
+exceptions:
+  active: false
+libraries:
+  active: false
+naming:
+  active: false
+performance:
+  active: false
+potential-bugs:
+  active: false
+ruleauthors:
+  active: false
+style:
+  active: false

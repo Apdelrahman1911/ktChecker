@@ -1,0 +1,225 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.6.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :contracts:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :contracts:compileKotlin UP-TO-DATE
+> Task :contracts:compileJava NO-SOURCE
+> Task :contracts:processResources NO-SOURCE
+> Task :contracts:classes UP-TO-DATE
+> Task :contracts:jar UP-TO-DATE
+> Task :contracts:compileTestKotlin UP-TO-DATE
+> Task :contracts:compileTestJava NO-SOURCE
+> Task :contracts:processTestResources NO-SOURCE
+> Task :contracts:testClasses UP-TO-DATE
+> Task :contracts:test UP-TO-DATE
+> Task :snapshot:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :snapshot:compileKotlin UP-TO-DATE
+> Task :snapshot:compileJava NO-SOURCE
+> Task :snapshot:processResources NO-SOURCE
+> Task :snapshot:classes UP-TO-DATE
+> Task :snapshot:jar UP-TO-DATE
+> Task :snapshot:compileTestKotlin
+> Task :snapshot:compileTestJava NO-SOURCE
+> Task :snapshot:processTestResources NO-SOURCE
+> Task :snapshot:testClasses UP-TO-DATE
+> Task :snapshot:test
+> Task :kernel:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :kernel:compileKotlin
+> Task :kernel:compileJava NO-SOURCE
+> Task :kernel:processResources NO-SOURCE
+> Task :kernel:classes UP-TO-DATE
+> Task :kernel:jar
+> Task :kernel:compileTestKotlin
+> Task :kernel:compileTestJava NO-SOURCE
+> Task :kernel:processTestResources NO-SOURCE
+> Task :kernel:testClasses UP-TO-DATE
+
+> Task :kernel:test
+
+KernelPlanIntegrationTest > malformedControllerEntriesCannotRetargetOwnerPatchSnapshotRootOrCompilationIdentity() FAILED
+    org.opentest4j.AssertionFailedError at KernelPlanIntegrationTest.kt:182
+
+44 tests completed, 1 failed
+
+> Task :kernel:test FAILED
+> Task :config:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :config:compileKotlin UP-TO-DATE
+> Task :config:compileJava NO-SOURCE
+> Task :config:processResources NO-SOURCE
+> Task :config:classes UP-TO-DATE
+> Task :config:jar UP-TO-DATE
+> Task :config:compileTestKotlin UP-TO-DATE
+> Task :config:compileTestJava NO-SOURCE
+> Task :config:processTestResources NO-SOURCE
+> Task :config:testClasses UP-TO-DATE
+> Task :config:test UP-TO-DATE
+> Task :provider-runtime:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :provider-runtime:compileKotlin UP-TO-DATE
+> Task :provider-runtime:compileJava NO-SOURCE
+> Task :provider-runtime:processResources NO-SOURCE
+> Task :provider-runtime:classes UP-TO-DATE
+> Task :provider-runtime:jar UP-TO-DATE
+> Task :provider-runtime:compileTestKotlin UP-TO-DATE
+> Task :provider-runtime:compileTestJava NO-SOURCE
+> Task :provider-runtime:processTestResources NO-SOURCE
+> Task :provider-runtime:testClasses UP-TO-DATE
+> Task :provider-runtime:test UP-TO-DATE
+> Task :semantic-facts:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :semantic-facts:compileKotlin UP-TO-DATE
+> Task :semantic-facts:compileJava NO-SOURCE
+> Task :semantic-facts:processResources UP-TO-DATE
+> Task :semantic-facts:classes UP-TO-DATE
+> Task :semantic-facts:jar UP-TO-DATE
+> Task :semantic-facts:compileTestKotlin
+> Task :semantic-facts:compileTestJava NO-SOURCE
+> Task :semantic-facts:processTestResources NO-SOURCE
+> Task :semantic-facts:testClasses UP-TO-DATE
+> Task :semantic-facts:test
+> Task :project-model:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :project-model:compileKotlin
+> Task :project-model:compileJava NO-SOURCE
+> Task :project-model:processResources
+> Task :project-model:classes
+> Task :project-model:jar
+
+> Task :project-model:compileTestKotlin
+w: file:///root/projects/kt-chcker/modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/ProjectImpactPlannerTest.kt:121:56 Unnecessary non-null assertion (!!) on a non-null receiver of type 'RuleContext'.
+w: file:///root/projects/kt-chcker/modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/ProjectModelImporterTest.kt:30:31 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AnalysisContext'.
+w: file:///root/projects/kt-chcker/modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/ProjectModelImporterTest.kt:31:35 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AnalysisContext'.
+w: file:///root/projects/kt-chcker/modules/project-model/src/test/kotlin/dev/ktchecker/projectmodel/ProjectModelImporterTest.kt:32:64 Unnecessary non-null assertion (!!) on a non-null receiver of type 'AnalysisContext'.
+
+> Task :project-model:compileTestJava NO-SOURCE
+> Task :project-model:processTestResources NO-SOURCE
+> Task :project-model:testClasses UP-TO-DATE
+
+> Task :project-model:test
+
+OwnerFixtureDomainTest > fixedContractCannotEnrollEditedBuildScriptsExtraInputsOrJsonApproval() FAILED
+    org.opentest4j.AssertionFailedError at OwnerFixtureDomainTest.kt:30
+        Caused by: dev.ktchecker.projectmodel.ProjectModelException at OwnerFixtureDomainTest.kt:31
+
+ProjectModelImporterTest > maliciousFileMembershipTraversalRefinementAndIssueScopesAreRejected() FAILED
+    org.opentest4j.AssertionFailedError at ProjectModelImporterTest.kt:88
+
+26 tests completed, 2 failed
+
+> Task :project-model:test FAILED
+> Task :provider-architecture:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :provider-architecture:compileKotlin
+> Task :provider-architecture:compileJava NO-SOURCE
+> Task :provider-architecture:processResources NO-SOURCE
+> Task :provider-architecture:classes UP-TO-DATE
+> Task :provider-architecture:jar
+> Task :provider-architecture:compileTestKotlin
+> Task :provider-architecture:compileTestJava NO-SOURCE
+> Task :provider-architecture:processTestResources NO-SOURCE
+> Task :provider-architecture:testClasses UP-TO-DATE
+> Task :provider-architecture:test
+> Task :audit:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :audit:compileKotlin NO-SOURCE
+> Task :audit:compileJava NO-SOURCE
+> Task :audit:processResources NO-SOURCE
+> Task :audit:classes UP-TO-DATE
+> Task :audit:jar UP-TO-DATE
+> Task :audit:compileTestKotlin
+> Task :audit:compileTestJava NO-SOURCE
+> Task :audit:processTestResources NO-SOURCE
+> Task :audit:testClasses UP-TO-DATE
+> Task :audit:test
+> Task :provider-lint:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :provider-lint:compileKotlin
+> Task :provider-lint:compileJava NO-SOURCE
+> Task :provider-lint:processResources
+> Task :provider-lint:classes
+> Task :provider-lint:jar
+
+> Task :provider-lint:compileTestKotlin
+w: file:///root/projects/kt-chcker/modules/provider-lint/src/test/kotlin/dev/ktchecker/providers/lint/AndroidLintProviderTest.kt:113:54 Unnecessary non-null assertion (!!) on a non-null receiver of type 'ExactCompilationModel'.
+
+> Task :provider-lint:compileTestJava NO-SOURCE
+> Task :provider-lint:processTestResources NO-SOURCE
+> Task :provider-lint:testClasses UP-TO-DATE
+> Task :provider-lint:test
+> Task :provider-native:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :provider-native:compileKotlin
+> Task :provider-native:compileJava NO-SOURCE
+> Task :provider-native:processResources
+> Task :provider-native:classes
+> Task :provider-native:jar
+> Task :provider-native:compileTestKotlin
+> Task :provider-native:compileTestJava NO-SOURCE
+> Task :provider-native:processTestResources NO-SOURCE
+> Task :provider-native:testClasses UP-TO-DATE
+> Task :provider-native:test
+> Task :provider-detekt:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :provider-detekt:compileKotlin UP-TO-DATE
+> Task :provider-detekt:compileJava NO-SOURCE
+> Task :provider-detekt:processResources UP-TO-DATE
+> Task :provider-detekt:classes UP-TO-DATE
+> Task :provider-detekt:jar UP-TO-DATE
+> Task :provider-detekt:compileTestKotlin
+> Task :provider-detekt:compileTestJava NO-SOURCE
+> Task :provider-detekt:processTestResources NO-SOURCE
+> Task :provider-detekt:testClasses UP-TO-DATE
+> Task :provider-detekt:test
+> Task :provider-ktlint:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :provider-ktlint:compileKotlin UP-TO-DATE
+> Task :provider-ktlint:compileJava NO-SOURCE
+> Task :provider-ktlint:processResources UP-TO-DATE
+> Task :provider-ktlint:classes UP-TO-DATE
+> Task :provider-ktlint:jar UP-TO-DATE
+> Task :provider-ktlint:compileTestKotlin
+> Task :provider-ktlint:compileTestJava NO-SOURCE
+> Task :provider-ktlint:processTestResources NO-SOURCE
+> Task :provider-ktlint:testClasses UP-TO-DATE
+
+> Task :provider-ktlint:test
+
+KtlintIntegrationTest > four selected syntax rules execute positive negative config version scoped suppression and immutable regression() FAILED
+    org.opentest4j.AssertionFailedError at KtlintIntegrationTest.kt:124
+
+18 tests completed, 1 failed
+
+> Task :provider-ktlint:test FAILED
+
+[Incubating] Problems report is available at: file:///root/projects/kt-chcker/build/reports/problems/problems-report.html
+
+FAILURE: Build completed with 3 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':kernel:test'.
+> There were failing tests. See the report at: file:///root/projects/kt-chcker/modules/kernel/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':project-model:test'.
+> There were failing tests. See the report at: file:///root/projects/kt-chcker/modules/project-model/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+==============================================================================
+
+3: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':provider-ktlint:test'.
+> There were failing tests. See the report at: file:///root/projects/kt-chcker/modules/provider-ktlint/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+==============================================================================
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.6.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 2m 17s
+57 actionable tasks: 33 executed, 24 up-to-date

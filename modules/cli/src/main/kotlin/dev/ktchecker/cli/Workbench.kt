@@ -1,15 +1,28 @@
 package dev.ktchecker.cli
 
 import dev.ktchecker.compiler.KotlinJvmCompilerProvider
+import dev.ktchecker.compiler.KotlinJvmInputMode
 import dev.ktchecker.compiler.KotlinJvmToolchain
+import dev.ktchecker.compiler.CompilerRuleRegistry
 import dev.ktchecker.config.*
 import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.*
+import dev.ktchecker.projectmodel.GradleModelExporter
+import dev.ktchecker.projectmodel.ProjectModelImporter
+import dev.ktchecker.projectmodel.VerifiedProjectModel
+import dev.ktchecker.reviewcontroller.OwnerPlanAssembler
 import dev.ktchecker.providers.detekt.DetektInstallation
 import dev.ktchecker.providers.detekt.DetektProvider
 import dev.ktchecker.providers.detekt.DetektCatalog
+import dev.ktchecker.providers.ktlint.KtlintCatalog
+import dev.ktchecker.providers.ktlint.KtlintInstallation
+import dev.ktchecker.providers.ktlint.KtlintProvider
+import dev.ktchecker.providers.ktlint.KTLINT_EMBEDDED_KOTLIN
 import dev.ktchecker.providers.lint.AndroidLintProvider
+import dev.ktchecker.providers.lint.LintCatalog
 import dev.ktchecker.providers.native.KotlinNativeProvider
+import dev.ktchecker.providers.native.NativeCatalog
+import dev.ktchecker.providers.runtime.IsolatedProcessRunner
 import dev.ktchecker.providers.runtime.fileDigest
 import dev.ktchecker.snapshot.*
 import java.nio.file.Files
@@ -58,6 +71,8 @@ import kotlinx.serialization.json.*
     val classpath: List<ArtifactIdentity> = emptyList(),
     val addKotlinStdlib: Boolean = true,
     val libraries: Map<String, String> = emptyMap(),
+    /** Owner-declared project version; this does not install or qualify that compiler. */
+    val compilerVersion: String = "2.4.21",
 )
 
 @Serializable internal data class PreparedReview(
@@ -77,6 +92,10 @@ internal data class WorkbenchOptions(
     val compilerDirectory: Path? = null,
     val detektDirectory: Path? = null,
     val workerCount: Int = 2,
+    val ktlintDirectory: Path? = null,
+    val compilerJavaHome: Path? = null,
+    /** In-process owner selection only; paths/profile JSON cannot reconstruct this capability. */
+    val modelCompilerInstallation: KotlinJvmToolchain? = null,
 )
 
 /** Trusted local composition root; ordinary MCP tools cannot call its owner-control methods. */
@@ -85,50 +104,123 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     private val catalog = Catalog()
     val snapshots = SnapshotStore(state.namespace("snapshots"), state.ownerId)
     private val grants = ExecutionGrants()
+    private val modelGrants = ModelAttemptGrants()
     private val java = Path.of(System.getProperty("java.home"), "bin", if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java")
-    private val compilerInstallation = installCompiler(options.compilerDirectory ?: distributionHome()?.resolve("providers/compiler"))
+    // Explicit shipped closure: core/policy/storage/normalization/provider adapters and their
+    // data, Kotlin/serialization and SQLite. This is NOT automatic arbitrary-plugin discovery
+    // or an attestation of already-loaded/transformed classes or of the external JDK image.
+    private val codeImage = CodeImage.capture(listOf(
+        Workbench::class.java, AnalysisInput::class.java, SnapshotStore::class.java,
+        KernelService::class.java, ConfigStore::class.java, IsolatedProcessRunner::class.java,
+        ProjectModelImporter::class.java, OwnerPlanAssembler::class.java,
+        KotlinJvmCompilerProvider::class.java, DetektProvider::class.java, KtlintProvider::class.java,
+        AndroidLintProvider::class.java, KotlinNativeProvider::class.java,
+        Unit::class.java, kotlinx.serialization.KSerializer::class.java, Json::class.java,
+        Class.forName("org.sqlite.JDBC", false, Workbench::class.java.classLoader),
+    ), mapOf(
+        "catalog" to CodeImage.resourceRoot(Catalog::class.java, "/catalog/rules-core.json"),
+        // Explicit resource closure also binds host-built native bytes in split
+        // Gradle class/resource directories. In a distribution this is the same
+        // provider-runtime JAR as the implementation, not a PATH-selected helper.
+        "process-supervisor" to CodeImage.resourceRoot(IsolatedProcessRunner::class.java,
+            "/dev/ktchecker/providers/runtime/native/manifest"),
+        "compiler-mappings" to CodeImage.resourceRoot(CompilerRuleRegistry::class.java, "/compiler-rule-map.json"),
+        "project-model-exporter" to CodeImage.resourceRoot(GradleModelExporter::class.java, "/${GradleModelExporter.SCRIPT}"),
+        "detekt-mappings" to CodeImage.resourceRoot(DetektCatalog::class.java, "/detekt-rule-map.json"),
+        "detekt-artifact-pins" to CodeImage.resourceRoot(DetektCatalog::class.java, "/detekt-artifacts.json"),
+        "ktlint-mappings" to CodeImage.resourceRoot(KtlintCatalog::class.java, "/ktlint-rule-map.json"),
+        "ktlint-artifact-pins" to CodeImage.resourceRoot(KtlintCatalog::class.java, "/ktlint-artifacts.json"),
+        "lint-mappings" to CodeImage.resourceRoot(LintCatalog::class.java, "/dev/ktchecker/providers/lint/android-lint-catalog.json"),
+        "native-mappings" to CodeImage.resourceRoot(NativeCatalog::class.java, "/dev/ktchecker/providers/native/kotlin-native-catalog.json"),
+    ))
+    private val compilerSelection = selectCompiler(options.compilerDirectory ?: distributionHome()?.resolve("providers/compiler"),
+        options.compilerJavaHome ?: Path.of(System.getProperty("java.home")))
+    private val compilerInstallation = compilerSelection.toolchain
     private val compiler = compilerInstallation?.let { KotlinJvmCompilerProvider(it, grants) }
-    private val detekt = DetektProvider((options.detektDirectory ?: state.root.resolve("providers/detekt"))
-        .takeIf { Files.isDirectory(it) }?.let { DetektInstallation(java, it, Path.of(System.getProperty("java.home"))) }, grants)
+    // One fixed model provider per owner composition. A missing selection is unavailable, never
+    // a downgrade to the bundled explicit-input compiler or a request-controlled profile loader.
+    private val modelCompilerInstallation = options.modelCompilerInstallation
+    private val modelCompiler = modelCompilerInstallation?.let { KotlinJvmCompilerProvider(it, modelGrants.executionAuthority,
+        inputMode = KotlinJvmInputMode.VERIFIED_MODEL, modelAuthority = modelGrants.modelAuthority) }
+    private val detektInstallation = (options.detektDirectory ?: state.root.resolve("providers/detekt"))
+        .takeIf { Files.isDirectory(it) }?.let { DetektInstallation(java, it, Path.of(System.getProperty("java.home"))) }
+    private val detekt = DetektProvider(detektInstallation, grants)
+    private val ktlintInstallation = (options.ktlintDirectory ?: state.root.resolve("providers/ktlint"))
+        .takeIf { Files.isDirectory(it) }?.let { KtlintInstallation(java, it, Path.of(System.getProperty("java.home"))) }
+    private val ktlint = KtlintProvider(ktlintInstallation, grants)
     private val lint = AndroidLintProvider(authority = grants)
     private val native = KotlinNativeProvider(authority = grants)
-    private val routes = buildList {
-        compiler?.let { provider -> add(ProviderRoute(provider, { it.context.scope.target.lowercase() in setOf("jvm", "desktop", "android") }, { provider.executionProfile(it) })) }
-        add(ProviderRoute(detekt, { true }, detekt::executionProfile))
-        add(ProviderRoute(lint, { it.context.scope.target.lowercase().contains("android") }))
-        add(ProviderRoute(native, { it.context.scope.target in setOf("iosArm64", "iosSimulatorArm64") }))
+    private val ktlintIdentity = ktlintInstallation?.let { installed ->
+        runCatching { Digests.sha256(providerIdentity(ktlint) + Digests.canonical(
+            ContractJson.encodeToJsonElement(KtlintCatalog.verifyArtifacts(installed.artifactDirectory)))) }.getOrNull()
     }
-    private val coordinator = ReviewCoordinator(catalog, routes, grants)
+    private val routes = buildList {
+        modelCompiler?.let { provider -> add(ProviderRoute(provider, modelGrants::routes,
+            implementationIdentity = Digests.sha256(providerIdentity(provider) + modelCompilerInstallation!!.digest + Digests.canonical(
+                ContractJson.encodeToJsonElement(modelCompilerInstallation.compilerClasspath))),
+            preparedChild = modelGrants::child, finishAttempt = modelGrants::finish)) }
+        compiler?.let { provider -> add(ProviderRoute(provider,
+            { !modelGrants.routes(it) && it.context.scope.target.lowercase() in setOf("jvm", "desktop", "android") && it.context.compilerVersion == "2.4.21" }, { provider.executionProfile(it) },
+            Digests.sha256(providerIdentity(provider) + compilerInstallation!!.digest + Digests.canonical(
+                ContractJson.encodeToJsonElement(compilerInstallation.compilerClasspath))))) }
+            ?: add(ProviderRoute(UnavailableCompilerProvider(compilerSelection.unavailableReason!!),
+                { !modelGrants.routes(it) && it.context.scope.target.lowercase() in setOf("jvm", "desktop", "android") && it.context.compilerVersion == "2.4.21" }))
+        // Some syntax/Compose catalog IDs have multiple upstream adapters. Prefer Ktlint only
+        // on its explicitly installed, parser-compatible tuple; it must not steal the same IDs
+        // from Detekt on a newer Kotlin project or an unavailable platform/profile.
+        val ktlintRoute = ProviderRoute(ktlint, { true }, ktlint::executionProfile, ktlintIdentity)
+        add(ktlintRoute.copy(applicable = { !modelGrants.routes(it) && ktlintPreferred(it, ktlintIdentity != null) }))
+        add(ProviderRoute(detekt, { !modelGrants.routes(it) }, detekt::executionProfile, detektInstallation?.let { installed ->
+            runCatching { Digests.sha256(providerIdentity(detekt) + Digests.canonical(
+                ContractJson.encodeToJsonElement(DetektCatalog.verifyArtifacts(installed.artifactDirectory)))) }.getOrNull()
+        }))
+        // Keep Ktlint-only unsupported/missing tuples visible through its precise abstention.
+        add(ktlintRoute.copy(applicable = { !modelGrants.routes(it) && !ktlintPreferred(it, ktlintIdentity != null) }))
+        add(ProviderRoute(lint, { !modelGrants.routes(it) && it.context.scope.target.lowercase().contains("android") }))
+        add(ProviderRoute(native, { !modelGrants.routes(it) && it.context.scope.target in setOf("iosArm64", "iosSimulatorArm64") }))
+    }
+    private val coordinator = ReviewCoordinator(catalog, routes, grants, codeImage)
+    private val routingAliases = policyAliases(catalog)
     private val aliases = RuleAliases(catalog.records.map { record ->
         val id = record.getValue("id").jsonPrimitive.content
         val protected = record.getValue("category").jsonPrimitive.content.startsWith("kotlin.compiler") &&
             record.getValue("severity").jsonPrimitive.content == "error"
-        PolicyRule(id, failureProtected = protected, implementationDigest = Digests.sha256(
-            Digests.canonical(record) + routes.filter { id in it.provider.supportedRuleIds }.joinToString {
-                providerIdentity(it.provider) + when (it.provider.id) {
-                    "kotlin-compiler-jvm" -> compilerInstallation?.digest.orEmpty()
-                    "detekt" -> Digests.canonical(ContractJson.encodeToJsonElement(DetektCatalog.pins))
-                    else -> "no-qualified-upstream-installation"
-                }
-            },
-        ))
+        val implementingRoutes = routes.filter { id in it.provider.supportedRuleIds && it.implementationIdentity != null }
+        // Catalog membership alone is not an implementation or a usable narrow-policy identity.
+        PolicyRule(id, aliases = routingAliases[id].orEmpty(), failureProtected = protected, implementationDigest = implementingRoutes.takeIf { it.isNotEmpty() }?.let { Digests.sha256(
+            Digests.canonical(record) + it.joinToString { it.implementationIdentity!! },
+        ) })
     })
     val configs = ConfigStore(state.namespace("configuration"), aliases)
+    private val modelPlans = OwnerModelPlans(state, snapshots, configs, catalog, modelCompilerInstallation, modelCompiler, modelGrants, codeImage::verify)
     private val loadedPolicies = ConcurrentHashMap<String, ConfigSnapshot>()
     private val records = ConcurrentHashMap<String, PreparedReview>()
     val kernel: KernelService = KernelService.open(state.namespace("broker"), coordinator,
         config = KernelConfig(workerCount = options.workerCount, globalParallelism = 2, perWorktreeParallelism = 1),
         snapshotGate = sourceGate(),
-        preparedInputObserver = PreparedInputObserver { original, effective, verify ->
-            val prepared = prepared(original)
-            validateSnapshot(prepared)
-            cachePolicy(prepared)
-            grants.prepared(AuthorizedAttempt(original, effective,
-                if (prepared.executionAuthorized) prepared.profiles else emptyMap(), verify))
+        preparedInputObserver = object : PreparedInputObserver {
+            override fun prepared(original: AnalysisInput, effective: AnalysisInput, verifyFrozen: () -> Unit) {
+                codeImage.verify()
+                if (modelPlans.evidence(original) != null) modelPlans.observe(original, effective, verifyFrozen)
+                else {
+                    val prepared = this@Workbench.prepared(original)
+                    validateSnapshot(prepared)
+                    cachePolicy(prepared)
+                    grants.prepared(AuthorizedAttempt(original, effective,
+                        if (prepared.executionAuthorized) prepared.profiles else emptyMap(), verifyFrozen))
+                }
+            }
+
+            override fun finished(effective: AnalysisInput) {
+                // The worker owns the attempt lifetime, including cancellation after preparation
+                // but before any provider is invoked. Coordinator teardown is an idempotent backup.
+                try { modelGrants.finish(effective) } finally { grants.finish(effective) }
+            }
         },
+        planAuthority = modelPlans,
         findingProviders = coordinator.findingProviders,
         resultPolicy = ResultPolicy { binding, input, raw ->
-            val policy = loadedPolicies[policyKey(binding, input)]
+            val policy = modelPlans.policy(binding, input) ?: loadedPolicies[policyKey(binding, input)]
                 ?: throw CliProblem("captured_policy_unavailable", "Captured policy was not restored for this consumer.")
             configs.apply(policy, input, raw)
         })
@@ -157,6 +249,25 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
 
     fun registration(clientId: String): ClientRegistration = state.read(state.keyFile("clients", clientId))
 
+    /** Owner-only beginning of a model import; capture configuration and consent BEFORE Gradle. */
+    fun beginModelReview(clientId: String, request: SubmitPlanRequest, authorizeExecution: Boolean): OwnerModelIntent =
+        modelPlans.begin(registration(clientId).binding, request, authorizeExecution)
+
+    /** Typed live importer capability only. There is deliberately no model JSON/RPC counterpart. */
+    fun prepareModelReview(intent: OwnerModelIntent, before: VerifiedProjectModel?, after: VerifiedProjectModel,
+                           materialized: MaterializedSnapshot): PreparedOwnerModelPlan {
+        if (registration(intent.binding.clientId).binding != intent.binding) {
+            throw CliProblem("model_client_binding_changed", "Model intent belongs to another exact client session.")
+        }
+        return modelPlans.prepare(intent, before, after, materialized)
+    }
+
+    /** A parent reference resolves only through live owner authority; cached inputs are not plans. */
+    fun submitModelPlan(credential: ClientCredential, request: SubmitPlanRequest): ParentPlanStatus {
+        codeImage.verify()
+        return kernel.submitPlan(credential, request)
+    }
+
     fun overlay(document: OverlayDocument): SnapshotCommit {
         val identity = SnapshotIdentity(state.ownerId, document.workspaceId, document.worktreeId)
         snapshots.registerWorktree(identity)
@@ -182,6 +293,13 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     }
 
     fun prepare(spec: PreparationSpec, authorizeExecution: Boolean): PreparedReview {
+        codeImage.verify()
+        if (!spec.compilerVersion.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?")) || spec.compilerVersion.length > 64) {
+            throw CliProblem("invalid_compiler_version", "An explicit bounded project compiler version is required.")
+        }
+        if (spec.addKotlinStdlib && spec.compilerVersion != "2.4.21") {
+            throw CliProblem("matching_stdlib_unavailable", "The bundled stdlib belongs to Kotlin 2.4.21; explicitly supply another version's exact classpath instead.")
+        }
         val registration = registration(spec.clientId)
         val binding = registration.binding
         val identity = SnapshotIdentity(binding.ownerId, binding.workspaceId, binding.worktreeId)
@@ -195,25 +313,31 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         val policy = configs.capture(configBinding(binding))
         val activation = activationPlan(catalog, rules, spec.requiredRuleIds != null,
             policy.ruleSettings.mapValues { it.value.enabled }, policy.policyDigest)
-        val artifacts = (spec.classpath + if (spec.addKotlinStdlib) compilerInstallation?.compilerClasspath.orEmpty().filter {
+        val artifacts = (spec.classpath + if (spec.addKotlinStdlib) compilerSelection.artifacts.filter {
             Path.of(it.path).fileName.toString().startsWith("kotlin-stdlib-")
-        } else emptyList()).distinctBy { it.path }.sortedBy { it.coordinate }
+        } else emptyList())
+        // Resolution precedence is ordered. Never sort by coordinate or silently choose one
+        // of conflicting identities for the same path. Exact repeated entries stay explicit.
+        if (artifacts.groupBy { Path.of(it.path).toAbsolutePath().normalize() }.values.any { rows ->
+                rows.map { it.digest }.distinct().size != 1
+            }) throw CliProblem("classpath_identity_conflict", "One classpath path has conflicting content identities.")
         artifacts.forEach { if (fileDigest(Path.of(it.path)) != it.digest) throw CliProblem("artifact_changed", "Declared classpath artifact differs from its digest.") }
         val destination = state.namespace("materializations").resolve(UUID.randomUUID().toString())
         val materialized = snapshots.materialize(identity, spec.snapshotId, destination)
         val modelDigest = Digests.sha256(Digests.canonical(buildJsonObject {
             put("kind", "owner-declared-single-compilation"); put("scope", ContractJson.encodeToJsonElement(spec.scope))
+            put("compilerVersion", spec.compilerVersion)
             put("files", ContractJson.encodeToJsonElement(spec.compilationFiles.sorted()))
             put("arguments", ContractJson.encodeToJsonElement(spec.compilerArguments))
             put("libraries", ContractJson.encodeToJsonElement(spec.libraries))
         }))
         var input = AnalysisInput(materialized.manifest.toContractManifest(), materialized.root.toString(),
-            AnalysisContext(scope = spec.scope, compilerVersion = "2.4.21", classpath = artifacts,
+            AnalysisContext(scope = spec.scope, compilerVersion = spec.compilerVersion, classpath = artifacts,
                 compilerArguments = spec.compilerArguments, libraries = spec.libraries,
                 policies = mapOf("ktchecker.model" to "owner-declared-single-compilation", "ktchecker.coverage" to "partial-project",
                     ACTIVATION_POLICY_KEY to ContractJson.encodeToString(ActivationPlan.serializer(), activation)),
                 modelDigest = modelDigest, dependencyDigest = Digests.sha256(ContractJson.encodeToJsonElement(artifacts).toString()),
-                toolchainDigest = compilerInstallation?.digest,
+                toolchainDigest = compilerInstallation?.digest?.takeIf { spec.compilerVersion == "2.4.21" },
                 configurationDigest = policy.policyDigest, fullProject = false, compilationFiles = spec.compilationFiles.sorted()),
             requiredRuleIds = rules, changedPaths = manifest.delta.map { delta ->
                 val root = manifest.roots.single { it.id == delta.rootId }
@@ -224,13 +348,27 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             ("ktchecker.execution-plan" to Digests.sha256(Digests.canonical(ContractJson.encodeToJsonElement(profiles))))))
         val prepared = PreparedReview(binding, spec.patchId, spec.idempotencyKey, input, configs.exportSnapshot(policy), profiles,
             authorizeExecution, if (spec.requiredRuleIds == null) "all-catalog-candidates-for-declared-target" else "explicit-rule-subset-not-full-release")
-        state.locked("prepared:${input.analysisKey()}") { state.write(state.keyFile("prepared", input.analysisKey()), prepared) }
+        codeImage.verify()
+        state.locked("prepared:${input.analysisKey()}") {
+            val file = state.keyFile("prepared", input.analysisKey())
+            // Work sharing must never overwrite a different consumer's owner policy, patch or
+            // execution consent. A general shared-work authorization registry is still separate
+            // release work; this single-compilation controller rejects collisions instead.
+            if (Files.exists(file, NOFOLLOW_LINKS) && state.read<PreparedReview>(file) != prepared) {
+                throw CliProblem("prepared_binding_conflict", "Input already has a different immutable consumer/authorization binding.")
+            }
+            state.write(file, prepared)
+        }
         records[input.analysisKey()] = prepared
         loadedPolicies[policyKey(binding, input)] = policy
         return prepared
     }
 
     fun submit(credential: ClientCredential, patchId: String, idempotencyKey: String, input: AnalysisInput): ReviewStatus {
+        codeImage.verify()
+        if (modelPlans.evidence(input) != null || input.context.policies["ktchecker.model"] == dev.ktchecker.projectmodel.GRADLE_MODEL_EXPORTER_ID) {
+            throw CliProblem("model_parent_plan_required", "A verified model input cannot bypass its complete required parent plan.")
+        }
         val prepared = prepared(input)
         if (prepared.binding.clientId != credential.clientId || prepared.patchId != patchId || prepared.idempotencyKey != idempotencyKey) {
             throw CliProblem("unprepared_submission", "Submission does not match this client's exact owner-prepared patch.")
@@ -266,6 +404,9 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
 
     private fun sourceGate(): SnapshotGate = object : SnapshotGate {
         override fun <T> withCurrentSnapshot(input: AnalysisInput, action: (SnapshotCheck) -> T): T {
+            codeImage.verify() // Deliberately outside the short configuration/source fences.
+            val model = modelPlans.evidence(input)
+            if (model != null) return withModelSnapshot(model, input, action)
             val record = prepared(input)
             return configs.withCurrentConfig(configBinding(record.binding), record.configuration.revisionToken) { config ->
                 snapshots.withVerifiedSnapshot(SnapshotIdentity(record.binding.ownerId, record.binding.workspaceId, record.binding.worktreeId),
@@ -286,9 +427,27 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         }
     }
 
+    private fun <T> withModelSnapshot(record: ModelInputEvidence, input: AnalysisInput, action: (SnapshotCheck) -> T): T =
+        configs.withCurrentConfig(modelConfigBinding(record.binding), record.configuration.revisionToken) { config ->
+            snapshots.withVerifiedSnapshot(SnapshotIdentity(record.binding.ownerId, record.binding.workspaceId, record.binding.worktreeId),
+                input.snapshot.snapshotId) { capture ->
+                val head = capture.head
+                action(SnapshotCheck(current = config.matches && capture.valid,
+                    snapshotId = head.headSnapshotId, sourceEpoch = head.sourceEpoch,
+                    configurationDigest = config.current.policyDigest, modelDigest = input.context.modelDigest,
+                    dependencyDigest = input.context.dependencyDigest, toolchainDigest = input.context.toolchainDigest,
+                    analysisEpoch = Digests.sha256(ContractJson.encodeToJsonElement(record.configuration.revisionToken).toString() + head.sourceEpoch),
+                    authoritative = false,
+                    reasons = config.reasons + listOfNotNull(capture.reason) +
+                        listOf("verified_model_parent_not_final_success", "live_project_model_completion_fence_unavailable"),
+                    validUntilEpochMillis = config.current.validUntilEpochMillis))
+            }
+        }
+
     override fun call(method: String, params: JsonObject): JsonObject = try {
         when (method) {
-            "doctor" -> { requireKeys(params, emptySet()); doctor() }
+            "doctor" -> { requireKeys(params, emptySet()); JsonObject(doctor() + mapOf(
+                "installedProvidersInspected" to JsonPrimitive(true), "installedProviders" to providerAvailability())) }
             "client.register" -> { requireKeys(params, setOf("binding")); result(register(params.decode("binding"))) }
             "review.submit" -> {
                 requireKeys(params, setOf("credential", "patchId", "idempotencyKey", "input"))
@@ -330,6 +489,16 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         return result(configs.explain(loadedPolicies.getValue(policyKey(record.binding, input)), input, finding))
     }
 
+    /** Read-only helper; returned selector grants no policy mutation or execution authority. */
+    fun findingSelector(clientId: String, input: AnalysisInput, finding: Finding): JsonObject {
+        val record = prepared(input)
+        if (record.binding.clientId != clientId) throw CliProblem("permission_denied", "Finding selector belongs to another consumer.")
+        validateSnapshot(record)
+        cachePolicy(record)
+        val selector: PolicySelector = configs.findingSelector(loadedPolicies.getValue(policyKey(record.binding, input)), input, finding)
+        return result(selector)
+    }
+
     private fun configView(snapshot: ConfigSnapshot): JsonObject = buildJsonObject {
         put("contractVersion", PREVIEW_CONTRACT); put("revision", ContractJson.encodeToJsonElement(snapshot.revisionToken))
         put("shared", ContractJson.encodeToJsonElement(snapshot.shared)); put("local", ContractJson.encodeToJsonElement(snapshot.local))
@@ -340,28 +509,36 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     private fun configBinding(binding: ClientBinding) = ConfigBinding(binding.ownerId, binding.workspaceId, binding.worktreeId, binding.lineageId)
     private fun policyKey(binding: ClientBinding, input: AnalysisInput) = Digests.sha256(ContractJson.encodeToJsonElement(binding).toString() + input.analysisKey())
 
-    private fun installCompiler(directory: Path?): KotlinJvmToolchain? {
-        if (directory == null || !Files.isDirectory(directory, NOFOLLOW_LINKS)) return null
-        val artifacts = Files.list(directory).use { files -> files.filter { it.fileName.toString().endsWith(".jar") }.sorted().map {
-            ArtifactIdentity("installed:${it.fileName}", fileDigest(it), it.toAbsolutePath().normalize().toString())
-        }.toList() }
-        return KotlinJvmToolchain(java, artifacts)
+    fun providerAvailability(): JsonObject = buildJsonObject {
+        put("contractVersion", PREVIEW_CONTRACT)
+        put("releaseQualified", false)
+        put("doesNotEstablishTargetExecution", true)
+        put("inspectionScope", "kotlin-compiler-jvm and bundled process containment; other providers not inspected by this command")
+        put("processContainment", containmentAvailability())
+        putJsonObject("compiler") {
+            put("state", if (compilerInstallation == null) "unavailable" else "toolchain_bound")
+            compilerSelection.unavailableReason?.let { put("reason", it) }
+            compilerInstallation?.let { put("toolchainDigest", it.digest) }
+            put("requiresExplicitExecutionAuthorization", true)
+            put("javaHomeSelection", if (options.compilerJavaHome == null) "broker_default_no_fallback" else "explicit_owner_selection")
+            put("runtimeRequirement", "complete_link_free_jdk21_image")
+            put("scope", "Kotlin 2.4.21 JVM compiler only; no target or rule qualification implied")
+        }
     }
 
+    private fun providerIdentity(provider: AnalysisProvider): String = "${provider.id}:${provider.version}:${codeImage.digest}"
+
     companion object {
-        private val providerDigests = ConcurrentHashMap<String, String>()
-        private fun providerIdentity(provider: AnalysisProvider): String = providerDigests.computeIfAbsent(provider.javaClass.name) {
-            val source = Path.of(provider.javaClass.protectionDomain.codeSource.location.toURI())
-            val digest = if (Files.isRegularFile(source)) fileDigest(source) else {
-                val pieces = Files.walk(source).use { paths -> paths.filter { Files.isRegularFile(it) }
-                    .sorted().map { source.relativize(it).toString() + ":" + fileDigest(it) }.toList() }
-                Digests.sha256(pieces.joinToString("\n"))
-            }
-            "${provider.id}:${provider.version}:$digest"
-        }
         private fun distributionHome(): Path? {
             val location = Path.of(Workbench::class.java.protectionDomain.codeSource.location.toURI())
             return if (Files.isRegularFile(location) && location.parent.fileName.toString() == "lib") location.parent.parent else null
         }
     }
 }
+
+/** Preference only. The provider independently verifies all execution/config/artifact prerequisites. */
+internal fun ktlintPreferred(input: AnalysisInput, installed: Boolean): Boolean = installed &&
+    input.context.scope.target == "jvm" && input.context.compilerVersion == KTLINT_EMBEDDED_KOTLIN &&
+    input.context.compilerArguments.isEmpty() && input.snapshot.unknownInputs.isEmpty() &&
+    input.snapshot.files.any { it.path == ".editorconfig" } &&
+    input.context.compilationFiles?.let { files -> files.isNotEmpty() && files.all { it.endsWith(".kt") || it.endsWith(".kts") } } == true

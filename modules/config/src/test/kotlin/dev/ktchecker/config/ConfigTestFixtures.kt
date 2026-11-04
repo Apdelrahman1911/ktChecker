@@ -46,7 +46,8 @@ internal class ConfigFixture(
     lifecycleVerifier: FindingLifecycleVerifier = FindingLifecycleVerifier.NONE,
     writeObserver: ConfigWriteObserver = ConfigWriteObserver.NONE,
 ) : AutoCloseable {
-    val root: Path = Files.createTempDirectory("ktchecker-config-test-")
+    // Canonicalize only the fresh trusted outer root, not configuration descendants.
+    val root: Path = Files.createTempDirectory("ktchecker-config-test-").toRealPath()
     val clock = MutableClock()
     val authority = HmacOwnerAuthority(ByteArray(32) { it.toByte() }, listOf(OwnerSessionRegistration(OWNER, setOf(binding))))
     val store = ConfigStore(root.resolve("state"), TEST_ALIASES, authority, identityVerifier, lifecycleVerifier, clock, writeObserver)

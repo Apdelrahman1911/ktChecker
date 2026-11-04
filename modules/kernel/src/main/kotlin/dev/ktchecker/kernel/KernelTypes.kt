@@ -216,6 +216,16 @@ class KernelException(val code: String, message: String) : RuntimeException(mess
  */
 fun interface PreparedInputObserver {
     fun prepared(original: AnalysisInput, effective: AnalysisInput, verifyFrozen: () -> Unit)
+
+    /**
+     * Outside all kernel/config/source locks, once for each attempt whose prepared callback began,
+     * including partial preparation failure or cancellation before provider entry. Release ONLY
+     * this exact effective attempt's permits; implementations must be idempotent and must not
+     * revoke a different task's equal-input or later-attempt authority. No-op retains scalar/SAM
+     * integrations. Failure preserves the raw terminal result but makes the review incomplete.
+     */
+    fun finished(effective: AnalysisInput) { }
+
     companion object { val NONE = PreparedInputObserver { _, _, _ -> } }
 }
 

@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "provider_id": "ktlint",
+  "provider_version": "1.8.0",
+  "recorded_at_utc": "2026-11-04T09-25-19Z",
+  "status": "partial_real_run_failed_version_label_assertion_no_passing_sidecar",
+  "qualified": false,
+  "release_qualified": false,
+  "tests": {
+    "unit": {
+      "total": 16,
+      "failures": 0
+    },
+    "integration": {
+      "total": 2,
+      "failures": 1
+    }
+  },
+  "observed_from_genuine_junit_failure": "expected bare 1.8.0, but actual upstream version stdout was ktlint version 1.8.0",
+  "verified_before_failure": [
+    "four exact positive findings/ranges",
+    "negative no findings",
+    "owner-disabled configuration no findings",
+    "changed-settings replay denied before execution",
+    "actual nested EditorConfig inheritance",
+    "allowed wildcard package exemption",
+    "genuine malformed Kotlin parse failure with unknown coverage"
+  ],
+  "not_completed": [
+    "full version evidence receipt/parser-mismatch case",
+    "suppression case",
+    "immutable regression case",
+    "all-six-case START verification/passing sidecar"
+  ],
+  "source_attribution": "Explicit source/resource/fixture hashes and top-level provider/parser/catalog/test/runtime class archives were emitted at START by the test. All those witness hashes were independently rechecked against exact preserved source/class bytes before any label fix. This historical failed run is not current tested evidence.",
+  "raw_version_probe_limitation": "The assertion failed before a separate version-process JSON was archived. Actual version stdout is retained in the genuine JUnit assertion failure, not fabricated as a standalone process receipt.",
+  "preserved_files": [
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-exemption-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/configuration-exemption-provider-result.json",
+      "sha256": "d9e44df6774c162e7837b4998d8391605de5399571d6fa322fa50a0b32cabcd6"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-exemption-report.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/configuration-exemption-report.json",
+      "sha256": "3fbbd4c6d76130399b0c79cdf41758669224a91e05b7b216953f0c9728750865"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-inheritance-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/configuration-inheritance-provider-result.json",
+      "sha256": "26a71e958f7bc85fddf034643f13f04d403332bc8b7bc0616ebfdbd99d137e02"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-inheritance-report.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/configuration-inheritance-report.json",
+      "sha256": "a462e73fb37cacda679022365344b983de098920e757d6d551257107c3b16a36"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-parse-failure-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/configuration-parse-failure-provider-result.json",
+      "sha256": "12686e708e1a1fc6a1b9d339a5fccdafd411280e27a014841d70847a8f293654"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/configuration-parse-failure-report.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/configuration-parse-failure-report.json",
+      "sha256": "1b7f419249d53b7c3e3c035beb43ddd3cd3bef3cd4db0f9b36d32f3871b83ccc"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-ExecutionPermit.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-ExecutionPermit.class",
+      "sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintCatalog.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-KtlintCatalog.class",
+      "sha256": "1b4939b92c468eac68a59035f9fffc6b07064ccaf34f6a96fda357db871aec02"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintIntegrationTest.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-KtlintIntegrationTest.class",
+      "sha256": "767728244b913bd826d50eaf06bc1538113e5796dc443ed1fc64d5e594ff5981"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintProvider.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-KtlintProvider.class",
+      "sha256": "e2fd8fc54ccfbb8b2f63e8258bc337a6f5d7b127557e5bfc879411dbb06221cf"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-KtlintReportParser.class",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-KtlintReportParser.class",
+      "sha256": "a294aeeab29ae6c22d1e4be0a6fc71ffc96c03aaf2dbddc89514c2ba32258341"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-editorconfig",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-configuration-editorconfig",
+      "sha256": "049382fa52576747a64dcf7d1b9c77cc3673361ce75ef38a6e2bb08626e15e68"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-process.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-configuration-process.json",
+      "sha256": "b2a70fc27ced9e3ba6b83ecb0080c67538e8175c71b14d78dc1fbba2cd6074a8"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-configuration-provider-result.json",
+      "sha256": "f6417de3dc9b643d417de5d26498ce55dc03c2b6d77de7a8863a2f87f22052c1"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-receipt.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-configuration-receipt.json",
+      "sha256": "a01c473f629bc39dfb90163dcfabf927c902fa63b20d4107e544a353e838e1ee"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-configuration-report.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-configuration-report.json",
+      "sha256": "3fbbd4c6d76130399b0c79cdf41758669224a91e05b7b216953f0c9728750865"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-editorconfig",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-negative-editorconfig",
+      "sha256": "6c0c6885d0656ace28b7341106748e0429d636c28c96e9a0031c27d215e8bfe8"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-process.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-negative-process.json",
+      "sha256": "f8e6c8ec7e659c149c16d3beac3ea35d442d953ceedc3d23ba21699122a0d8f2"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-negative-provider-result.json",
+      "sha256": "f1062ecdf468ab3c97d02ac8aec533e3c94690af342aae8acfe4a5966414932d"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-receipt.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-negative-receipt.json",
+      "sha256": "a7567a9c7fbc9c96f8745320748da95017d11b7409a5a4098c9f9c2cbf7adeb2"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-negative-report.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-negative-report.json",
+      "sha256": "3fbbd4c6d76130399b0c79cdf41758669224a91e05b7b216953f0c9728750865"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-editorconfig",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-positive-editorconfig",
+      "sha256": "6c0c6885d0656ace28b7341106748e0429d636c28c96e9a0031c27d215e8bfe8"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-process.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-positive-process.json",
+      "sha256": "ee32e87368d950156ccb3414d20c80bbbf9699a70f6e268940f48fdc9c06de08"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-positive-provider-result.json",
+      "sha256": "c8bd6a448bf56b7df20957d8c290e2b34ffc4f2ce4dfa74fe99ec910cbf0b115"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-receipt.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-positive-receipt.json",
+      "sha256": "b417977af1ec0dbf7b8dc8c895cf08f3000e64ef858d52462607292e6a4b8229"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-positive-report.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-positive-report.json",
+      "sha256": "c0c0b8b0890c9cd91f3a94e4c081f7d6a4682b8802456c33dc9a847eab41059f"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-start-witness.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-start-witness.json",
+      "sha256": "ecaeff324efbf7f6646245b6b5a7f98fcaa87c2938b4b2e67e423efdd2c91e68"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-editorconfig",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-version-editorconfig",
+      "sha256": "6c0c6885d0656ace28b7341106748e0429d636c28c96e9a0031c27d215e8bfe8"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-process.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-version-process.json",
+      "sha256": "5918825f2dbff138bd44a263eee9f3fab027575fdf4f66fe6c91391d4794773b"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-provider-result.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-version-provider-result.json",
+      "sha256": "b3d0070a1b5a7df15f02acd972c042ad5842b15715aa1c111b16d6ac9d14dd43"
+    },
+    {
+      "original_path": "providers/ktlint-fixtures/evidence-artifacts/syntax-version-report.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/evidence-artifacts/syntax-version-report.json",
+      "sha256": "c0c0b8b0890c9cd91f3a94e4c081f7d6a4682b8802456c33dc9a847eab41059f"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintCatalog.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/start-hash-verified-source-before-fix/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintCatalog.kt",
+      "sha256": "5d77dc2584647ae03aed17f9279ae239ff03c5ed214c84a2b093ad35cfdec678"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintProvider.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/start-hash-verified-source-before-fix/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintProvider.kt",
+      "sha256": "140144d434736f97530037e35f3a03a4fd2b8c0350d5224f3d90ea70ec7ea6c6"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintReport.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/start-hash-verified-source-before-fix/modules/provider-ktlint/src/main/kotlin/dev/ktchecker/providers/ktlint/KtlintReport.kt",
+      "sha256": "e0c1dea267a69fbd87223e76ac1901fc35c11faf06faa3f339c415d1246b7e57"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/resources/ktlint-artifacts.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/start-hash-verified-source-before-fix/modules/provider-ktlint/src/main/resources/ktlint-artifacts.json",
+      "sha256": "183dc473c053df6fe15d78441fac315d887e9bf8d3fcef5643ef1727a0a66c22"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/start-hash-verified-source-before-fix/modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+      "sha256": "d4b008829ee945561ad1d2867a094746158a1aac67e499f9450c02774a1f4dad"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintIntegrationTest.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/start-hash-verified-source-before-fix/modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintIntegrationTest.kt",
+      "sha256": "390f5597dff1f86d3344bc8fabcb2d6e6573c41713d0db58388077a6675d4ce1"
+    },
+    {
+      "original_path": "modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintProviderTest.kt",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/start-hash-verified-source-before-fix/modules/provider-ktlint/src/test/kotlin/dev/ktchecker/providers/ktlint/KtlintProviderTest.kt",
+      "sha256": "1634c3fcf03d1f7d56574c407af300fed054024ac854cd6c0a99e17d6a6db0db"
+    },
+    {
+      "original_path": "modules/provider-ktlint/build/test-results/test/TEST-dev.ktchecker.providers.ktlint.KtlintIntegrationTest.xml",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/test-results/TEST-dev.ktchecker.providers.ktlint.KtlintIntegrationTest.xml",
+      "sha256": "3559f8770f62a8ed12158018d6dd5b0f8ece97d1ca024ff03b8000afe2ab967a"
+    },
+    {
+      "original_path": "modules/provider-ktlint/build/test-results/test/TEST-dev.ktchecker.providers.ktlint.KtlintProviderTest.xml",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/test-results/TEST-dev.ktchecker.providers.ktlint.KtlintProviderTest.xml",
+      "sha256": "5765c7de5f22617065ec06a8deac03576edea51607019cffe36886cad9dbb0fb"
+    },
+    {
+      "original_path": "build/library-validation/2026-11-04T09-22-00Z-ktlint-loader-retry.log",
+      "archived_path": "providers/ktlint-fixtures/runs/2026-11-04T09-25-19Z-partial-run-version-label-assertion/gradle-output.log",
+      "sha256": "21471f4ce42d7007bf4db0030d103ee2044fd297e525f34af2af00e5f00a1e30"
+    }
+  ]
+}

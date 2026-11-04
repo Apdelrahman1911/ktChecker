@@ -1,0 +1,8 @@
+{
+  ".editorconfig": "root = true\n\n[*.{kt,kts}]\nktlint_code_style = ktlint_official\n",
+  "Composable.kt": "package androidx.compose.runtime\n\n// Explicit syntax stub, not real Compose runtime/compiler compatibility evidence.\n@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)\nannotation class Composable\n",
+  "Wildcard.kt": "package fixture\n\nimport java.io.*\n\nfun wildcard() = Unit\n",
+  "Whitespace.kt": "package fixture\n\nfun whitespace() = Unit  \n",
+  "Newline.kt": "package fixture\n\nfun newline() = Unit",
+  "Compose.kt": "package fixture\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun Example(optional: String = \"\", required: Int) {}\n"
+}

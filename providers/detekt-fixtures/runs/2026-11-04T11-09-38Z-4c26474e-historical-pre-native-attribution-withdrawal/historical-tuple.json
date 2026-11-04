@@ -1,0 +1,555 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "state": "historical_attribution_withdrawal_only_no_new_execution",
+  "captured_at": "2026-11-04T11:09:38.240363+00:00",
+  "qualified": false,
+  "new_provider_processes": 0,
+  "references": [
+    {
+      "original_path": "providers/detekt-fixtures/evidence/verified-jvm-coroutine-upstream.json",
+      "original_sha256": "ec9a6af18ac9fc3e76619dd8710baa155bfd0c337a3d2a0b3f98a8e2b8cb9d2b",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence/verified-jvm-coroutine-upstream.json",
+        "sha256": "ec9a6af18ac9fc3e76619dd8710baa155bfd0c337a3d2a0b3f98a8e2b8cb9d2b"
+      }
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektCatalog.kt",
+      "original_sha256": "fb697c39dd95d9d98854d56f7f365baf431aeb33dc303624f4ce266cb5b00640",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektCatalog.kt",
+        "sha256": "fb697c39dd95d9d98854d56f7f365baf431aeb33dc303624f4ce266cb5b00640"
+      }
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektProvider.kt",
+      "original_sha256": "35acaa2a4414194c3b44316ec11ecd731e6712268f7357046217c7b3dfab4b52",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektProvider.kt",
+        "sha256": "35acaa2a4414194c3b44316ec11ecd731e6712268f7357046217c7b3dfab4b52"
+      }
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektReport.kt",
+      "original_sha256": "5c2a647cfffe3b3f550faf3f65face5bdb104d2f506c3e2f6c9a067cb0b2c7f8",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/modules/provider-detekt/src/main/kotlin/dev/ktchecker/providers/detekt/DetektReport.kt",
+        "sha256": "5c2a647cfffe3b3f550faf3f65face5bdb104d2f506c3e2f6c9a067cb0b2c7f8"
+      }
+    },
+    {
+      "original_path": "modules/provider-detekt/src/test/kotlin/dev/ktchecker/providers/detekt/DetektIntegrationTest.kt",
+      "original_sha256": "d8ce06133924e527e5a899a61ad6d8590a4a4f57c7c9d5b4badb3969c1fa31af",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/modules/provider-detekt/src/test/kotlin/dev/ktchecker/providers/detekt/DetektIntegrationTest.kt",
+        "sha256": "d8ce06133924e527e5a899a61ad6d8590a4a4f57c7c9d5b4badb3969c1fa31af"
+      }
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/resources/detekt-rule-map.json",
+      "original_sha256": "47ce5a08d971f8174441a578130188915a141e3c80724f3553609e3672aa1202",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/modules/provider-detekt/src/main/resources/detekt-rule-map.json",
+        "sha256": "47ce5a08d971f8174441a578130188915a141e3c80724f3553609e3672aa1202"
+      }
+    },
+    {
+      "original_path": "modules/provider-detekt/src/main/resources/detekt-artifacts.json",
+      "original_sha256": "09575c9dfdd6d1cbb751532edbae0f5408113102240a6f2220c1e45c63a4b937",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/modules/provider-detekt/src/main/resources/detekt-artifacts.json",
+        "sha256": "09575c9dfdd6d1cbb751532edbae0f5408113102240a6f2220c1e45c63a4b937"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/coroutines/negative/Sleep.kt",
+      "original_sha256": "3dc0f0cbba90a41072c76c4b9d90ac0c3db68c0564140fe3919325a9d84274fa",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/coroutines/negative/Sleep.kt",
+        "sha256": "3dc0f0cbba90a41072c76c4b9d90ac0c3db68c0564140fe3919325a9d84274fa"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/coroutines/positive/Sleep.kt",
+      "original_sha256": "21a8b98999cab088e3bb5b63737cd71939313ad522ff2ca6ac9a20603f562808",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/coroutines/positive/Sleep.kt",
+        "sha256": "21a8b98999cab088e3bb5b63737cd71939313ad522ff2ca6ac9a20603f562808"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/negative/ComposeExample.kt",
+      "original_sha256": "aef0f1ba07bf74bc5743691442475c1c60a4be445120e3278454594e38985aea",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/negative/ComposeExample.kt",
+        "sha256": "aef0f1ba07bf74bc5743691442475c1c60a4be445120e3278454594e38985aea"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/negative/EmptyCatch.kt",
+      "original_sha256": "c60df4fd0b7945113155765a7314d21084d150ea040757a277cc515f59c45793",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/negative/EmptyCatch.kt",
+        "sha256": "c60df4fd0b7945113155765a7314d21084d150ea040757a277cc515f59c45793"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/negative/EntityFixture.kt",
+      "original_sha256": "59259fc209cc4d5f1b3f5955cb2bcb4267ed31e247bf5e322f323f54474742a8",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/negative/EntityFixture.kt",
+        "sha256": "59259fc209cc4d5f1b3f5955cb2bcb4267ed31e247bf5e322f323f54474742a8"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/negative/Exported.kt",
+      "original_sha256": "b57413b7afe75d7c7d9bf43a72f02e30f95dd661eefcd65aebf0d4d2b474d26e",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/negative/Exported.kt",
+        "sha256": "b57413b7afe75d7c7d9bf43a72f02e30f95dd661eefcd65aebf0d4d2b474d26e"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/Composable.kt",
+      "original_sha256": "654325e3fa47b135372863e5290d14dff24c38e6cbc4a1a92b64900b7103a0b4",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/positive/Composable.kt",
+        "sha256": "654325e3fa47b135372863e5290d14dff24c38e6cbc4a1a92b64900b7103a0b4"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/ComposeExample.kt",
+      "original_sha256": "4eb48d3017e13b8cff77fd8be00ad2891d1beb99451f650f149ae4a8cf9e66f6",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/positive/ComposeExample.kt",
+        "sha256": "4eb48d3017e13b8cff77fd8be00ad2891d1beb99451f650f149ae4a8cf9e66f6"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/EmptyCatch.kt",
+      "original_sha256": "686ff2812020c1d47bc3b2ea1da86db96f1f8d52fa2a9ca78dc88361fe9fcceb",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/positive/EmptyCatch.kt",
+        "sha256": "686ff2812020c1d47bc3b2ea1da86db96f1f8d52fa2a9ca78dc88361fe9fcceb"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/EntityFixture.kt",
+      "original_sha256": "3162a35c0d4f6c5c3a401cdc8cc1e594f223c782689268e5f25d8e2990e3d0c4",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/positive/EntityFixture.kt",
+        "sha256": "3162a35c0d4f6c5c3a401cdc8cc1e594f223c782689268e5f25d8e2990e3d0c4"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/positive/Exported.kt",
+      "original_sha256": "1fc214b3f1d654c5877677fc6f866a302753e68b6eedd6ac7dbfc8ab2d2cc3f2",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/positive/Exported.kt",
+        "sha256": "1fc214b3f1d654c5877677fc6f866a302753e68b6eedd6ac7dbfc8ab2d2cc3f2"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/suppression/ComposeExample.kt",
+      "original_sha256": "3e0712540871783a4c071c2d81e7357f8ed255e026ba92b259e6b2d1e1e741ca",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/suppression/ComposeExample.kt",
+        "sha256": "3e0712540871783a4c071c2d81e7357f8ed255e026ba92b259e6b2d1e1e741ca"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/suppression/EmptyCatch.kt",
+      "original_sha256": "36bafe0a73f77153305ffbcb1fe7eaa797398791eb19790aec3dc7c356c12c5c",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/suppression/EmptyCatch.kt",
+        "sha256": "36bafe0a73f77153305ffbcb1fe7eaa797398791eb19790aec3dc7c356c12c5c"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/suppression/EntityFixture.kt",
+      "original_sha256": "fca0db5c7046cd9beb26522ba33607c10cd846c606cf4feb443b5954be6b8d10",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/suppression/EntityFixture.kt",
+        "sha256": "fca0db5c7046cd9beb26522ba33607c10cd846c606cf4feb443b5954be6b8d10"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/cases/syntax/suppression/Exported.kt",
+      "original_sha256": "94ea6d18ee511a03ae5738b0d53554ea0277ea6869ac33baa6f5d6924249ea31",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/cases/syntax/suppression/Exported.kt",
+        "sha256": "94ea6d18ee511a03ae5738b0d53554ea0277ea6869ac33baa6f5d6924249ea31"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-DetektProvider.class",
+      "original_sha256": "8a45d6e072ff20ef108814c922f900be7610354b1239e61725f4b10e4933b013",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-DetektProvider.class",
+        "sha256": "8a45d6e072ff20ef108814c922f900be7610354b1239e61725f4b10e4933b013"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-DetektCatalog.class",
+      "original_sha256": "adf770c2d77080cfbfa8d9d23457d9b6a68cfcb433b11b46562b51e95b04878b",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-DetektCatalog.class",
+        "sha256": "adf770c2d77080cfbfa8d9d23457d9b6a68cfcb433b11b46562b51e95b04878b"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-DetektReportParser.class",
+      "original_sha256": "f4761054f5372bfc5597051fb40068b50957e19e3a4986f06843d8a9338e00ea",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-DetektReportParser.class",
+        "sha256": "f4761054f5372bfc5597051fb40068b50957e19e3a4986f06843d8a9338e00ea"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-DetektIntegrationTest.class",
+      "original_sha256": "d56b65eb4912b6d76e43add2ccc745f07d9d326f380783381798f1d193b2be33",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-DetektIntegrationTest.class",
+        "sha256": "d56b65eb4912b6d76e43add2ccc745f07d9d326f380783381798f1d193b2be33"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-IsolatedProcessRunner.class",
+      "original_sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-IsolatedProcessRunner.class",
+        "sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-ExecutionPermit.class",
+      "original_sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-ExecutionPermit.class",
+        "sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-ExactExecutionAuthority.class",
+      "original_sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-ExactExecutionAuthority.class",
+        "sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-positive-receipt.json",
+      "original_sha256": "6f979872d18dec8928e8471cabb00ce5a879251315072c3272a80f2b7fb4f461",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-positive-receipt.json",
+        "sha256": "6f979872d18dec8928e8471cabb00ce5a879251315072c3272a80f2b7fb4f461"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-positive-provider-result.json",
+      "original_sha256": "428fde44d7ce37058f316bb9933e6c055765bc44236666a0fd81f543fe74bf24",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-positive-provider-result.json",
+        "sha256": "428fde44d7ce37058f316bb9933e6c055765bc44236666a0fd81f543fe74bf24"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-positive.sarif",
+      "original_sha256": "8ed7e1d76ee97781dc6c9869cc2ed772c7c45a82587030ba2e68bca366edff50",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-positive.sarif",
+        "sha256": "8ed7e1d76ee97781dc6c9869cc2ed772c7c45a82587030ba2e68bca366edff50"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-negative-receipt.json",
+      "original_sha256": "7b95cffc9e45e2911683f69ebae64d98518656887ec6fd9eb6449ba58f38acf5",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-negative-receipt.json",
+        "sha256": "7b95cffc9e45e2911683f69ebae64d98518656887ec6fd9eb6449ba58f38acf5"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-negative-provider-result.json",
+      "original_sha256": "7d5bfc8f3d87c000dccbd054ea1b37b591cd97e1e8d81d5561e0e6834ecb60d5",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-negative-provider-result.json",
+        "sha256": "7d5bfc8f3d87c000dccbd054ea1b37b591cd97e1e8d81d5561e0e6834ecb60d5"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/coroutine-negative.sarif",
+      "original_sha256": "516387c6b9a7fe798c60015063a08ab6117368f2c45b6f69076640390b7007aa",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/coroutine-negative.sarif",
+        "sha256": "516387c6b9a7fe798c60015063a08ab6117368f2c45b6f69076640390b7007aa"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence/verified-jvm-syntax.json",
+      "original_sha256": "e65c393dcabedfb96392550fda37dc991288b06b4b810033c9fe572f47a5f2d1",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence/verified-jvm-syntax.json",
+        "sha256": "e65c393dcabedfb96392550fda37dc991288b06b4b810033c9fe572f47a5f2d1"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-DetektProvider.class",
+      "original_sha256": "8a45d6e072ff20ef108814c922f900be7610354b1239e61725f4b10e4933b013",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-DetektProvider.class",
+        "sha256": "8a45d6e072ff20ef108814c922f900be7610354b1239e61725f4b10e4933b013"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-DetektCatalog.class",
+      "original_sha256": "adf770c2d77080cfbfa8d9d23457d9b6a68cfcb433b11b46562b51e95b04878b",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-DetektCatalog.class",
+        "sha256": "adf770c2d77080cfbfa8d9d23457d9b6a68cfcb433b11b46562b51e95b04878b"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-DetektReportParser.class",
+      "original_sha256": "f4761054f5372bfc5597051fb40068b50957e19e3a4986f06843d8a9338e00ea",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-DetektReportParser.class",
+        "sha256": "f4761054f5372bfc5597051fb40068b50957e19e3a4986f06843d8a9338e00ea"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-DetektIntegrationTest.class",
+      "original_sha256": "d56b65eb4912b6d76e43add2ccc745f07d9d326f380783381798f1d193b2be33",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-DetektIntegrationTest.class",
+        "sha256": "d56b65eb4912b6d76e43add2ccc745f07d9d326f380783381798f1d193b2be33"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+      "original_sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-IsolatedProcessRunner.class",
+        "sha256": "4e2787f82732c6506d3d6dd6d15270514cac00af6132f6a059fa8a5a1f1f6ee0"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-ExecutionPermit.class",
+      "original_sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-ExecutionPermit.class",
+        "sha256": "276e2c3b2170ba0a9c675597d41d6f51370d1605a32484b791fa5bd293056724"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+      "original_sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-ExactExecutionAuthority.class",
+        "sha256": "f3ee1088d49af010fb6d4d2cbbe79d7f956b966f513dcbb483acaae6915c9270"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-positive-receipt.json",
+      "original_sha256": "c25c61d63af539c2ffb5ce6d3ca2d22c598b93d57917b7c1adb102ca03295a77",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-positive-receipt.json",
+        "sha256": "c25c61d63af539c2ffb5ce6d3ca2d22c598b93d57917b7c1adb102ca03295a77"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-positive.sarif",
+      "original_sha256": "e925337f48ff2f480e3daff77e799f5449b6286618cb854566eea92e2a98b617",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-positive.sarif",
+        "sha256": "e925337f48ff2f480e3daff77e799f5449b6286618cb854566eea92e2a98b617"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-positive-provider-result.json",
+      "original_sha256": "105cc6fe82093c03c3ed6f0b7867d9938843af9ab565fe21468a05566c3bca59",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-positive-provider-result.json",
+        "sha256": "105cc6fe82093c03c3ed6f0b7867d9938843af9ab565fe21468a05566c3bca59"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-positive-config.yml",
+      "original_sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-positive-config.yml",
+        "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-negative-receipt.json",
+      "original_sha256": "d3247d59c9c63b16b57c88ae9246a874033f99d3ebe49c527fb06c9b30b7e70f",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-negative-receipt.json",
+        "sha256": "d3247d59c9c63b16b57c88ae9246a874033f99d3ebe49c527fb06c9b30b7e70f"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-negative.sarif",
+      "original_sha256": "aded215c5c8300c4d620a8032c38368c203c8743f3a3b5ac0bce4756717466a9",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-negative.sarif",
+        "sha256": "aded215c5c8300c4d620a8032c38368c203c8743f3a3b5ac0bce4756717466a9"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-negative-provider-result.json",
+      "original_sha256": "0f125aafaa2cbba5803bfee517c2847a8f2a129202f06bee53bac9ec593fab88",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-negative-provider-result.json",
+        "sha256": "0f125aafaa2cbba5803bfee517c2847a8f2a129202f06bee53bac9ec593fab88"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-negative-config.yml",
+      "original_sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-negative-config.yml",
+        "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-configuration-receipt.json",
+      "original_sha256": "9253cdec13c2e5d119ebeed3a4c689435e4086c8bcdef749ac4cb0852c82df17",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-configuration-receipt.json",
+        "sha256": "9253cdec13c2e5d119ebeed3a4c689435e4086c8bcdef749ac4cb0852c82df17"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-configuration.sarif",
+      "original_sha256": "c859adbc4c3cf7faf7013a3083787bb618402e2ec1d00601e33e9afe2636eead",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-configuration.sarif",
+        "sha256": "c859adbc4c3cf7faf7013a3083787bb618402e2ec1d00601e33e9afe2636eead"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-configuration-provider-result.json",
+      "original_sha256": "6d4f679ed8b25814947cc6489a3a30a54210745c4d38133fc3c986e36dbaec76",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-configuration-provider-result.json",
+        "sha256": "6d4f679ed8b25814947cc6489a3a30a54210745c4d38133fc3c986e36dbaec76"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-configuration-config.yml",
+      "original_sha256": "8b8a59521cea3bd532eca26e1563e7f642d005547efbf6da1db5afc1c0e1f1c1",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-configuration-config.yml",
+        "sha256": "8b8a59521cea3bd532eca26e1563e7f642d005547efbf6da1db5afc1c0e1f1c1"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version-receipt.json",
+      "original_sha256": "f3dead2f40dcb8600f8777c51515330f191f00e8213e7a7546b967ddbaed886e",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-version-receipt.json",
+        "sha256": "f3dead2f40dcb8600f8777c51515330f191f00e8213e7a7546b967ddbaed886e"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version.sarif",
+      "original_sha256": "e925337f48ff2f480e3daff77e799f5449b6286618cb854566eea92e2a98b617",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-version.sarif",
+        "sha256": "e925337f48ff2f480e3daff77e799f5449b6286618cb854566eea92e2a98b617"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version-provider-result.json",
+      "original_sha256": "6d00712120f0dc3c5a0b62891c5a07dd814cab0afb28f971891a84189e78a16f",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-version-provider-result.json",
+        "sha256": "6d00712120f0dc3c5a0b62891c5a07dd814cab0afb28f971891a84189e78a16f"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version-config.yml",
+      "original_sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-version-config.yml",
+        "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-version-cli.json",
+      "original_sha256": "a4d9415c1be02c231bac70bba0c9706d26dfadd62f231056460f9f3e8de92b20",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-version-cli.json",
+        "sha256": "a4d9415c1be02c231bac70bba0c9706d26dfadd62f231056460f9f3e8de92b20"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-suppression-receipt.json",
+      "original_sha256": "4833139c485e1d6a67d084e9ac48c8e0ac547235d1a7a4d7c4b3ebf793b27397",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-suppression-receipt.json",
+        "sha256": "4833139c485e1d6a67d084e9ac48c8e0ac547235d1a7a4d7c4b3ebf793b27397"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-suppression.sarif",
+      "original_sha256": "7fd716e6dbd08f9ccc09caaef0b519275b8e96aaf7eba2e34933c5889006b73f",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-suppression.sarif",
+        "sha256": "7fd716e6dbd08f9ccc09caaef0b519275b8e96aaf7eba2e34933c5889006b73f"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-suppression-provider-result.json",
+      "original_sha256": "bff4690de78aa24853655339696fad6c0381d949b9caaea9ed668b906faeaab7",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-suppression-provider-result.json",
+        "sha256": "bff4690de78aa24853655339696fad6c0381d949b9caaea9ed668b906faeaab7"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-suppression-config.yml",
+      "original_sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-suppression-config.yml",
+        "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-regression-receipt.json",
+      "original_sha256": "add9f2a3eca4f83812a2d06cc04cbab5d11149730d91510dab01efd456fc3a1d",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-regression-receipt.json",
+        "sha256": "add9f2a3eca4f83812a2d06cc04cbab5d11149730d91510dab01efd456fc3a1d"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-regression.sarif",
+      "original_sha256": "aded215c5c8300c4d620a8032c38368c203c8743f3a3b5ac0bce4756717466a9",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-regression.sarif",
+        "sha256": "aded215c5c8300c4d620a8032c38368c203c8743f3a3b5ac0bce4756717466a9"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-regression-provider-result.json",
+      "original_sha256": "528c4f48da1ade1b0e2f0bdd203f092472357982186a001d027144abe9abdea9",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-regression-provider-result.json",
+        "sha256": "528c4f48da1ade1b0e2f0bdd203f092472357982186a001d027144abe9abdea9"
+      }
+    },
+    {
+      "original_path": "providers/detekt-fixtures/evidence-artifacts/syntax-regression-config.yml",
+      "original_sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4",
+      "archived": {
+        "path": "providers/detekt-fixtures/runs/2026-11-04T11-09-38Z-4c26474e-historical-pre-native-attribution-withdrawal/original/providers/detekt-fixtures/evidence-artifacts/syntax-regression-config.yml",
+        "sha256": "caf64b75b6044c0fb2199cbf93ddc675ebd7e12dd5b161727101b1d914d3d1d4"
+      }
+    }
+  ],
+  "scope": "Byte-for-byte original sidecars and their complete referenced originals. Paths inside original sidecars remain unchanged; this manifest maps original paths to immutable archive bytes. No old receipt hash or result is renewed. No source-to-loaded-bytecode proof, native helper identity, native exec confirmation, or current per-rule test attribution is fabricated."
+}

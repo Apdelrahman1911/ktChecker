@@ -12,8 +12,10 @@ import subprocess
 
 if __package__:
     from .ci_common import REPO_ROOT, digest_file, source_identity, utc_now, write_json
+    from .provision_android import PACKAGES, installed_packages
 else:
     from ci_common import REPO_ROOT, digest_file, source_identity, utc_now, write_json
+    from provision_android import PACKAGES, installed_packages
 
 
 PATH_VARIABLES = ("JAVA_HOME", "ANDROID_HOME", "ANDROID_SDK_ROOT", "DEVELOPER_DIR")
@@ -108,10 +110,12 @@ def record(args: argparse.Namespace) -> dict:
     if args.require_xcode_build and xcode.get("build") != args.require_xcode_build:
         errors.append(f"Observed Xcode build {xcode.get('build')}; required {args.require_xcode_build}")
     android_home = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
+    android_packages = installed_packages(Path(android_home)) if android_home else []
     android = {"sdkmanager_available": shutil.which("sdkmanager") is not None,
                "sdk_root_configured": android_home is not None,
-               "compile_sdk_37_installed": bool(android_home and (Path(android_home) / "platforms/android-37/android.jar").is_file()),
-               "build_tools_36_0_0_installed": bool(android_home and (Path(android_home) / "build-tools/36.0.0/source.properties").is_file())}
+               "compile_sdk_37_installed": any(row["package"] == PACKAGES[0] and row["installed"] for row in android_packages),
+               "build_tools_36_0_0_installed": any(row["package"] == PACKAGES[1] and row["installed"] for row in android_packages),
+               "packages": android_packages}
     return {"schema_version": 1, "evidence_kind": "observed_environment", "recorded_at": utc_now(),
             "state": "passed" if not errors else "failed", "errors": errors,
             "source": source_identity(),

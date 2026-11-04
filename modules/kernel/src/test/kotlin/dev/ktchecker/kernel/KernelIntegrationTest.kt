@@ -2,7 +2,11 @@ package dev.ktchecker.kernel
 
 import dev.ktchecker.contracts.*
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermissions
+import java.sql.Connection
+import java.sql.DriverManager
 import java.time.Instant
 import java.util.Collections
 import java.util.UUID
@@ -405,25 +409,89 @@ class KernelIntegrationTest {
         }
     }
 
-    @Test fun reopeningPreClientFairnessLedgerBackfillsAcceptedQueuesWithoutNewSubmissions() {
-        val input = fixtureInput("legacy-fairness")
+    @Test fun reopeningDamagedSchema2RefusesMissingFairnessTableWithoutRepairingOrLosingAcceptedObligations() {
+        val input = fixtureInput("damaged-fairness")
         val provider = Provider { i, _ -> passed(i) }
-        val database = temp.resolve("legacy-fairness-ledger")
+        val database = temp.resolve("damaged-fairness-ledger")
         lateinit var client: ClientRegistration
         lateinit var review: ReviewStatus
+        lateinit var acceptedEvents: List<ReviewEvent>
         KernelService.open(database, provider, testConfig.copy(workerCount = 0)).use { service ->
-            client = service.registerClient(binding("legacy-fairness"))
-            review = service.submit(client.client, request("legacy", input))
-            // Simulates an accepted preview ledger from before the additive fair_clients table.
-            service.ledger.transaction { c -> c.execute("DROP TABLE fair_clients") }
+            client = service.registerClient(binding("damaged-fairness"))
+            review = service.submit(client.client, request("retained", input))
+            acceptedEvents = allEvents(service, client)
         }
-        KernelService.open(database, provider, testConfig).use { recovered ->
-            assertEquals("complete", await(recovered, client, review.reviewId).state)
-            assertEquals(1, provider.calls.get())
-            assertEquals(1L, recovered.ledger.read { c -> c.count("SELECT COUNT(*) FROM fair_clients WHERE client_id=?", client.binding.clientId) })
-            assertEquals(1, allEvents(recovered, client).count { it.kind == "accepted" })
-            assertEquals(1, allEvents(recovered, client).count { it.kind == "result" })
+        // Test-only offline corruption of schema2, NOT a supported older-schema upgrade.
+        DriverManager.getConnection("jdbc:sqlite:${database.resolve("ledger.sqlite").toUri()}?mode=rw").use { c ->
+            c.execute("DROP TABLE fair_clients")
+            fun retained(connection: Connection) = listOf("metadata", "clients", "instances", "fair_queues", "work", "reviews", "events")
+                .associateWith { table -> connection.query("SELECT * FROM $table ORDER BY rowid") { row ->
+                    List(row.metaData.columnCount) { column -> row.getString(column + 1) }
+                } }
+            val before = retained(c)
+            val schema = c.query("SELECT sql FROM sqlite_schema ORDER BY name") { it.getString(1) }
+            repeat(2) {
+                assertCode("ledger_corrupt") { KernelService.open(database, provider, testConfig).use { } }
+                assertEquals(before, retained(c), "Refusal must preserve every accepted review, work row and outbox")
+                assertEquals(schema, c.query("SELECT sql FROM sqlite_schema ORDER BY name") { it.getString(1) })
+                assertEquals(0L, c.count("SELECT COUNT(*) FROM sqlite_schema WHERE name='fair_clients'"))
+            }
+            assertEquals("queued", c.one("SELECT w.state FROM work w JOIN reviews r ON r.work_key=w.work_key WHERE r.review_id=?",
+                review.reviewId) { it.getString(1) })
+            assertEquals(acceptedEvents.map { it.payload }, c.query("SELECT payload FROM events ORDER BY sequence") { it.getString(1) })
+            assertEquals(1, acceptedEvents.size)
+            assertEquals("accepted", acceptedEvents.single().kind)
         }
+        assertEquals(0, provider.calls.get())
+    }
+
+    @Test fun concurrentSchema2ReopensKeepSidecarsPrivateAndRetainAcceptedWork() {
+        val provider = Provider { i, _ -> passed(i) }
+        val database = temp.resolve("reopen-sidecars-ledger")
+        val config = testConfig.copy(workerCount = 0)
+        lateinit var client: ClientRegistration
+        lateinit var review: ReviewStatus
+        lateinit var acceptedEvents: List<ReviewEvent>
+        KernelService.open(database, provider, config).use { service ->
+            client = service.registerClient(binding("reopen-sidecars"))
+            review = service.submit(client.client, request("retained", fixtureInput("reopen-sidecars")))
+            acceptedEvents = allEvents(service, client)
+        }
+        // Two bounded producers, 24 real reopen/close cycles each, zero provider workers.
+        // Heartbeat/read connections also open and close, exercising last-connection WAL cleanup.
+        val pool = Executors.newFixedThreadPool(2)
+        val start = CountDownLatch(1)
+        try {
+            val attempts = (0 until 2).map { pool.submit(Callable {
+                assertTrue(start.await(5, TimeUnit.SECONDS))
+                repeat(24) {
+                    KernelService.open(database, provider, config).use { reopened ->
+                        assertEquals(review, reopened.status(client.client, review.reviewId))
+                        assertEquals(acceptedEvents, allEvents(reopened, client))
+                        reopened.ledger.read { c ->
+                            assertEquals("2", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+                            // This read connection keeps SQLite's sidecars present during inspection.
+                            listOf("ledger.sqlite", "ledger.sqlite-wal", "ledger.sqlite-shm").forEach { name ->
+                                val path = database.resolve(name)
+                                assertTrue(Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS))
+                                if (Files.getFileStore(path).supportsFileAttributeView("posix")) {
+                                    assertEquals(PosixFilePermissions.fromString("rw-------"), Files.getPosixFilePermissions(path))
+                                }
+                            }
+                            assertEquals(1L, c.count("SELECT COUNT(*) FROM reviews"))
+                            assertEquals(1L, c.count("SELECT COUNT(*) FROM events"))
+                        }
+                    }
+                }
+            }) }
+            start.countDown()
+            attempts.forEach { it.get(30, TimeUnit.SECONDS) }
+        } finally { pool.shutdownNow(); assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS)) }
+        KernelService.open(database, provider, config).use { reopened ->
+            assertEquals(review, reopened.status(client.client, review.reviewId))
+            assertEquals(acceptedEvents, allEvents(reopened, client))
+        }
+        assertEquals(0, provider.calls.get())
     }
 
     @Test fun globalAndPerWorktreeCapsSpanIndependentServiceInstances() {

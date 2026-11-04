@@ -2,6 +2,7 @@
 """Original synthetic compiler inputs, not executed proof or upstream conformance."""
 from pathlib import Path
 import json
+from cohort_expansion import COHORTS, EXPANSION_CASES, PLANNED_KMP_CASES
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'providers/compiler-fixtures'
@@ -51,6 +52,29 @@ CASES = {
     'JVM_RECORD_NOT_VAL_PARAMETER': ('@JvmRecord data class Record(var value: Int)', '@JvmRecord data class Record(val value: Int)'),
     'FIELD_IN_JVM_RECORD': ('@JvmRecord data class Record(val value: Int) { val extra = 1 }', '@JvmRecord data class Record(val value: Int) { val extra get() = 1 }'),
 }
+assert len(CASES) == 42 and len(EXPANSION_CASES) == 50 and len(PLANNED_KMP_CASES) == 16
+assert not CASES.keys() & EXPANSION_CASES.keys()
+assert not (CASES.keys() | EXPANSION_CASES.keys()) & PLANNED_KMP_CASES.keys()
+CASES.update({name: pair[:2] for name, pair in EXPANSION_CASES.items()})
+
+
+def validation_plan(name, severity, alternative, kmp=False):
+    role_scope = ('the complete explicit common -> JVM source-role/refines graph' if kmp else
+                  'the same explicit original JVM source/dependency batch')
+    return {
+        'positive': f'Proposed: execute Kotlin2.4.21 on {role_scope}; require actual {name} at a sealed input location. Retain all additional raw diagnostics and actual nonzero exits.',
+        'negative': f'Proposed: execute the independently corrected counterpart in {role_scope}; require this exact ID absent, actual exit0 and no raw task diagnostics. Intentional/advisory alternatives may still emit and are not no-warning controls.',
+        'configuration': (f'Proposed: explicitly promote {name} to error and disable it with -Xwarning-level; disabled checks must remain unknown, never clean coverage.' if severity == 'warning' else
+                          f'Proposed: re-emit {name} under JVM target21 separately from target17; a configuration that removes the error is not this generic re-emission assessment.'),
+        'version': 'Proposed: actual pinned2.4.21 banner/internal-name renderer with language/API2.4; deny a2.4.20 request before execution. No alternate-version success inferred.',
+        'suppression': ('Proposed: compiler source suppression with an adjacent unsuppressed control; suppression must not create complete/unqualified-scope coverage.' if severity == 'warning' else
+                       'Proposed: compiler-error suppression individually; preserve actual failure or compiler-accepted suppression, neither gives clean/complete coverage.'),
+        'regression': f'Proposed: independently moved/changed positive and corrected counterpart within {role_scope}; verify new point/file/snapshot binding. Authored source is not an executed receipt.',
+        'legitimate_or_intentional_alternative': alternative,
+        'evidence_state': 'not_run; source-only authorship',
+    }
+
+
 manifest = []
 for name, (positive, negative) in CASES.items():
     rule = rules[name]
@@ -59,12 +83,45 @@ for name, (positive, negative) in CASES.items():
     package = 'package fixtures.' + name.lower() + '\n\n'
     for kind, text in [('positive', positive), ('negative', negative)]:
         (folder / (kind + '.kt')).write_text(package + text + '\n')
-    manifest.append({'rule_id': rule['id'], 'upstream_id': name,
-                     'positive': str((folder / 'positive.kt').relative_to(FIXTURES)),
-                     'negative': str((folder / 'negative.kt').relative_to(FIXTURES)),
-                     'declared_severity': rule['compiler_factory']['declaration_severity'].lower(),
-                     'flags': ['-jvm-target', '17'] + (['-Wextra'] if name == 'UNREACHABLE_CODE' else []) +
-                              (['-Xuse-fir-experimental-checkers'] if name == 'EMPTY_RANGE' else []),
-                     'source': rule['sources'][0], 'status': 'unrun_synthetic_input'})
+    row = {'rule_id': rule['id'], 'upstream_id': name,
+           'positive': str((folder / 'positive.kt').relative_to(FIXTURES)),
+           'negative': str((folder / 'negative.kt').relative_to(FIXTURES)),
+           'declared_severity': rule['compiler_factory']['declaration_severity'].lower(),
+           'flags': ['-jvm-target', '17'] + (['-Wextra'] if name == 'UNREACHABLE_CODE' else []) +
+                    (['-Xuse-fir-experimental-checkers'] if name == 'EMPTY_RANGE' else []),
+           'source': rule['sources'][0], 'status': 'unrun_synthetic_input'}
+    if name in EXPANSION_CASES:
+        row['authored_cohort'] = '2026-11-04-' + COHORTS[name]
+        row['validation_plan'] = validation_plan(name, row['declared_severity'], EXPANSION_CASES[name][2])
+    manifest.append(row)
 (FIXTURES / 'manifest.json').write_text(json.dumps({'schema_version': 1, 'kotlin_version': '2.4.21', 'fixtures': manifest}, indent=2) + '\n')
-print('Wrote', len(manifest), 'original per-ID input pairs; no execution or qualification claimed')
+
+planned = []
+for name, (positive_common, positive_jvm, negative_common, negative_jvm, alternative) in PLANNED_KMP_CASES.items():
+    rule = rules[name]
+    row = {'rule_id': rule['id'], 'upstream_id': name,
+           'declared_severity': rule['compiler_factory']['declaration_severity'].lower(),
+           'authored_cohort': '2026-11-04-' + COHORTS[name],
+           'status': 'planned_unsupported_sealed_source_roles_not_available',
+           'flags': ['-jvm-target', '17', '-Xmulti-platform', '-Xexpect-actual-classes'],
+           'fragments': ['common', 'jvm'], 'refines': [{'from': 'jvm', 'on': 'common'}],
+           'source': rule['sources'][0]}
+    for kind, common, jvm in [('positive', positive_common, positive_jvm), ('negative', negative_common, negative_jvm)]:
+        folder = FIXTURES / 'planned-kmp-cases' / name.lower() / kind
+        folder.mkdir(parents=True, exist_ok=True)
+        members = []
+        for fragment, text in [('common', common), ('jvm', jvm)]:
+            destination = folder / (fragment + '.kt')
+            destination.write_text('package fixtures.planned_kmp.' + name.lower() + '\n\n' + text + '\n')
+            members.append({'path': str(destination.relative_to(FIXTURES)), 'fragment': fragment})
+        row[kind + '_sources'] = members
+    row['validation_plan'] = validation_plan(name, row['declared_severity'], alternative, kmp=True)
+    planned.append(row)
+(FIXTURES / 'planned-kmp-manifest.json').write_text(json.dumps({
+    'schema_version': 1, 'kotlin_version': '2.4.21', 'target': 'jvm',
+    'status': 'planned_unsupported_sealed_source_roles_not_available',
+    'execution_policy': 'Do not merge/concatenate these inputs into one module or execute them through the ordinary fixture runner. Requires owner-approved sealed source roles, refines and provider-generated copied-source path flags first.',
+    'not_demonstrated': ['common metadata compilation', 'Android', 'Native/iOS actualization', 'linking', 'simulator execution', 'full project graph', 'qualification'],
+    'fixtures': planned}, indent=2) + '\n')
+print('Wrote', len(manifest), 'ordinary per-ID input pairs and', len(planned),
+      'separate planned/unsupported common-to-JVM graphs; no execution or qualification claimed')
