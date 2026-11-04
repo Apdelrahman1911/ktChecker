@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "read_only_official_native_archive_header_inventory",
+  "state": "observed",
+  "started_at": "2026-11-04T16:21:39.666447+00:00",
+  "coordinate": "org.jetbrains.kotlin:kotlin-native-prebuilt:2.4.21:macos-aarch64@tar.gz",
+  "expected_home": "kotlin-native-prebuilt-macos-aarch64-2.4.21",
+  "checksum_provenance": {
+    "published_checksum_algorithm": "sha1",
+    "published_checksum": "bfa7a92e6654ac8f060648a2937ec08f8d4b1c49",
+    "published_checksum_url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-native-prebuilt/2.4.21/kotlin-native-prebuilt-2.4.21-macos-aarch64.tar.gz.sha1",
+    "published_sha256_http_status_at_enrollment": 404,
+    "published_sha512_http_status_at_enrollment": 404,
+    "sha256_origin": "author_enrolled_fixed_https_exact_size_and_published_sha1_verified",
+    "author_acquired_at": "2026-11-04T14:51:07+00:00",
+    "signature_verified": false
+  },
+  "freeze_manifest": {
+    "bytes": 3699,
+    "sha256": "4d770b5d2a6c84826898f591609a20234cb97871460e443811a60dcf1476e2f2"
+  },
+  "source_inputs_before": {
+    ".github/workflows/platform-validation.yml": {
+      "bytes": 14110,
+      "sha256": "597c04e3849366b610a1918d8caf63760c18737703c61026717b41128615c38c"
+    },
+    "scripts/ci/provision_native.py": {
+      "bytes": 43773,
+      "sha256": "5a819d25884ded97302c3e83f0d8721eac2fbb92d7b2df15cb688c23f005a68e"
+    },
+    "scripts/ci/run_semantic_checks.py": {
+      "bytes": 31973,
+      "sha256": "1cc875381dccd814deffb999f66ff25509f44516d9397918f99796233cfa1c53"
+    },
+    "scripts/ci/test_semantic_ci.py": {
+      "bytes": 82962,
+      "sha256": "226c5892a2f1bf44d7d5a2c6778f56317c711acfa49a92bf948f228c93f6dcf6"
+    },
+    "scripts/ci/run_platform_checks.py": {
+      "bytes": 17759,
+      "sha256": "6a7504614c7050b7231b78d7ed7e197ef564c00632f54c3b5deecd3fca483f1d"
+    },
+    "scripts/ci/run_provider_checks.py": {
+      "bytes": 24936,
+      "sha256": "a167404c48b11640fa2f29f532a6f6822220630b26cda377789d001bfffce261"
+    },
+    "scripts/ci/ci_common.py": {
+      "bytes": 12753,
+      "sha256": "73630a12802a3aacdb99973daf014f6971d266282fa72444fd6a474e8b604c95"
+    },
+    "scripts/ci/run_library_checks.py": {
+      "bytes": 19990,
+      "sha256": "ba052bdc3f3aa2158d5f379129283a4d97dbd84318084a321f4b96439d9a6c97"
+    },
+    "scripts/ci/collect_evidence.py": {
+      "bytes": 12093,
+      "sha256": "e88c3bbd226a6bbb26aff8d71faafcc2a96ca1da6e899d6173cfb33412931610"
+    },
+    "scripts/ci/provision_android.py": {
+      "bytes": 7393,
+      "sha256": "ac9035b534a9deefa1cf7cdaa9218a49b9ac601170a58b92dc71f40720128b30"
+    },
+    "scripts/ci/record_environment.py": {
+      "bytes": 19659,
+      "sha256": "533dffc90c8041e62158229b82aa9a2786f9e52051143705f4ece363561dffe6"
+    },
+    "modules/semantic-facts/evidence/2026-11-04T091649Z-jvm/summary.json": {
+      "bytes": 10911,
+      "sha256": "2cb4b8d9f005afc18dcd9e86be7731acc5499436184697a97a5d237032c5208e"
+    }
+  },
+  "inspector": {
+    "bytes": 13234,
+    "sha256": "312a403b43554e68f95319685f500cc38f94b3aa80bacb9b5c38809e9d32c27b"
+  },
+  "runtime": {
+    "executable": "/usr/bin/python3.12",
+    "version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "optimize": 0
+  },
+  "limits": {
+    "max_raw_headers": 1700000,
+    "max_logical_members": 100000,
+    "max_namespace_entries": 100000,
+    "max_total_work_bytes": 4294967296,
+    "work_definition": "both checksum passes plus compressed reads plus decompressed reads plus declared regular bytes",
+    "internal_deadline_seconds": 115,
+    "hard_outer_deadline_seconds": 120,
+    "address_space_bytes": [
+      536870912,
+      536870912
+    ]
+  },
+  "archive_verified_before": true,
+  "archive_verified_after": true,
+  "headers_completed": true,
+  "members_extracted": false,
+  "member_contents_inspected": false,
+  "binaries_executed": false,
+  "network_used": false,
+  "tuple_qualified": false,
+  "custom_rules_qualified": false,
+  "release_qualified": false,
+  "limitations": [
+    "Read-only headers/type/link/layout observations only, not compiler/JDK/Native/Apple execution or qualification.",
+    "No file contents, compiler manifest/KLIB metadata, dependency readiness, SDK/cache closure or target execution was assessed.",
+    "Tar member iteration follows the source-cleared parser's end-of-tar semantics; gzip/trailing-member format qualification is not claimed.",
+    "Trusted quiescent same-UID state is assumed; checksum rechecks are not host attestation or a hostile-writer race-proof guarantee."
+  ],
+  "archive_before": {
+    "bytes": 290160802,
+    "sha1": "bfa7a92e6654ac8f060648a2937ec08f8d4b1c49",
+    "sha256": "bf4edb526d91e17d0862102f69250525d788e79011f86c2c64362749adf260ae"
+  },
+  "archive_after": {
+    "bytes": 290160802,
+    "sha1": "bfa7a92e6654ac8f060648a2937ec08f8d4b1c49",
+    "sha256": "bf4edb526d91e17d0862102f69250525d788e79011f86c2c64362749adf260ae"
+  },
+  "reviewed_header_guard_compatible": true,
+  "header_inventory_digest": "sha256:fd18eb9fc9c3fe37d30fc83043b95edace02d5776d2a63905a15fb771f9878df",
+  "raw_header_types": {
+    "directory": 24684,
+    "regular": 40932,
+    "gnu_longname": 63497
+  },
+  "headers": 129113,
+  "logical_members": 65616,
+  "yielded_members": 65616,
+  "namespace_entries": 65616,
+  "regular_members": 40932,
+  "link_members": 0,
+  "metadata_bytes": 9818796,
+  "compressed_read_bytes": 290160802,
+  "decompressed_read_bytes": 1136373760,
+  "declared_regular_bytes": 1024465008,
+  "hash_read_bytes": 580321604,
+  "total_work_bytes": 3031321174,
+  "core_header_presence": {
+    "bin/konanc": {
+      "regular_header_present": true,
+      "executable_mode_declared": true
+    },
+    "bin/run_konan": {
+      "regular_header_present": true,
+      "executable_mode_declared": true
+    },
+    "tools/env_blacklist": {
+      "regular_header_present": true,
+      "executable_mode_declared": false
+    },
+    "konan/konan.properties": {
+      "regular_header_present": true,
+      "executable_mode_declared": false
+    },
+    "konan/lib/kotlin-native-compiler-embeddable.jar": {
+      "regular_header_present": true,
+      "executable_mode_declared": false
+    }
+  },
+  "stdlib_manifest_header_present": true,
+  "platform_manifest_headers": {
+    "ios_arm64": 177,
+    "ios_simulator_arm64": 177
+  },
+  "selected_component_headers": 6280,
+  "selected_component_header_bound_ok": true,
+  "rejected_external_or_write_events": [],
+  "elapsed_seconds": 10.406569,
+  "max_rss_kib": 146512,
+  "finished_at": "2026-11-04T16:21:50.024339+00:00",
+  "source_inputs_after": {
+    ".github/workflows/platform-validation.yml": {
+      "bytes": 14110,
+      "sha256": "597c04e3849366b610a1918d8caf63760c18737703c61026717b41128615c38c"
+    },
+    "scripts/ci/provision_native.py": {
+      "bytes": 43773,
+      "sha256": "5a819d25884ded97302c3e83f0d8721eac2fbb92d7b2df15cb688c23f005a68e"
+    },
+    "scripts/ci/run_semantic_checks.py": {
+      "bytes": 31973,
+      "sha256": "1cc875381dccd814deffb999f66ff25509f44516d9397918f99796233cfa1c53"
+    },
+    "scripts/ci/test_semantic_ci.py": {
+      "bytes": 82962,
+      "sha256": "226c5892a2f1bf44d7d5a2c6778f56317c711acfa49a92bf948f228c93f6dcf6"
+    },
+    "scripts/ci/run_platform_checks.py": {
+      "bytes": 17759,
+      "sha256": "6a7504614c7050b7231b78d7ed7e197ef564c00632f54c3b5deecd3fca483f1d"
+    },
+    "scripts/ci/run_provider_checks.py": {
+      "bytes": 24936,
+      "sha256": "a167404c48b11640fa2f29f532a6f6822220630b26cda377789d001bfffce261"
+    },
+    "scripts/ci/ci_common.py": {
+      "bytes": 12753,
+      "sha256": "73630a12802a3aacdb99973daf014f6971d266282fa72444fd6a474e8b604c95"
+    },
+    "scripts/ci/run_library_checks.py": {
+      "bytes": 19990,
+      "sha256": "ba052bdc3f3aa2158d5f379129283a4d97dbd84318084a321f4b96439d9a6c97"
+    },
+    "scripts/ci/collect_evidence.py": {
+      "bytes": 12093,
+      "sha256": "e88c3bbd226a6bbb26aff8d71faafcc2a96ca1da6e899d6173cfb33412931610"
+    },
+    "scripts/ci/provision_android.py": {
+      "bytes": 7393,
+      "sha256": "ac9035b534a9deefa1cf7cdaa9218a49b9ac601170a58b92dc71f40720128b30"
+    },
+    "scripts/ci/record_environment.py": {
+      "bytes": 19659,
+      "sha256": "533dffc90c8041e62158229b82aa9a2786f9e52051143705f4ece363561dffe6"
+    },
+    "modules/semantic-facts/evidence/2026-11-04T091649Z-jvm/summary.json": {
+      "bytes": 10911,
+      "sha256": "2cb4b8d9f005afc18dcd9e86be7731acc5499436184697a97a5d237032c5208e"
+    }
+  },
+  "source_inputs_unchanged": true,
+  "exit_status": 0
+}

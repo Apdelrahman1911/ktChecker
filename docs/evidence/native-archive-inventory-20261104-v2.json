@@ -1,0 +1,216 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "read_only_official_native_archive_header_inventory",
+  "state": "unavailable",
+  "started_at": "2026-11-04T15:46:11.869351+00:00",
+  "coordinate": "org.jetbrains.kotlin:kotlin-native-prebuilt:2.4.21:macos-aarch64@tar.gz",
+  "expected_home": "kotlin-native-prebuilt-macos-aarch64-2.4.21",
+  "checksum_provenance": {
+    "published_checksum_algorithm": "sha1",
+    "published_checksum": "bfa7a92e6654ac8f060648a2937ec08f8d4b1c49",
+    "published_checksum_url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-native-prebuilt/2.4.21/kotlin-native-prebuilt-2.4.21-macos-aarch64.tar.gz.sha1",
+    "published_sha256_http_status_at_enrollment": 404,
+    "published_sha512_http_status_at_enrollment": 404,
+    "sha256_origin": "author_enrolled_fixed_https_exact_size_and_published_sha1_verified",
+    "author_acquired_at": "2026-11-04T14:51:07+00:00",
+    "signature_verified": false
+  },
+  "freeze_manifest": {
+    "bytes": 2990,
+    "sha256": "40aa718430c64d050352f2de54e2a4cab7ed00b8656dacae5ab1c4fab86e08b5"
+  },
+  "source_inputs_before": {
+    ".github/workflows/platform-validation.yml": {
+      "bytes": 14110,
+      "sha256": "597c04e3849366b610a1918d8caf63760c18737703c61026717b41128615c38c"
+    },
+    "scripts/ci/provision_native.py": {
+      "bytes": 42745,
+      "sha256": "5665e4c1dd77f957f6de03bf01132e4ac2490ec44fabf4d5d8584e1de9c37df7"
+    },
+    "scripts/ci/run_semantic_checks.py": {
+      "bytes": 31973,
+      "sha256": "1cc875381dccd814deffb999f66ff25509f44516d9397918f99796233cfa1c53"
+    },
+    "scripts/ci/test_semantic_ci.py": {
+      "bytes": 72546,
+      "sha256": "2f0e2b3bf4cd4fbfd4ff79d77af494216e84b27f8e851436f870c34bc5ec6394"
+    },
+    "scripts/ci/run_platform_checks.py": {
+      "bytes": 17759,
+      "sha256": "6a7504614c7050b7231b78d7ed7e197ef564c00632f54c3b5deecd3fca483f1d"
+    },
+    "scripts/ci/run_provider_checks.py": {
+      "bytes": 24936,
+      "sha256": "a167404c48b11640fa2f29f532a6f6822220630b26cda377789d001bfffce261"
+    },
+    "scripts/ci/ci_common.py": {
+      "bytes": 12753,
+      "sha256": "73630a12802a3aacdb99973daf014f6971d266282fa72444fd6a474e8b604c95"
+    },
+    "scripts/ci/run_library_checks.py": {
+      "bytes": 19990,
+      "sha256": "ba052bdc3f3aa2158d5f379129283a4d97dbd84318084a321f4b96439d9a6c97"
+    },
+    "scripts/ci/collect_evidence.py": {
+      "bytes": 12093,
+      "sha256": "e88c3bbd226a6bbb26aff8d71faafcc2a96ca1da6e899d6173cfb33412931610"
+    },
+    "scripts/ci/provision_android.py": {
+      "bytes": 7393,
+      "sha256": "ac9035b534a9deefa1cf7cdaa9218a49b9ac601170a58b92dc71f40720128b30"
+    },
+    "scripts/ci/record_environment.py": {
+      "bytes": 19659,
+      "sha256": "533dffc90c8041e62158229b82aa9a2786f9e52051143705f4ece363561dffe6"
+    },
+    "modules/semantic-facts/evidence/2026-11-04T091649Z-jvm/summary.json": {
+      "bytes": 10911,
+      "sha256": "2cb4b8d9f005afc18dcd9e86be7731acc5499436184697a97a5d237032c5208e"
+    }
+  },
+  "inspector": {
+    "bytes": 13089,
+    "sha256": "9d9382bcecf9930ab8838a7f8e7aee26955458f575bfdc57b825632349bcefac"
+  },
+  "runtime": {
+    "executable": "/usr/bin/python3.12",
+    "version": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "optimize": 0
+  },
+  "limits": {
+    "max_headers_and_members": 100000,
+    "max_total_work_bytes": 4294967296,
+    "work_definition": "both checksum passes plus compressed reads plus decompressed reads plus declared regular bytes",
+    "internal_deadline_seconds": 115,
+    "hard_outer_deadline_seconds": 120,
+    "address_space_bytes": [
+      536870912,
+      536870912
+    ]
+  },
+  "archive_verified_before": true,
+  "archive_verified_after": false,
+  "headers_completed": false,
+  "members_extracted": false,
+  "member_contents_inspected": false,
+  "binaries_executed": false,
+  "network_used": false,
+  "tuple_qualified": false,
+  "custom_rules_qualified": false,
+  "release_qualified": false,
+  "limitations": [
+    "Read-only headers/type/link/layout observations only, not compiler/JDK/Native/Apple execution or qualification.",
+    "No file contents, compiler manifest/KLIB metadata, dependency readiness, SDK/cache closure or target execution was assessed.",
+    "Tar member iteration follows the source-cleared parser's end-of-tar semantics; gzip/trailing-member format qualification is not claimed.",
+    "Trusted quiescent same-UID state is assumed; checksum rechecks are not host attestation or a hostile-writer race-proof guarantee."
+  ],
+  "archive_before": {
+    "bytes": 290160802,
+    "sha1": "bfa7a92e6654ac8f060648a2937ec08f8d4b1c49",
+    "sha256": "bf4edb526d91e17d0862102f69250525d788e79011f86c2c64362749adf260ae"
+  },
+  "fixed_failure_code": "native_archive_member_bound_exceeded",
+  "reviewed_header_guard_compatible": false,
+  "raw_header_types": {
+    "directory": 17379,
+    "regular": 32648,
+    "gnu_longname": 49974
+  },
+  "headers": 100001,
+  "yielded_members": 50027,
+  "namespace_entries": 50027,
+  "regular_members": 32648,
+  "link_members": 0,
+  "metadata_bytes": 7690852,
+  "compressed_read_bytes": 136839178,
+  "decompressed_read_bytes": 755077120,
+  "declared_regular_bytes": 667227618,
+  "hash_read_bytes": 290160802,
+  "total_work_bytes": 1849304718,
+  "core_header_presence": {
+    "bin/konanc": {
+      "regular_header_present": true,
+      "executable_mode_declared": true
+    },
+    "bin/run_konan": {
+      "regular_header_present": true,
+      "executable_mode_declared": true
+    },
+    "tools/env_blacklist": {
+      "regular_header_present": false,
+      "executable_mode_declared": false
+    },
+    "konan/konan.properties": {
+      "regular_header_present": false,
+      "executable_mode_declared": false
+    },
+    "konan/lib/kotlin-native-compiler-embeddable.jar": {
+      "regular_header_present": false,
+      "executable_mode_declared": false
+    }
+  },
+  "stdlib_manifest_header_present": true,
+  "platform_manifest_headers": {
+    "ios_arm64": 177,
+    "ios_simulator_arm64": 177
+  },
+  "selected_component_headers": 4009,
+  "selected_component_header_bound_ok": true,
+  "rejected_external_or_write_events": [],
+  "elapsed_seconds": 7.986466,
+  "max_rss_kib": 116160,
+  "finished_at": "2026-11-04T15:46:19.804230+00:00",
+  "source_inputs_after": {
+    ".github/workflows/platform-validation.yml": {
+      "bytes": 14110,
+      "sha256": "597c04e3849366b610a1918d8caf63760c18737703c61026717b41128615c38c"
+    },
+    "scripts/ci/provision_native.py": {
+      "bytes": 42745,
+      "sha256": "5665e4c1dd77f957f6de03bf01132e4ac2490ec44fabf4d5d8584e1de9c37df7"
+    },
+    "scripts/ci/run_semantic_checks.py": {
+      "bytes": 31973,
+      "sha256": "1cc875381dccd814deffb999f66ff25509f44516d9397918f99796233cfa1c53"
+    },
+    "scripts/ci/test_semantic_ci.py": {
+      "bytes": 72546,
+      "sha256": "2f0e2b3bf4cd4fbfd4ff79d77af494216e84b27f8e851436f870c34bc5ec6394"
+    },
+    "scripts/ci/run_platform_checks.py": {
+      "bytes": 17759,
+      "sha256": "6a7504614c7050b7231b78d7ed7e197ef564c00632f54c3b5deecd3fca483f1d"
+    },
+    "scripts/ci/run_provider_checks.py": {
+      "bytes": 24936,
+      "sha256": "a167404c48b11640fa2f29f532a6f6822220630b26cda377789d001bfffce261"
+    },
+    "scripts/ci/ci_common.py": {
+      "bytes": 12753,
+      "sha256": "73630a12802a3aacdb99973daf014f6971d266282fa72444fd6a474e8b604c95"
+    },
+    "scripts/ci/run_library_checks.py": {
+      "bytes": 19990,
+      "sha256": "ba052bdc3f3aa2158d5f379129283a4d97dbd84318084a321f4b96439d9a6c97"
+    },
+    "scripts/ci/collect_evidence.py": {
+      "bytes": 12093,
+      "sha256": "e88c3bbd226a6bbb26aff8d71faafcc2a96ca1da6e899d6173cfb33412931610"
+    },
+    "scripts/ci/provision_android.py": {
+      "bytes": 7393,
+      "sha256": "ac9035b534a9deefa1cf7cdaa9218a49b9ac601170a58b92dc71f40720128b30"
+    },
+    "scripts/ci/record_environment.py": {
+      "bytes": 19659,
+      "sha256": "533dffc90c8041e62158229b82aa9a2786f9e52051143705f4ece363561dffe6"
+    },
+    "modules/semantic-facts/evidence/2026-11-04T091649Z-jvm/summary.json": {
+      "bytes": 10911,
+      "sha256": "2cb4b8d9f005afc18dcd9e86be7731acc5499436184697a97a5d237032c5208e"
+    }
+  },
+  "source_inputs_unchanged": true,
+  "exit_status": 1
+}
