@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "github_exact_push_initial_runs_only_metadata_observation",
+  "repository": "Apdelrahman1911/ktChecker",
+  "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+  "observation_kind": "initial_non_polling_run_api_snapshot_only",
+  "metadata_collection_started_at": "2026-11-04T15:11:13.780743+00:00",
+  "metadata_collection_completed_at": "2026-11-04T15:11:15.104308+00:00",
+  "record_authored_at": "2026-11-04T15:16:59.211913+00:00",
+  "collection_is_atomic": false,
+  "related_earlier_observations": [
+    {
+      "path": "docs/evidence/ci-2026-11-04-75fc659.json",
+      "sha256": "1386c610e1420d3f7e813fe2ff24cc874761dfb164c38b27d396a2edad8b3f22",
+      "size_bytes": 21355,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T135437Z-75fc659.json",
+      "sha256": "340135f4138546297cca4639df506a1c2613bd1decd84bed08808677f0b04625",
+      "size_bytes": 47878,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T141757Z-b807de0.json",
+      "sha256": "e194e5beedd39c22b940b2b354487cfee945087a3786faedcc6586037df10fe7",
+      "size_bytes": 38661,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T144751Z-b807de0.json",
+      "sha256": "475e41a544f89c906469fb63da42a7bb66766b5b5f7d170018c90eeb2eb67239",
+      "size_bytes": 44927,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T145213Z-b807de0-diagnostics.json",
+      "sha256": "9bd6f2118fbfe3054ab42612f5033ca0cd71c6d2501e51041080c61a03d25a33",
+      "size_bytes": 13775,
+      "preserved_byte_for_byte": true
+    }
+  ],
+  "collection_scope": {
+    "method": "Exactly one bounded head_sha+push-filtered runs-list GET for the new pushed checkpoint; no followup polling and no job/log/artifact requests.",
+    "metadata_request_count": 1,
+    "metadata_response_byte_limit": 2097152,
+    "metadata_timeout_seconds": 45,
+    "metadata_request": {
+      "method": "GET",
+      "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs?head_sha=ad632ac4d97d9b8ee0245d0e010268a38f0dedaf&event=push&per_page=100",
+      "started_at": "2026-11-04T15:11:13.780743+00:00",
+      "response_byte_limit": 2097152,
+      "timeout_seconds": 45,
+      "completed_at": "2026-11-04T15:11:15.104308+00:00",
+      "return_code": 0,
+      "response_size_bytes": 53454,
+      "private_stderr_size_bytes": 0,
+      "response_sha256": "2b66bf5a0755466554f14da9fda2ac7bc073f7b908a718b03b763b237dad7799"
+    },
+    "retained_metadata_container_sha256": "39ae78eaf833f0b5a78457c96eba02a750df8e57ca1c3ff8ac27031f5cd26f77",
+    "retained_metadata_container_size_bytes": 65393,
+    "job_metadata_inspected": false,
+    "job_step_metadata_inspected": false,
+    "single_job_logs_downloaded": false,
+    "artifact_bundles_downloaded": false,
+    "manual_workflow_dispatch": false,
+    "workflow_cancellation_by_collector": false,
+    "workflow_rerun_by_collector": false
+  },
+  "qualification": {
+    "release_qualified": false,
+    "rule_qualification": false,
+    "production_native_supervision_qualification": false,
+    "apple_abi_qualification": false,
+    "native_throws_qualification": false,
+    "loaded_artifact_enrollment_verified_by_this_record": false,
+    "original_junit_and_stress_artifacts_verified_by_this_record": false
+  },
+  "runs": [
+    {
+      "workflow_id": 406620452,
+      "workflow_name": "Planning evidence and registry",
+      "run_id": 41853458825,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "workflow_path": ".github/workflows/plan-validation.yml",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41853458825",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T15:01:34Z",
+      "api_updated_at": "2026-11-04T15:01:34Z"
+    },
+    {
+      "workflow_id": 406714085,
+      "workflow_name": "Preview bridges (actual SDK and synthetic host controls)",
+      "run_id": 41853458610,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "workflow_path": ".github/workflows/bridges-validation.yml",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41853458610",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T15:01:34Z",
+      "api_updated_at": "2026-11-04T15:01:34Z"
+    },
+    {
+      "workflow_id": 406714086,
+      "workflow_name": "Preview implementation (real pinned JVM)",
+      "run_id": 41853458965,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "workflow_path": ".github/workflows/implementation.yml",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41853458965",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T15:01:34Z",
+      "api_updated_at": "2026-11-04T15:01:34Z"
+    },
+    {
+      "workflow_id": 406714087,
+      "workflow_name": "Preview platform execution (actual KMP targets)",
+      "run_id": 41853458769,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "workflow_path": ".github/workflows/platform-validation.yml",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41853458769",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T15:01:34Z",
+      "api_updated_at": "2026-11-04T15:01:34Z"
+    }
+  ],
+  "summary": {
+    "workflow_count": 4,
+    "terminal_workflow_count": 0,
+    "workflow_status_counts": {
+      "queued": 4
+    },
+    "workflow_conclusion_counts": {
+      "not_set": 4
+    },
+    "all_workflows_terminal": false,
+    "all_required_workflows_passed": false,
+    "job_count_established_by_this_record": false,
+    "hosted_repair_step_success_established_by_this_record": false
+  },
+  "checkpoint_source_inventory": [
+    {
+      "path": "fixtures/kmp/build.gradle.kts",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "4436f1c7dbea641b0c0cb9e92e5173411afc632ef3c0a7c17adf206c9a72f4db",
+      "size_bytes": 6992,
+      "changed_from_b807_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/run_supervisor_checks.py",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "4d69ccf81ad78c1104d94cfb7c0bded67fbb1f98744958f0fe93e918bdfdf19d",
+      "size_bytes": 51610,
+      "changed_from_b807_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_ci.py",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "2b4a28b976abd2968c477b260a50b403052944c0cf54bbd24727aaecc4841120",
+      "size_bytes": 71826,
+      "changed_from_b807_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_native_throws_ci.py",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "40bf7dcbaec80d53b86310577136bbc78e66b35cb5e176b8143b5f5d208b3a57",
+      "size_bytes": 87946,
+      "changed_from_b807_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_supervisor_ci.py",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "550b4131008594e96932fad18e8006aaa6c42bcd5d2ea1a47bec18219714ba16",
+      "size_bytes": 50809,
+      "changed_from_b807_checkpoint": true
+    }
+  ],
+  "limitations": [
+    "This is a timestamped initial run-level metadata observation, not a terminal CI result. All four exact-SHA push attempt-1 runs advertise queued status and null conclusions at this single collection boundary.",
+    "No job metadata or steps were queried. Queued run API status does not establish that any host job is queued, running, failed or passed, and does not prove a repair step executed.",
+    "The five source repair files and three preserved b807 observations are pinned to the narrow pushed commit. Local fixture success and source review are not converted into hosted platform success.",
+    "No workflow dispatch, cancellation, rerun, log, report artifact or distribution download occurred in this observation. No followup polling is included.",
+    "All qualification flags remain false. This initial metadata alone does not qualify rules, production Native supervision, Apple ABI, loaded artifact enrollment, platform execution or release behavior."
+  ]
+}

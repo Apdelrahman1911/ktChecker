@@ -4,6 +4,7 @@ import argparse
 import ast
 from contextlib import ExitStack, contextmanager
 import copy
+from functools import partial
 import io
 import json
 import os
@@ -455,6 +456,7 @@ class NativeOutcomeTests(unittest.TestCase):
             result = checks.outcome_metadata(fixture.outcomes("failed"), IDENTITY, fixture.host, checks.native_test_inputs(fixture.root))
             self.assertEqual("failed", result["state"])
             self.assertEqual(1, result["counts"]["failed"])
+            self.assertEqual({}, result["failure_diagnostics"])
             self.assertNotIn("PRIVATE", json.dumps(result))
 
     def test_reporter_synthetic_tests_do_not_import_or_execute_the_actual_native_fixture(self):
@@ -482,6 +484,180 @@ class NativeOutcomeTests(unittest.TestCase):
         result.record(SimpleNamespace(id=lambda: "PRIVATE setup path"), "error")
         self.assertEqual(1, result.fixture_errors)
         self.assertNotIn("PRIVATE", json.dumps(result.outcomes))
+
+
+class NativeFailureDiagnosticTests(unittest.TestCase):
+    @staticmethod
+    def diagnostic(fixture, *, event="assertion_failure", role="tests", line=1):
+        return {"event": event, "source": role, "source_digest": checks.native_test_inputs(fixture.root)[role], "line": line}
+
+    @staticmethod
+    def synthetic_case(fixture, source, role="tests"):
+        # Only this authored Python stub is compiled in memory. The actual C
+        # fixtures, native unittest module and compiler are never imported/run.
+        path = fixture.root / checks.DIAGNOSTIC_SOURCES[role]
+        write(path, source.encode("utf-8"))
+        namespace = {}
+        exec(compile(source, str(path), "exec"), namespace)
+        name = sorted(checks.CASES)[0]
+        case_type = type("SyntheticCase", (unittest.TestCase,), {"runTest": namespace["runTest"], "id": lambda _: name})
+        sources = checks.native_diagnostic_sources(checks.native_test_inputs(fixture.root), fixture.root)
+        return case_type(), partial(runner.OutcomeResult, diagnostic_sources=sources)
+
+    def test_first_bound_assertion_line_survives_real_reporter_and_sanitized_projection(self):
+        for target, passed, skipped in (("linux-x86_64", 21, 0), ("macos-aarch64", 19, 2)):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(target=target):
+                fixture = Fixture(Path(temporary), target)
+                failed, _ = self.synthetic_case(fixture, "def nested(case):\n    PRIVATE_LOCAL = 'PRIVATE local'\n"
+                                                "    case.fail('PRIVATE assertion body')\n\n"
+                                                "def runTest(self):\n    nested(self)\n")
+                class FakeCase(unittest.TestCase):
+                    def __init__(self, name): super().__init__("runTest"); self.name = name
+                    def id(self): return self.name
+                    def runTest(self):
+                        if fixture.host["os"] == "macos" and self.name in checks.LINUX_ONLY:
+                            self.skipTest(checks.LINUX_ONLY[self.name][0])
+                suite = unittest.TestSuite(failed if name == failed.id() else FakeCase(name) for name in sorted(checks.CASES))
+                with fixture.context(), patch.object(runner.unittest.TestLoader, "discover", return_value=suite), \
+                        patch.dict(sys.modules, {"test_supervisor": SimpleNamespace()}), patch.object(runner.sys, "stdout", io.StringIO()):
+                    raw = runner.run(fixture.args.output, fixture.cc, fixture.root)
+                projected = checks.outcome_metadata(raw, IDENTITY, fixture.host, checks.native_test_inputs(fixture.root), fixture.root)
+                self.assertEqual("failed", raw["state"])
+                self.assertEqual(22, raw["tests_run"])
+                self.assertEqual({"passed": passed, "failed": 1, "error": 0, "skipped": skipped, "not_run": 0}, projected["counts"])
+                self.assertEqual({failed.id(): self.diagnostic(fixture, line=3)}, projected["failure_diagnostics"])
+                self.assertFalse(raw["native_abi_qualified"])
+                self.assertFalse(raw["release_qualified"])
+                self.assertNotIn("PRIVATE", json.dumps(raw))
+                self.assertNotIn(str(fixture.root), json.dumps(projected))
+
+    def test_builder_location_is_bound_and_unknown_paths_messages_and_overlong_traces_are_not_retained(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = Fixture(Path(temporary))
+            case, result_class = self.synthetic_case(fixture, "def runTest(self):\n    raise RuntimeError('PRIVATE builder error')\n", "builder")
+            outcome = unittest.TextTestRunner(stream=io.StringIO(), resultclass=result_class).run(case)
+            self.assertEqual({case.id(): self.diagnostic(fixture, event="test_error", role="builder", line=2)}, outcome.failure_diagnostics)
+            result = result_class(io.StringIO(), False, 0)
+            missing = {"event": "assertion_failure", "source": None, "source_digest": None, "line": None}
+            frame = SimpleNamespace(f_code=SimpleNamespace(co_filename=str(fixture.root / checks.TEST_FILE)))
+            class PrivateException(Exception):
+                def __str__(self): raise AssertionError("diagnostic formatted a private exception")
+                def __repr__(self): raise AssertionError("diagnostic formatted a private exception")
+            trace = None
+            for _ in range(64):
+                trace = SimpleNamespace(tb_frame=frame, tb_lineno=1, tb_next=trace)
+            error = (PrivateException, PrivateException("PRIVATE exception"), trace)
+            self.assertEqual(self.diagnostic(fixture), result.failure_diagnostic("assertion_failure", error))
+            trace = SimpleNamespace(tb_frame=frame, tb_lineno=1, tb_next=trace)
+            self.assertEqual(missing, result.failure_diagnostic("assertion_failure", (*error[:2], trace)))
+            for filename in ("PRIVATE/test_supervisor.py", str(fixture.root / "PRIVATE/test_supervisor.py"), checks.TEST_FILE):
+                unknown = SimpleNamespace(tb_frame=SimpleNamespace(f_code=SimpleNamespace(co_filename=filename)), tb_lineno=1, tb_next=None)
+                self.assertEqual(missing, result.failure_diagnostic("assertion_failure", (*error[:2], unknown)))
+            self.assertNotIn("PRIVATE", json.dumps(outcome.failure_diagnostics))
+
+    def test_subtests_keep_first_event_and_error_precedence_without_values_or_invocation_claims(self):
+        for first_error in (False, True):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(first_error=first_error):
+                fixture = Fixture(Path(temporary))
+                first = "raise RuntimeError('PRIVATE first')" if first_error else "self.fail('PRIVATE first')"
+                case, result_class = self.synthetic_case(fixture, "def runTest(self):\n    with self.subTest(value='PRIVATE first'):\n"
+                                                        f"        {first}\n    with self.subTest(value='PRIVATE second'):\n"
+                                                        "        raise RuntimeError('PRIVATE second')\n"
+                                                        "    with self.subTest(value='PRIVATE third'):\n        self.fail('PRIVATE third')\n")
+                outcome = unittest.TextTestRunner(stream=io.StringIO(), resultclass=result_class).run(case)
+                self.assertEqual("error", outcome.outcomes[case.id()]["state"])
+                self.assertEqual(0, outcome.fixture_errors)
+                self.assertEqual({case.id(): self.diagnostic(fixture, event="test_error" if first_error else "assertion_failure", line=3)},
+                                 outcome.failure_diagnostics)
+                self.assertNotIn("PRIVATE", json.dumps(outcome.failure_diagnostics))
+                report = fixture.outcomes("failed")
+                report["cases"][0]["state"] = "error"
+                report["counts"].update(failed=0, error=1)
+                report["failure_diagnostics"] = outcome.failure_diagnostics
+                self.assertEqual("failed", checks.outcome_metadata(report, IDENTITY, fixture.host, checks.native_test_inputs(fixture.root), fixture.root)["state"])
+
+    def test_expected_failure_and_unexpected_success_remain_failed_with_fixed_events(self):
+        for failing in (False, True):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(failing=failing):
+                fixture = Fixture(Path(temporary))
+                case, result_class = self.synthetic_case(fixture, "def runTest(self):\n    " + ("self.fail('PRIVATE expected failure')" if failing else "pass") + "\n")
+                case.__class__.runTest = unittest.expectedFailure(case.__class__.runTest)
+                outcome = unittest.TextTestRunner(stream=io.StringIO(), resultclass=result_class).run(case)
+                self.assertEqual("failed", outcome.outcomes[case.id()]["state"])
+                expected = self.diagnostic(fixture, event="expected_failure", line=2) if failing else \
+                    {"event": "unexpected_success", "source": None, "source_digest": None, "line": None}
+                self.assertEqual({case.id(): expected}, outcome.failure_diagnostics)
+                report = fixture.outcomes("failed"); report["failure_diagnostics"] = outcome.failure_diagnostics
+                self.assertEqual("failed", checks.outcome_metadata(report, IDENTITY, fixture.host, checks.native_test_inputs(fixture.root), fixture.root)["state"])
+
+    def test_unknown_fixture_errors_have_no_diagnostic_method_label(self):
+        result = runner.OutcomeResult(io.StringIO(), False, 0)
+        result.record(SimpleNamespace(id=lambda: "PRIVATE setup fixture"), "error", event="test_error")
+        self.assertEqual(1, result.fixture_errors)
+        self.assertEqual({}, result.failure_diagnostics)
+
+    def test_diagnostic_validation_rejects_unbound_lines_values_codes_and_outcome_disagreement(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = Fixture(Path(temporary)); original = fixture.outcomes("failed")
+            name = original["cases"][0]["id"]
+            original["failure_diagnostics"] = {name: self.diagnostic(fixture)}
+            inputs = checks.native_test_inputs(fixture.root)
+            self.assertEqual(original["failure_diagnostics"], checks.outcome_metadata(original, IDENTITY, fixture.host, inputs, fixture.root)["failure_diagnostics"])
+            invalid = (("event", "PRIVATE event"), ("event", ["assertion_failure"]), ("event", "test_error"),
+                       ("event", "unexpected_success"), ("source", "PRIVATE path"), ("source", []), ("source", None),
+                       ("source_digest", "sha256:" + "0" * 64), ("source_digest", None), ("source_digest", {}),
+                       ("line", True), ("line", 0), ("line", -1), ("line", 2), ("line", 1.0), ("line", "1"), ("line", None),
+                       ("message", "PRIVATE body"), ("filename", "PRIVATE/test_supervisor.py"), ("locals", {"PRIVATE": "value"}))
+            for field, value in invalid:
+                changed = copy.deepcopy(original); changed["failure_diagnostics"][name][field] = value
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    checks.outcome_metadata(changed, IDENTITY, fixture.host, inputs, fixture.root)
+            for diagnostics in (None, [], {name: None}, {name: {}}, {"PRIVATE unknown method": self.diagnostic(fixture)},
+                                {original["cases"][1]["id"]: self.diagnostic(fixture)}):
+                changed = copy.deepcopy(original); changed["failure_diagnostics"] = diagnostics
+                with self.subTest(diagnostics=diagnostics), self.assertRaises(ValueError):
+                    checks.outcome_metadata(changed, IDENTITY, fixture.host, inputs, fixture.root)
+            missing = {"event": "assertion_failure", "source": None, "source_digest": None, "line": None}
+            original["failure_diagnostics"][name] = missing
+            self.assertEqual({name: missing}, checks.outcome_metadata(original, IDENTITY, fixture.host, inputs, fixture.root)["failure_diagnostics"])
+
+    def test_changed_source_bytes_refuse_diagnostic_binding_and_discovery(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = Fixture(Path(temporary)); report = fixture.outcomes("failed")
+            report["failure_diagnostics"] = {report["cases"][0]["id"]: self.diagnostic(fixture)}
+            inputs = checks.native_test_inputs(fixture.root)
+            write(fixture.root / checks.TEST_FILE, b"PRIVATE changed source\n")
+            with self.assertRaises(ValueError): checks.native_diagnostic_sources(inputs, fixture.root)
+            with self.assertRaises(ValueError): checks.outcome_metadata(report, IDENTITY, fixture.host, inputs, fixture.root)
+            with fixture.context(), patch.object(checks, "native_test_inputs", return_value=inputs), \
+                    patch.object(runner.unittest.TestLoader, "discover") as discover:
+                result = runner.run(fixture.args.output, fixture.cc, fixture.root)
+            discover.assert_not_called()
+            self.assertEqual("failed", result["state"])
+            self.assertEqual(1, result["fixture_errors"])
+            self.assertEqual(0, result["tests_run"])
+            self.assertEqual({}, result["failure_diagnostics"])
+
+    def test_failed_wrapper_retains_only_validated_diagnostics_and_collect_cannot_drop_them(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = Fixture(Path(temporary)); fixture.prerequisite()
+            report = fixture.outcomes("failed")
+            report["failure_diagnostics"] = {report["cases"][0]["id"]: self.diagnostic(fixture)}
+            def command(argv, **_):
+                write_json(Path(argv[argv.index("--output") + 1]), report)
+                return {"state": "completed", "return_code": 1, "raw_logs_uploaded": False}, "PRIVATE stdout", ""
+            with fixture.context(), patch.object(checks, "run_logged", side_effect=command):
+                result = checks.controls(fixture.args, fixture.root)
+            self.assertEqual("failed", result["state"])
+            self.assertEqual(report["failure_diagnostics"], result["controls"]["failure_diagnostics"])
+            self.assertEqual(1, result["controls"]["counts"]["failed"])
+            self.assertFalse(result["native_fixture_controls_passed"])
+            self.assertNotIn("PRIVATE", json.dumps(result))
+            fixture.bundle()
+            installed = checks.strict_json(fixture.args.controls.read_bytes())
+            installed["controls"]["failure_diagnostics"] = report["failure_diagnostics"]
+            write_json(fixture.args.controls, installed)
+            self.assertEqual("failed", fixture.collect()["state"])
 
 
 class NativeControlOrchestrationTests(unittest.TestCase):

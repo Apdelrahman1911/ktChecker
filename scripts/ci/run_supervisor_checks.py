@@ -99,6 +99,8 @@ LINUX_ONLY = {
     "test_supervisor.NativeSupervisorTest.test_syscalls_every_real_group_signal_precedes_any_leader_reap":
         ("Linux-only syscall observation, not a Darwin proof", "linux_syscall_trace_not_applicable"),
 }
+FAILURE_EVENTS = {"assertion_failure", "test_error", "expected_failure", "unexpected_success"}
+DIAGNOSTIC_SOURCES = {"tests": TEST_FILE, "builder": BUILDER}
 
 
 def valid_digest(value: object) -> bool:
@@ -163,6 +165,20 @@ def native_test_inputs(root: Path) -> dict:
     actual = {path.name for path in (root / MODULE / "native").glob("test_*.py")}
     if actual != {"test_supervisor.py"}:
         raise ValueError("native fixture file inventory changed")
+    return result
+
+
+def native_diagnostic_sources(inputs: dict, root: Path = REPO_ROOT) -> dict:
+    """Private filename lookup; public diagnostics retain only a fixed role/hash/line."""
+    result = {}
+    for role, relative in DIAGNOSTIC_SOURCES.items():
+        path = root / relative
+        raw = regular_input(path, root)
+        digest = digest_bytes(raw)
+        if not 0 < len(raw) <= 1_048_576 or digest != inputs.get(role):
+            raise ValueError("native diagnostic source differs from fixture input")
+        result[role] = {"source_digest": digest, "line_count": len(raw.splitlines()),
+                        "paths": {os.path.abspath(path), str(regular_path(path, root))}}
     return result
 
 
@@ -334,7 +350,36 @@ def validate_prerequisites(value: object, source: dict, host: dict) -> dict:
     return value
 
 
-def outcome_metadata(value: object, source: dict, host: dict, inputs: dict) -> dict:
+def failure_diagnostic_metadata(value: object, cases: list, inputs: dict, root: Path) -> dict:
+    """One first nonpassing event per method, never subtest values or invocation counts."""
+    if not isinstance(value, dict) or len(value) > len(CASES):
+        raise ValueError("native failure diagnostic inventory invalid")
+    states = {row["id"]: row["state"] for row in cases}
+    sources, projected = None, {}
+    for name, row in value.items():
+        if not isinstance(name, str) or name not in CASES or states.get(name) not in {"failed", "error"} \
+                or not isinstance(row, dict) or set(row) != {"event", "source", "source_digest", "line"} \
+                or not isinstance(row.get("event"), str) or row["event"] not in FAILURE_EVENTS \
+                or row["event"] == "test_error" and states[name] != "error":
+            raise ValueError("native failure diagnostic identity/event invalid")
+        role = row["source"]
+        if role is None:
+            if row["source_digest"] is not None or row["line"] is not None:
+                raise ValueError("native failure diagnostic has an unbound location")
+        else:
+            if not isinstance(role, str) or role not in DIAGNOSTIC_SOURCES or row["event"] == "unexpected_success":
+                raise ValueError("native failure diagnostic source invalid")
+            if sources is None:
+                sources = native_diagnostic_sources(inputs, root)
+            bound = sources[role]
+            if row["source_digest"] != bound["source_digest"] or type(row["line"]) is not int \
+                    or not 1 <= row["line"] <= bound["line_count"]:
+                raise ValueError("native failure diagnostic source/line differs from fixture input")
+        projected[name] = {key: row[key] for key in ("event", "source", "source_digest", "line")}
+    return {name: projected[name] for name in sorted(projected)}
+
+
+def outcome_metadata(value: object, source: dict, host: dict, inputs: dict, root: Path = REPO_ROOT) -> dict:
     if not isinstance(value, dict) or type(value.get("schema_version")) is not int or value["schema_version"] != 1 \
             or value.get("evidence_kind") != "native_supervisor_unittest_outcomes" \
             or value.get("state") not in {"passed", "failed"} or value.get("host") != host \
@@ -366,6 +411,9 @@ def outcome_metadata(value: object, source: dict, host: dict, inputs: dict) -> d
             or any(type(item) is not int for item in value["counts"].values()) \
             or value["counts"] != counts or value["tests_run"] != len(CASES) - counts["not_run"]:
         raise ValueError("native unittest counts disagree")
+    # Additive to the existing outcome schema: old reports lack diagnostics.
+    # Their absence cannot alter a failing outcome or supply a missing proof.
+    diagnostics = failure_diagnostic_metadata(value.get("failure_diagnostics", {}), cases, inputs, root)
     expected_skips = LINUX_ONLY if host["os"] == "macos" else {}
     passed = host["target"] in SUPERVISOR_TARGETS and value["fixture_errors"] == 0 and all(
         row["state"] == ("skipped" if row["id"] in expected_skips else "passed")
@@ -374,6 +422,7 @@ def outcome_metadata(value: object, source: dict, host: dict, inputs: dict) -> d
         raise ValueError("native unittest success disagrees with actual host-scoped controls")
     return {"state": value["state"], "selected_method_count": len(CASES), "tests_run": value["tests_run"], "counts": counts,
             "fixture_errors": value["fixture_errors"], "cases": sorted(projected, key=lambda row: row["id"]),
+            "failure_diagnostics": diagnostics,
             "native_methods_executed": sum(row["scope"] == "owned_child_runtime" and row["state"] in {"passed", "failed", "error"}
                                            for row in projected),
             "builder_metadata_methods_passed": sum(row["scope"] == "builder_metadata" and row["state"] == "passed" for row in projected),
@@ -418,7 +467,7 @@ def controls(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
                                        max_output_bytes=2 * 1024 * 1024, additional_output_paths=(report,))
             result["fixture_command"] = safe_command(command)
             report_bytes = regular_input(report, root)
-            result["controls"] = outcome_metadata(strict_json(report_bytes, limit=256 * 1024), result["source"], result["host"], result["test_inputs"])
+            result["controls"] = outcome_metadata(strict_json(report_bytes, limit=256 * 1024), result["source"], result["host"], result["test_inputs"], root)
             result["test_report_digest"] = digest_bytes(report_bytes)
             result["native_fixture_controls_executed"] = result["controls"]["native_methods_executed"] > 0
             result["native_helper_executed_by_test_harness"] = any(row["scope"] == "owned_child_runtime" and row["state"] == "passed"
@@ -619,7 +668,7 @@ def collect(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
                                  raw_exception_messages_retained=False, provider_controls_executed=False,
                                  native_abi_qualified=False, release_qualified=False)
             tested_report["cases"] = [{key: row[key] for key in ("id", "state", "skip_reason")} for row in tested_report["cases"]]
-            outcome_metadata(tested_report, result["source"], result["host"], tested["test_inputs"])
+            outcome_metadata(tested_report, result["source"], result["host"], tested["test_inputs"], root)
         elif tested["controls"].get("tests_run") != 0 or tested["controls"].get("methods_not_executed") != len(CASES):
             raise ValueError("unsupported host cannot claim native fixture execution")
         inputs = input_digests(root)

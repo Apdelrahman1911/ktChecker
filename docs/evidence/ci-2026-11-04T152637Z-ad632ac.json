@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "github_exact_push_later_runs_only_metadata_observation",
+  "repository": "Apdelrahman1911/ktChecker",
+  "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+  "observation_kind": "separately_authorized_later_nonterminal_run_api_snapshot_only",
+  "metadata_collection_started_at": "2026-11-04T15:26:36.620081+00:00",
+  "metadata_collection_completed_at": "2026-11-04T15:26:37.860523+00:00",
+  "record_authored_at": "2026-11-04T15:28:31.909893+00:00",
+  "collection_is_atomic": false,
+  "related_earlier_observations": [
+    {
+      "path": "docs/evidence/ci-2026-11-04-75fc659.json",
+      "sha256": "1386c610e1420d3f7e813fe2ff24cc874761dfb164c38b27d396a2edad8b3f22",
+      "size_bytes": 21355,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T135437Z-75fc659.json",
+      "sha256": "340135f4138546297cca4639df506a1c2613bd1decd84bed08808677f0b04625",
+      "size_bytes": 47878,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T141757Z-b807de0.json",
+      "sha256": "e194e5beedd39c22b940b2b354487cfee945087a3786faedcc6586037df10fe7",
+      "size_bytes": 38661,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T144751Z-b807de0.json",
+      "sha256": "475e41a544f89c906469fb63da42a7bb66766b5b5f7d170018c90eeb2eb67239",
+      "size_bytes": 44927,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T145213Z-b807de0-diagnostics.json",
+      "sha256": "9bd6f2118fbfe3054ab42612f5033ca0cd71c6d2501e51041080c61a03d25a33",
+      "size_bytes": 13775,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T150932Z-b807de0-macos-controls.json",
+      "sha256": "04481772f8be4e8e3ff9e520b4144a316d69b3d31b23e4bbd82fd94aa5bc2492",
+      "size_bytes": 19545,
+      "preserved_byte_for_byte": true
+    },
+    {
+      "path": "docs/evidence/ci-2026-11-04T151115Z-ad632ac.json",
+      "sha256": "f056e45de689f86201f12c649b93cebee7a3012ffe18ff060c32c51b4ef449b3",
+      "size_bytes": 8429,
+      "preserved_byte_for_byte": true
+    }
+  ],
+  "collection_scope": {
+    "method": "Exactly one separately authorized bounded head_sha+push-filtered runs-list GET. The optional job-list condition required all four exact known attempt-1 runs to be in progress/completed; three remained queued, so no job list was requested.",
+    "metadata_request_count": 1,
+    "run_list_request_count": 1,
+    "job_list_request_count": 0,
+    "metadata_response_byte_limit": 2097152,
+    "metadata_timeout_seconds": 45,
+    "metadata_request": {
+      "method": "GET",
+      "endpoint": "repos/Apdelrahman1911/ktChecker/actions/runs?head_sha=ad632ac4d97d9b8ee0245d0e010268a38f0dedaf&event=push&per_page=100",
+      "started_at": "2026-11-04T15:26:36.620128+00:00",
+      "response_byte_limit": 2097152,
+      "timeout_seconds": 45,
+      "complete_response": true,
+      "completed_at": "2026-11-04T15:26:37.859543+00:00",
+      "return_code": 0,
+      "response_size_bytes": 53459,
+      "private_stderr_size_bytes": 0,
+      "response_sha256": "4d637474c11747a5da60975b8d8359b59d8920a4366b5b4015bc78c9073c4679"
+    },
+    "retained_metadata_container_sha256": "b7082ce1bbaa39f5c35c067ea16cb37bf13e23b21524eeb0210fb8a13f79440c",
+    "retained_metadata_container_size_bytes": 65760,
+    "conditional_job_lists_maximum_authorized": 4,
+    "conditional_job_lists_all_four_runs_in_progress_or_completed": false,
+    "job_metadata_inspected": false,
+    "job_step_metadata_inspected": false,
+    "single_job_logs_downloaded": false,
+    "artifact_bundles_downloaded": false,
+    "manual_workflow_dispatch": false,
+    "workflow_cancellation_by_collector": false,
+    "workflow_rerun_by_collector": false,
+    "request_retry_performed": false,
+    "poll_loop_performed": false
+  },
+  "qualification": {
+    "release_qualified": false,
+    "rule_qualification": false,
+    "production_native_supervision_qualification": false,
+    "apple_abi_qualification": false,
+    "native_throws_qualification": false,
+    "loaded_artifact_enrollment_verified_by_this_record": false,
+    "original_junit_and_stress_artifacts_verified_by_this_record": false
+  },
+  "runs": [
+    {
+      "workflow_id": 406620452,
+      "workflow_name": "Planning evidence and registry",
+      "run_id": 41853458825,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "workflow_path": ".github/workflows/plan-validation.yml",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41853458825",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T15:01:34Z",
+      "api_updated_at": "2026-11-04T15:01:34Z"
+    },
+    {
+      "workflow_id": 406714085,
+      "workflow_name": "Preview bridges (actual SDK and synthetic host controls)",
+      "run_id": 41853458610,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "workflow_path": ".github/workflows/bridges-validation.yml",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41853458610",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T15:01:34Z",
+      "api_updated_at": "2026-11-04T15:01:34Z"
+    },
+    {
+      "workflow_id": 406714086,
+      "workflow_name": "Preview implementation (real pinned JVM)",
+      "run_id": 41853458965,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "workflow_path": ".github/workflows/implementation.yml",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41853458965",
+      "api_status": "in_progress",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T15:01:34Z",
+      "api_updated_at": "2026-11-04T15:25:13Z"
+    },
+    {
+      "workflow_id": 406714087,
+      "workflow_name": "Preview platform execution (actual KMP targets)",
+      "run_id": 41853458769,
+      "attempt": 1,
+      "event": "push",
+      "head_sha": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "workflow_path": ".github/workflows/platform-validation.yml",
+      "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/41853458769",
+      "api_status": "queued",
+      "api_conclusion": null,
+      "api_created_at": "2026-11-04T15:01:34Z",
+      "api_updated_at": "2026-11-04T15:01:34Z"
+    }
+  ],
+  "summary": {
+    "workflow_count": 4,
+    "terminal_workflow_count": 0,
+    "workflow_status_counts": {
+      "queued": 3,
+      "in_progress": 1
+    },
+    "workflow_conclusion_counts": {
+      "not_set": 4
+    },
+    "all_workflows_terminal": false,
+    "all_required_workflows_passed": false,
+    "job_count_established_by_this_record": false,
+    "hosted_repair_step_success_established_by_this_record": false
+  },
+  "checkpoint_source_inventory": [
+    {
+      "path": "fixtures/kmp/build.gradle.kts",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "4436f1c7dbea641b0c0cb9e92e5173411afc632ef3c0a7c17adf206c9a72f4db",
+      "size_bytes": 6992,
+      "changed_from_b807_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/run_supervisor_checks.py",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "4d69ccf81ad78c1104d94cfb7c0bded67fbb1f98744958f0fe93e918bdfdf19d",
+      "size_bytes": 51610,
+      "changed_from_b807_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_ci.py",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "2b4a28b976abd2968c477b260a50b403052944c0cf54bbd24727aaecc4841120",
+      "size_bytes": 71826,
+      "changed_from_b807_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_native_throws_ci.py",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "40bf7dcbaec80d53b86310577136bbc78e66b35cb5e176b8143b5f5d208b3a57",
+      "size_bytes": 87946,
+      "changed_from_b807_checkpoint": true
+    },
+    {
+      "path": "scripts/ci/test_supervisor_ci.py",
+      "commit": "ad632ac4d97d9b8ee0245d0e010268a38f0dedaf",
+      "sha256": "550b4131008594e96932fad18e8006aaa6c42bcd5d2ea1a47bec18219714ba16",
+      "size_bytes": 50809,
+      "changed_from_b807_checkpoint": true
+    }
+  ],
+  "limitations": [
+    "This later snapshot does not overwrite or re-date the earlier 15:11:15Z queued-only observation. At the new run-level API boundary, Implementation is in progress and the other three exact-SHA push attempt-1 workflows advertise queued status; all conclusions are still null.",
+    "The all-four active/terminal condition for optional job metadata was not met, so zero job-list requests were made. Run-level status does not establish which host jobs or repair steps have started, failed or passed.",
+    "Only one separately authorized runs-list request is included. No polling loop, retry, job log, report artifact, distribution, workflow dispatch, cancellation or rerun is included.",
+    "The five source pins are unchanged exact ad632ac commit bytes; newer local source-oriented commits and their validation are not attributed to this still-running pushed checkpoint.",
+    "All qualification flags remain false. Neither nonterminal run metadata nor local source/unit receipts qualify all rules, production Native supervision, Apple ABI, platform execution, loaded artifact enrollment or release behavior."
+  ]
+}

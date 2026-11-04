@@ -7,6 +7,7 @@ is not provider, adversarial-sandbox, Darwin syscall or release qualification.
 """
 
 import argparse
+from functools import partial
 from pathlib import Path
 import platform
 import sys
@@ -27,12 +28,34 @@ def suite_cases(suite):
 
 
 class OutcomeResult(unittest.TextTestResult):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, diagnostic_sources=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.outcomes = {name: {"id": name, "state": "not_run", "skip_reason": None} for name in checks.CASES}
         self.fixture_errors = 0
+        self.failure_diagnostics = {}
+        self.diagnostic_paths = {path: (role, entry["source_digest"], entry["line_count"])
+                                 for role, entry in (diagnostic_sources or {}).items() for path in entry["paths"]}
 
-    def record(self, test, state, reason=None):
+    def failure_diagnostic(self, event, error):
+        """No exception formatting, values, locals, source text or arbitrary filenames.
+
+        The innermost bound fixture frame can be a call site, not the exception
+        origin. Unknown sources or overlong traces have no public location.
+        """
+        if event not in checks.FAILURE_EVENTS:
+            raise ValueError("native failure diagnostic event invalid")
+        result = {"event": event, "source": None, "source_digest": None, "line": None}
+        trace = error[2] if error is not None else None
+        for _ in range(64):
+            if trace is None:
+                return result
+            bound = self.diagnostic_paths.get(trace.tb_frame.f_code.co_filename)
+            if bound is not None and type(trace.tb_lineno) is int and 1 <= trace.tb_lineno <= bound[2]:
+                result.update(source=bound[0], source_digest=bound[1], line=trace.tb_lineno)
+            trace = trace.tb_next
+        return result if trace is None else {"event": event, "source": None, "source_digest": None, "line": None}
+
+    def record(self, test, state, reason=None, *, event=None, error=None):
         name = test.id()
         if name not in self.outcomes:
             # Setup/teardown failures and unrecognized subtest IDs have no safe
@@ -42,6 +65,10 @@ class OutcomeResult(unittest.TextTestResult):
         if self.outcomes[name]["state"] == "error" and state == "failed":
             return
         self.outcomes[name] = {"id": name, "state": state, "skip_reason": reason}
+        if event is not None and name not in self.failure_diagnostics:
+            # Subtests/teardown can fail more than once; preserve just the first
+            # nonpassing event, without exposing subtest parameters or counts.
+            self.failure_diagnostics[name] = self.failure_diagnostic(event, error)
 
     def addSuccess(self, test):
         super().addSuccess(test)
@@ -49,11 +76,11 @@ class OutcomeResult(unittest.TextTestResult):
 
     def addFailure(self, test, error):
         super().addFailure(test, error)
-        self.record(test, "failed")
+        self.record(test, "failed", event="assertion_failure", error=error)
 
     def addError(self, test, error):
         super().addError(test, error)
-        self.record(test, "error")
+        self.record(test, "error", event="test_error", error=error)
 
     def addSkip(self, test, reason):
         super().addSkip(test, reason)
@@ -65,15 +92,16 @@ class OutcomeResult(unittest.TextTestResult):
     def addSubTest(self, test, subtest, error):
         super().addSubTest(test, subtest, error)
         if error is not None:
-            self.record(test, "failed" if issubclass(error[0], test.failureException) else "error")
+            failed = issubclass(error[0], test.failureException)
+            self.record(test, "failed" if failed else "error", event="assertion_failure" if failed else "test_error", error=error)
 
     def addExpectedFailure(self, test, error):
         super().addExpectedFailure(test, error)
-        self.record(test, "failed")
+        self.record(test, "failed", event="expected_failure", error=error)
 
     def addUnexpectedSuccess(self, test):
         super().addUnexpectedSuccess(test)
-        self.record(test, "failed")
+        self.record(test, "failed", event="unexpected_success")
 
 
 def run(output: Path, cc: Path, root: Path = checks.REPO_ROOT) -> dict:
@@ -81,6 +109,7 @@ def run(output: Path, cc: Path, root: Path = checks.REPO_ROOT) -> dict:
               "state": "failed", "source": checks.source_identity(root),
               "host": checks.normalized_host(platform.system(), platform.machine()), "test_inputs": {},
               "selected_method_count": len(checks.CASES), "tests_run": 0, "fixture_errors": 0,
+              "failure_diagnostics": {},
               "cases": [{"id": name, "state": "not_run", "skip_reason": None} for name in sorted(checks.CASES)],
               "raw_exception_messages_retained": False, "provider_controls_executed": False,
               "native_abi_qualified": False, "release_qualified": False}
@@ -89,6 +118,7 @@ def run(output: Path, cc: Path, root: Path = checks.REPO_ROOT) -> dict:
         if result["host"]["target"] not in checks.SUPERVISOR_TARGETS or not cc.is_absolute() or not cc.is_file():
             raise ValueError("actual native fixture runner requires a supported host and explicit compiler")
         native = root / checks.MODULE / "native"
+        diagnostic_sources = checks.native_diagnostic_sources(result["test_inputs"], root)
         suite = unittest.TestLoader().discover(str(native), pattern="test_*.py")
         selected = [case.id() for case in suite_cases(suite)]
         if len(selected) != len(checks.CASES) or set(selected) != set(checks.CASES):
@@ -96,8 +126,10 @@ def run(output: Path, cc: Path, root: Path = checks.REPO_ROOT) -> dict:
         # Discovery does not invoke the file's CLI. Bind its explicit existing
         # compiler before any setUpClass can build the temporary C fixtures.
         sys.modules["test_supervisor"].CC = cc
-        outcome = unittest.TextTestRunner(verbosity=2, stream=sys.stdout, resultclass=OutcomeResult).run(suite)
+        outcome = unittest.TextTestRunner(verbosity=2, stream=sys.stdout,
+                                         resultclass=partial(OutcomeResult, diagnostic_sources=diagnostic_sources)).run(suite)
         result.update(tests_run=outcome.testsRun, fixture_errors=outcome.fixture_errors,
+                      failure_diagnostics=outcome.failure_diagnostics,
                       cases=[outcome.outcomes[name] for name in sorted(outcome.outcomes)])
         if not checks.matching_source(checks.source_identity(root), result["source"]) or checks.native_test_inputs(root) != result["test_inputs"]:
             result["fixture_errors"] += 1
