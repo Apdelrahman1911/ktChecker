@@ -381,7 +381,8 @@ class ConfigStore(
                 if (anchor.canonicalRuleId != rule.canonicalId || anchor.binding.ownerId != binding.ownerId || anchor.binding.workspaceId != binding.workspaceId ||
                     ((creating || layer == ConfigLayer.LOCAL) && anchor.binding != binding)) throw ConfigValidationException("Narrow selector identity belongs to another rule/project/worktree/lineage.")
                 validateIdentifier(anchor.providerId, "provider")
-                listOf(anchor.context.module, anchor.context.sourceSet, anchor.context.target, anchor.context.compilation).forEach { validateIdentifier(it, "rule context") }
+                validateTargetIdentifier(anchor.context.target)
+                listOf(anchor.context.module, anchor.context.sourceSet, anchor.context.compilation).forEach { validateIdentifier(it, "rule context") }
                 listOf(anchor.severity, anchor.findingKind, anchor.certainty).forEach { validateIdentifier(it, "finding classification") }
                 validatePath(anchor.path)
                 validateRange(anchor.line, anchor.column, anchor.endLine, anchor.endColumn)
@@ -399,11 +400,11 @@ class ConfigStore(
     private fun validateScope(scope: SuppressionScope, ruleId: String, binding: ConfigBinding, layer: ConfigLayer, creating: Boolean) {
         when (scope) {
             SuppressionScope.Project -> Unit
-            is SuppressionScope.Target -> validateIdentifier(scope.target, "target")
+            is SuppressionScope.Target -> validateTargetIdentifier(scope.target)
             is SuppressionScope.Module -> validateIdentifier(scope.module, "module")
             is SuppressionScope.SourceSet -> {
                 validateIdentifier(scope.module, "module"); validateIdentifier(scope.sourceSet, "source set")
-                scope.target?.let { validateIdentifier(it, "target") }
+                scope.target?.let(::validateTargetIdentifier)
             }
             is SuppressionScope.File -> {
                 validatePath(scope.path)

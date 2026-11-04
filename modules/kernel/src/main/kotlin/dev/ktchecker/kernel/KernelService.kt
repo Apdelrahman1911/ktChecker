@@ -465,7 +465,8 @@ class KernelService private constructor(
         if (input.requiredRuleIds.size > 50_000) fail("input_limit", "Required rule inventory is too large")
         input.requiredRuleIds.forEach { identifier(it, "rule ID") }
         input.changedPaths.forEach { InputArchive.safeRelative(it) }
-        listOf(input.context.scope.target, input.context.scope.module, input.context.scope.sourceSet, input.context.scope.compilation)
+        targetIdentifier(input.context.scope.target)
+        listOf(input.context.scope.module, input.context.scope.sourceSet, input.context.scope.compilation)
             .forEach { identifier(it, "analysis context") }
     }
 
@@ -766,5 +767,9 @@ class KernelService private constructor(
 internal inline fun <reified T> canonical(value: T): String = Digests.canonical(ContractJson.encodeToJsonElement(value))
 internal fun identifier(value: String, name: String) {
     if (value.isBlank() || value.length > 512 || value.any { it == '\u0000' || it.isISOControl() }) fail("invalid_identifier", "$name is empty or invalid")
+}
+/** Exact empty is a target name, not a wildcard or a claim of JVM/model authority. */
+internal fun targetIdentifier(value: String) {
+    if (value.isNotEmpty()) identifier(value, "analysis target")
 }
 internal fun randomToken(): String = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })

@@ -86,6 +86,12 @@ digest for narrow policy. Missing implementation identity is **unavailable**, no
 identity. Broad rule acceptance deliberately applies to future findings in its
 chosen scope.
 
+Target names are literal identities. The pinned Kotlin JVM-only plugin's empty
+target name (`""`) remains distinct from a named `"jvm"` target; neither is an
+alias for the JVM platform or every target. Only a source-set scope's `null`
+target is a target wildcard. Reload, sharing, fingerprints and mutation permits
+preserve this distinction.
+
 Each suppression requires a nonempty justification and one of:
 
 - `accepted_risk`: classified as **accepted**, not fixed or false-positive proof.

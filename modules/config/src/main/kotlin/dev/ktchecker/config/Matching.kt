@@ -317,6 +317,11 @@ internal fun validateIdentifier(value: String, description: String) {
     }
 }
 
+/** Exact empty names one target; only SourceSet.target == null is a target wildcard. */
+internal fun validateTargetIdentifier(value: String) {
+    if (value.isNotEmpty()) validateIdentifier(value, "target")
+}
+
 internal fun validatePath(path: String) {
     if (path.length !in 1..4096 || path.startsWith('/') || path.contains('\\') || path.any { it.isISOControl() } ||
         path.split('/').any { it.isEmpty() || it == "." || it == ".." } || Regex("^[A-Za-z]:").containsMatchIn(path)) {
