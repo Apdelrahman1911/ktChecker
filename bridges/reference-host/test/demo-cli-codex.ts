@@ -20,7 +20,7 @@ import { ACTUAL_DEMO_USAGE, ActualCliFixture, ActualFaultBroker, BROKEN_SOURCE, 
 import { captureApplicationEvidence } from './application-evidence.js';
 import { captureRunIdentity } from './run-identity.js';
 import { captureDeliveryTelemetry, permanentDeliveryProblem, safeDeliveryProblem } from './delivery-telemetry.js';
-import { OwnedDemoThreads } from './owned-demo-threads.js';
+import { closeDemoConsumer, OwnedDemoThreads } from './owned-demo-threads.js';
 
 const selection = (() => {
   try { return parseActualDemoArgs(process.argv.slice(2)); }
@@ -86,7 +86,7 @@ function startPolling(consumer: Consumer): void {
   void consumer.running.catch(() => {});
 }
 async function closeConsumer(consumer: Consumer): Promise<void> {
-  await stopPolling(consumer); await consumer.host.close(); consumer.journal.close();
+  await closeDemoConsumer(() => stopPolling(consumer), () => consumer.host.close(), () => consumer.journal.close());
 }
 function resultEntry(consumer: Consumer, patch: string): InboxEntry | undefined {
   return Object.values(consumer.journal.read().inbox).find(entry => entry.event.patchId === patch && entry.event.kind === 'result');

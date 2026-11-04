@@ -3,7 +3,7 @@ import { PREVIEW_CONTRACT } from '@ktchecker/mcp-preview/rpc';
 import { KernelBroker } from './broker.js';
 import { canonical, digest, HostError, InboxJournal } from './journal.js';
 import { prepareDiagnosticContext } from './context-projection.js';
-import type { ContextItem, GateCut, GateResult, HostPort, InboxEntry, InsertedContext, ModelRequest, Submission } from './types.js';
+import type { ContextItem, GateCut, GateResult, HostPort, InboxEntry, InsertedContext, JournalState, ModelRequest, Submission } from './types.js';
 
 const pause=(milliseconds:number,signal:AbortSignal)=>new Promise<void>(resolve=>{
   if(signal.aborted){resolve();return;}
@@ -11,6 +11,12 @@ const pause=(milliseconds:number,signal:AbortSignal)=>new Promise<void>(resolve=
   const timer=setTimeout(done,milliseconds);signal.addEventListener('abort',done,{once:true});
 });
 export interface AdapterOptions { maxContextBytes?:number; maxPendingSubmissions?:number }
+
+// Local response fence only, never permission for a later unfenced native action.
+// Receipt/inbox progress may continue while a gate RPC is in flight.
+function gateResponseFence(state:JournalState):string{
+  return canonical({binding:state.binding,localEpoch:state.localEpoch,cut:state.cut});
+}
 
 /** Polling/inbox controller only. No token or proof operation is exposed as a coding-model tool. */
 export class ReferenceHost {
@@ -179,15 +185,21 @@ export class ReferenceHost {
     return {allowed:reasons.length===0,reasons};
   }
   async prepareFinal():Promise<GateCut>{
+    const before=this.journal.read(),fence=gateResponseFence(before),b=before.binding.client;
     await this.recoverSubmissions();await this.pollOnce();await this.drainContext();
-    const cut=await this.broker.prepareGate();const b=this.journal.binding.client;
+    const cut=await this.broker.prepareGate();
     if(cut.contractVersion!==PREVIEW_CONTRACT||cut.clientId!==b.clientId||cut.generation!==b.generation||cut.lineageId!==b.lineageId||
       typeof cut.cutId!=='string'||!cut.cutId||!Array.isArray(cut.requiredEventIds)||cut.requiredEventIds.some(id=>typeof id!=='string')||
       !Number.isSafeInteger(cut.eventFrontier)||!Number.isSafeInteger(cut.lineageEpoch)||typeof cut.ready!=='boolean')throw new HostError('gate_binding_mismatch');
-    this.journal.edit(state=>{state.cut={value:cut,localEpoch:state.localEpoch};});return cut;
+    this.journal.edit(state=>{
+      // Never stamp an old reply with a newer epoch or replace a concurrently prepared cut.
+      if(gateResponseFence(state)!==fence)throw new HostError('gate_cut_invalidated');
+      state.cut={value:cut,localEpoch:before.localEpoch};
+    });return cut;
   }
   async completeFinal(cutId:string):Promise<GateResult>{
     const state=this.journal.read();const cut=state.cut;
+    const fence=gateResponseFence(state);
     const binding=state.binding.client;
     if(!cut||cut.value.cutId!==cutId||cut.localEpoch!==state.localEpoch)throw new HostError('gate_cut_invalidated');
     if(cut.value.requiredEventIds.some(id=>!state.inbox[id]?.observed))return {allowed:false,actionPerformed:false,reasons:['required_context_not_observed'],cutId,
@@ -198,6 +210,8 @@ export class ReferenceHost {
     if(result.contractVersion!==PREVIEW_CONTRACT||result.cutId!==cutId||result.clientId!==binding.clientId||
        result.lineageId!==binding.lineageId||result.generation!==binding.generation||typeof result.allowed!=='boolean'||result.actionPerformed!==false||
        !Array.isArray(result.reasons)||result.reasons.some(reason=>typeof reason!=='string'))throw new HostError('gate_result_binding_mismatch');
+    // A remote decision computed before known local invalidation is not current on arrival.
+    if(gateResponseFence(this.journal.read())!==fence)throw new HostError('gate_cut_invalidated');
     return result;
   }
 }

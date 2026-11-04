@@ -32,7 +32,7 @@ test('failed demonstration cleanup deletes only confirmed owned IDs once and ret
   const calls: unknown[] = [];
   const result = await owned.cleanup(() => ({
     async connect() { calls.push('connect'); },
-    async request(method, params) { calls.push({ method, params }); if (params.threadId === 'owned-b') throw new Error('unknown'); },
+    async request(method, params) { calls.push({ method, params }); if (params.threadId === 'owned-b') throw new Error('unknown'); return {}; },
     async close() { calls.push('close'); },
   }));
   assert.deepEqual(calls, ['connect', { method: 'thread/delete', params: { threadId: 'owned-a' } },

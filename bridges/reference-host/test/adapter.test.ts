@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { JsonObject } from '@ktchecker/mcp-preview/rpc';
 import { InboxJournal } from '../src/journal.js';
 import { KernelBroker } from '../src/broker.js';
 import { ReferenceHost } from '../src/adapter.js';
@@ -14,6 +15,145 @@ async function setup(t:{after(fn:()=>Promise<unknown>|void):void}){
   return {dir,r,kernel,port,journal,broker,adapter};
 }
 const patch=(patchId:string,snapshotId=S1)=>({patchId,idempotencyKey:'key-'+patchId,input:{snapshot:{snapshotId},materializedRoot:'/synthetic-owner-fixture'}});
+
+/** Hold a real fixture response AFTER it is computed, without clocks or production RPCs. */
+function holdGateReply(kernel:FixtureKernel,method:'gate.prepare'|'gate.complete'){
+  let enter!:()=>void,release!:()=>void,held=false,response:unknown;
+  const entered=new Promise<void>(resolve=>{enter=resolve;});
+  const barrier=new Promise<void>(resolve=>{release=resolve;});
+  const dispatch=kernel.request.bind(kernel);
+  kernel.request=async<T=JsonObject>(name:string,params:JsonObject):Promise<T>=>{
+    const result=await dispatch<T>(name,params);
+    if(name===method&&!held){held=true;response=structuredClone(result);enter();await barrier;}
+    return result;
+  };
+  return {entered,release,get response(){return response;}};
+}
+
+test('late gate.prepare cannot attach a P1 cut to the newer local P2 epoch', {timeout:10_000}, async t=>{
+  const {r,kernel,port,journal,adapter}=await setup(t);
+  kernel.eventsByClient.set(r.binding.clientId,[event(r)]);port.mode='protected-fixture';
+  await adapter.recordCompletedPatch(patch('p1'));await adapter.pollOnce();
+  assert.equal((await adapter.requestModelObservation()).observed,true);
+  const before=journal.read(),observation=before.inbox['event-1']!.observation;
+  const held=holdGateReply(kernel,'gate.prepare');t.after(held.release);
+  const pending=adapter.prepareFinal().then(value=>({value,error:null}),error=>({value:null,error}));
+  try{
+    await held.entered;
+    await adapter.recordCompletedPatch(patch('p2',S2));
+    kernel.eventsByClient.get(r.binding.clientId)!.push(event(r,'event-2',S2,2));await adapter.pollOnce();
+    assert.equal(journal.read().cut,null);
+  }finally{held.release();}
+  const outcome=await pending;
+  assert.equal(outcome.error?.code,'gate_cut_invalidated','a late P1 cut must not become a current P2 cut');
+  assert.equal(outcome.value,null);
+  const after=journal.read();
+  assert.equal(after.cut,null);assert.equal(after.currentSnapshotId,S2);assert.equal(after.localEpoch,before.localEpoch+1);
+  assert.deepEqual(Object.keys(after.submissions).sort(),['key-p1','key-p2']);
+  assert(Object.values(after.submissions).every(submission=>submission.status!==null));
+  assert.deepEqual(after.inbox['event-1']!.observation,observation);assert.equal(after.inbox['event-1']!.observed,true);
+  assert.equal(after.inbox['event-2']!.observed,false);assert.equal(adapter.mutationFence().allowed,false);
+  assert.equal(kernel.calls.filter(call=>call.method==='gate.prepare').length,1);
+  assert.equal(kernel.calls.filter(call=>call.method==='gate.complete').length,0);
+});
+
+test('late gate.complete cannot return allowed after a locally recorded P2 invalidates its exact cut', {timeout:10_000}, async t=>{
+  const {r,kernel,port,journal,adapter}=await setup(t);
+  kernel.eventsByClient.set(r.binding.clientId,[event(r)]);port.mode='protected-fixture';
+  await adapter.recordCompletedPatch(patch('p1'));await adapter.pollOnce();
+  assert.equal((await adapter.requestModelObservation()).observed,true);
+  const cut=await adapter.prepareFinal(),before=journal.read(),observation=before.inbox['event-1']!.observation;
+  const held=holdGateReply(kernel,'gate.complete');t.after(held.release);
+  const pending=adapter.completeFinal(cut.cutId).then(value=>({value,error:null}),error=>({value:null,error}));
+  try{
+    await held.entered;
+    assert.equal((held.response as {allowed:boolean}).allowed,true);
+    assert.equal((held.response as {actionPerformed:boolean}).actionPerformed,false);
+    await adapter.recordCompletedPatch(patch('p2',S2));
+    kernel.eventsByClient.get(r.binding.clientId)!.push(event(r,'event-2',S2,2));await adapter.pollOnce();
+    assert.equal(journal.read().cut,null);
+  }finally{held.release();}
+  const outcome=await pending;
+  assert.equal(outcome.error?.code,'gate_cut_invalidated','a late allowed P1 decision must not outlive known local invalidation');
+  assert.equal(outcome.value,null);
+  const after=journal.read();
+  assert.equal(after.cut,null);assert.equal(after.currentSnapshotId,S2);assert.equal(after.localEpoch,before.localEpoch+1);
+  assert.deepEqual(Object.keys(after.submissions).sort(),['key-p1','key-p2']);
+  assert(Object.values(after.submissions).every(submission=>submission.status!==null));
+  assert.deepEqual(after.inbox['event-1']!.observation,observation);assert.equal(after.inbox['event-1']!.observed,true);
+  assert.equal(after.inbox['event-2']!.observed,false);assert.equal(adapter.mutationFence().allowed,false);
+  assert.equal(kernel.calls.filter(call=>call.method==='gate.complete').length,1);
+});
+
+test('overlapping gate.prepare replies cannot overwrite the cut already installed at the same epoch', {timeout:10_000}, async t=>{
+  const {kernel,journal,adapter}=await setup(t);
+  const held=holdGateReply(kernel,'gate.prepare');t.after(held.release);
+  const pending=adapter.prepareFinal().then(value=>({value,error:null}),error=>({value:null,error}));
+  let replacement;
+  try{
+    await held.entered;
+    // No controller-wide lock: this independent request must finish while the first is held.
+    replacement=await adapter.prepareFinal();
+    assert.equal(journal.read().localEpoch,0);
+  }finally{held.release();}
+  const outcome=await pending;
+  assert.equal(outcome.error?.code,'gate_cut_invalidated');assert.equal(outcome.value,null);
+  assert.deepEqual(journal.read().cut?.value,replacement);
+  assert.equal(kernel.calls.filter(call=>call.method==='gate.prepare').length,2);
+});
+
+test('late gate.complete rejects a changed cut vector even when cut ID and local epoch are unchanged', {timeout:10_000}, async t=>{
+  const {kernel,journal,adapter}=await setup(t);const cut=await adapter.prepareFinal();
+  const held=holdGateReply(kernel,'gate.complete');t.after(held.release);
+  const pending=adapter.completeFinal(cut.cutId).then(value=>({value,error:null}),error=>({value:null,error}));
+  try{
+    await held.entered;
+    journal.edit(state=>{state.cut!.value.eventFrontier++;});
+    assert.equal(journal.read().localEpoch,0);assert.equal(journal.read().cut?.value.cutId,cut.cutId);
+  }finally{held.release();}
+  const outcome=await pending;
+  assert.equal(outcome.error?.code,'gate_cut_invalidated');assert.equal(outcome.value,null);
+  assert.equal(journal.read().cut?.value.eventFrontier,cut.eventFrontier+1);
+  assert.equal(kernel.calls.filter(call=>call.method==='gate.complete').length,1);
+});
+
+for(const method of ['gate.prepare','gate.complete'] as const){
+  test(`late ${method} rejects changed lineage binding without relabeling the returned decision`, {timeout:10_000}, async t=>{
+    const {kernel,journal,adapter}=await setup(t);
+    const cut=method==='gate.complete'?await adapter.prepareFinal():null;
+    const held=holdGateReply(kernel,method);t.after(held.release);
+    const operation=cut?adapter.completeFinal(cut.cutId):adapter.prepareFinal();
+    const pending=operation.then(value=>({value,error:null}),error=>({value:null,error}));
+    try{
+      await held.entered;
+      // Protected journal fault injection, not a supported in-place binding migration.
+      journal.edit(state=>{state.binding.client.lineageId='replacement-lineage';});
+      assert.equal(journal.read().localEpoch,0);
+    }finally{held.release();}
+    const outcome=await pending;
+    assert.equal(outcome.error?.code,'gate_cut_invalidated');assert.equal(outcome.value,null);
+    assert.equal(journal.read().binding.client.lineageId,'replacement-lineage');
+  });
+}
+
+test('an in-flight gate.prepare preserves independent observation progress at the unchanged response fence', {timeout:10_000}, async t=>{
+  const {r,kernel,port,journal,adapter}=await setup(t);
+  kernel.eventsByClient.set(r.binding.clientId,[event(r)]);port.mode='protected-fixture';
+  await adapter.recordCompletedPatch(patch('p1'));await adapter.pollOnce();
+  const held=holdGateReply(kernel,'gate.prepare');t.after(held.release);
+  const pending=adapter.prepareFinal();
+  try{
+    await held.entered;
+    assert.equal(journal.read().inbox['event-1']!.acknowledged,true);
+    assert.equal((await adapter.requestModelObservation()).observed,true);
+  }finally{held.release();}
+  const cut=await pending,state=journal.read();
+  assert.equal(state.cut?.value.cutId,cut.cutId);assert.equal(state.localEpoch,1);
+  assert.equal(state.inbox['event-1']!.observed,true);assert.equal(kernel.observed.has('event-1'),true);
+  assert.equal(port.modelCalls,1);assert.equal(Object.keys(state.submissions).length,1);
+  const decision=await adapter.completeFinal(cut.cutId);
+  assert.equal(decision.allowed,true);assert.equal(decision.actionPerformed,false);
+});
 
 test('insertion ACK, transport acceptance and test-only witness NEVER pass observation/final gate',async t=>{
   const {r,kernel,port,journal,adapter}=await setup(t);kernel.eventsByClient.set(r.binding.clientId,[event(r)]);
