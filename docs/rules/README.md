@@ -204,6 +204,24 @@ everything into opt-in. Internal staged builds are allowed and labeled incomplet
 the first public release claiming the product contract must meet the broad launch
 gates. Scope changes must be explicit, reasoned and visible to the owner.
 
+## Executable coverage reports
+
+```bash
+python scripts/rule_coverage.py --output build/reports/rule-coverage.json
+```
+
+Read the exit status and `inventory_valid` before using any coverage counts.
+Invalid or stale evidence still produces exit **2**, unknown current evidence
+counts, and false qualification flags. Old reference hashes are never renewed
+to make a changed source tree appear tested.
+
+On that failure path, `catalog_visibility` preserves independently validated
+**declared** rules and context cells where possible. These rows are not recovered
+test evidence: mapping is unknown, stage claims are false, and current evidence
+is unavailable/not evaluated. Invalid catalog or context inputs leave the relevant
+denominators unknown rather than inventing an empty or default passing scope.
+An output left `pending` after interruption is likewise not a passing report.
+
 ## Maintaining the planning files
 
 ```bash

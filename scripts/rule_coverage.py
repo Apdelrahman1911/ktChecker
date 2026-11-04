@@ -401,8 +401,103 @@ def publish_inventory(path: Path, output: dict) -> None:
             temporary.unlink(missing_ok=True)
 
 
-def unavailable_inventory(status: str) -> dict:
-    """No zero denominators or inherited counts when the current inventory is unknown."""
+def catalog_visibility(root: Path, evidence_paths: list[Path] | None = None,
+                       contexts: list[dict] | None = None, *,
+                       context_inputs_available: bool = True) -> dict:
+    """Declared catalog/context metadata only, never a substitute for rejected evidence.
+
+    Used only to enrich a failed CLI report. The strict generator still rejects
+    the original input and no attestation, mapping, reference or stage is salvaged.
+    Context envelopes declare a scope; they neither validate their evidence nor
+    establish a current project or required release matrix. Error text is unused.
+    """
+    visibility = {
+        "schema_version": 1, "kind": "ktchecker_declared_catalog_visibility",
+        "status": "unavailable", "catalog_valid": False, "context_scope_known": False,
+        "context_scope_source": None,
+        "evidence_valid": False, "current_coverage_known": False,
+        "all_requested_cells_qualified": False, "release_qualified": False,
+        "catalog_records": None, "excluded_records": None, "candidate_records": None,
+        "catalog_rules": None, "contexts": None, "context_count": None,
+        "row_count": None, "excluded_cells": None, "candidate_cells": None, "rows": None,
+        "gaps": ["declared_catalog_unavailable"],
+        "scope": "Independently read declared inventory only; not current implementation, testing, qualification or a complete release matrix.",
+    }
+    try:
+        root = root.resolve()
+        # Unlike an evidence fallback, a catalog basis must stand on its own.
+        # Reject aliases in catalog descendants before reading their contents.
+        for path in sorted((root / "data").glob("rules-*.json")):
+            repository_input(root, path)
+        catalog = load_catalog(root)
+    except (CoverageError, OSError, TypeError, UnicodeError):
+        return visibility
+    rules = [{
+        "rule_id": rule_id, "catalog_path": rule["catalog_path"],
+        "catalog_record_sha256": rule["catalog_record_sha256"],
+        "default_activation": rule.get("default_activation", "unknown"),
+        "disposition_reason": rule.get("disposition_reason", ""),
+        "catalog_status": rule.get("status", "unknown"), "depth": rule.get("depth", "unknown"),
+        "catalog_state": "excluded" if rule.get("default_activation") == "excluded" else "included",
+    } for rule_id, rule in sorted(catalog.items())]
+    excluded = sum(rule["catalog_state"] == "excluded" for rule in rules)
+    visibility.update({
+        "status": "catalog_only_context_scope_unavailable", "catalog_valid": True,
+        "catalog_records": len(rules), "excluded_records": excluded,
+        "candidate_records": len(rules) - excluded, "catalog_rules": rules,
+        "gaps": ["declared_context_scope_unavailable"],
+    })
+    # A missing/malformed explicit context is not permission to select observed
+    # contexts or invent the default tuple. Preserve the independently known catalog.
+    if not context_inputs_available:
+        return visibility
+    try:
+        if contexts is not None:
+            chosen = {context_key(context): context for context in contexts}
+            context_source = "explicit"
+        else:
+            paths = evidence_paths if evidence_paths is not None else sorted(root.glob("providers/*-fixtures/evidence/*.json"))
+            chosen = {}
+            context_source = "observed_declarations"
+            for path in paths:
+                sidecar = read_json(repository_input(root, path))
+                if not isinstance(sidecar, dict) or sidecar.get("schema_version") != 1:
+                    raise CoverageError("invalid declared context envelope")
+                for field in ("provider_id", "provider_version"):
+                    if not isinstance(sidecar.get(field), str) or not sidecar[field]:
+                        raise CoverageError("invalid declared provider envelope")
+                if not isinstance(sidecar.get("rules"), list):
+                    raise CoverageError("invalid declared rules envelope")
+                context = sidecar.get("context")
+                chosen[context_key(context)] = context
+        if not chosen:
+            chosen = {context_key(DEFAULT_CONTEXT): DEFAULT_CONTEXT}
+            context_source = "default_unqualified"
+    except (CoverageError, OSError, TypeError, UnicodeError):
+        return visibility
+    # Rows join exact context objects and catalog records by their unchanged
+    # canonical identities. No provider/result data or historical passed cases
+    # enters this projection; even unaffected cells remain unevaluated here.
+    rows = [{
+        "rule_id": rule["rule_id"], "catalog_record_sha256": rule["catalog_record_sha256"],
+        "context_sha256": digest(key.encode()),
+        "state": "excluded" if rule["catalog_state"] == "excluded" else "current_evidence_unavailable",
+        "evidence_status": "unavailable", "mapped": None,
+        "implemented": False, "tested": False, "qualified": False, "runtime_default_enabled": False,
+    } for key in sorted(chosen) for rule in rules]
+    visibility.update({
+        "status": "declared_inventory_evidence_unavailable", "context_scope_known": True,
+        "context_scope_source": context_source,
+        "contexts": [chosen[key] for key in sorted(chosen)], "context_count": len(chosen),
+        "row_count": len(rows), "excluded_cells": excluded * len(chosen),
+        "candidate_cells": (len(rules) - excluded) * len(chosen), "rows": rows,
+        "gaps": ["strict_coverage_inputs_invalid_or_unreadable", "current_evidence_not_evaluated_in_visibility"],
+    })
+    return visibility
+
+
+def unavailable_inventory(status: str, visibility: dict | None = None) -> dict:
+    """Evidence counts stay unknown; optional declared metadata cannot restore credit."""
     return {
         "schema_version": 1, "kind": "ktchecker_evidence_inventory",
         "inventory_status": status, "inventory_valid": False,
@@ -410,6 +505,7 @@ def unavailable_inventory(status: str) -> dict:
         "release_qualification_reason": "The current evidence inventory has not been validated.",
         "catalog_records": None, "contexts": None, "row_count": None,
         "summary": None, "states": None, "rows": None,
+        "catalog_visibility": visibility,
         "gaps": ["coverage_inventory_generation_pending" if status == "pending"
                  else "coverage_inputs_invalid_or_unreadable"],
     }
@@ -425,6 +521,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--require-tested", action="store_true", help="Fail unless all nonexcluded records have all six test kinds.")
     parser.add_argument("--require-qualified", action="store_true", help="Fail unless all nonexcluded requested report cells are explicitly qualified; this never certifies a release.")
     args = parser.parse_args(argv)
+    contexts = None
+    context_inputs_available = args.context is None
     try:
         # Invalidate a previous run BEFORE inspecting inputs. A crash or rejected
         # digest must not leave yesterday's counts masquerading as this attempt.
@@ -432,6 +530,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.output:
             publish_inventory(args.output, unavailable_inventory("pending"))
         contexts = [read_json(path) for path in args.context] if args.context is not None else None
+        context_inputs_available = True
         output = generate_coverage(args.root, args.mapping, args.evidence, contexts)
         if args.output:
             publish_inventory(args.output, output)
@@ -446,9 +545,12 @@ def main(argv: list[str] | None = None) -> int:
     except (CoverageError, OSError, TypeError, UnicodeError) as error:
         if args.output:
             try:
-                # The public report intentionally does not retain paths, input
-                # excerpts or exception text. Exact diagnostics stay on stderr.
-                publish_inventory(args.output, unavailable_inventory("unavailable"))
+                # Keep failure diagnostics generic; never parse or serialize error text.
+                # The separate projection contains declared catalog/context metadata,
+                # not failed artifact paths or evidence.
+                visibility = catalog_visibility(args.root, args.evidence, contexts,
+                                                context_inputs_available=context_inputs_available)
+                publish_inventory(args.output, unavailable_inventory("unavailable", visibility))
             except (OSError, TypeError, UnicodeError):
                 print("rule coverage error: report publication failed; do not use an existing output as current evidence", file=sys.stderr)
         print(f"rule coverage error: {error}", file=sys.stderr)

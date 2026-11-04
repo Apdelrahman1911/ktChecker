@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from rule_coverage import CASE_KINDS, QUALIFICATION_DIGESTS, QUALIFICATION_IDENTITIES, CoverageError, digest, generate_coverage, main, publish_inventory, read_json
+from rule_coverage import CASE_KINDS, QUALIFICATION_DIGESTS, QUALIFICATION_IDENTITIES, CoverageError, catalog_visibility, digest, generate_coverage, main, publish_inventory, read_json
 
 
 CONTEXT = {
@@ -475,6 +475,281 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(1663, output["catalog_records"])
         self.assertEqual(1663, output["row_count"])
         self.assertEqual(0, output["summary"]["qualified"])
+
+    # These projections contain declared metadata only, never rescued execution
+    # credit. Every fixture below is private synthetic bookkeeping, not a detector.
+    def failed_visibility(self, *extra):
+        output = self.root / "failed-coverage.json"
+        with contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(2, main(["--root", str(self.root), "--output", str(output), *extra]))
+        self.assertTrue(errors.getvalue())
+        report = read_json(output)
+        self.assertEqual("unavailable", report["inventory_status"])
+        for field in ("inventory_valid", "all_requested_cells_qualified", "release_qualified"):
+            self.assertFalse(report[field])
+        for field in ("catalog_records", "contexts", "row_count", "summary", "states", "rows"):
+            self.assertIsNone(report[field])
+        self.assertNotIn(str(self.root), output.read_text())
+        self.assertNotIn("implementation.kt", output.read_text())
+        visibility = report["catalog_visibility"]
+        for field in ("evidence_valid", "current_coverage_known", "all_requested_cells_qualified", "release_qualified"):
+            self.assertFalse(visibility[field])
+        for row in visibility["rows"] or []:
+            self.assertIsNone(row["mapped"])
+            for field in ("implemented", "tested", "qualified", "runtime_default_enabled"):
+                self.assertFalse(row[field])
+            self.assertEqual("unavailable", row["evidence_status"])
+            self.assertNotIn("cases", row)
+            self.assertNotIn("implementation_evidence", row)
+        return visibility
+
+    def assert_unknown_visibility_scope(self, visibility):
+        self.assertTrue(visibility["catalog_valid"])
+        self.assertEqual(len(self.catalog), visibility["catalog_records"])
+        self.assertEqual(len(self.catalog), len(visibility["catalog_rules"]))
+        self.assertFalse(visibility["context_scope_known"])
+        self.assertEqual("catalog_only_context_scope_unavailable", visibility["status"])
+        for field in ("contexts", "context_scope_source", "context_count", "row_count", "excluded_cells", "candidate_cells", "rows"):
+            self.assertIsNone(visibility[field])
+
+    def test_stale_source_keeps_all_declared_records_but_strict_generator_still_rejects(self):
+        self.catalog += [
+            {"id": "ktc.excluded.alias", "default_activation": "excluded", "disposition_reason": "Alias, not another detector."},
+            {"id": "ktc.opt.in", "default_activation": "opt_in", "disposition_reason": "Explicit owner policy."},
+        ]
+        self.write("data/rules-example.json", self.catalog)
+        self.emit()
+        (self.root / "src/implementation.kt").write_text("changed after attestation")
+        with self.assertRaisesRegex(CoverageError, "digest mismatch"):
+            generate_coverage(self.root)
+        visibility = self.failed_visibility()
+        self.assertEqual((3, 1, 2), tuple(visibility[field] for field in ("catalog_records", "excluded_records", "candidate_records")))
+        self.assertEqual((3, 1, 2), tuple(visibility[field] for field in ("row_count", "excluded_cells", "candidate_cells")))
+        self.assertEqual({rule["id"] for rule in self.catalog}, {row["rule_id"] for row in visibility["rows"]})
+        self.assertEqual(1, sum(row["state"] == "excluded" for row in visibility["rows"]))
+        self.assertEqual(2, sum(row["state"] == "current_evidence_unavailable" for row in visibility["rows"]))
+        self.assertEqual("observed_declarations", visibility["context_scope_source"])
+
+    def test_stale_early_sidecar_does_not_hide_later_declared_contexts(self):
+        self.emit()
+        later = copy.deepcopy(self.sidecar)
+        later["context"] = {**CONTEXT, "kotlin_version": "2.4.10"}
+        self.write("providers/example-fixtures/evidence/z-later.json", later)
+        (self.root / "src/implementation.kt").write_text("stale current source")
+        visibility = self.failed_visibility()
+        self.assertEqual(2, visibility["context_count"])
+        self.assertEqual(2, visibility["row_count"])
+        self.assertEqual({"2.4.21", "2.4.10"}, {context["kotlin_version"] for context in visibility["contexts"]})
+
+    def test_explicit_context_selection_remains_exact_despite_failed_other_evidence(self):
+        self.emit()
+        selected = {**QUALIFIED_CONTEXT, "kotlin_version": "2.4.10", "extra_identity": {"opaque": "preserved"}}
+        path = self.write("selected-context.json", selected)
+        (self.root / "src/implementation.kt").write_text("stale current source")
+        visibility = self.failed_visibility("--context", str(path))
+        self.assertEqual([selected], visibility["contexts"])
+        self.assertEqual("explicit", visibility["context_scope_source"])
+        self.assertEqual(digest(json.dumps(selected, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()),
+                         visibility["rows"][0]["context_sha256"])
+
+    def test_missing_explicit_context_keeps_catalog_only_never_falls_back_to_observed(self):
+        self.emit()
+        visibility = self.failed_visibility("--context", str(self.root / "missing-context.json"))
+        self.assert_unknown_visibility_scope(visibility)
+
+    def test_malformed_or_structurally_invalid_explicit_context_never_invents_scope(self):
+        self.emit()
+        path = self.root / "invalid-context.json"
+        for data in ('{"id":"first","id":"duplicate"}', json.dumps({**CONTEXT, "target": ""}), "[]", "null"):
+            with self.subTest(data=data):
+                path.write_text(data)
+                visibility = self.failed_visibility("--context", str(path))
+                self.assert_unknown_visibility_scope(visibility)
+
+    def test_partially_read_explicit_context_list_is_not_a_complete_requested_scope(self):
+        self.emit()
+        good = self.write("good-context.json", CONTEXT)
+        visibility = self.failed_visibility("--context", str(good), "--context", str(self.root / "missing.json"))
+        self.assert_unknown_visibility_scope(visibility)
+
+    def test_invalid_or_missing_discovered_envelope_keeps_context_scope_unknown(self):
+        self.emit()
+        original = self.evidence_path.read_bytes()
+        for bad in (b"not JSON", b'{"context":{},"context":{}}', b'{"schema_version":1,"context":null}',
+                    json.dumps({**self.sidecar, "rules": {}}).encode(),
+                    json.dumps({**self.sidecar, "provider_version": ""}).encode()):
+            self.evidence_path.write_bytes(bad)
+            self.assert_unknown_visibility_scope(self.failed_visibility())
+        self.evidence_path.write_bytes(original)
+        visibility = self.failed_visibility("--evidence", "providers/example-fixtures/evidence/missing.json")
+        self.assert_unknown_visibility_scope(visibility)
+
+    def test_symlinked_evidence_envelope_cannot_supply_a_rescued_context(self):
+        self.emit()
+        alias = self.root / "evidence-alias.json"
+        alias.symlink_to(self.evidence_path)
+        self.assert_unknown_visibility_scope(self.failed_visibility("--evidence", str(alias)))
+
+    def test_invalid_catalog_has_unknown_denominators_not_zero_or_inherited_records(self):
+        self.emit()
+        for bad in (self.catalog + self.catalog, {"not": "a catalog array"}, [{"id": 42}]):
+            self.write("data/rules-example.json", bad)
+            visibility = self.failed_visibility()
+            self.assertFalse(visibility["catalog_valid"])
+            self.assertFalse(visibility["context_scope_known"])
+            for field in ("catalog_records", "excluded_records", "candidate_records", "catalog_rules", "row_count", "rows"):
+                self.assertIsNone(visibility[field])
+
+    def test_catalog_symlink_is_not_a_literal_independent_visibility_basis(self):
+        self.emit()
+        original = self.root / "data/rules-example.json"
+        target = self.write("other-catalog.json", self.catalog)
+        original.unlink()
+        original.symlink_to(target)
+        (self.root / "src/implementation.kt").write_text("stale current source")
+        visibility = self.failed_visibility()
+        self.assertFalse(visibility["catalog_valid"])
+        self.assertIsNone(visibility["catalog_records"])
+
+    def test_mapping_catalog_drift_is_still_an_error_without_mapping_or_stage_salvage(self):
+        self.emit()
+        self.map["mappings"][0]["catalog_record_sha256"] = "0" * 64
+        self.write(self.mapping_path.relative_to(self.root), self.map)
+        with self.assertRaisesRegex(CoverageError, "catalog drift"):
+            generate_coverage(self.root)
+        visibility = self.failed_visibility()
+        self.assertEqual(1, visibility["row_count"])
+        self.assertIsNone(visibility["rows"][0]["mapped"])
+
+    def test_malformed_mapping_and_unknown_rule_still_fail_with_only_declared_visibility(self):
+        self.emit()
+        original = self.mapping_path.read_bytes()
+        for bad in (b"not JSON", b'{"schema_version":1,"mappings":[],"mappings":[]}',
+                    json.dumps({**self.map, "mappings": [{"rule_id": "ktc.unknown", "relation": "exact"}]}).encode()):
+            self.mapping_path.write_bytes(bad)
+            self.assertEqual(1, self.failed_visibility()["row_count"])
+        self.mapping_path.write_bytes(original)
+
+    def test_invalid_reference_categories_are_not_accepted_as_usable_stale_evidence(self):
+        self.emit()
+        original = copy.deepcopy(self.sidecar["rules"][0]["cases"][0]["evidence"][0])
+        alias = self.root / "reference-alias.json"
+        alias.symlink_to(self.root / original["path"])
+        for ref in ({**original, "sha256": "0" * 64}, {**original, "sha256": "not-a-hash"},
+                    {**original, "path": "missing-original.json"}, {**original, "path": "../outside.json"},
+                    {**original, "path": "/outside.json"}, {**original, "path": "reference-alias.json"}):
+            with self.subTest(reference_category=ref["path"]):
+                self.sidecar["rules"][0]["cases"][0]["evidence"] = [ref]
+                self.write(self.evidence_path.relative_to(self.root), self.sidecar)
+                with self.assertRaises(CoverageError):
+                    generate_coverage(self.root)
+                self.assertEqual(1, self.failed_visibility()["row_count"])
+
+    def test_duplicate_and_unknown_rule_evidence_remain_errors_without_case_credit(self):
+        self.emit()
+        duplicate = self.write("providers/example-fixtures/evidence/duplicate.json", self.sidecar)
+        with self.assertRaisesRegex(CoverageError, "duplicate evidence"):
+            generate_coverage(self.root)
+        self.assertEqual(1, self.failed_visibility()["row_count"])
+        duplicate.unlink()
+        bad = copy.deepcopy(self.sidecar)
+        bad["rules"][0]["rule_id"] = "ktc.unknown"
+        self.write(self.evidence_path.relative_to(self.root), bad)
+        with self.assertRaisesRegex(CoverageError, "unknown catalog rule"):
+            generate_coverage(self.root)
+        self.assertEqual(1, self.failed_visibility()["row_count"])
+
+    def test_explicit_qualified_claim_is_not_preserved_in_unavailable_visibility(self):
+        self.sidecar["context"] = QUALIFIED_CONTEXT
+        self.sidecar["rules"][0]["qualified"] = True
+        self.sidecar["rules"][0]["qualification_evidence"] = [self.artifact("review/qualified.json", b"fabricated control only")]
+        self.assertTrue(self.emit()["rows"][0]["qualified"])
+        (self.root / "src/implementation.kt").write_text("stale current source")
+        visibility = self.failed_visibility("--require-tested", "--require-qualified")
+        self.assertEqual([QUALIFIED_CONTEXT], visibility["contexts"])
+        self.assertFalse(visibility["rows"][0]["qualified"])
+
+    def test_changed_native_and_code_context_identities_are_preserved_not_relabelled(self):
+        original = {**CONTEXT, "supervisor_binary_digest": "sha256:" + "a" * 64,
+                    "runtime_code_image_digest": "sha256:" + "b" * 64}
+        changed = {**original, "supervisor_binary_digest": "sha256:" + "c" * 64,
+                   "runtime_code_image_digest": "sha256:" + "d" * 64}
+        self.sidecar["context"] = original
+        self.emit()
+        first = self.write("original-context.json", original)
+        second = self.write("changed-context.json", changed)
+        (self.root / "src/implementation.kt").write_text("stale current source")
+        visibility = self.failed_visibility("--context", str(first), "--context", str(second))
+        self.assertEqual({json.dumps(context, sort_keys=True) for context in (original, changed)},
+                         {json.dumps(context, sort_keys=True) for context in visibility["contexts"]})
+        self.assertEqual(2, len({row["context_sha256"] for row in visibility["rows"]}))
+        self.assertEqual(original, read_json(self.evidence_path)["context"])
+
+    def test_visibility_does_not_rewrite_sidecars_references_or_expected_hashes(self):
+        self.emit()
+        (self.root / "src/implementation.kt").write_text("changed source remains changed")
+        paths = [path for path in self.root.rglob("*") if path.is_file()]
+        before = {path: path.read_bytes() for path in paths}
+        self.failed_visibility()
+        self.assertEqual(before, {path: path.read_bytes() for path in paths})
+        self.assertEqual(self.sidecar, read_json(self.evidence_path))
+
+    def test_unreferenced_source_or_module_registration_edits_do_not_invent_staleness(self):
+        before = self.emit()
+        self.artifact("modules/unreferenced/build.gradle.kts", b"// unrelated registration, not an attested input\n")
+        self.artifact("unreferenced-source.kt", b"// unrelated source, not evidence\n")
+        after = generate_coverage(self.root)
+        self.assertEqual(before, after)
+        self.assertTrue(after["rows"][0]["tested"])
+        self.assertFalse(after["release_qualified"])
+
+    def test_pending_report_never_carries_yesterdays_catalog_visibility(self):
+        self.emit()
+        output = self.root / "coverage.json"
+        output.write_text('{"catalog_visibility":{"catalog_records":999,"rows":["old"]}}')
+        with patch("rule_coverage.generate_coverage", side_effect=KeyboardInterrupt):
+            with self.assertRaises(KeyboardInterrupt):
+                main(["--root", str(self.root), "--output", str(output)])
+        pending = read_json(output)
+        self.assertEqual("pending", pending["inventory_status"])
+        self.assertFalse(pending["inventory_valid"])
+        self.assertIsNone(pending["catalog_visibility"])
+
+    def test_no_output_error_does_not_run_visibility_or_emit_success_shaped_json(self):
+        self.emit()
+        (self.root / "src/implementation.kt").write_text("stale current source")
+        with patch("rule_coverage.catalog_visibility") as projection, \
+                contextlib.redirect_stdout(io.StringIO()) as out, contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(2, main(["--root", str(self.root)]))
+        self.assertEqual("", out.getvalue())
+        projection.assert_not_called()
+
+    def test_valid_but_incomplete_strict_gate_does_not_use_failed_visibility(self):
+        self.emit()
+        output = self.root / "coverage.json"
+        with patch("rule_coverage.catalog_visibility") as projection:
+            self.assertEqual(1, main(["--root", str(self.root), "--require-qualified", "--output", str(output)]))
+        report = read_json(output)
+        self.assertTrue(report["inventory_valid"])
+        self.assertEqual(1, report["row_count"])
+        self.assertTrue(report["rows"][0]["tested"])
+        self.assertFalse(report["rows"][0]["qualified"])
+        projection.assert_not_called()
+
+    def test_full_declared_catalog_counts_are_real_records_not_context_multiplication(self):
+        root = Path(__file__).resolve().parents[1]
+        contexts = [CONTEXT, {**CONTEXT, "kotlin_version": "2.4.10"}]
+        visibility = catalog_visibility(root, evidence_paths=[], contexts=contexts)
+        self.assertEqual((1663, 46, 1617), tuple(visibility[field] for field in ("catalog_records", "excluded_records", "candidate_records")))
+        self.assertEqual((3326, 92, 3234), tuple(visibility[field] for field in ("row_count", "excluded_cells", "candidate_cells")))
+        rule_ids = {row["rule_id"] for row in visibility["catalog_rules"]}
+        self.assertEqual(1663, len(rule_ids))
+        by_context = {}
+        for row in visibility["rows"]:
+            by_context.setdefault(row["context_sha256"], set()).add(row["rule_id"])
+            self.assertFalse(row["implemented"] or row["tested"] or row["qualified"])
+        self.assertEqual(2, len(by_context))
+        self.assertTrue(all(ids == rule_ids for ids in by_context.values()))
 
 
 if __name__ == "__main__":
