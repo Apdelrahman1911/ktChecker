@@ -139,7 +139,16 @@ are supported; new contexts use the explicit projection schema.
 | [Live projected Codex evidence](../bridges/reference-host/evidence/codex-inbox-projected-synthetic-events.json) | Real Codex 0.160.0, `gpt-6-astra`: background synthetic result delivered while a real turn was active; exact request joined that turn; subsequent adapter/app-server restart resumed only the owned thread and consumed a second result; explicit projected-context scope | Actual Kotlin kernel/compiler, internal inference input trace, a final guarded action |
 | [Actual CLI/kernel/compiler delivery](../bridges/reference-host/evidence/cli-kernel-codex-public-fixture.json) | Real installed CLI/kernel/compiler and Codex 0.160.0 `gpt-6-astra`, three verified public diagnostic observations: active consumer A, independent consumer B, and repaired P2 after A/broker restart; exact public lexical text retained | Full-project qualification, stock-client universality, internal inference tracing, original full-coverage-byte reconstruction offline, final guarded action |
 
-The live evidence includes exact serialized **application** `turn/start` requests,
+The newer [supervised Linux observation](evidence/actual-host-supervised-20261104.json)
+adds a mandatory outer runtime budget, independent cleanup obligations, and
+pre-await delivery-request commitments. Fresh compilation and all **129** synthetic
+host tests passed; three actual compiler-to-Codex observations were independently
+audited. Nine projected contexts and six reconstructable full originals were
+checked; three progress originals and the initial barrier's full request bytes
+remain absent. The final action still denied success. This is not full-project,
+Windows/macOS, native-quiescence, performance, or release qualification.
+
+The earlier live evidence includes exact serialized **application** `turn/start` requests,
 SHA-256 digests, public response content and identity bindings. It verifies more
 than marker receipt: diagnosis, source location, verification requirement/state
 and context/payload/request digests all match. Source events in this demonstration

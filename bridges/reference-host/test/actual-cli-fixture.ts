@@ -10,6 +10,8 @@ import { promisify } from 'node:util';
 import { BrokerError, RestartingJsonLineRpc, type BrokerPort, type JsonObject, type RpcOptions } from '@ktchecker/mcp-preview/rpc';
 import { canonical, digest, HostError } from '../src/journal.js';
 import type { Registration, Submission, ReviewStatus } from '../src/types.js';
+import { actualDemoRuntime } from './actual-demo-controls.js';
+import { DeliveryReceiptCapture } from './delivery-receipts.js';
 
 const execute = promisify(execFile);
 export const COMPILER_RULE = 'ktc.compiler.common.abstract_member_not_implemented';
@@ -26,8 +28,9 @@ export interface ActualDemoArguments {
   readonly launcher: string;
   readonly compilerJavaHome: string;
   readonly evidence: string;
+  readonly maxRuntimeMs: number;
 }
-export const ACTUAL_DEMO_USAGE = 'demo-cli-codex --allow-inference --cli KT_CHECKER_LAUNCHER --compiler-java-home COMPLETE_COMPILER_JDK --evidence NEW_EVIDENCE_JSON';
+export const ACTUAL_DEMO_USAGE = 'demo-cli-codex --allow-inference --cli KT_CHECKER_LAUNCHER --compiler-java-home COMPLETE_COMPILER_JDK --evidence NEW_EVIDENCE_JSON --max-runtime-ms INTEGER_1000_TO_1800000';
 
 function explicitPath(value: unknown, code: string): string {
   if (typeof value !== 'string' || !value.trim() || Buffer.byteLength(value) > 16_384 || /\p{Cc}/u.test(value)) {
@@ -58,20 +61,22 @@ export function parseActualDemoArgs(args: readonly string[]): Readonly<ActualDem
       allowInference = true;
       continue;
     }
-    if (flag !== '--cli' && flag !== '--compiler-java-home' && flag !== '--evidence') {
+    if (flag !== '--cli' && flag !== '--compiler-java-home' && flag !== '--evidence' && flag !== '--max-runtime-ms') {
       throw new HostError('actual_demo_unknown_option');
     }
     if (values.has(flag)) throw new HostError('actual_demo_duplicate_option');
     const value = args[++i];
     if (typeof value !== 'string' || value.startsWith('--')) throw new HostError('actual_demo_option_value_required');
-    values.set(flag, flag === '--compiler-java-home' ? explicitCompilerJavaHome(value, 'actual_demo_invalid_path') :
+    values.set(flag, flag === '--max-runtime-ms' ? String(actualDemoRuntime(value)) : flag === '--compiler-java-home' ? explicitCompilerJavaHome(value, 'actual_demo_invalid_path') :
       explicitPath(value, 'actual_demo_invalid_path'));
   }
   if (!allowInference) throw new HostError('actual_demo_inference_approval_required');
   if (!values.has('--cli')) throw new HostError('actual_demo_launcher_required');
   if (!values.has('--compiler-java-home')) throw new HostError('actual_demo_compiler_java_home_required');
   if (!values.has('--evidence')) throw new HostError('actual_demo_evidence_required');
-  return Object.freeze({ launcher: values.get('--cli')!, compilerJavaHome: values.get('--compiler-java-home')!, evidence: values.get('--evidence')! });
+  if (!values.has('--max-runtime-ms')) throw new HostError('actual_demo_max_runtime_required');
+  return Object.freeze({ launcher: values.get('--cli')!, compilerJavaHome: values.get('--compiler-java-home')!, evidence: values.get('--evidence')!,
+    maxRuntimeMs: Number(values.get('--max-runtime-ms')) });
 }
 
 export interface ActualDemoEvidence {
@@ -146,6 +151,25 @@ export async function reserveActualDemoEvidence(path: string): Promise<ActualDem
     if (error instanceof HostError) throw error;
     throw new HostError((error as NodeJS.ErrnoException).code === 'EEXIST' ? 'actual_demo_evidence_exists' : 'actual_demo_evidence_reservation_failed');
   }
+}
+
+/** Shared public defaults also give the supervisor a conservative timeout report. */
+export function actualDemoInitialReport(): Record<string, unknown> {
+  return {
+  schema: 'ktchecker-host-evidence/preview-1', date: new Date().toISOString(),
+  evidenceScope: 'actual_cli_kernel_compiler_and_real_codex_application_requests_with_public_synthetic_source',
+  contractVersion: 'ktchecker/preview-1', model: 'gpt-6-astra', allowProviderModelFallback: false,
+  internalInferenceRequestTrace: false, actualKernelIntegration: false, actualKotlinCompilerRun: false,
+  sourceAuthority: 'immutable_owner_overlay_not_physical_live_worktree',
+  ...actualDemoCleanupEvidence(),
+  fullProjectModel: false, releaseQualified: false, guardedActionPerformed: false, modelPollingCalls: 0,
+  node: process.version, codex: null,
+  compilerJdkSelection: 'explicit_owner_path_shared_by_every_owner_command_and_rpc_restart', compilerJdkAmbientFallback: false,
+  compilerJdkValidationBoundary: 'actual_cli_runtime_verifier_not_this_argument_parser',
+  sourceFixture: { path: FIXTURE_PATH, p1: BROKEN_SOURCE, p2: REPAIRED_SOURCE },
+  ownerExplicitlyEnabledRule: COMPILER_RULE, candidateCoverageScope: 'all-catalog-candidates-for-declared-target',
+  phases: [], negatives: {}, verified: false,
+};
 }
 
 export class ActualCliFixture {
@@ -249,19 +273,27 @@ export class ActualCliFixture {
  * operations start one worker and recover the exact durable submission key.
  */
 export class ActualFaultBroker implements BrokerPort {
-  private transport: RestartingJsonLineRpc;
+  private transport: BrokerPort & { close(): Promise<void> };
+  readonly deliveryReceipts = new DeliveryReceiptCapture();
   private dropNextSubmit = true;
   private workers: 0 | 1 = 0;
   readonly calls: { method: string; clientId: string | null; idempotencyKey?: string; requestDigest?: string }[] = [];
   acceptedBeforeInjectedLoss: { reviewId: string; statusDigest: string } | null = null;
   disconnects = 0;
-  constructor(private readonly fixture: ActualCliFixture) { this.transport = new RestartingJsonLineRpc(fixture.rpcOptions(0)); }
+  constructor(private readonly fixture: ActualCliFixture,
+    private readonly transportFactory: (options: RpcOptions) => BrokerPort & { close(): Promise<void> } = options => new RestartingJsonLineRpc(options),
+  ) { this.transport = transportFactory(fixture.rpcOptions(0)); }
   async request<T = JsonObject>(method: string, params: JsonObject): Promise<T> {
+    if (this.calls.length >= 8_192) throw new HostError('actual_demo_rpc_call_bound');
     const credential = params.credential as { clientId?: string } | undefined;
     this.calls.push({ method, clientId: credential?.clientId ?? null,
       ...(method === 'review.submit' ? { idempotencyKey: String(params.idempotencyKey),
         requestDigest: digest(canonical({ patchId: params.patchId, idempotencyKey: params.idempotencyKey, input: params.input })) } : {}) });
-    const result = await this.transport.request<T>(method, params);
+    const capture = this.deliveryReceipts.beforeRequest(method, params); // Public whitelist BEFORE awaiting the actual RPC.
+    let result: T;
+    try { result = await this.transport.request<T>(method, params); }
+    catch (error) { capture?.rejected(); throw error; }
+    capture?.returned(result); // No positive row for a rejected/dropped/unvalidated response.
     if (method === 'review.submit' && this.dropNextSubmit) {
       this.dropNextSubmit = false;
       const accepted = result as ReviewStatus;
@@ -274,7 +306,7 @@ export class ActualFaultBroker implements BrokerPort {
   }
   async disconnect(workers: 0 | 1 = 1): Promise<void> {
     await this.transport.close(); this.disconnects++; this.workers = workers;
-    this.transport = new RestartingJsonLineRpc(this.fixture.rpcOptions(this.workers));
+    this.transport = this.transportFactory(this.fixture.rpcOptions(this.workers));
   }
   async close(): Promise<void> { await this.transport.close(); }
 }

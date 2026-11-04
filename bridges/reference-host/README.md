@@ -88,12 +88,18 @@ execution against disposable public Kotlin source, not a fake broker:
 npm --prefix bridges/reference-host run demo:cli:codex -- \
   --allow-inference --cli /absolute/path/to/ktchecker \
   --compiler-java-home /owner/prepared-link-free-jdk21 \
+  --max-runtime-ms 600000 \
   --evidence /owner/approved-output/cli-kernel-codex.json
 ```
 
 The evidence path must be **new**; existing evidence is never overwritten. The
 explicit compiler JDK is used by every owner command and broker restart, with no
 ambient-JDK fallback. The CLI validates its contents; a path alone is not proof.
+`--max-runtime-ms` is mandatory (1,000–1,800,000, canonical integer milliseconds;
+no default). A separate controller bounds the directly owned driver, including
+cleanup and finalization reserves. Expiration is sticky: a late result cannot
+become success. This is not remote/native descendant-quiescence proof; uncertain
+cleanup remains visible and private recovery state is retained.
 
 `--allow-inference` authorizes three diagnostic observations, including an
 active-turn barrier, two independent consumers and a disconnected/resumed P2
@@ -105,6 +111,14 @@ kernel results or observation witnesses, never builds Gradle, and never runs a
 guarded final action. A successful compiler repair is not full-project/release
 qualification. Its evidence `verified` field must be checked; launching it alone
 is not a passing result.
+
+The [supervised Linux observation](../../docs/evidence/actual-host-supervised-20261104.json)
+records three real diagnostic requests, two independent consumers, broker/resume
+recovery, and an independent content/receipt audit. All 129 synthetic host tests
+also passed on that source tuple. Only six of nine full original event payloads
+are reconstructable; the three progress originals are missing. All nine projected
+contexts were checked. The final action remained denied, and neither general host
+support nor the warm latency target is qualified.
 
 [Evidence and limitations](../../docs/implementation-host.md) distinguish a
 genuine application request/public response from an unavailable internal inference

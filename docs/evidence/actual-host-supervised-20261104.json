@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "kind": "independently_audited_local_actual_host_observation_not_release_qualification",
+  "observed_at": "2026-11-04T16:43:00.611Z",
+  "audit_completed_at": "2026-11-04T17:12:09.747119+00:00",
+  "base_commit": "4caf12792d192ef0764199555f0dd944886bd98a",
+  "installed_java_source_commit": null,
+  "scope": "Actual owner-selected Linux CLI/kernel/Kotlin compiler with public synthetic Kotlin source and real Codex application requests; not a physical shared-worktree capture or universal host guarantee.",
+  "selected_tuple": {
+    "node": "v24.20.0",
+    "codex": "codex-cli 0.160.0",
+    "model": "gpt-6-astra",
+    "model_fallback": false,
+    "compiler": "2.4.21",
+    "jdk_major": 21,
+    "distribution": "ktchecker-0.1.0-dev.1",
+    "os": "Linux",
+    "architecture": "x86_64"
+  },
+  "state": "verified_narrow_demonstration",
+  "actual_kotlin_compiler_run": true,
+  "source_authority": "immutable_owner_overlay_not_physical_live_worktree",
+  "observed_delivery": {
+    "serialized_application_requests": 3,
+    "exact_matching_public_responses": 3,
+    "projected_model_contexts": 9,
+    "reconstructable_full_original_event_payloads": 6,
+    "full_progress_original_payloads_missing": 3,
+    "rpc_confirmations": {
+      "ack_calls": 9,
+      "ack_rows": 9,
+      "all_request_response_projection_digests_recomputed": true,
+      "calls": 12,
+      "events": 9,
+      "observation_calls": 3,
+      "observation_rows": 9,
+      "phase_orders": [
+        [
+          4
+        ],
+        [
+          8
+        ],
+        [
+          12
+        ]
+      ],
+      "rows": 18
+    },
+    "model_polling_calls": 0,
+    "independent_consumers": 2,
+    "accepted_submission_response_loss_and_exact_replay_verified": true,
+    "disconnected_consumer_repaired_snapshot_observed_after_resume": true,
+    "active_barrier_invocations": 1,
+    "initial_barrier_complete_serialized_request_retained": false
+  },
+  "coverage": {
+    "required_rows_per_phase": 1097,
+    "uncertified_required_rows_per_phase": 1097,
+    "fixed_source_p2_prior_diagnosis_absent": true,
+    "ack_only_final_action_allowed": false,
+    "final_action_allowed": false,
+    "guarded_action_performed": false,
+    "release_qualified": false
+  },
+  "validation": {
+    "fresh_root_typescript_compilations": 2,
+    "synthetic_node_tests_passed": 129,
+    "synthetic_node_tests_failed": 0,
+    "initial_87_test_selection_limitation_preserved": true,
+    "independent_source_backing_files": 61,
+    "independent_compiled_backing_files": 132,
+    "independent_extracted_image_files": 35,
+    "declared_source_and_compiled_brackets_unchanged": true,
+    "source_to_bytecode_reproducibility_claim": false
+  },
+  "timing": {
+    "recorded_controller_seconds": 178.461,
+    "outer_runtime_cap_ms": 600000,
+    "request_acknowledgment_latency": "not_measured_separately",
+    "time_to_first_useful_findings": "not_measured_separately",
+    "required_analysis_completion_latency": "not_measured_separately",
+    "agent_context_delivery_latency": "not_measured_separately",
+    "warm_1_to_3_second_objective_demonstrated": false
+  },
+  "cleanup": {
+    "owned_thread_deletion_rpc_confirmations": 2,
+    "native_or_remote_quiescence_verified": false,
+    "private_recovery_state_retained": true,
+    "automatic_runtime_directory_deletion_authorized": false
+  },
+  "identity": {
+    "host_patch_sha256": "6ce099eba4173b9b994b4c5542cc1130ccb80aa5df9ae34a8ba4cd4a6bd4691b",
+    "bridge_source_digest": "sha256:cf3b73ed9cda1faaa842fd3ca1da84a739314ff69dc1b84a5d30d3b070c2557b",
+    "executed_bridge_artifact_digest": "sha256:1d83def173c6204d21a49a47cd8f54f5b5a1c6ce55c982d9f5867ba3e75c48a7",
+    "installed_java_artifact_digest": "sha256:575a33a867b7bf0e631c94ad808b6d911e0d904a23d58da5c15dccfd7c6b24ec",
+    "launcher": {
+      "path": "bin/ktchecker",
+      "bytes": 9499,
+      "digest": "sha256:1fbd3fcb160270fd0afa10e92ae86097e0ea2b785fff8e9c7783ad886e763b45"
+    }
+  },
+  "retained_local_originals": [
+    {
+      "path": "build/evidence/actual-host/20261104-supervised-new-image/driver-evidence.json",
+      "bytes": 3346703,
+      "sha256": "acfce44807d0d1833d1d0e02b09b5565d430c76ead752bb0b5cc9152acbde296"
+    },
+    {
+      "path": "build/evidence/actual-host/20261104-supervised-new-image/outcome.json",
+      "bytes": 2099,
+      "sha256": "ec463684d5dad89d1032fd0f2c086ace6abcdd5c5386793b38b309f860ca11c2"
+    },
+    {
+      "path": "build/evidence/actual-host/20261104-supervised-new-image/raw/controller.stdout.log",
+      "bytes": 185,
+      "sha256": "3a27f3fc7d943c1e3bee9042028eee105b179c82a70dfe6e17bf1e331acebe79"
+    }
+  ],
+  "independent_private_audit": {
+    "bytes": 26722,
+    "sha256": "34d4d5ef736a71ffc3d81f293efb4868c9c3afeeaac3c86dfec0c699341eec40",
+    "status": "passed_for_bounded_public_synthetic_actual_host_demonstration",
+    "pending_checks": [],
+    "original_private_report_published": false
+  },
+  "limitations": [
+    "This reviewer did not execute the runtime or observe private inference requests. The successful application-level run and controller exit are root-owned retained evidence, not independent execution or signed attestation.",
+    "Exactly six of nine complete original event payloads are retained or independently reconstructable. The three progress-event full originals are not retained or reconstructable; only their complete public projections and responses are audited. No claim that models read omitted full coverage or validation-reason bytes.",
+    "The initial barrier retains application metadata but not complete serialized request bytes. Exactly-once active-turn assertions rest on captured controller state plus pinned source checks, not an independent raw tool transcript.",
+    "RPC confirmations are captured application records, not signed kernel receipts or private-ledger attestation. Opaque ACK receipt, context-item and timestamp preimages were unavailable and no store was read to obtain them.",
+    "Every phase has 1097 required coverage rows and every required row remains uncertified. Zero P2 findings and executed compiler provenance do not certify a full project, authorize a guarded action or qualify a release.",
+    "The supervisor budget applies to a responsive Node controller and directly owned worker, not hard-real-time containment. The outer 630-second run_logged cap is best-effort direct-child monitoring and does not prove descendants or inherited log writers quiescent.",
+    "Owned-thread deletion RPC confirmation does not establish turn, process-descendant, remote or native quiescence. runtimeCleanup remains unverified, private recovery state is retained and automatic run-directory deletion is unauthorized.",
+    "All 35 extracted image backing files were independently rehashed, but the reviewer did not reopen the TAR or ZIP. Aggregate archive hashes are retained root receipt evidence joined through their entry inventories.",
+    "The doctor smoke inventories only 19 launcher/library rows, not the complete compiler asset inventory, and does not itself prove compiler execution or installed-provider inspection. The actual driver separately binds 26 Java artifacts plus its launcher.",
+    "Staged launcher modes 0755 become owner-only executable 0700 in the extracted image. Bytes and executable flags match; this is a restriction, not unnoticed mode equality.",
+    "Fresh compile receipts and byte brackets do not prove source-to-bytecode reproducibility. Installed Java source commit is explicitly null. Default-install preservation is the root packaging observation and was not independently inspected here.",
+    "Packaging smoke and this audit do not clear blocked license review, signing, publication or release qualification.",
+    "Privacy scanning found no configured credential/private-path indicators in the complete recursively parsed driver evidence, but unknown-secret absence is not provable without unavailable secret preimages. Public opaque IDs are still correlatable.",
+    "Outer runner, invocation and outcome contain private absolute paths. Publish a sanitized concise summary only, not raw outer artifacts, the private report, or wholesale driver data.",
+    "Historical initial failures and the initial 87-test selection limitation are retained unchanged. This report does not rewrite prior pending-review outcomes as retrospectively verified."
+  ]
+}

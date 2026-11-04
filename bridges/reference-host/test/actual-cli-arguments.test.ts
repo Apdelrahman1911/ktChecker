@@ -11,7 +11,7 @@ import { ActualCliFixture, ActualFaultBroker, actualDemoCleanupEvidence, parseAc
 const launcher = resolve('not-executed launcher'), compilerJavaHome = resolve('not-executed JDK 21 共有');
 const fixtureDirectory = resolve('not-created fixture state');
 function argumentsFor(evidence = 'not-created evidence.json'): string[] {
-  return ['--allow-inference', '--cli', launcher, '--compiler-java-home', compilerJavaHome, '--evidence', evidence];
+  return ['--allow-inference', '--cli', launcher, '--compiler-java-home', compilerJavaHome, '--evidence', evidence, '--max-runtime-ms', '600000'];
 }
 function fixture(): ActualCliFixture { return new ActualCliFixture(launcher, fixtureDirectory, compilerJavaHome); }
 async function directory(t: TestContext): Promise<string> {
@@ -24,13 +24,14 @@ function assertOption(args: readonly string[], name: string, value: string): voi
   assert.equal(args[args.indexOf(name) + 1], value);
 }
 
-test('actual demo requires independent explicit inference, launcher, compiler JDK, and NEW evidence selections', () => {
+test('actual demo requires independent explicit inference, launcher, compiler JDK, NEW evidence, and finite runtime selections', () => {
   const all = argumentsFor();
   for (const [flag, code] of [
     ['--allow-inference', 'actual_demo_inference_approval_required'],
     ['--cli', 'actual_demo_launcher_required'],
     ['--compiler-java-home', 'actual_demo_compiler_java_home_required'],
     ['--evidence', 'actual_demo_evidence_required'],
+    ['--max-runtime-ms', 'actual_demo_max_runtime_required'],
   ]) {
     const args = [...all], index = args.indexOf(flag!);
     args.splice(index, flag === '--allow-inference' ? 1 : 2);
@@ -39,9 +40,9 @@ test('actual demo requires independent explicit inference, launcher, compiler JD
 });
 
 test('actual demo parses explicit selections without mutating argv or serializing ambient defaults', () => {
-  const args = ['--evidence', 'new evidence 共有.json', '--compiler-java-home', 'owner JDK 21 共有', '--allow-inference', '--cli', 'owner launcher'];
+  const args = ['--evidence', 'new evidence 共有.json', '--compiler-java-home', 'owner JDK 21 共有', '--allow-inference', '--cli', 'owner launcher', '--max-runtime-ms', '600000'];
   const original = [...args], parsed = parseActualDemoArgs(args);
-  assert.deepEqual(parsed, { launcher: resolve('owner launcher'), compilerJavaHome: resolve('owner JDK 21 共有'), evidence: resolve('new evidence 共有.json') });
+  assert.deepEqual(parsed, { launcher: resolve('owner launcher'), compilerJavaHome: resolve('owner JDK 21 共有'), evidence: resolve('new evidence 共有.json'), maxRuntimeMs: 600000 });
   assert(Object.isFrozen(parsed)); assert.deepEqual(args, original);
 });
 
@@ -50,14 +51,15 @@ test('actual demo rejects repeated selections even when their values match', () 
     ['--allow-inference'], ['--cli', launcher], ['--cli', 'conflicting launcher'],
     ['--compiler-java-home', compilerJavaHome], ['--compiler-java-home', 'conflicting JDK'],
     ['--evidence', 'not-created evidence.json'], ['--evidence', 'other evidence.json'],
+    ['--max-runtime-ms', '600000'], ['--max-runtime-ms', '120000'],
   ]) assert.throws(() => parseActualDemoArgs([...argumentsFor(), ...suffix]), { code: 'actual_demo_duplicate_option' });
 });
 
 test('actual demo rejects unknown options, equals aliases, and missing values', () => {
-  for (const extra of ['--unknown', '--compiler-java-home=other', '--allow-inference=true', '--', 'positional']) {
+  for (const extra of ['--unknown', '--compiler-java-home=other', '--max-runtime-ms=1000', '--allow-inference=true', '--', 'positional']) {
     assert.throws(() => parseActualDemoArgs([...argumentsFor(), extra]), { code: 'actual_demo_unknown_option' });
   }
-  for (const flag of ['--cli', '--compiler-java-home', '--evidence']) {
+  for (const flag of ['--cli', '--compiler-java-home', '--evidence', '--max-runtime-ms']) {
     assert.throws(() => parseActualDemoArgs(['--allow-inference', flag]), { code: 'actual_demo_option_value_required' });
     assert.throws(() => parseActualDemoArgs([flag, '--allow-inference']), { code: 'actual_demo_option_value_required' });
   }
@@ -277,4 +279,17 @@ test('externally changed or hardlinked reservations fail closed without overwrit
     await assert.rejects(second.write('must-not-share'), { code: 'actual_demo_evidence_path_changed' });
     assert.equal(await readFile(changed, 'utf8'), 'concurrent owner bytes'); assert.equal(await readFile(linked, 'utf8'), '');
   } finally { await first.close(); await second.close(); }
+});
+
+
+test('finite maximum runtime is canonical decimal with strict independent bounds and no ambient fallback', () => {
+  for (const value of ['1000', '1800000', '600000']) {
+    const args = argumentsFor(); args[args.indexOf('--max-runtime-ms') + 1] = value;
+    assert.equal(parseActualDemoArgs(args).maxRuntimeMs, Number(value));
+  }
+  for (const value of ['', '0', '999', '1800001', '9007199254740991', 'Infinity', 'NaN', '1e3', '1000.0',
+    '0x3e8', '+1000', '-1000', ' 1000', '1000 ', '01000', '1_000', '１０００', '1000\n']) {
+    const args = argumentsFor(); args[args.indexOf('--max-runtime-ms') + 1] = value;
+    assert.throws(() => parseActualDemoArgs(args), { code: 'actual_demo_invalid_max_runtime' });
+  }
 });

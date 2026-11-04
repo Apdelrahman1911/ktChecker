@@ -26,10 +26,12 @@ has since produced a runnable **unqualified preview**: immutable capture and a
 concurrent durable review kernel, installed JVM CLI, isolated provider adapters,
 suppression controls, and a reference host. Actual compiler findings have entered
 subsequent Codex model requests in the retained three-phase synthetic-project
-[delivery experiment](../bridges/reference-host/evidence/cli-kernel-codex-public-fixture.json).
-This does not qualify all hosts or rules; its final completion gate deliberately
-denied success. Original full coverage event arrays were not retained in that
-experiment; its evidence document records that reproducibility limit.
+[supervised delivery experiment and independent audit summary](evidence/actual-host-supervised-20261104.json).
+All nine projected contexts were checked; six full original event payloads are
+reconstructable, while three progress originals remain missing. Its final completion
+gate deliberately denied success. It does not qualify other hosts, newer installed
+images, or all rules. The [earlier experiment](../bridges/reference-host/evidence/cli-kernel-codex-public-fixture.json)
+remains historical evidence with its documented missing-original-payload limitation.
 
 Use the [implementation usage guide](implementation-usage.md),
 [independent implementation audit](implementation-audit.md), and

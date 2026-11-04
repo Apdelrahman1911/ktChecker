@@ -43,7 +43,8 @@ export async function captureRunIdentity(launcher: string): Promise<Record<strin
     ...await files(repository, join(repository, 'bridges/reference-host/src'))];
   const executedBridgeArtifacts = [...await files(repository, join(repository, 'bridges/mcp/dist/src')),
     ...await files(repository, join(repository, 'bridges/reference-host/dist/src'))];
-  for (const name of ['demo-cli-codex', 'actual-cli-fixture', 'application-evidence', 'run-identity', 'delivery-telemetry', 'owned-demo-threads']) {
+  for (const name of ['demo-cli-codex', 'demo-cli-codex-run', 'actual-demo-controls', 'actual-cli-fixture', 'application-evidence',
+    'run-identity', 'delivery-telemetry', 'delivery-receipts', 'owned-demo-threads']) {
     for (const [folder, extension, destination] of [['test', 'ts', bridgeSources], ['dist/test', 'js', executedBridgeArtifacts]] as const) {
       const path = join(repository, 'bridges/reference-host', folder, name + '.' + extension);
       destination.push(await identity(path, relative(repository, path)));
