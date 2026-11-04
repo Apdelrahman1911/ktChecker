@@ -1,5 +1,7 @@
 # ktChecker engine architecture
 
+Implementation additions: [concurrency, suppression and scoped completion contract](implementation-contract.md).
+
 **Status: proposed, not implemented.** This repository is a planning skeleton. Nothing here establishes a working CLI, daemon, compiler adapter, incremental cache, MCP integration, sandbox, or performance result. The intended first release covers **Android, iOS, and Desktop/JVM** with a broad rule catalogue, low false positives, and review after **every completed patch, including review-driven fixes**. Implementation may be staged internally; publishing a narrow JVM-only prototype must not be described as meeting that release scope.
 
 **Recommendation:** Kotlin/JVM analysis core and CLI, a durable per-user local broker, version-isolated compiler/provider workers, content-addressed immutable inputs, and conservative incremental analysis. Keep the host-facing bridge thin; the evidence-dependent MCP SDK/profile choice belongs in [protocol.md](protocol.md). At the researched baseline, a small TypeScript bridge can provide the current protocol while the engine stays JVM-based. Do not make a language-server connection, an accepted job ID, or a progress notification stand in for completed review or agent-visible delivery.

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "provider_id": "android-lint",
+  "provider_version": "32.3.1/32.5.0",
+  "context": {
+    "id": "isolated-lint32.3.1-xml-main",
+    "target": "android",
+    "source_set": "main",
+    "module": ":fixture",
+    "compilation": "xml",
+    "kotlin_version": "not_used_xml_only",
+    "jdk_version": "unknown",
+    "library_versions": {
+      "android-lint": "32.3.1",
+      "lint-client": "9.3.1"
+    },
+    "run": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml",
+    "fixture_scope": "Two XML detector controls only; no Android Gradle or Kotlin/Native execution.",
+    "evidence_state": "verified_xml_controls_unqualified"
+  },
+  "rules": [
+    {
+      "rule_id": "ktc.android.lint.ContentDescription",
+      "implemented": true,
+      "tested": false,
+      "qualified": false,
+      "provider_status": "incomplete",
+      "cases": [
+        {
+          "kind": "positive",
+          "passed": true,
+          "evidence": [
+            {
+              "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/positive.json",
+              "sha256": "02788452972e73a2da189578efe2fe3f6a83c8df72153cf9fe0f36586164eefc"
+            }
+          ]
+        },
+        {
+          "kind": "negative",
+          "passed": true,
+          "evidence": [
+            {
+              "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/negative.json",
+              "sha256": "f5c9ad63f6fad4cd8e7d5ed57f29f0d6986d0e961f855062f3e281f6b200ce0e"
+            }
+          ]
+        },
+        {
+          "kind": "suppression",
+          "passed": true,
+          "evidence": [
+            {
+              "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/suppression.json",
+              "sha256": "c70c95293bc15b3c547417e5e19b5d2534f5da1108c35b7f6d89448eab237b53"
+            }
+          ]
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-lint/src/main/kotlin/dev/ktchecker/providers/lint/AndroidLintProvider.kt",
+          "sha256": "5ede95f7b5bc7018bcfbeac67dd74bbcef07503388e4205b40965da7a25c692d"
+        }
+      ],
+      "qualification_evidence": [],
+      "gaps": [
+        "Only positive, legal negative, and provider-suppression XML controls executed; configuration/version/regression detector controls missing.",
+        "Actual Lint32.3.1/client9.3.1 only: no Lint32.5.0 detector execution or qualification.",
+        "Standalone JVM version was not independently probed; no complete project/toolchain qualification tuple.",
+        "Synthetic 609-ID transport tests are not detector cases, Native execution, precision/corpus review, or release coverage."
+      ]
+    },
+    {
+      "rule_id": "ktc.android.lint.HardcodedText",
+      "implemented": true,
+      "tested": false,
+      "qualified": false,
+      "provider_status": "incomplete",
+      "cases": [
+        {
+          "kind": "positive",
+          "passed": true,
+          "evidence": [
+            {
+              "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/positive.json",
+              "sha256": "02788452972e73a2da189578efe2fe3f6a83c8df72153cf9fe0f36586164eefc"
+            }
+          ]
+        },
+        {
+          "kind": "negative",
+          "passed": true,
+          "evidence": [
+            {
+              "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/negative.json",
+              "sha256": "f5c9ad63f6fad4cd8e7d5ed57f29f0d6986d0e961f855062f3e281f6b200ce0e"
+            }
+          ]
+        },
+        {
+          "kind": "suppression",
+          "passed": true,
+          "evidence": [
+            {
+              "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/suppression.json",
+              "sha256": "c70c95293bc15b3c547417e5e19b5d2534f5da1108c35b7f6d89448eab237b53"
+            }
+          ]
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-lint/src/main/kotlin/dev/ktchecker/providers/lint/AndroidLintProvider.kt",
+          "sha256": "5ede95f7b5bc7018bcfbeac67dd74bbcef07503388e4205b40965da7a25c692d"
+        }
+      ],
+      "qualification_evidence": [],
+      "gaps": [
+        "Only positive, legal negative, and provider-suppression XML controls executed; configuration/version/regression detector controls missing.",
+        "Actual Lint32.3.1/client9.3.1 only: no Lint32.5.0 detector execution or qualification.",
+        "Standalone JVM version was not independently probed; no complete project/toolchain qualification tuple.",
+        "Synthetic 609-ID transport tests are not detector cases, Native execution, precision/corpus review, or release coverage."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-8295957961822386635/sources/unsuppressed/overloads_without_default_arguments.kt:3:1: warning: [OVERLOADS_WITHOUT_DEFAULT_ARGUMENTS] '@JvmOverloads' annotation has no effect for methods without default arguments.
+@JvmOverloads fun use(x: Int) = x
+^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-8295957961822386635/sources/unsuppressed/synchronized_on_inline.kt:3:1: warning: [SYNCHRONIZED_ON_INLINE] '@Synchronized' annotation has no effect on inline functions.
+@Synchronized inline fun use(action: () -> Unit) { action() }
+^^^^^^^^^^^^^

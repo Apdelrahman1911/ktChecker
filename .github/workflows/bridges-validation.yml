@@ -1,0 +1,78 @@
+name: Preview bridges (actual SDK and synthetic host controls)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bridges/**'
+      - 'scripts/ci/**'
+      - '.github/workflows/bridges-validation.yml'
+  pull_request:
+    paths:
+      - 'bridges/**'
+      - 'scripts/ci/**'
+      - '.github/workflows/bridges-validation.yml'
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bridges-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  bridge-controls:
+    name: MCP SDK and synthetic host tests/audits (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - name: Check out candidate without persisted credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up bounded evidence runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Select exact audited bridge Node runtime
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.20.0'
+          check-latest: false
+      - name: Execute npm ci, actual SDK/synthetic-host tests/audits and validated unsigned npm packs
+        # No Codex account probe, real model request, or privileged SDK/toolchain.
+        # Windows private-state runtime is unqualified until native ACL checks
+        # exist; failures remain honest blockers, not continue-on-error passes.
+        run: python scripts/ci/run_bridge_checks.py --output build/ci-evidence/bridges.json
+      - name: Bind sanitized bridge evidence to actual source and job outcome
+        if: always()
+        env:
+          KT_CI_JOB_STATUS: ${{ job.status }}
+        run: python scripts/ci/run_bridge_checks.py --finalize --output build/ci-evidence/bridges.json
+      - name: Retain sanitized case counts, exact lock pins and audit outcomes
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-bridges-evidence-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/bridges.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain actual tested unsigned preview npm packages (never publish/sign)
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unsigned-preview-bridges-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-packages/ktchecker-mcp-preview-0.1.0-preview.1.tgz
+            build/ci-packages/ktchecker-reference-host-preview-0.1.0-preview.1.tgz
+          if-no-files-found: error
+          retention-days: 14

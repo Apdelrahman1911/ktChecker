@@ -1,0 +1,51 @@
+{
+    "rule_id": "ktc.compiler.common.empty_range",
+    "upstream_id": "EMPTY_RANGE",
+    "kind": "suppression",
+    "passed": false,
+    "assertions": "Real @file:Suppress removed only this warning from its sealed file while an adjacent unsuppressed control still emitted the same ID; coverage remained non-complete.",
+    "jobs": [
+        {
+            "label": "suppression-single-EMPTY_RANGE",
+            "analysis_key": "sha256:2026c08e01acac8ffe144cc5a48be83042db7a1e9d8d1a504a4789667e751e99",
+            "snapshot_id": "sha256:270dfcb2d1085dcc95ff728c8068d6cc2deaa7dd792d39e43317cd68436e67a6",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/057-suppression-single-empty_range/input.json",
+            "sha256": "1433130d8e413c569fb13dbec31b3206baf3dad17f19ebc250dcb9ee2e765163"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/057-suppression-single-empty_range/process.json",
+            "sha256": "d98ceecda4fee29621fce0b55fadff0a043b4e054c1893faf641d9355e38088c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/057-suppression-single-empty_range/result.json",
+            "sha256": "f50eb3538763b8807c74d2030cdaf2ee8b7eeb20307e9b51338f63f68140b709"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/057-suppression-single-empty_range/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/057-suppression-single-empty_range/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/057-suppression-single-empty_range/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/057-suppression-single-empty_range/sources/cases/empty_range.kt",
+            "sha256": "f8ce2c69af3756b3cec45525536be5ca03c1c83295410bd8fd95e8bf54c13575"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/057-suppression-single-empty_range/sources/unsuppressed/empty_range.kt",
+            "sha256": "8f2b868515f9262634734c85ad7d1bc465dd979ddb520c8d50b6b2f29206a245"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

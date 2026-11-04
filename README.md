@@ -1,8 +1,34 @@
 # ktChecker
 Fast, evidence-based Kotlin Multiplatform code review for AI agents.
 
-**Status: researched implementation plan, not a released checker.** Initial targets:
-Android, iOS and Desktop/JVM. Research baseline: **2026-11-04**.
+**Status: executable, unqualified development preview—not a completed release.**
+The full planned Android, iOS and Desktop/JVM rule scope is unchanged. Research
+baseline: **2026-11-04**. Missing implementations and qualification remain visible;
+preview analysis cannot grant full-project completion.
+
+## Build and try the preview
+
+Requires **JDK 21**, Python 3.12 for the example, and network access during the
+explicit build to resolve pinned dependencies. Project target fixtures separately
+use JDK 25 and their Android/Xcode toolchains.
+
+```bash
+./gradlew --no-daemon --max-workers=1 test :cli:installDist
+modules/cli/build/install/ktchecker/bin/ktchecker doctor --format json
+python3 scripts/run_preview_example.py --output /tmp/ktchecker-example
+```
+
+On Windows use `gradlew.bat`, `bin\ktchecker.bat` and a **new** output directory.
+The example creates synthetic immutable inputs and two independent clients. It
+does not touch an existing project's source. It selects an experimental compiler
+rule explicitly and reports incomplete/unqualified coverage honestly. See
+[installation and actual commands](docs/implementation-usage.md),
+[suppression controls](docs/suppressions.md), and
+[MCP/host integration](docs/implementation-host.md).
+
+The CLI is Kotlin/JVM. The separate MCP/host bridges require the pinned Node/npm
+tooling in their package directories. Review itself does not require an LLM;
+genuine model-delivery experiments are separate explicit host operations.
 
 ## Start here
 
@@ -11,7 +37,8 @@ Android, iOS and Desktop/JVM. Research baseline: **2026-11-04**.
 | Specification | Contents |
 |---|---|
 | [Architecture](docs/architecture.md) | Kotlin/JVM core, alternatives, workers, incremental analysis, snapshots, caching and security |
-| [Repository and local installation design](docs/repository.md) | Proposed modules, dependency boundaries, packaging, per-user state and multiple-project use |
+| [Implementation contract](docs/implementation-contract.md) | Concurrent clients, immutable capture, suppression authority, completion and unchanged release gates |
+| [Repository and local installation design](docs/repository.md) | Baseline module design, dependency boundaries, packaging and per-user state |
 | [CLI, MCP and host delivery](docs/protocol.md) | Contracts, example findings, patch sequences, real background context delivery and recovery |
 | [Rule inventory](docs/rules/README.md) | Atomic rule records, applicability, source/version evidence, limitations and per-rule validation requirements |
 | [Testing, compatibility, CI and benchmarks](docs/validation-ci.md) | False-positive gates, realistic corpus, OS/target matrices and cold/warm measurements |
@@ -34,12 +61,23 @@ capabilities require it. No external LLM service is required for analysis.
 
 ### What has—and has not—been validated
 
-The current workflow checks the planning registry, generated indexes, links,
-synthetic application-schema examples and validator failure cases on Windows,
-Linux and macOS. It does **not** build or test
-a ktChecker engine, run Kotlin rules, establish accuracy or speed, or validate iOS
-execution. All initial rules are explicitly **planned**. The implementation plan
-defines the separate checker-portability and Android/Desktop/iOS release gates.
+Local tests now exercise the real SQLite kernel, snapshot store, configuration
+controls, isolated provider runtime, and actual compiler/Detekt integrations.
+These tests do **not** qualify the complete catalog or establish real-world
+precision, incremental equivalence for arbitrary projects, Native semantic
+coverage, or the warm 1–3-second objective. The catalog remains the release
+requirements ledger; a separate machine-readable report records evidence:
+
+```bash
+python3 scripts/rule_coverage.py --output build/reports/rule-coverage.json
+```
+
+[Implementation evidence](docs/implementation-evidence.md) distinguishes observed,
+unrun and failed checks. GitHub Actions has separate checker-host and actual-target
+suites; a planning-only CI run is not implementation evidence. A rule-ID mapping
+is not an implemented/tested/qualified detector. No default-qualified rule set has
+been installed; preview execution requires explicit owner selection, and opt-in
+rules are never silently enabled.
 
 Run planning checks locally with Python 3.12:
 
@@ -61,7 +99,7 @@ they do not exercise an MCP server, authentication or an agent host.
 
 Upstream catalog descriptions/examples are attributed in
 [third-party notices](THIRD_PARTY_NOTICES.md). The original project's software
-license remains an explicit owner decision before implementation distribution.
+license and complete redistribution review remain explicit release decisions.
 
 After editing rule metadata, regenerate the human indexes with
 `python scripts/validate_plan.py --write-catalogs`. Changes to the captured catalog

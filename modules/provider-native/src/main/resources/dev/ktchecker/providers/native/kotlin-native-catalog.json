@@ -1,0 +1,2754 @@
+[
+  {
+    "ruleId": "ktc.compiler.common.abstract_class_member_not_implemented",
+    "upstreamId": "ABSTRACT_CLASS_MEMBER_NOT_IMPLEMENTED",
+    "title": "Compiler diagnostic ABSTRACT_CLASS_MEMBER_NOT_IMPLEMENTED: {0} is not abstract and does not implement abstract base class {1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.abstract_member_not_implemented",
+    "upstreamId": "ABSTRACT_MEMBER_NOT_IMPLEMENTED",
+    "title": "Compiler diagnostic ABSTRACT_MEMBER_NOT_IMPLEMENTED: {0} is not abstract and does not implement abstract {1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.abstract_member_not_implemented_by_enum_entry",
+    "upstreamId": "ABSTRACT_MEMBER_NOT_IMPLEMENTED_BY_ENUM_ENTRY",
+    "title": "Compiler diagnostic ABSTRACT_MEMBER_NOT_IMPLEMENTED_BY_ENUM_ENTRY: {0} does not implement abstract {1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_annotations_not_match_expect",
+    "upstreamId": "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT",
+    "title": "Compiler diagnostic ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT: {3}.\nAll annotations from 'expect' declaration '{0}' must be present and have the same arguments on 'actual' declaration '{1}', otherwise they might behave incorrectly.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_function_with_default_arguments",
+    "upstreamId": "ACTUAL_FUNCTION_WITH_DEFAULT_ARGUMENTS",
+    "title": "Compiler diagnostic ACTUAL_FUNCTION_WITH_DEFAULT_ARGUMENTS: 'actual' function cannot have default argument values. They must be declared in the 'expect' function.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_ignorability_not_match_expect",
+    "upstreamId": "ACTUAL_IGNORABILITY_NOT_MATCH_EXPECT",
+    "title": "Compiler diagnostic ACTUAL_IGNORABILITY_NOT_MATCH_EXPECT: Ignorability statuses for 'expect' and 'actual' declarations are different. 'expect' declaration {0} is '{1}' and 'actual' declaration {2} is '{3}'. Different statuses may result in inconsistent and incorrect warnings.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_missing",
+    "upstreamId": "ACTUAL_MISSING",
+    "title": "Compiler diagnostic ACTUAL_MISSING: Declaration must be marked with 'actual'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_type_alias_not_to_class",
+    "upstreamId": "ACTUAL_TYPE_ALIAS_NOT_TO_CLASS",
+    "title": "Compiler diagnostic ACTUAL_TYPE_ALIAS_NOT_TO_CLASS: Right-hand side of 'actual' type alias must be a class, not another type alias.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_type_alias_to_class_with_declaration_site_variance",
+    "upstreamId": "ACTUAL_TYPE_ALIAS_TO_CLASS_WITH_DECLARATION_SITE_VARIANCE",
+    "title": "Compiler diagnostic ACTUAL_TYPE_ALIAS_TO_CLASS_WITH_DECLARATION_SITE_VARIANCE: Aliased class cannot have type parameters with declaration-site variance.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_type_alias_to_nothing",
+    "upstreamId": "ACTUAL_TYPE_ALIAS_TO_NOTHING",
+    "title": "Compiler diagnostic ACTUAL_TYPE_ALIAS_TO_NOTHING: Right-hand side of 'actual' type alias cannot be of type 'kotlin.Nothing'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_type_alias_to_nullable_type",
+    "upstreamId": "ACTUAL_TYPE_ALIAS_TO_NULLABLE_TYPE",
+    "title": "Compiler diagnostic ACTUAL_TYPE_ALIAS_TO_NULLABLE_TYPE: Right-hand side of 'actual' type alias cannot be a nullable type.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_type_alias_with_complex_substitution",
+    "upstreamId": "ACTUAL_TYPE_ALIAS_WITH_COMPLEX_SUBSTITUTION",
+    "title": "Compiler diagnostic ACTUAL_TYPE_ALIAS_WITH_COMPLEX_SUBSTITUTION: Type arguments on the right-hand side of 'actual' type alias must be its type parameters in the same order, e.g. 'actual typealias Foo<A, B> = Bar<A, B>'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_type_alias_with_use_site_variance",
+    "upstreamId": "ACTUAL_TYPE_ALIAS_WITH_USE_SITE_VARIANCE",
+    "title": "Compiler diagnostic ACTUAL_TYPE_ALIAS_WITH_USE_SITE_VARIANCE: Right-hand side of 'actual' type alias cannot contain use-site variance or star projections.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_typealias_to_special_annotation",
+    "upstreamId": "ACTUAL_TYPEALIAS_TO_SPECIAL_ANNOTATION",
+    "title": "Compiler diagnostic ACTUAL_TYPEALIAS_TO_SPECIAL_ANNOTATION: 'actual typealias' to annotation which affects code compilation can lead to incorrect behavior. Instead, use '{0}' annotation directly.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.actual_without_expect",
+    "upstreamId": "ACTUAL_WITHOUT_EXPECT",
+    "title": "Compiler diagnostic ACTUAL_WITHOUT_EXPECT: '{0}' has no corresponding 'expect' declaration{1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.ambiguous_anonymous_type_inferred",
+    "upstreamId": "AMBIGUOUS_ANONYMOUS_TYPE_INFERRED",
+    "title": "Compiler diagnostic AMBIGUOUS_ANONYMOUS_TYPE_INFERRED: Right-hand side has an anonymous type. Specify the type explicitly.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.ambiguous_context_argument",
+    "upstreamId": "AMBIGUOUS_CONTEXT_ARGUMENT",
+    "title": "Compiler diagnostic AMBIGUOUS_CONTEXT_ARGUMENT: Multiple potential context arguments for '{0}' in scope.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.ambiguous_expects",
+    "upstreamId": "AMBIGUOUS_EXPECTS",
+    "title": "Compiler diagnostic AMBIGUOUS_EXPECTS: '{0}' has several compatible 'expect' declarations in modules {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.api_not_available",
+    "upstreamId": "API_NOT_AVAILABLE",
+    "title": "Compiler diagnostic API_NOT_AVAILABLE: This declaration is only available in Kotlin {0} and newer versions and cannot be used with the specified API version {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.argument_passed_twice",
+    "upstreamId": "ARGUMENT_PASSED_TWICE",
+    "title": "Compiler diagnostic ARGUMENT_PASSED_TWICE: Argument already passed for this parameter.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.argument_type_mismatch",
+    "upstreamId": "ARGUMENT_TYPE_MISMATCH",
+    "title": "Compiler diagnostic ARGUMENT_TYPE_MISMATCH: Argument type mismatch: actual type is '{0}', but '{1}' was expected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.array_equality_operator_can_be_replaced_with_content_equals",
+    "upstreamId": "ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS",
+    "title": "Compiler diagnostic ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS: '{0}' on arrays compares only references. Replace '{0}' with '{1}contentEquals' to compare the arrays' contents or use '{0}=' to remove the warning.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.assigned_value_is_never_read",
+    "upstreamId": "ASSIGNED_VALUE_IS_NEVER_READ",
+    "title": "Compiler diagnostic ASSIGNED_VALUE_IS_NEVER_READ: Assigned value is never read.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.assignment_type_mismatch",
+    "upstreamId": "ASSIGNMENT_TYPE_MISMATCH",
+    "title": "Compiler diagnostic ASSIGNMENT_TYPE_MISMATCH: Assignment type mismatch: actual type is '{1}', but '{0}' was expected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.callable_reference_to_contextual_declaration",
+    "upstreamId": "CALLABLE_REFERENCE_TO_CONTEXTUAL_DECLARATION",
+    "title": "Compiler diagnostic CALLABLE_REFERENCE_TO_CONTEXTUAL_DECLARATION: Callable reference to '{0}' is unsupported because it has context parameters.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.can_be_val",
+    "upstreamId": "CAN_BE_VAL",
+    "title": "Compiler diagnostic CAN_BE_VAL: This 'var' property is never written to, it can be declared as 'val'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.can_be_val_delayed_initialization",
+    "upstreamId": "CAN_BE_VAL_DELAYED_INITIALIZATION",
+    "title": "Compiler diagnostic CAN_BE_VAL_DELAYED_INITIALIZATION: This 'var' property is not written to more than once, it can be declared as 'val'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.can_be_val_lateinit",
+    "upstreamId": "CAN_BE_VAL_LATEINIT",
+    "title": "Compiler diagnostic CAN_BE_VAL_LATEINIT: This 'lateinit var' property is not written to more than once, it can be declared as nullable 'val'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cannot_change_access_privilege",
+    "upstreamId": "CANNOT_CHANGE_ACCESS_PRIVILEGE",
+    "title": "Compiler diagnostic CANNOT_CHANGE_ACCESS_PRIVILEGE: Cannot change access privilege {0} for '{1}' in '{2}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cannot_change_access_privilege_warning",
+    "upstreamId": "CANNOT_CHANGE_ACCESS_PRIVILEGE_WARNING",
+    "title": "Compiler diagnostic CANNOT_CHANGE_ACCESS_PRIVILEGE_WARNING: Cannot change access privilege {0} for '{1}' in '{2}'. This will be prohibited in the future.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cannot_check_for_erased",
+    "upstreamId": "CANNOT_CHECK_FOR_ERASED",
+    "title": "Compiler diagnostic CANNOT_CHECK_FOR_ERASED: Cannot check for instance of erased type '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cannot_infer_visibility",
+    "upstreamId": "CANNOT_INFER_VISIBILITY",
+    "title": "Compiler diagnostic CANNOT_INFER_VISIBILITY: Cannot infer visibility for '{0}'. Specify it explicitly.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cannot_infer_visibility_warning",
+    "upstreamId": "CANNOT_INFER_VISIBILITY_WARNING",
+    "title": "Compiler diagnostic CANNOT_INFER_VISIBILITY_WARNING: Cannot infer visibility for '{0}'. Specify it explicitly. This will be prohibited in the future.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cannot_override_invisible_member",
+    "upstreamId": "CANNOT_OVERRIDE_INVISIBLE_MEMBER",
+    "title": "Compiler diagnostic CANNOT_OVERRIDE_INVISIBLE_MEMBER: {0} has no access to {1}, so it cannot override it.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cannot_weaken_access_privilege",
+    "upstreamId": "CANNOT_WEAKEN_ACCESS_PRIVILEGE",
+    "title": "Compiler diagnostic CANNOT_WEAKEN_ACCESS_PRIVILEGE: Cannot weaken access privilege {0} for '{1}' in '{2}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cannot_weaken_access_privilege_warning",
+    "upstreamId": "CANNOT_WEAKEN_ACCESS_PRIVILEGE_WARNING",
+    "title": "Compiler diagnostic CANNOT_WEAKEN_ACCESS_PRIVILEGE_WARNING: Cannot weaken access privilege {0} for '{1}' in '{2}'. This will be prohibited in the future.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.captured_member_val_initialization",
+    "upstreamId": "CAPTURED_MEMBER_VAL_INITIALIZATION",
+    "title": "Compiler diagnostic CAPTURED_MEMBER_VAL_INITIALIZATION: Initialization of captured member values is prohibited because of possible reassignments.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.captured_val_initialization",
+    "upstreamId": "CAPTURED_VAL_INITIALIZATION",
+    "title": "Compiler diagnostic CAPTURED_VAL_INITIALIZATION: Captured values cannot be initialized because of possible reassignments.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cast_never_succeeds",
+    "upstreamId": "CAST_NEVER_SUCCEEDS",
+    "title": "Compiler diagnostic CAST_NEVER_SUCCEEDS: This cast can never succeed.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.comma_in_when_condition_with_when_guard",
+    "upstreamId": "COMMA_IN_WHEN_CONDITION_WITH_WHEN_GUARD",
+    "title": "Compiler diagnostic COMMA_IN_WHEN_CONDITION_WITH_WHEN_GUARD: Use of comma in 'when' condition with guard statement is not allowed.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.comma_in_when_condition_without_argument",
+    "upstreamId": "COMMA_IN_WHEN_CONDITION_WITHOUT_ARGUMENT",
+    "title": "Compiler diagnostic COMMA_IN_WHEN_CONDITION_WITHOUT_ARGUMENT: Use '||' instead of commas in conditions of 'when' without a subject.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.compare_to_type_mismatch",
+    "upstreamId": "COMPARE_TO_TYPE_MISMATCH",
+    "title": "Compiler diagnostic COMPARE_TO_TYPE_MISMATCH: 'compareTo()' must return 'Int', but returns '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.component_function_ambiguity",
+    "upstreamId": "COMPONENT_FUNCTION_AMBIGUITY",
+    "title": "Compiler diagnostic COMPONENT_FUNCTION_AMBIGUITY: Operator call '{0}()' is ambiguous for destructuring of type '{2}'. Applicable candidates:{1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.component_function_missing",
+    "upstreamId": "COMPONENT_FUNCTION_MISSING",
+    "title": "Compiler diagnostic COMPONENT_FUNCTION_MISSING: Destructuring of type '{1}' requires operator function '{0}()'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.component_function_on_nullable",
+    "upstreamId": "COMPONENT_FUNCTION_ON_NULLABLE",
+    "title": "Compiler diagnostic COMPONENT_FUNCTION_ON_NULLABLE: Operator call '{0}()' cannot be applied to destructuring of nullable type '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.component_function_return_type_mismatch",
+    "upstreamId": "COMPONENT_FUNCTION_RETURN_TYPE_MISMATCH",
+    "title": "Compiler diagnostic COMPONENT_FUNCTION_RETURN_TYPE_MISMATCH: Operator call '{0}()' returns '{1}', but '{2}' is expected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.condition_type_mismatch",
+    "upstreamId": "CONDITION_TYPE_MISMATCH",
+    "title": "Compiler diagnostic CONDITION_TYPE_MISMATCH: Condition type mismatch: inferred type is '{0}' but 'Boolean' was expected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.conflicting_inherited_members",
+    "upstreamId": "CONFLICTING_INHERITED_MEMBERS",
+    "title": "Compiler diagnostic CONFLICTING_INHERITED_MEMBERS: '{0}' inherits conflicting members: {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.conflicting_upper_bounds",
+    "upstreamId": "CONFLICTING_UPPER_BOUNDS",
+    "title": "Compiler diagnostic CONFLICTING_UPPER_BOUNDS: Upper bounds of '{0}' have an empty intersection.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.confusing_branch_condition_error",
+    "upstreamId": "CONFUSING_BRANCH_CONDITION_ERROR",
+    "title": "Compiler diagnostic CONFUSING_BRANCH_CONDITION_ERROR: Logical expression in when-with-subject. The branch will be matched by comparing the result of the logical expression with the subject. To suppress the diagnostic, wrap the expression with parentheses.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.context_parameter_with_default",
+    "upstreamId": "CONTEXT_PARAMETER_WITH_DEFAULT",
+    "title": "Compiler diagnostic CONTEXT_PARAMETER_WITH_DEFAULT: Context parameters cannot have default values.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.context_parameter_without_name",
+    "upstreamId": "CONTEXT_PARAMETER_WITHOUT_NAME",
+    "title": "Compiler diagnostic CONTEXT_PARAMETER_WITHOUT_NAME: Context parameters must be named. Use '_' to declare an anonymous context parameter.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.context_parameters_with_backing_field",
+    "upstreamId": "CONTEXT_PARAMETERS_WITH_BACKING_FIELD",
+    "title": "Compiler diagnostic CONTEXT_PARAMETERS_WITH_BACKING_FIELD: Property with context parameters cannot be initialized because it has no backing field.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.contextual_overload_shadowed",
+    "upstreamId": "CONTEXTUAL_OVERLOAD_SHADOWED",
+    "title": "Compiler diagnostic CONTEXTUAL_OVERLOAD_SHADOWED: The following overloads conflict with this contextual declaration. Calls will be ambiguous because context arguments are not used for overload resolution.{0}",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.contract_not_allowed",
+    "upstreamId": "CONTRACT_NOT_ALLOWED",
+    "title": "Compiler diagnostic CONTRACT_NOT_ALLOWED: {0}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.coroutine_context_as_context_parameter_is_reserved",
+    "upstreamId": "COROUTINE_CONTEXT_AS_CONTEXT_PARAMETER_IS_RESERVED",
+    "title": "Compiler diagnostic COROUTINE_CONTEXT_AS_CONTEXT_PARAMETER_IS_RESERVED: Context parameter of type 'kotlin.coroutines.CoroutineContext' is reserved for future use. See https://github.com/Kotlin/KEEP/blob/main/proposals/KEEP-0443-suspend-CoroutineContext-context-parameter.md for more information.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cyclic_constructor_delegation_call",
+    "upstreamId": "CYCLIC_CONSTRUCTOR_DELEGATION_CALL",
+    "title": "Compiler diagnostic CYCLIC_CONSTRUCTOR_DELEGATION_CALL: There's a cycle in the delegation calls chain.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.cyclic_inheritance_hierarchy",
+    "upstreamId": "CYCLIC_INHERITANCE_HIERARCHY",
+    "title": "Compiler diagnostic CYCLIC_INHERITANCE_HIERARCHY: Cycle in supertypes and/or containing declarations detected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.data_class_override_conflict",
+    "upstreamId": "DATA_CLASS_OVERRIDE_CONFLICT",
+    "title": "Compiler diagnostic DATA_CLASS_OVERRIDE_CONFLICT: Function '{0}' generated for the data class conflicts with the supertype member {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.data_class_override_default_values",
+    "upstreamId": "DATA_CLASS_OVERRIDE_DEFAULT_VALUES",
+    "title": "Compiler diagnostic DATA_CLASS_OVERRIDE_DEFAULT_VALUES: Generated function '{0}' of the data class has default values for parameters which conflicts with the overriden member of supertype '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.default_arguments_in_expect_actualized_by_fake_override",
+    "upstreamId": "DEFAULT_ARGUMENTS_IN_EXPECT_ACTUALIZED_BY_FAKE_OVERRIDE",
+    "title": "Compiler diagnostic DEFAULT_ARGUMENTS_IN_EXPECT_ACTUALIZED_BY_FAKE_OVERRIDE: Default argument values inside 'expect' declaration '{0}' are not allowed for methods actualized via fake override. Possible fix is to remove default argument values in members:{1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.default_arguments_in_expect_with_actual_typealias",
+    "upstreamId": "DEFAULT_ARGUMENTS_IN_EXPECT_WITH_ACTUAL_TYPEALIAS",
+    "title": "Compiler diagnostic DEFAULT_ARGUMENTS_IN_EXPECT_WITH_ACTUAL_TYPEALIAS: Default argument values inside 'expect' declaration '{0}' are not allowed if it is actualized via typealias. Possible fix is to remove default argument values in members:{1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.delegate_special_function_ambiguity",
+    "upstreamId": "DELEGATE_SPECIAL_FUNCTION_AMBIGUITY",
+    "title": "Compiler diagnostic DELEGATE_SPECIAL_FUNCTION_AMBIGUITY: Overload resolution ambiguity on method '{0}':{1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.delegate_special_function_missing",
+    "upstreamId": "DELEGATE_SPECIAL_FUNCTION_MISSING",
+    "title": "Compiler diagnostic DELEGATE_SPECIAL_FUNCTION_MISSING: Type '{1}' has no method '{0}', so it cannot serve as a {2}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.delegate_special_function_return_type_mismatch",
+    "upstreamId": "DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH",
+    "title": "Compiler diagnostic DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH: Function '{0}' of property delegate is expected to return '{1}', but returns '{2}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.delegated_member_hides_supertype_override",
+    "upstreamId": "DELEGATED_MEMBER_HIDES_SUPERTYPE_OVERRIDE",
+    "title": "Compiler diagnostic DELEGATED_MEMBER_HIDES_SUPERTYPE_OVERRIDE: Delegated member '{0}' hides supertype override '{1}'. Specify proper override explicitly.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.deprecation",
+    "upstreamId": "DEPRECATION",
+    "title": "Compiler diagnostic DEPRECATION: '{0}' is deprecated.{1}",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.deprecation_error",
+    "upstreamId": "DEPRECATION_ERROR",
+    "title": "Compiler diagnostic DEPRECATION_ERROR: '{0}' is deprecated.{1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.different_names_for_the_same_parameter_in_supertypes",
+    "upstreamId": "DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES",
+    "title": "Compiler diagnostic DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES: Names '{0}' and '{1}' of parameter #{2} conflict in the following members of supertypes: {3}. This may cause problems when calling this function with named arguments.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.division_by_zero",
+    "upstreamId": "DIVISION_BY_ZERO",
+    "title": "Compiler diagnostic DIVISION_BY_ZERO: Division by zero.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.dsl_scope_violation",
+    "upstreamId": "DSL_SCOPE_VIOLATION",
+    "title": "Compiler diagnostic DSL_SCOPE_VIOLATION: '{0}' cannot be called in this context with an implicit receiver. Use an explicit receiver if necessary.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.duplicate_branch_condition_in_when",
+    "upstreamId": "DUPLICATE_BRANCH_CONDITION_IN_WHEN",
+    "title": "Compiler diagnostic DUPLICATE_BRANCH_CONDITION_IN_WHEN: Duplicate branch condition in 'when'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.else_misplaced_in_when",
+    "upstreamId": "ELSE_MISPLACED_IN_WHEN",
+    "title": "Compiler diagnostic ELSE_MISPLACED_IN_WHEN: 'else' entry must be the last one in a 'when' expression.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.empty_range",
+    "upstreamId": "EMPTY_RANGE",
+    "title": "Compiler diagnostic EMPTY_RANGE: Range is empty.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.enum_entry_as_type",
+    "upstreamId": "ENUM_ENTRY_AS_TYPE",
+    "title": "Compiler diagnostic ENUM_ENTRY_AS_TYPE: Use of enum entry names as types is prohibited. Use enum type instead.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.equality_not_applicable",
+    "upstreamId": "EQUALITY_NOT_APPLICABLE",
+    "title": "Compiler diagnostic EQUALITY_NOT_APPLICABLE: Operator '{0}' cannot be applied to '{1}' and '{2}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.error_in_contract_description",
+    "upstreamId": "ERROR_IN_CONTRACT_DESCRIPTION",
+    "title": "Compiler diagnostic ERROR_IN_CONTRACT_DESCRIPTION: Error in contract description: {0}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_classifiers_are_in_beta_warning",
+    "upstreamId": "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING: 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_class_kind",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_CLASS_KIND",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_CLASS_KIND: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_class_modifiers",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_CLASS_MODIFIERS",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_CLASS_MODIFIERS: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_class_scope",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_CLASS_SCOPE",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_CLASS_SCOPE: '{0}' contains an incompatible pair of 'expect' and 'actual' member declarations.\n  expect: {1}\n  actual: {2}\n  reason: {3}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_class_type_parameter_count",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_CLASS_TYPE_PARAMETER_COUNT",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_CLASS_TYPE_PARAMETER_COUNT: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_context_parameter_names",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_CONTEXT_PARAMETER_NAMES",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_CONTEXT_PARAMETER_NAMES: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_enum_entries",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_ENUM_ENTRIES",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_ENUM_ENTRIES: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_fun_interface_modifier",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_FUN_INTERFACE_MODIFIER",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_FUN_INTERFACE_MODIFIER: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_function_modifiers_not_subset",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_FUNCTION_MODIFIERS_NOT_SUBSET",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_FUNCTION_MODIFIERS_NOT_SUBSET: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_illegal_requires_opt_in",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_ILLEGAL_REQUIRES_OPT_IN",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_ILLEGAL_REQUIRES_OPT_IN: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_modality",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_MODALITY",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_MODALITY: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_nested_type_alias",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_NESTED_TYPE_ALIAS",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_NESTED_TYPE_ALIAS: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_parameter_names",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_PARAMETER_NAMES",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_PARAMETER_NAMES: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_property_kind",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_KIND",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_KIND: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_property_lateinit_modifier",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_LATEINIT_MODIFIER",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_LATEINIT_MODIFIER: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_property_setter_visibility",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_SETTER_VISIBILITY",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_SETTER_VISIBILITY: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_return_type",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_RETURN_TYPE",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_RETURN_TYPE: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_supertypes",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_SUPERTYPES",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_SUPERTYPES: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_type_parameter_names",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_TYPE_PARAMETER_NAMES",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_TYPE_PARAMETER_NAMES: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_type_parameter_variance",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_TYPE_PARAMETER_VARIANCE",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_TYPE_PARAMETER_VARIANCE: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_value_parameter_crossinline",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_CROSSINLINE",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_CROSSINLINE: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_value_parameter_noinline",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_NOINLINE",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_NOINLINE: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_value_parameter_vararg",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_VARARG",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_VARARG: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_incompatible_visibility",
+    "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_VISIBILITY",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_VISIBILITY: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_actual_opt_in_annotation",
+    "upstreamId": "EXPECT_ACTUAL_OPT_IN_ANNOTATION",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_OPT_IN_ANNOTATION: Opt-in annotations are prohibited to be 'expect' or 'actual'. Instead, declare annotation once in common sources.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_refinement_annotation_missing",
+    "upstreamId": "EXPECT_REFINEMENT_ANNOTATION_MISSING",
+    "title": "Compiler diagnostic EXPECT_REFINEMENT_ANNOTATION_MISSING: 'expect' declaration refinement is an experimental feature. Mark the declaration with the '@ExpectRefinement' annotation.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expect_refinement_annotation_wrong_target",
+    "upstreamId": "EXPECT_REFINEMENT_ANNOTATION_WRONG_TARGET",
+    "title": "Compiler diagnostic EXPECT_REFINEMENT_ANNOTATION_WRONG_TARGET: Only top-level 'expect' declarations can be annotated with the '@ExpectRefinement' annotation.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_class_constructor_delegation_call",
+    "upstreamId": "EXPECTED_CLASS_CONSTRUCTOR_DELEGATION_CALL",
+    "title": "Compiler diagnostic EXPECTED_CLASS_CONSTRUCTOR_DELEGATION_CALL: Explicit delegation call for constructor of 'expect' class is prohibited.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_class_constructor_property_parameter",
+    "upstreamId": "EXPECTED_CLASS_CONSTRUCTOR_PROPERTY_PARAMETER",
+    "title": "Compiler diagnostic EXPECTED_CLASS_CONSTRUCTOR_PROPERTY_PARAMETER: 'expect' class constructor cannot have a property parameter.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_condition",
+    "upstreamId": "EXPECTED_CONDITION",
+    "title": "Compiler diagnostic EXPECTED_CONDITION: Condition of type 'Boolean' expected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_declaration_with_body",
+    "upstreamId": "EXPECTED_DECLARATION_WITH_BODY",
+    "title": "Compiler diagnostic EXPECTED_DECLARATION_WITH_BODY: 'expect' declaration cannot have a body.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_delegated_property",
+    "upstreamId": "EXPECTED_DELEGATED_PROPERTY",
+    "title": "Compiler diagnostic EXPECTED_DELEGATED_PROPERTY: 'expect' property cannot be delegated.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_enum_constructor",
+    "upstreamId": "EXPECTED_ENUM_CONSTRUCTOR",
+    "title": "Compiler diagnostic EXPECTED_ENUM_CONSTRUCTOR: 'expect' enum class cannot have a constructor.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_enum_entry_with_body",
+    "upstreamId": "EXPECTED_ENUM_ENTRY_WITH_BODY",
+    "title": "Compiler diagnostic EXPECTED_ENUM_ENTRY_WITH_BODY: 'expect' enum entry cannot have a body.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_external_declaration",
+    "upstreamId": "EXPECTED_EXTERNAL_DECLARATION",
+    "title": "Compiler diagnostic EXPECTED_EXTERNAL_DECLARATION: 'expect' declaration cannot be external.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_lateinit_property",
+    "upstreamId": "EXPECTED_LATEINIT_PROPERTY",
+    "title": "Compiler diagnostic EXPECTED_LATEINIT_PROPERTY: 'expect' property cannot be 'lateinit'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_parameter_type_mismatch",
+    "upstreamId": "EXPECTED_PARAMETER_TYPE_MISMATCH",
+    "title": "Compiler diagnostic EXPECTED_PARAMETER_TYPE_MISMATCH: Parameter type mismatch: actual type is '{0}', but '{1}' was expected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_private_declaration",
+    "upstreamId": "EXPECTED_PRIVATE_DECLARATION",
+    "title": "Compiler diagnostic EXPECTED_PRIVATE_DECLARATION: 'expect' declaration cannot be private.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_property_initializer",
+    "upstreamId": "EXPECTED_PROPERTY_INITIALIZER",
+    "title": "Compiler diagnostic EXPECTED_PROPERTY_INITIALIZER: 'expect' property cannot have an initializer.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.expected_tailrec_function",
+    "upstreamId": "EXPECTED_TAILREC_FUNCTION",
+    "title": "Compiler diagnostic EXPECTED_TAILREC_FUNCTION: 'expect' function cannot have 'tailrec' modifier.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_function_return_type",
+    "upstreamId": "EXPOSED_FUNCTION_RETURN_TYPE",
+    "title": "Compiler diagnostic EXPOSED_FUNCTION_RETURN_TYPE: '{0}' function exposes its '{3}' return type{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_parameter_type",
+    "upstreamId": "EXPOSED_PARAMETER_TYPE",
+    "title": "Compiler diagnostic EXPOSED_PARAMETER_TYPE: '{0}' function exposes its '{3}' parameter type{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_property_type",
+    "upstreamId": "EXPOSED_PROPERTY_TYPE",
+    "title": "Compiler diagnostic EXPOSED_PROPERTY_TYPE: '{0}' property exposes its '{3}' type{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_property_type_in_constructor_error",
+    "upstreamId": "EXPOSED_PROPERTY_TYPE_IN_CONSTRUCTOR_ERROR",
+    "title": "Compiler diagnostic EXPOSED_PROPERTY_TYPE_IN_CONSTRUCTOR_ERROR: '{0}' property exposes its '{3}' type{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_receiver_type",
+    "upstreamId": "EXPOSED_RECEIVER_TYPE",
+    "title": "Compiler diagnostic EXPOSED_RECEIVER_TYPE: '{0}' member exposes its '{3}' receiver type{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_super_class",
+    "upstreamId": "EXPOSED_SUPER_CLASS",
+    "title": "Compiler diagnostic EXPOSED_SUPER_CLASS: '{0}' subclass exposes its '{3}' supertype{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_super_interface",
+    "upstreamId": "EXPOSED_SUPER_INTERFACE",
+    "title": "Compiler diagnostic EXPOSED_SUPER_INTERFACE: '{0}' sub-interface exposes its '{3}' supertype{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_type_parameter_bound",
+    "upstreamId": "EXPOSED_TYPE_PARAMETER_BOUND",
+    "title": "Compiler diagnostic EXPOSED_TYPE_PARAMETER_BOUND: '{0}' generic exposes its '{3}' parameter bound type{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_type_parameter_bound_deprecation_warning",
+    "upstreamId": "EXPOSED_TYPE_PARAMETER_BOUND_DEPRECATION_WARNING",
+    "title": "Compiler diagnostic EXPOSED_TYPE_PARAMETER_BOUND_DEPRECATION_WARNING: '{0}' generic exposes its '{3}' parameter bound type{2} '{1}'. This will be prohibited in the future.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.exposed_typealias_expanded_type",
+    "upstreamId": "EXPOSED_TYPEALIAS_EXPANDED_TYPE",
+    "title": "Compiler diagnostic EXPOSED_TYPEALIAS_EXPANDED_TYPE: '{0}' typealias exposes '{3}' in expanded type{2} '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.field_initializer_type_mismatch",
+    "upstreamId": "FIELD_INITIALIZER_TYPE_MISMATCH",
+    "title": "Compiler diagnostic FIELD_INITIALIZER_TYPE_MISMATCH: Initializer type mismatch: expected '{0}', actual '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.forbidden_identity_equals",
+    "upstreamId": "FORBIDDEN_IDENTITY_EQUALS",
+    "title": "Compiler diagnostic FORBIDDEN_IDENTITY_EQUALS: Identity equality for arguments of types '{0}' and '{1}' is prohibited.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.has_next_function_type_mismatch",
+    "upstreamId": "HAS_NEXT_FUNCTION_TYPE_MISMATCH",
+    "title": "Compiler diagnostic HAS_NEXT_FUNCTION_TYPE_MISMATCH: The 'iterator().hasNext()' function of the loop range must return 'Boolean', but returns '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.has_next_missing",
+    "upstreamId": "HAS_NEXT_MISSING",
+    "title": "Compiler diagnostic HAS_NEXT_MISSING: 'hasNext()' cannot be called on 'iterator()'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.illegal_declaration_in_when_subject",
+    "upstreamId": "ILLEGAL_DECLARATION_IN_WHEN_SUBJECT",
+    "title": "Compiler diagnostic ILLEGAL_DECLARATION_IN_WHEN_SUBJECT: Illegal variable declaration in 'when' subject: {0}. Must be a simple 'val' with an initializer.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.implementation_by_delegation_in_expect_class",
+    "upstreamId": "IMPLEMENTATION_BY_DELEGATION_IN_EXPECT_CLASS",
+    "title": "Compiler diagnostic IMPLEMENTATION_BY_DELEGATION_IN_EXPECT_CLASS: Implementation by delegation in 'expect' classes is prohibited.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.implicit_boxing_in_identity_equals",
+    "upstreamId": "IMPLICIT_BOXING_IN_IDENTITY_EQUALS",
+    "title": "Compiler diagnostic IMPLICIT_BOXING_IN_IDENTITY_EQUALS: Identity equality for arguments of types '{0}' and '{1}' can be unstable because of implicit boxing.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.inapplicable_all_target",
+    "upstreamId": "INAPPLICABLE_ALL_TARGET",
+    "title": "Compiler diagnostic INAPPLICABLE_ALL_TARGET: '@all:' annotations cannot be applied to {0}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.incompatible_enum_comparison_error",
+    "upstreamId": "INCOMPATIBLE_ENUM_COMPARISON_ERROR",
+    "title": "Compiler diagnostic INCOMPATIBLE_ENUM_COMPARISON_ERROR: Comparison of incompatible enums '{0}' and '{1}' is always unsuccessful.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.inferred_invisible_when_type_warning",
+    "upstreamId": "INFERRED_INVISIBLE_WHEN_TYPE_WARNING",
+    "title": "Compiler diagnostic INFERRED_INVISIBLE_WHEN_TYPE_WARNING: Inferred type '{0}' for {1} expression is not visible in this scope.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.initialization_before_declaration",
+    "upstreamId": "INITIALIZATION_BEFORE_DECLARATION",
+    "title": "Compiler diagnostic INITIALIZATION_BEFORE_DECLARATION: Variable cannot be initialized before declaration.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.initialization_before_declaration_warning",
+    "upstreamId": "INITIALIZATION_BEFORE_DECLARATION_WARNING",
+    "title": "Compiler diagnostic INITIALIZATION_BEFORE_DECLARATION_WARNING: Variable cannot be initialized before declaration.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.initializer_type_mismatch",
+    "upstreamId": "INITIALIZER_TYPE_MISMATCH",
+    "title": "Compiler diagnostic INITIALIZER_TYPE_MISMATCH: Initializer type mismatch: expected '{0}', actual '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.inline_property_with_backing_field",
+    "upstreamId": "INLINE_PROPERTY_WITH_BACKING_FIELD",
+    "title": "Compiler diagnostic INLINE_PROPERTY_WITH_BACKING_FIELD: Inline property cannot have a backing field.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.int_literal_out_of_range",
+    "upstreamId": "INT_LITERAL_OUT_OF_RANGE",
+    "title": "Compiler diagnostic INT_LITERAL_OUT_OF_RANGE: Value out of range.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.integer_literal_cast_instead_of_to_call",
+    "upstreamId": "INTEGER_LITERAL_CAST_INSTEAD_OF_TO_CALL",
+    "title": "Compiler diagnostic INTEGER_LITERAL_CAST_INSTEAD_OF_TO_CALL: Use $toNumberCallTemplate to give the type explicitly.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.invalid_if_as_expression",
+    "upstreamId": "INVALID_IF_AS_EXPRESSION",
+    "title": "Compiler diagnostic INVALID_IF_AS_EXPRESSION: 'if' must have both main and 'else' branches when used as an expression.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.invisible_abstract_member_from_super_error",
+    "upstreamId": "INVISIBLE_ABSTRACT_MEMBER_FROM_SUPER_ERROR",
+    "title": "Compiler diagnostic INVISIBLE_ABSTRACT_MEMBER_FROM_SUPER_ERROR: '{0}' inherits invisible abstract {1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.invisible_reference",
+    "upstreamId": "INVISIBLE_REFERENCE",
+    "title": "Compiler diagnostic INVISIBLE_REFERENCE: Cannot access '{0}': it is {1} in {2}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.invisible_setter",
+    "upstreamId": "INVISIBLE_SETTER",
+    "title": "Compiler diagnostic INVISIBLE_SETTER: Cannot access '{0}': it is {1} in {2}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.is_enum_entry",
+    "upstreamId": "IS_ENUM_ENTRY",
+    "title": "Compiler diagnostic IS_ENUM_ENTRY: 'is' over enum entry is prohibited. Use comparison instead.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.iterator_ambiguity",
+    "upstreamId": "ITERATOR_AMBIGUITY",
+    "title": "Compiler diagnostic ITERATOR_AMBIGUITY: Method 'iterator()' is ambiguous for this expression. Applicable candidates:{0}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.iterator_missing",
+    "upstreamId": "ITERATOR_MISSING",
+    "title": "Compiler diagnostic ITERATOR_MISSING: For-loop range must have an 'iterator()' method.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.iterator_on_nullable",
+    "upstreamId": "ITERATOR_ON_NULLABLE",
+    "title": "Compiler diagnostic ITERATOR_ON_NULLABLE: Non-nullable value required to call an 'iterator()' method in a for-loop.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.leaked_in_place_lambda",
+    "upstreamId": "LEAKED_IN_PLACE_LAMBDA",
+    "title": "Compiler diagnostic LEAKED_IN_PLACE_LAMBDA: Leaked in-place lambda '{0}'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.many_impl_member_not_implemented",
+    "upstreamId": "MANY_IMPL_MEMBER_NOT_IMPLEMENTED",
+    "title": "Compiler diagnostic MANY_IMPL_MEMBER_NOT_IMPLEMENTED: {0} must override '{1}' because it inherits multiple implementations for it.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.many_interfaces_member_not_implemented",
+    "upstreamId": "MANY_INTERFACES_MEMBER_NOT_IMPLEMENTED",
+    "title": "Compiler diagnostic MANY_INTERFACES_MEMBER_NOT_IMPLEMENTED: {0} must override '{1}' because it inherits multiple interface methods for it.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.missing_branch_for_non_abstract_sealed_class",
+    "upstreamId": "MISSING_BRANCH_FOR_NON_ABSTRACT_SEALED_CLASS",
+    "title": "Compiler diagnostic MISSING_BRANCH_FOR_NON_ABSTRACT_SEALED_CLASS: Missing branch for non-abstract sealed Java class. Add {0}.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.multiple_context_lists",
+    "upstreamId": "MULTIPLE_CONTEXT_LISTS",
+    "title": "Compiler diagnostic MULTIPLE_CONTEXT_LISTS: Multiple context parameter lists are forbidden. Put all context parameters in one list.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.named_arguments_not_allowed",
+    "upstreamId": "NAMED_ARGUMENTS_NOT_ALLOWED",
+    "title": "Compiler diagnostic NAMED_ARGUMENTS_NOT_ALLOWED: Named arguments are prohibited for {0}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.named_context_parameter_in_function_type",
+    "upstreamId": "NAMED_CONTEXT_PARAMETER_IN_FUNCTION_TYPE",
+    "title": "Compiler diagnostic NAMED_CONTEXT_PARAMETER_IN_FUNCTION_TYPE: Named context parameters in function types are unsupported. Use syntax 'context(Type)' instead.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.named_parameter_not_found",
+    "upstreamId": "NAMED_PARAMETER_NOT_FOUND",
+    "title": "Compiler diagnostic NAMED_PARAMETER_NOT_FOUND: No parameter with name '{0}' found.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.next_missing",
+    "upstreamId": "NEXT_MISSING",
+    "title": "Compiler diagnostic NEXT_MISSING: Method 'next()' cannot be called on 'iterator()'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.no_actual_class_member_for_expected_class",
+    "upstreamId": "NO_ACTUAL_CLASS_MEMBER_FOR_EXPECTED_CLASS",
+    "title": "Compiler diagnostic NO_ACTUAL_CLASS_MEMBER_FOR_EXPECTED_CLASS: '{0}' has no corresponding members for 'expect' class members:{1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.no_context_argument",
+    "upstreamId": "NO_CONTEXT_ARGUMENT",
+    "title": "Compiler diagnostic NO_CONTEXT_ARGUMENT: No context argument for '{0}' found.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.no_else_in_when",
+    "upstreamId": "NO_ELSE_IN_WHEN",
+    "title": "Compiler diagnostic NO_ELSE_IN_WHEN: 'when' expression must be exhaustive. Add {0}{1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.no_explicit_return_type_in_api_mode",
+    "upstreamId": "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE",
+    "title": "Compiler diagnostic NO_EXPLICIT_RETURN_TYPE_IN_API_MODE: Return type must be specified in explicit API mode.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.no_explicit_visibility_in_api_mode",
+    "upstreamId": "NO_EXPLICIT_VISIBILITY_IN_API_MODE",
+    "title": "Compiler diagnostic NO_EXPLICIT_VISIBILITY_IN_API_MODE: Visibility must be specified in explicit API mode.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.no_get_method",
+    "upstreamId": "NO_GET_METHOD",
+    "title": "Compiler diagnostic NO_GET_METHOD: No 'get' operator method providing array access.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.no_set_method",
+    "upstreamId": "NO_SET_METHOD",
+    "title": "Compiler diagnostic NO_SET_METHOD: No 'set' operator method providing array access.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.no_value_for_parameter",
+    "upstreamId": "NO_VALUE_FOR_PARAMETER",
+    "title": "Compiler diagnostic NO_VALUE_FOR_PARAMETER: No value passed for parameter '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.non_final_member_in_final_class",
+    "upstreamId": "NON_FINAL_MEMBER_IN_FINAL_CLASS",
+    "title": "Compiler diagnostic NON_FINAL_MEMBER_IN_FINAL_CLASS: 'open' has no effect on a final class.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.non_final_member_in_object",
+    "upstreamId": "NON_FINAL_MEMBER_IN_OBJECT",
+    "title": "Compiler diagnostic NON_FINAL_MEMBER_IN_OBJECT: 'open' has no effect on object.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.non_inline_member_val_initialization",
+    "upstreamId": "NON_INLINE_MEMBER_VAL_INITIALIZATION",
+    "title": "Compiler diagnostic NON_INLINE_MEMBER_VAL_INITIALIZATION: Initialization of captured member values must be inlined.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.non_public_call_from_public_inline",
+    "upstreamId": "NON_PUBLIC_CALL_FROM_PUBLIC_INLINE",
+    "title": "Compiler diagnostic NON_PUBLIC_CALL_FROM_PUBLIC_INLINE: Public-API inline {1} cannot access non-public-API {0}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.non_public_inline_call_from_public_inline",
+    "upstreamId": "NON_PUBLIC_INLINE_CALL_FROM_PUBLIC_INLINE",
+    "title": "Compiler diagnostic NON_PUBLIC_INLINE_CALL_FROM_PUBLIC_INLINE: Public-API inline {1} cannot access non-public-API inline {0} as it could transitively access non-public-API declarations.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.non_suspend_overridden_by_suspend",
+    "upstreamId": "NON_SUSPEND_OVERRIDDEN_BY_SUSPEND",
+    "title": "Compiler diagnostic NON_SUSPEND_OVERRIDDEN_BY_SUSPEND: Suspend function '{0}' cannot override non-suspend function {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.non_vararg_spread",
+    "upstreamId": "NON_VARARG_SPREAD",
+    "title": "Compiler diagnostic NON_VARARG_SPREAD: The spread operator (*foo) can only be applied in a vararg position.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.none_applicable",
+    "upstreamId": "NONE_APPLICABLE",
+    "title": "Compiler diagnostic NONE_APPLICABLE: None of the following candidates is applicable:\n\n{0}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.not_null_assertion_on_callable_reference",
+    "upstreamId": "NOT_NULL_ASSERTION_ON_CALLABLE_REFERENCE",
+    "title": "Compiler diagnostic NOT_NULL_ASSERTION_ON_CALLABLE_REFERENCE: Non-null assertion (!!) called on a callable reference expression.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.not_null_assertion_on_lambda_expression",
+    "upstreamId": "NOT_NULL_ASSERTION_ON_LAMBDA_EXPRESSION",
+    "title": "Compiler diagnostic NOT_NULL_ASSERTION_ON_LAMBDA_EXPRESSION: Non-null assertion (!!) called on a lambda expression.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.nothing_to_override",
+    "upstreamId": "NOTHING_TO_OVERRIDE",
+    "title": "Compiler diagnostic NOTHING_TO_OVERRIDE: '{0}' overrides nothing.{1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.null_for_nonnull_type",
+    "upstreamId": "NULL_FOR_NONNULL_TYPE",
+    "title": "Compiler diagnostic NULL_FOR_NONNULL_TYPE: Null cannot be a value of a non-null type '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.numeric_cast_never_succeeds_but_can_be_replaced_with_to_call",
+    "upstreamId": "NUMERIC_CAST_NEVER_SUCCEEDS_BUT_CAN_BE_REPLACED_WITH_TO_CALL",
+    "title": "Compiler diagnostic NUMERIC_CAST_NEVER_SUCCEEDS_BUT_CAN_BE_REPLACED_WITH_TO_CALL: $castNeverSucceedsMessage Use $toNumberCallTemplate to perform numeric conversion.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_argument_is_not_marker",
+    "upstreamId": "OPT_IN_ARGUMENT_IS_NOT_MARKER",
+    "title": "Compiler diagnostic OPT_IN_ARGUMENT_IS_NOT_MARKER: Annotation '{0}' is not annotated with '@RequiresOptIn'. '@OptIn' has no effect.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_can_only_be_used_as_annotation",
+    "upstreamId": "OPT_IN_CAN_ONLY_BE_USED_AS_ANNOTATION",
+    "title": "Compiler diagnostic OPT_IN_CAN_ONLY_BE_USED_AS_ANNOTATION: This class can only be used as an annotation.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_marker_can_only_be_used_as_annotation_or_argument_in_opt_in",
+    "upstreamId": "OPT_IN_MARKER_CAN_ONLY_BE_USED_AS_ANNOTATION_OR_ARGUMENT_IN_OPT_IN",
+    "title": "Compiler diagnostic OPT_IN_MARKER_CAN_ONLY_BE_USED_AS_ANNOTATION_OR_ARGUMENT_IN_OPT_IN: This class can only be used as an annotation or as an argument to '@OptIn'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_marker_on_wrong_target",
+    "upstreamId": "OPT_IN_MARKER_ON_WRONG_TARGET",
+    "title": "Compiler diagnostic OPT_IN_MARKER_ON_WRONG_TARGET: Opt-in requirement marker annotation cannot be used on {0}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_marker_with_wrong_retention",
+    "upstreamId": "OPT_IN_MARKER_WITH_WRONG_RETENTION",
+    "title": "Compiler diagnostic OPT_IN_MARKER_WITH_WRONG_RETENTION: Opt-in requirement marker annotation cannot be used with SOURCE retention. Use BINARY retention instead.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_marker_with_wrong_target",
+    "upstreamId": "OPT_IN_MARKER_WITH_WRONG_TARGET",
+    "title": "Compiler diagnostic OPT_IN_MARKER_WITH_WRONG_TARGET: Opt-in requirement marker annotation cannot be used on the following code elements: {0}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_override",
+    "upstreamId": "OPT_IN_OVERRIDE",
+    "title": "Compiler diagnostic OPT_IN_OVERRIDE: {1}",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_override_error",
+    "upstreamId": "OPT_IN_OVERRIDE_ERROR",
+    "title": "Compiler diagnostic OPT_IN_OVERRIDE_ERROR: {1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_to_inheritance",
+    "upstreamId": "OPT_IN_TO_INHERITANCE",
+    "title": "Compiler diagnostic OPT_IN_TO_INHERITANCE: {1}",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_to_inheritance_error",
+    "upstreamId": "OPT_IN_TO_INHERITANCE_ERROR",
+    "title": "Compiler diagnostic OPT_IN_TO_INHERITANCE_ERROR: {1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_usage",
+    "upstreamId": "OPT_IN_USAGE",
+    "title": "Compiler diagnostic OPT_IN_USAGE: {1}",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_usage_error",
+    "upstreamId": "OPT_IN_USAGE_ERROR",
+    "title": "Compiler diagnostic OPT_IN_USAGE_ERROR: {1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.opt_in_without_arguments",
+    "upstreamId": "OPT_IN_WITHOUT_ARGUMENTS",
+    "title": "Compiler diagnostic OPT_IN_WITHOUT_ARGUMENTS: '@OptIn' without any arguments has no effect.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.optional_declaration_outside_of_annotation_entry",
+    "upstreamId": "OPTIONAL_DECLARATION_OUTSIDE_OF_ANNOTATION_ENTRY",
+    "title": "Compiler diagnostic OPTIONAL_DECLARATION_OUTSIDE_OF_ANNOTATION_ENTRY: Declaration annotated with '@OptionalExpectation' can only be used inside an annotation entry.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.optional_declaration_usage_in_non_common_source",
+    "upstreamId": "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE",
+    "title": "Compiler diagnostic OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE: Declaration annotated with '@OptionalExpectation' can only be used in common module sources.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.optional_expectation_not_on_expected",
+    "upstreamId": "OPTIONAL_EXPECTATION_NOT_ON_EXPECTED",
+    "title": "Compiler diagnostic OPTIONAL_EXPECTATION_NOT_ON_EXPECTED: '@OptionalExpectation' can only be used on an 'expect' annotation class.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.overload_resolution_ambiguity",
+    "upstreamId": "OVERLOAD_RESOLUTION_AMBIGUITY",
+    "title": "Compiler diagnostic OVERLOAD_RESOLUTION_AMBIGUITY: Overload resolution ambiguity between candidates:{0}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.overriding_final_member",
+    "upstreamId": "OVERRIDING_FINAL_MEMBER",
+    "title": "Compiler diagnostic OVERRIDING_FINAL_MEMBER: '{0}' in '{1}' is final and cannot be overridden.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.overriding_final_member_by_delegation",
+    "upstreamId": "OVERRIDING_FINAL_MEMBER_BY_DELEGATION",
+    "title": "Compiler diagnostic OVERRIDING_FINAL_MEMBER_BY_DELEGATION: {0} implicitly overrides a final member {1} by delegation.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.overriding_ignorable_with_must_use",
+    "upstreamId": "OVERRIDING_IGNORABLE_WITH_MUST_USE",
+    "title": "Compiler diagnostic OVERRIDING_IGNORABLE_WITH_MUST_USE: Method '{0}' is located in a scope marked as '@MustUseReturnValues', but marked as '@IgnorableReturnValue' in parent type '{1}' or its supertypes. Overriding ignorable methods with must-use methods is a semantically incorrect change. Consider marking '{0}' as '@IgnorableReturnValue'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.parameter_name_changed_on_override",
+    "upstreamId": "PARAMETER_NAME_CHANGED_ON_OVERRIDE",
+    "title": "Compiler diagnostic PARAMETER_NAME_CHANGED_ON_OVERRIDE: The corresponding parameter in the supertype '{0}' is named '{1}'. This may cause problems when calling this function with named arguments.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.property_type_mismatch_by_delegation",
+    "upstreamId": "PROPERTY_TYPE_MISMATCH_BY_DELEGATION",
+    "title": "Compiler diagnostic PROPERTY_TYPE_MISMATCH_BY_DELEGATION: {0} clashes with {1} from delegation: property types are incompatible.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.property_type_mismatch_on_inheritance",
+    "upstreamId": "PROPERTY_TYPE_MISMATCH_ON_INHERITANCE",
+    "title": "Compiler diagnostic PROPERTY_TYPE_MISMATCH_ON_INHERITANCE: {0} clashes with {1}: property types are incompatible.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.property_type_mismatch_on_override",
+    "upstreamId": "PROPERTY_TYPE_MISMATCH_ON_OVERRIDE",
+    "title": "Compiler diagnostic PROPERTY_TYPE_MISMATCH_ON_OVERRIDE: Type of '{0}' is not a subtype of overridden property {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.protected_call_from_public_inline_error",
+    "upstreamId": "PROTECTED_CALL_FROM_PUBLIC_INLINE_ERROR",
+    "title": "Compiler diagnostic PROTECTED_CALL_FROM_PUBLIC_INLINE_ERROR: Protected function call from public-API inline {0} is prohibited.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.protected_constructor_call_from_public_inline",
+    "upstreamId": "PROTECTED_CONSTRUCTOR_CALL_FROM_PUBLIC_INLINE",
+    "title": "Compiler diagnostic PROTECTED_CONSTRUCTOR_CALL_FROM_PUBLIC_INLINE: Protected constructor call from public-API inline {0} is deprecated.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.recursion_in_inline",
+    "upstreamId": "RECURSION_IN_INLINE",
+    "title": "Compiler diagnostic RECURSION_IN_INLINE: Inline function '{0}' cannot be recursive.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.recursive_typealias_expansion",
+    "upstreamId": "RECURSIVE_TYPEALIAS_EXPANSION",
+    "title": "Compiler diagnostic RECURSIVE_TYPEALIAS_EXPANSION: Recursive type alias in expansion.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.redundant_call_of_conversion_method",
+    "upstreamId": "REDUNDANT_CALL_OF_CONVERSION_METHOD",
+    "title": "Compiler diagnostic REDUNDANT_CALL_OF_CONVERSION_METHOD: Redundant call of conversion method.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.redundant_else_in_when",
+    "upstreamId": "REDUNDANT_ELSE_IN_WHEN",
+    "title": "Compiler diagnostic REDUNDANT_ELSE_IN_WHEN: 'when' is exhaustive so 'else' is redundant here.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.redundant_modality_modifier",
+    "upstreamId": "REDUNDANT_MODALITY_MODIFIER",
+    "title": "Compiler diagnostic REDUNDANT_MODALITY_MODIFIER: Redundant modality modifier.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.redundant_return_unit_type",
+    "upstreamId": "REDUNDANT_RETURN_UNIT_TYPE",
+    "title": "Compiler diagnostic REDUNDANT_RETURN_UNIT_TYPE: Redundant return 'Unit' type.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.redundant_setter_parameter_type",
+    "upstreamId": "REDUNDANT_SETTER_PARAMETER_TYPE",
+    "title": "Compiler diagnostic REDUNDANT_SETTER_PARAMETER_TYPE: Redundant setter parameter type.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.redundant_single_expression_string_template",
+    "upstreamId": "REDUNDANT_SINGLE_EXPRESSION_STRING_TEMPLATE",
+    "title": "Compiler diagnostic REDUNDANT_SINGLE_EXPRESSION_STRING_TEMPLATE: Redundant string template.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.redundant_visibility_modifier",
+    "upstreamId": "REDUNDANT_VISIBILITY_MODIFIER",
+    "title": "Compiler diagnostic REDUNDANT_VISIBILITY_MODIFIER: Redundant visibility modifier.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.repeated_annotation",
+    "upstreamId": "REPEATED_ANNOTATION",
+    "title": "Compiler diagnostic REPEATED_ANNOTATION: This annotation is not repeatable.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.result_type_mismatch",
+    "upstreamId": "RESULT_TYPE_MISMATCH",
+    "title": "Compiler diagnostic RESULT_TYPE_MISMATCH: Function return type mismatch: actual type is '{1}', but '{0}' was expected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.return_type_mismatch",
+    "upstreamId": "RETURN_TYPE_MISMATCH",
+    "title": "Compiler diagnostic RETURN_TYPE_MISMATCH: Return type mismatch: expected '{0}', actual '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.return_type_mismatch_by_delegation",
+    "upstreamId": "RETURN_TYPE_MISMATCH_BY_DELEGATION",
+    "title": "Compiler diagnostic RETURN_TYPE_MISMATCH_BY_DELEGATION: {0} clashes with {1} from delegation: return types are incompatible.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.return_type_mismatch_on_inheritance",
+    "upstreamId": "RETURN_TYPE_MISMATCH_ON_INHERITANCE",
+    "title": "Compiler diagnostic RETURN_TYPE_MISMATCH_ON_INHERITANCE: {0} clashes with {1}: return types are incompatible.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.return_type_mismatch_on_override",
+    "upstreamId": "RETURN_TYPE_MISMATCH_ON_OVERRIDE",
+    "title": "Compiler diagnostic RETURN_TYPE_MISMATCH_ON_OVERRIDE: Return type of '{0}' is not a subtype of the return type of the overridden member {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.return_value_not_used",
+    "upstreamId": "RETURN_VALUE_NOT_USED",
+    "title": "Compiler diagnostic RETURN_VALUE_NOT_USED: Unused return value{0}.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.return_value_not_used_coercion",
+    "upstreamId": "RETURN_VALUE_NOT_USED_COERCION",
+    "title": "Compiler diagnostic RETURN_VALUE_NOT_USED_COERCION: Unused return value{0}. It was coerced to 'Unit' due to a functional parameter type.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.safe_cast_relying_on_null",
+    "upstreamId": "SAFE_CAST_RELYING_ON_NULL",
+    "title": "Compiler diagnostic SAFE_CAST_RELYING_ON_NULL: This cast always returns null, even when it succeeds.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.sealed_inheritor_in_different_module",
+    "upstreamId": "SEALED_INHERITOR_IN_DIFFERENT_MODULE",
+    "title": "Compiler diagnostic SEALED_INHERITOR_IN_DIFFERENT_MODULE: Extending sealed classes or interfaces from a different module is prohibited.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.sealed_inheritor_in_different_package",
+    "upstreamId": "SEALED_INHERITOR_IN_DIFFERENT_PACKAGE",
+    "title": "Compiler diagnostic SEALED_INHERITOR_IN_DIFFERENT_PACKAGE: A class can only extend a sealed class or interface declared in the same package.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.sealed_supertype_in_local_class",
+    "upstreamId": "SEALED_SUPERTYPE_IN_LOCAL_CLASS",
+    "title": "Compiler diagnostic SEALED_SUPERTYPE_IN_LOCAL_CLASS: {0} cannot extend a sealed {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.senseless_comparison",
+    "upstreamId": "SENSELESS_COMPARISON",
+    "title": "Compiler diagnostic SENSELESS_COMPARISON: Condition is always '{0}'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.senseless_null_in_when",
+    "upstreamId": "SENSELESS_NULL_IN_WHEN",
+    "title": "Compiler diagnostic SENSELESS_NULL_IN_WHEN: Expression under 'when' is never equal to null.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.setter_projected_out",
+    "upstreamId": "SETTER_PROJECTED_OUT",
+    "title": "Compiler diagnostic SETTER_PROJECTED_OUT: Receiver type '{0}' contains {1} projection which prohibits calling the setter of '{2}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.smartcast_impossible",
+    "upstreamId": "SMARTCAST_IMPOSSIBLE",
+    "title": "Compiler diagnostic SMARTCAST_IMPOSSIBLE: Smart cast to '{0}' is impossible, because '{1}' is a {2}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.smartcast_impossible_on_implicit_invoke_receiver",
+    "upstreamId": "SMARTCAST_IMPOSSIBLE_ON_IMPLICIT_INVOKE_RECEIVER",
+    "title": "Compiler diagnostic SMARTCAST_IMPOSSIBLE_ON_IMPLICIT_INVOKE_RECEIVER: Smart cast to '{0}' is impossible, because '{1}' is a {2}. Use explicit '?.invoke' to make a function-like call instead.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.spread_of_nullable",
+    "upstreamId": "SPREAD_OF_NULLABLE",
+    "title": "Compiler diagnostic SPREAD_OF_NULLABLE: The spread operator (*foo) cannot be applied to an argument of nullable type.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.subclass_opt_in_argument_is_not_marker",
+    "upstreamId": "SUBCLASS_OPT_IN_ARGUMENT_IS_NOT_MARKER",
+    "title": "Compiler diagnostic SUBCLASS_OPT_IN_ARGUMENT_IS_NOT_MARKER: Annotation '{0}' is not annotated with '@RequiresOptIn'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.subclass_opt_in_inapplicable",
+    "upstreamId": "SUBCLASS_OPT_IN_INAPPLICABLE",
+    "title": "Compiler diagnostic SUBCLASS_OPT_IN_INAPPLICABLE: '@SubclassOptInRequired' is not applicable to '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.supertype_initialized_in_expected_class",
+    "upstreamId": "SUPERTYPE_INITIALIZED_IN_EXPECTED_CLASS",
+    "title": "Compiler diagnostic SUPERTYPE_INITIALIZED_IN_EXPECTED_CLASS: 'expect' classes cannot initialize supertypes.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.supertype_not_initialized",
+    "upstreamId": "SUPERTYPE_NOT_INITIALIZED",
+    "title": "Compiler diagnostic SUPERTYPE_NOT_INITIALIZED: This type has a constructor, so it must be initialized here.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.suspend_overridden_by_non_suspend",
+    "upstreamId": "SUSPEND_OVERRIDDEN_BY_NON_SUSPEND",
+    "title": "Compiler diagnostic SUSPEND_OVERRIDDEN_BY_NON_SUSPEND: Non-suspend function '{0}' cannot override suspend function {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.throwable_type_mismatch",
+    "upstreamId": "THROWABLE_TYPE_MISMATCH",
+    "title": "Compiler diagnostic THROWABLE_TYPE_MISMATCH: Throwable type mismatch: actual type is '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.too_many_arguments",
+    "upstreamId": "TOO_MANY_ARGUMENTS",
+    "title": "Compiler diagnostic TOO_MANY_ARGUMENTS: Too many arguments for '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.trim_margin_blank_prefix",
+    "upstreamId": "TRIM_MARGIN_BLANK_PREFIX",
+    "title": "Compiler diagnostic TRIM_MARGIN_BLANK_PREFIX: Prefix for trimMargin cannot be blank.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.type_mismatch",
+    "upstreamId": "TYPE_MISMATCH",
+    "title": "Compiler diagnostic TYPE_MISMATCH: Type mismatch: inferred type is '{1}', but '{0}' was expected.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.type_variance_conflict_error",
+    "upstreamId": "TYPE_VARIANCE_CONFLICT_ERROR",
+    "title": "Compiler diagnostic TYPE_VARIANCE_CONFLICT_ERROR: Type parameter '{0}' is declared as '{1}' but occurs in '{2}' position in type '{3}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.typealias_expands_to_array_of_nothings",
+    "upstreamId": "TYPEALIAS_EXPANDS_TO_ARRAY_OF_NOTHINGS",
+    "title": "Compiler diagnostic TYPEALIAS_EXPANDS_TO_ARRAY_OF_NOTHINGS: Type alias expanded to malformed type '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.typealias_expansion_deprecation",
+    "upstreamId": "TYPEALIAS_EXPANSION_DEPRECATION",
+    "title": "Compiler diagnostic TYPEALIAS_EXPANSION_DEPRECATION: '{0}' uses '{1}', which is deprecated. {2}.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.typealias_expansion_deprecation_error",
+    "upstreamId": "TYPEALIAS_EXPANSION_DEPRECATION_ERROR",
+    "title": "Compiler diagnostic TYPEALIAS_EXPANSION_DEPRECATION_ERROR: '{0}' uses '{1}', which is an error. {2}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unchecked_cast",
+    "upstreamId": "UNCHECKED_CAST",
+    "title": "Compiler diagnostic UNCHECKED_CAST: Unchecked cast of '{0}' to '{1}'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unexpected_safe_call",
+    "upstreamId": "UNEXPECTED_SAFE_CALL",
+    "title": "Compiler diagnostic UNEXPECTED_SAFE_CALL: Safe call is prohibited here.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.uninitialized_enum_companion",
+    "upstreamId": "UNINITIALIZED_ENUM_COMPANION",
+    "title": "Compiler diagnostic UNINITIALIZED_ENUM_COMPANION: Companion object of enum class '{0}' is uninitialized here.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.uninitialized_enum_entry",
+    "upstreamId": "UNINITIALIZED_ENUM_ENTRY",
+    "title": "Compiler diagnostic UNINITIALIZED_ENUM_ENTRY: Enum entry '{0}' is uninitialized here.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.uninitialized_variable",
+    "upstreamId": "UNINITIALIZED_VARIABLE",
+    "title": "Compiler diagnostic UNINITIALIZED_VARIABLE: Variable '{0}' must be initialized.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unnecessary_not_null_assertion",
+    "upstreamId": "UNNECESSARY_NOT_NULL_ASSERTION",
+    "title": "Compiler diagnostic UNNECESSARY_NOT_NULL_ASSERTION: Unnecessary non-null assertion (!!) on a non-null receiver of type '{0}'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unnecessary_safe_call",
+    "upstreamId": "UNNECESSARY_SAFE_CALL",
+    "title": "Compiler diagnostic UNNECESSARY_SAFE_CALL: Unnecessary safe call on a non-null receiver of type '{0}'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unreachable_code",
+    "upstreamId": "UNREACHABLE_CODE",
+    "title": "Compiler diagnostic UNREACHABLE_CODE: Unreachable code.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unresolved_import",
+    "upstreamId": "UNRESOLVED_IMPORT",
+    "title": "Compiler diagnostic UNRESOLVED_IMPORT: Unresolved reference '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unresolved_reference",
+    "upstreamId": "UNRESOLVED_REFERENCE",
+    "title": "Compiler diagnostic UNRESOLVED_REFERENCE: Unresolved reference '{0}'{1}{2}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unresolved_reference_wrong_receiver",
+    "upstreamId": "UNRESOLVED_REFERENCE_WRONG_RECEIVER",
+    "title": "Compiler diagnostic UNRESOLVED_REFERENCE_WRONG_RECEIVER: Candidate '{0}' is inapplicable because of a receiver type mismatch.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unsafe_call",
+    "upstreamId": "UNSAFE_CALL",
+    "title": "Compiler diagnostic UNSAFE_CALL: Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unsafe_callable_reference",
+    "upstreamId": "UNSAFE_CALLABLE_REFERENCE",
+    "title": "Compiler diagnostic UNSAFE_CALLABLE_REFERENCE: Bound callable reference cannot be created on nullable receiver of type '{0}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unsafe_cast_relying_on_null",
+    "upstreamId": "UNSAFE_CAST_RELYING_ON_NULL",
+    "title": "Compiler diagnostic UNSAFE_CAST_RELYING_ON_NULL: This cast only succeeds when the expression is null. Consider rewriting it explicitly.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unsafe_implicit_invoke_call",
+    "upstreamId": "UNSAFE_IMPLICIT_INVOKE_CALL",
+    "title": "Compiler diagnostic UNSAFE_IMPLICIT_INVOKE_CALL: Reference has a nullable type '{0}'. Use explicit '?.invoke' to make a function-like call instead.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unsafe_infix_call",
+    "upstreamId": "UNSAFE_INFIX_CALL",
+    "title": "Compiler diagnostic UNSAFE_INFIX_CALL: Infix call is prohibited on a nullable receiver of type '{0}'. Use '?.'-qualified call instead.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unsafe_operator_call",
+    "upstreamId": "UNSAFE_OPERATOR_CALL",
+    "title": "Compiler diagnostic UNSAFE_OPERATOR_CALL: Operator call is prohibited on a nullable receiver of type '{0}'. Use '?.'-qualified call instead.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unsupported_contextual_declaration_call",
+    "upstreamId": "UNSUPPORTED_CONTEXTUAL_DECLARATION_CALL",
+    "title": "Compiler diagnostic UNSUPPORTED_CONTEXTUAL_DECLARATION_CALL: To call contextual declarations, specify the '-Xcontext-parameters' compiler option.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unused_anonymous_parameter",
+    "upstreamId": "UNUSED_ANONYMOUS_PARAMETER",
+    "title": "Compiler diagnostic UNUSED_ANONYMOUS_PARAMETER: Parameter '{0}' is never used, consider renaming it to '_'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unused_expression",
+    "upstreamId": "UNUSED_EXPRESSION",
+    "title": "Compiler diagnostic UNUSED_EXPRESSION: Expression is unused.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unused_lambda_expression",
+    "upstreamId": "UNUSED_LAMBDA_EXPRESSION",
+    "title": "Compiler diagnostic UNUSED_LAMBDA_EXPRESSION: Lambda expression is never invoked. To create a scoped block, use 'run { ... }'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.unused_variable",
+    "upstreamId": "UNUSED_VARIABLE",
+    "title": "Compiler diagnostic UNUSED_VARIABLE: Variable is unused.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.upper_bound_violated",
+    "upstreamId": "UPPER_BOUND_VIOLATED",
+    "title": "Compiler diagnostic UPPER_BOUND_VIOLATED: Type argument is not within its bounds: type parameter '{2}' must be subtype of '{0}', but actual: '{1}'.{3}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.upper_bound_violated_in_typealias_expansion",
+    "upstreamId": "UPPER_BOUND_VIOLATED_IN_TYPEALIAS_EXPANSION",
+    "title": "Compiler diagnostic UPPER_BOUND_VIOLATED_IN_TYPEALIAS_EXPANSION: Type argument is not within its bounds: type parameter '{2}' must be subtype of '{0}', but actual: '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.useless_call_on_not_null",
+    "upstreamId": "USELESS_CALL_ON_NOT_NULL",
+    "title": "Compiler diagnostic USELESS_CALL_ON_NOT_NULL: Unnecessary call on a non-null value.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.useless_cast",
+    "upstreamId": "USELESS_CAST",
+    "title": "Compiler diagnostic USELESS_CAST: Cast is redundant.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.useless_elvis",
+    "upstreamId": "USELESS_ELVIS",
+    "title": "Compiler diagnostic USELESS_ELVIS: Elvis operator (?:) always returns the left operand of non-nullable type '{0}'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.useless_elvis_left_is_null",
+    "upstreamId": "USELESS_ELVIS_LEFT_IS_NULL",
+    "title": "Compiler diagnostic USELESS_ELVIS_LEFT_IS_NULL: Elvis operator (?:) is redundant if the left operand is always null.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.useless_elvis_right_is_null",
+    "upstreamId": "USELESS_ELVIS_RIGHT_IS_NULL",
+    "title": "Compiler diagnostic USELESS_ELVIS_RIGHT_IS_NULL: Elvis operator (?:) is redundant if the right operand is always null.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.useless_is_check",
+    "upstreamId": "USELESS_IS_CHECK",
+    "title": "Compiler diagnostic USELESS_IS_CHECK: Check for instance is always '{0}'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.val_reassignment",
+    "upstreamId": "VAL_REASSIGNMENT",
+    "title": "Compiler diagnostic VAL_REASSIGNMENT: 'val' cannot be reassigned.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.val_reassignment_via_backing_field_error",
+    "upstreamId": "VAL_REASSIGNMENT_VIA_BACKING_FIELD_ERROR",
+    "title": "Compiler diagnostic VAL_REASSIGNMENT_VIA_BACKING_FIELD_ERROR: Reassignment of read-only property via backing field.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.var_overridden_by_val",
+    "upstreamId": "VAR_OVERRIDDEN_BY_VAL",
+    "title": "Compiler diagnostic VAR_OVERRIDDEN_BY_VAL: 'var' property {0} cannot be overridden by 'val' property '{1}'.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.var_overridden_by_val_by_delegation",
+    "upstreamId": "VAR_OVERRIDDEN_BY_VAL_BY_DELEGATION",
+    "title": "Compiler diagnostic VAR_OVERRIDDEN_BY_VAL_BY_DELEGATION: 'val' property {0} implicitly overrides a 'var' property {1} by delegation.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.var_type_mismatch_on_inheritance",
+    "upstreamId": "VAR_TYPE_MISMATCH_ON_INHERITANCE",
+    "title": "Compiler diagnostic VAR_TYPE_MISMATCH_ON_INHERITANCE: {0} clashes with {1}: property types do not match.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.var_type_mismatch_on_override",
+    "upstreamId": "VAR_TYPE_MISMATCH_ON_OVERRIDE",
+    "title": "Compiler diagnostic VAR_TYPE_MISMATCH_ON_OVERRIDE: Type of '{0}' doesn't match the type of the overridden 'var' property {1}.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.variable_initializer_is_redundant",
+    "upstreamId": "VARIABLE_INITIALIZER_IS_REDUNDANT",
+    "title": "Compiler diagnostic VARIABLE_INITIALIZER_IS_REDUNDANT: Initializer is redundant.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.variable_never_read",
+    "upstreamId": "VARIABLE_NEVER_READ",
+    "title": "Compiler diagnostic VARIABLE_NEVER_READ: Variable is never read.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.variable_with_no_type_no_initializer",
+    "upstreamId": "VARIABLE_WITH_NO_TYPE_NO_INITIALIZER",
+    "title": "Compiler diagnostic VARIABLE_WITH_NO_TYPE_NO_INITIALIZER: This variable must either have an explicit type or be initialized.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.virtual_member_hidden",
+    "upstreamId": "VIRTUAL_MEMBER_HIDDEN",
+    "title": "Compiler diagnostic VIRTUAL_MEMBER_HIDDEN: '{0}' hides member of supertype '{1}' and needs an 'override' modifier.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.when_guard_without_subject",
+    "upstreamId": "WHEN_GUARD_WITHOUT_SUBJECT",
+    "title": "Compiler diagnostic WHEN_GUARD_WITHOUT_SUBJECT: Guard statements are only allowed in 'when' with subject.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.wrong_annotation_target",
+    "upstreamId": "WRONG_ANNOTATION_TARGET",
+    "title": "Compiler diagnostic WRONG_ANNOTATION_TARGET: This annotation is not applicable to target '{0}'. Applicable targets: {1}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.wrong_annotation_target_with_use_site_target",
+    "upstreamId": "WRONG_ANNOTATION_TARGET_WITH_USE_SITE_TARGET",
+    "title": "Compiler diagnostic WRONG_ANNOTATION_TARGET_WITH_USE_SITE_TARGET: This annotation is not applicable to target '{0}' and use-site target '@{1}'. Applicable targets: {2}",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.wrong_condition_suggest_guard",
+    "upstreamId": "WRONG_CONDITION_SUGGEST_GUARD",
+    "title": "Compiler diagnostic WRONG_CONDITION_SUGGEST_GUARD: Use 'if' instead of '&&' to introduce additional conditions. See https://kotl.in/guards-in-when.",
+    "severity": "error",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.common.wrong_invocation_kind",
+    "upstreamId": "WRONG_INVOCATION_KIND",
+    "title": "Compiler diagnostic WRONG_INVOCATION_KIND: Wrong invocation kind '{1}' for '{0}' specified, the actual invocation kind is '{2}'.",
+    "severity": "warning",
+    "family": "FirErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR common"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.actual_annotation_conflicting_default_argument_value",
+    "upstreamId": "ACTUAL_ANNOTATION_CONFLICTING_DEFAULT_ARGUMENT_VALUE",
+    "title": "Compiler diagnostic ACTUAL_ANNOTATION_CONFLICTING_DEFAULT_ARGUMENT_VALUE: Parameter '{0}' has conflicting values in 'expect' and 'actual' annotations.",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.ambiguous_actuals",
+    "upstreamId": "AMBIGUOUS_ACTUALS",
+    "title": "Compiler diagnostic AMBIGUOUS_ACTUALS: The 'expect' declaration '{0}' has several compatible 'actual' declarations in module '{1}'.",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.expect_actual_ir_incompatibility",
+    "upstreamId": "EXPECT_ACTUAL_IR_INCOMPATIBILITY",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_IR_INCOMPATIBILITY: The 'expect' and the 'actual' declarations are incompatible.\n  expect: {0}\n  actual: {1}\n  reason: {2}",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.expect_actual_ir_mismatch",
+    "upstreamId": "EXPECT_ACTUAL_IR_MISMATCH",
+    "title": "Compiler diagnostic EXPECT_ACTUAL_IR_MISMATCH: The 'expect' declaration '{0}' doesn't match the 'actual' declaration '{1}' because {2}.",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.java_direct_actual_without_expect",
+    "upstreamId": "JAVA_DIRECT_ACTUAL_WITHOUT_EXPECT",
+    "title": "Compiler diagnostic JAVA_DIRECT_ACTUAL_WITHOUT_EXPECT: The Java direct actual declaration '{0}' has no corresponding 'expect' declaration.",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.java_direct_actualization_default_parameters_in_actual_function",
+    "upstreamId": "JAVA_DIRECT_ACTUALIZATION_DEFAULT_PARAMETERS_IN_ACTUAL_FUNCTION",
+    "title": "Compiler diagnostic JAVA_DIRECT_ACTUALIZATION_DEFAULT_PARAMETERS_IN_ACTUAL_FUNCTION: Default parameters in the actual function '{0}' are not allowed because actualization is performed via the '@KotlinActual' annotation.",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.java_direct_actualization_default_parameters_in_expect_function",
+    "upstreamId": "JAVA_DIRECT_ACTUALIZATION_DEFAULT_PARAMETERS_IN_EXPECT_FUNCTION",
+    "title": "Compiler diagnostic JAVA_DIRECT_ACTUALIZATION_DEFAULT_PARAMETERS_IN_EXPECT_FUNCTION: Default parameters in the 'expect' function '{0}' are not allowed because the function is actualized via the '@KotlinActual' annotation.",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.kotlin_actual_annotation_missing",
+    "upstreamId": "KOTLIN_ACTUAL_ANNOTATION_MISSING",
+    "title": "Compiler diagnostic KOTLIN_ACTUAL_ANNOTATION_MISSING: The corresponding Java declaration '{0}' must be marked with '@kotlin.jvm.KotlinActual'.",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.ir.no_actual_for_expect",
+    "upstreamId": "NO_ACTUAL_FOR_EXPECT",
+    "title": "Compiler diagnostic NO_ACTUAL_FOR_EXPECT: The 'expect' declaration '{0}' has no 'actual' declaration in module '{1}'.",
+    "severity": "error",
+    "family": "IrActualizationErrors",
+    "provider": "Kotlin compiler2.4.21 / IR actualization"
+  },
+  {
+    "ruleId": "ktc.compiler.native.callable_references_to_variadic_c_functions_are_not_supported",
+    "upstreamId": "CALLABLE_REFERENCES_TO_VARIADIC_C_FUNCTIONS_ARE_NOT_SUPPORTED",
+    "title": "Compiler diagnostic CALLABLE_REFERENCES_TO_VARIADIC_C_FUNCTIONS_ARE_NOT_SUPPORTED: Callable references to variadic C functions are not supported: {0}",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.callable_references_to_variadic_objective_c_methods_are_not_supported",
+    "upstreamId": "CALLABLE_REFERENCES_TO_VARIADIC_OBJECTIVE_C_METHODS_ARE_NOT_SUPPORTED",
+    "title": "Compiler diagnostic CALLABLE_REFERENCES_TO_VARIADIC_OBJECTIVE_C_METHODS_ARE_NOT_SUPPORTED: Callable references to variadic Objective-C methods are not supported: {0}",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.cannot_check_for_forward_declaration",
+    "upstreamId": "CANNOT_CHECK_FOR_FORWARD_DECLARATION",
+    "title": "Compiler diagnostic CANNOT_CHECK_FOR_FORWARD_DECLARATION: Cannot check for forward declaration '{0}'.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.conflicting_objc_overloads",
+    "upstreamId": "CONFLICTING_OBJC_OVERLOADS",
+    "title": "Compiler diagnostic CONFLICTING_OBJC_OVERLOADS: Conflicting overloads:{0}\nAdd @ObjCSignatureOverride to allow collision for functions inherited from Objective-C.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.constructor_does_not_override_any_super_constructor",
+    "upstreamId": "CONSTRUCTOR_DOES_NOT_OVERRIDE_ANY_SUPER_CONSTRUCTOR",
+    "title": "Compiler diagnostic CONSTRUCTOR_DOES_NOT_OVERRIDE_ANY_SUPER_CONSTRUCTOR: Constructor with '@{0}' doesn't override any super class constructor.\nIt must completely match by parameter names and types.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.constructor_overrides_already_overridden_objc_initializer",
+    "upstreamId": "CONSTRUCTOR_OVERRIDES_ALREADY_OVERRIDDEN_OBJC_INITIALIZER",
+    "title": "Compiler diagnostic CONSTRUCTOR_OVERRIDES_ALREADY_OVERRIDDEN_OBJC_INITIALIZER: Constructor with '@{0}' overrides initializer that is already overridden explicitly.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.empty_objc_name",
+    "upstreamId": "EMPTY_OBJC_NAME",
+    "title": "Compiler diagnostic EMPTY_OBJC_NAME: Empty '@ObjCName' names aren't supported.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.forward_declaration_as_class_literal",
+    "upstreamId": "FORWARD_DECLARATION_AS_CLASS_LITERAL",
+    "title": "Compiler diagnostic FORWARD_DECLARATION_AS_CLASS_LITERAL: Cannot refer to forward declaration '{0}' from class literal.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.forward_declaration_as_reified_type_argument",
+    "upstreamId": "FORWARD_DECLARATION_AS_REIFIED_TYPE_ARGUMENT",
+    "title": "Compiler diagnostic FORWARD_DECLARATION_AS_REIFIED_TYPE_ARGUMENT: Cannot pass forward declaration '{0}' for reified type parameter.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.identity_hash_code_on_value_type",
+    "upstreamId": "IDENTITY_HASH_CODE_ON_VALUE_TYPE",
+    "title": "Compiler diagnostic IDENTITY_HASH_CODE_ON_VALUE_TYPE: Call to 'kotlin.native.identityHashCode' on an instance of value type '{0}' can have unexpected behavior.",
+    "severity": "warning",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.inapplicable_exact_objc_name",
+    "upstreamId": "INAPPLICABLE_EXACT_OBJC_NAME",
+    "title": "Compiler diagnostic INAPPLICABLE_EXACT_OBJC_NAME: Exact '@ObjCName' is only applicable to classes, objects, and interfaces.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.inapplicable_objc_name",
+    "upstreamId": "INAPPLICABLE_OBJC_NAME",
+    "title": "Compiler diagnostic INAPPLICABLE_OBJC_NAME: '@ObjCName' is not applicable to overrides.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.inapplicable_objc_override",
+    "upstreamId": "INAPPLICABLE_OBJC_OVERRIDE",
+    "title": "Compiler diagnostic INAPPLICABLE_OBJC_OVERRIDE: @ObjCSignatureOverride is only allowed on methods overriding methods from Objective-C.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.inapplicable_shared_immutable_property",
+    "upstreamId": "INAPPLICABLE_SHARED_IMMUTABLE_PROPERTY",
+    "title": "Compiler diagnostic INAPPLICABLE_SHARED_IMMUTABLE_PROPERTY: '@SharedImmutable' is applicable only to 'val' with backing field or to property with delegation.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.inapplicable_shared_immutable_top_level",
+    "upstreamId": "INAPPLICABLE_SHARED_IMMUTABLE_TOP_LEVEL",
+    "title": "Compiler diagnostic INAPPLICABLE_SHARED_IMMUTABLE_TOP_LEVEL: '@SharedImmutable' is applicable only to top-level declarations.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.inapplicable_thread_local",
+    "upstreamId": "INAPPLICABLE_THREAD_LOCAL",
+    "title": "Compiler diagnostic INAPPLICABLE_THREAD_LOCAL: '@ThreadLocal' is applicable only to property with backing field, to property with delegation, or to objects.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.inapplicable_thread_local_top_level",
+    "upstreamId": "INAPPLICABLE_THREAD_LOCAL_TOP_LEVEL",
+    "title": "Compiler diagnostic INAPPLICABLE_THREAD_LOCAL_TOP_LEVEL: '@ThreadLocal' is applicable only to top-level declarations.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.incompatible_objc_name_override",
+    "upstreamId": "INCOMPATIBLE_OBJC_NAME_OVERRIDE",
+    "title": "Compiler diagnostic INCOMPATIBLE_OBJC_NAME_OVERRIDE: Member '{0}' inherits inconsistent '@ObjCName' from:{1}",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.incompatible_objc_refinement_override",
+    "upstreamId": "INCOMPATIBLE_OBJC_REFINEMENT_OVERRIDE",
+    "title": "Compiler diagnostic INCOMPATIBLE_OBJC_REFINEMENT_OVERRIDE: Refined declaration '{0}' overrides declarations with different or no refinement from:{1}",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.incompatible_throws_inherited",
+    "upstreamId": "INCOMPATIBLE_THROWS_INHERITED",
+    "title": "Compiler diagnostic INCOMPATIBLE_THROWS_INHERITED: Member inherits different '@Throws' filters from:{0}",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.incompatible_throws_override",
+    "upstreamId": "INCOMPATIBLE_THROWS_OVERRIDE",
+    "title": "Compiler diagnostic INCOMPATIBLE_THROWS_OVERRIDE: Member overrides different '@Throws' filter from '{0}'.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.invalid_characters_native_error",
+    "upstreamId": "INVALID_CHARACTERS_NATIVE_ERROR",
+    "title": "Compiler diagnostic INVALID_CHARACTERS_NATIVE_ERROR: Name {0}.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.invalid_objc_hides_targets",
+    "upstreamId": "INVALID_OBJC_HIDES_TARGETS",
+    "title": "Compiler diagnostic INVALID_OBJC_HIDES_TARGETS: '@HidesFromObjC' annotation is only applicable to annotations with targets CLASS, FUNCTION, and/or PROPERTY.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.invalid_objc_name",
+    "upstreamId": "INVALID_OBJC_NAME",
+    "title": "Compiler diagnostic INVALID_OBJC_NAME: '@ObjCName' must have a 'name' and/or 'swiftName'.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.invalid_objc_name_chars",
+    "upstreamId": "INVALID_OBJC_NAME_CHARS",
+    "title": "Compiler diagnostic INVALID_OBJC_NAME_CHARS: '@ObjCName' contains illegal characters '{0}'.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.invalid_objc_name_first_char",
+    "upstreamId": "INVALID_OBJC_NAME_FIRST_CHAR",
+    "title": "Compiler diagnostic INVALID_OBJC_NAME_FIRST_CHAR: '@ObjCName' contains illegal first characters '{0}'.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.invalid_refines_in_swift_targets",
+    "upstreamId": "INVALID_REFINES_IN_SWIFT_TARGETS",
+    "title": "Compiler diagnostic INVALID_REFINES_IN_SWIFT_TARGETS: '@RefinesInSwift' annotation is only applicable to annotations with targets FUNCTION and/or PROPERTY.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.missing_exact_objc_name",
+    "upstreamId": "MISSING_EXACT_OBJC_NAME",
+    "title": "Compiler diagnostic MISSING_EXACT_OBJC_NAME: Exact '@ObjCName' is required to have an ObjC name.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.missing_exception_in_throws_on_suspend",
+    "upstreamId": "MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND",
+    "title": "Compiler diagnostic MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND: '@Throws' on suspend declaration must have '{0}' (or any of its superclasses) listed.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.must_be_objc_object_type",
+    "upstreamId": "MUST_BE_OBJC_OBJECT_TYPE",
+    "title": "Compiler diagnostic MUST_BE_OBJC_OBJECT_TYPE: Unexpected {0}: '{1}'\nOnly Objective-C object types are supported here.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.must_be_unit_type",
+    "upstreamId": "MUST_BE_UNIT_TYPE",
+    "title": "Compiler diagnostic MUST_BE_UNIT_TYPE: Unexpected {0}: '{1}'\nOnly 'Unit' is supported here.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.must_not_have_extension_receiver",
+    "upstreamId": "MUST_NOT_HAVE_EXTENSION_RECEIVER",
+    "title": "Compiler diagnostic MUST_NOT_HAVE_EXTENSION_RECEIVER: '{0}' cannot have extension receiver.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.native_specific_atomic",
+    "upstreamId": "NATIVE_SPECIFIC_ATOMIC",
+    "title": "Compiler diagnostic NATIVE_SPECIFIC_ATOMIC: Native-specific atomic type 'kotlin.concurrent.{0}' is going to be deprecated soon. Consider using 'kotlin.concurrent.atomics.{0}' instead.",
+    "severity": "warning",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.property_must_be_var",
+    "upstreamId": "PROPERTY_MUST_BE_VAR",
+    "title": "Compiler diagnostic PROPERTY_MUST_BE_VAR: '@{0}' property must be var.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.redundant_swift_refinement",
+    "upstreamId": "REDUNDANT_SWIFT_REFINEMENT",
+    "title": "Compiler diagnostic REDUNDANT_SWIFT_REFINEMENT: ObjC refined declarations cannot be refined in Swift.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.string_as_variadic_objc_param_is_ambiguous",
+    "upstreamId": "STRING_AS_VARIADIC_OBJC_PARAM_IS_AMBIGUOUS",
+    "title": "Compiler diagnostic STRING_AS_VARIADIC_OBJC_PARAM_IS_AMBIGUOUS: Passing String as variadic Objective-C argument is ambiguous; cast it to NSString or pass with '.cstr' as C string.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.subtype_of_hidden_from_objc",
+    "upstreamId": "SUBTYPE_OF_HIDDEN_FROM_OBJC",
+    "title": "Compiler diagnostic SUBTYPE_OF_HIDDEN_FROM_OBJC: Only '@HiddenFromObjC' declaration can be a subtype of '@HiddenFromObjC' declaration.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.throws_list_empty",
+    "upstreamId": "THROWS_LIST_EMPTY",
+    "title": "Compiler diagnostic THROWS_LIST_EMPTY: Throws must have a non-empty class list.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.two_or_less_parameters_are_supported_here",
+    "upstreamId": "TWO_OR_LESS_PARAMETERS_ARE_SUPPORTED_HERE",
+    "title": "Compiler diagnostic TWO_OR_LESS_PARAMETERS_ARE_SUPPORTED_HERE: Only 0, 1 or 2 parameters are supported here.",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.unchecked_cast_to_forward_declaration",
+    "upstreamId": "UNCHECKED_CAST_TO_FORWARD_DECLARATION",
+    "title": "Compiler diagnostic UNCHECKED_CAST_TO_FORWARD_DECLARATION: Unchecked cast to forward declaration from '{0}' to '{1}'.",
+    "severity": "warning",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.variadic_c_spread_is_supported_only_for_arrayof",
+    "upstreamId": "VARIADIC_C_SPREAD_IS_SUPPORTED_ONLY_FOR_ARRAYOF",
+    "title": "Compiler diagnostic VARIADIC_C_SPREAD_IS_SUPPORTED_ONLY_FOR_ARRAYOF: When calling variadic C functions spread operator is supported only for *arrayOf(...).",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.variadic_function_pointers_are_not_supported",
+    "upstreamId": "VARIADIC_FUNCTION_POINTERS_ARE_NOT_SUPPORTED",
+    "title": "Compiler diagnostic VARIADIC_FUNCTION_POINTERS_ARE_NOT_SUPPORTED: Variadic function pointers are not supported: {0}",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  },
+  {
+    "ruleId": "ktc.compiler.native.variadic_objc_spread_is_supported_only_for_arrayof",
+    "upstreamId": "VARIADIC_OBJC_SPREAD_IS_SUPPORTED_ONLY_FOR_ARRAYOF",
+    "title": "Compiler diagnostic VARIADIC_OBJC_SPREAD_IS_SUPPORTED_ONLY_FOR_ARRAYOF: When calling variadic Objective-C methods spread operator is supported only for *arrayOf(...).",
+    "severity": "error",
+    "family": "FirNativeErrors",
+    "provider": "Kotlin compiler2.4.21 / FIR native"
+  }
+]

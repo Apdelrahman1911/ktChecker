@@ -1,6 +1,11 @@
 # ktChecker: product contract and implementation plan
 
-**Research baseline: 2026-11-04. Status: design and catalog, not a working checker.**
+**Research baseline: 2026-11-04. Implementation underway; not a qualified release.**
+
+The baseline below records the planning deliverable. The implementation request adds
+the normative [implementation acceptance contract](implementation-contract.md).
+Executable progress and test evidence must be reported separately from this plan;
+catalog requirements are not evidence of implemented or qualified coverage.
 
 This plan preserves three simultaneous launch requirements: **broad relevant rules,
 low false positives, and fast useful feedback after every patch**. None can be
@@ -27,6 +32,7 @@ Read the detailed specifications together:
 | Document | Owns |
 |---|---|
 | [Architecture](architecture.md) | Engine, alternatives, snapshots, cache/impact algorithms, scheduling, security |
+| [Implementation acceptance contract](implementation-contract.md) | Concurrent agents, suppression authority, scoped completion and executable acceptance histories |
 | [Repository and distribution](repository.md) | Proposed module tree, ownership/dependency boundaries, local installation and multi-project state |
 | [Protocol](protocol.md) | CLI/MCP examples, foreground/background sequences, delivery state machines |
 | [Validation and CI](validation-ci.md) | Rule evidence gates, compatibility tuples, target CI, benchmarks |

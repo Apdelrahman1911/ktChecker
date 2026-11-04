@@ -5,4 +5,8 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 *.sh text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.ts text eol=lf
+*.properties text eol=lf
 *.bat text eol=crlf

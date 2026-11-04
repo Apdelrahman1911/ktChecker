@@ -1,0 +1,51 @@
+{
+    "rule_id": "ktc.compiler.common.unreachable_code",
+    "upstream_id": "UNREACHABLE_CODE",
+    "kind": "suppression",
+    "passed": false,
+    "assertions": "Real @file:Suppress removed only this warning from its sealed file while an adjacent unsuppressed control still emitted the same ID; coverage remained non-complete.",
+    "jobs": [
+        {
+            "label": "suppression-single-UNREACHABLE_CODE",
+            "analysis_key": "sha256:2445b827ea5170ce39d2d4eeb9f56d450d81f981880a3f68ca2eec213cf1f418",
+            "snapshot_id": "sha256:067c9985b0356129d05ce0478bbec94facd30317b3a83607da416333f7580676",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/056-suppression-single-unreachable_code/input.json",
+            "sha256": "a365dcfb963cc8047e4d57ec16b2d7e8038f5b6bab6fd517ea01abcefe7bc56d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/056-suppression-single-unreachable_code/process.json",
+            "sha256": "79f349bde3da9885ca37c789520f01359a579c42d1a0890adec2f60b85781341"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/056-suppression-single-unreachable_code/result.json",
+            "sha256": "cd708f1dbc4290f25873babf410ee263d43246aa1cd919c4a14cd83c01f8e117"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/056-suppression-single-unreachable_code/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/056-suppression-single-unreachable_code/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/056-suppression-single-unreachable_code/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/056-suppression-single-unreachable_code/sources/cases/unreachable_code.kt",
+            "sha256": "0095775c5dbeafa322bdb8e10f2c691cf7b3361e52e61e8b97ff9e773aa7d938"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/056-suppression-single-unreachable_code/sources/unsuppressed/unreachable_code.kt",
+            "sha256": "a06743103bcdbbb0ee2da7f4a7384a3d0bd352b3ec320c26c5dc4a72fef46a54"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

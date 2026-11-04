@@ -1,5 +1,7 @@
 # Validation, compatibility, CI, and benchmarks
 
+Implementation additions: [required executable concurrent histories](implementation-contract.md#required-executable-histories).
+
 **Status: proposed plan. Research retrieved on 2026-11-04 UTC.**
 
 There is no checker implementation, executed Kotlin rule suite, target-platform

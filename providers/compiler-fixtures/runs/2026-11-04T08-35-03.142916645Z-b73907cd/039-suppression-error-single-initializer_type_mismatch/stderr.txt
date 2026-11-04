@@ -1,0 +1,4 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-9625724626512655794/sources/cases/initializer_type_mismatch.kt:1:16: warning: [ERROR_SUPPRESSION] Suppression of error 'INITIALIZER_TYPE_MISMATCH' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue
+@file:Suppress("INITIALIZER_TYPE_MISMATCH")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^

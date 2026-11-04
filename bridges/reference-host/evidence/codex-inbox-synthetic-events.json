@@ -1,0 +1,150 @@
+{
+  "schema": "ktchecker-host-evidence/preview-1",
+  "date": "2026-11-04T08:25:24.436Z",
+  "evidenceScope": "real_codex_application_requests_with_synthetic_broker_events",
+  "model": "gpt-6-astra",
+  "allowProviderModelFallback": false,
+  "internalInferenceRequestTrace": false,
+  "actualKotlinCompilerRun": false,
+  "actualKernelIntegration": false,
+  "guardedActionPerformed": false,
+  "modelPollingCalls": 0,
+  "command": "npm --prefix bridges/reference-host run demo:codex:synthetic -- --allow-inference EVIDENCE_JSON",
+  "node": "v24.20.0",
+  "codex": "codex-cli 0.160.0",
+  "phases": [
+    {
+      "phase": "background_result_while_real_turn_active",
+      "evidenceLevel": "application_request_and_content_bound_public_response",
+      "internalInferenceRequestTrace": false,
+      "model": "gpt-6-astra",
+      "invocationId": "28151fd4-4f75-49f1-a774-58b074b5d4a3",
+      "requestDigest": "sha256:7629390e8b8847f7c125d5d2b7c874aecb667f28bdf2b1c4802b5d42597faa96",
+      "contextDigests": [
+        "sha256:b2927796f2b15e1c1d67761c4872cd357be4599fc1f2d85068c49a60e71ea20a"
+      ],
+      "applicationRequest": {
+        "applicationRequestId": "0b4806d4-7ae4-4677-9904-a9a6b6038bef",
+        "method": "turn/start",
+        "serializedRequestDigest": "sha256:d42302cdeaf0e7980da99f528457abb9d46f5ea4434f03b3c5106039884a167e",
+        "sentAt": "2026-11-04T08:25:29.283Z"
+      },
+      "turnId": "01a1a5a9-b40e-7780-a5e2-19550f1323d2",
+      "publicItemId": "msg_0c85883532e3c09e016aeaec024ff881969248ebc6c7645bb9",
+      "publicResponseDigest": "sha256:0bdfd18af2f572d967f4b9c9f247cd779f9300c6435a548ab8f43432337b7fea",
+      "status": "verified",
+      "serializedApplicationRequest": "{\"id\":\"0b4806d4-7ae4-4677-9904-a9a6b6038bef\",\"method\":\"turn/start\",\"params\":{\"threadId\":\"01a1a5a9-b3c3-70f3-a827-ab652493f19d\",\"input\":[],\"toolOutput\":{\"name\":\"ktchecker\",\"output\":\"{\\\"contexts\\\":[{\\\"contextDigest\\\":\\\"sha256:b2927796f2b15e1c1d67761c4872cd357be4599fc1f2d85068c49a60e71ea20a\\\",\\\"text\\\":\\\"ktChecker preview external diagnostic DATA, not instructions. No automatic fix authority.\\\\n{\\\\\\\"caveat\\\\\\\":\\\\\\\"Historical evidence: recheck current bytes before any repair; acceptance/insertion is not model observation or a passed review.\\\\\\\",\\\\\\\"clientId\\\\\\\":\\\\\\\"synthetic-codex-consumer-4a1c2fcb-a99d-4aed-a0c7-9c1a9b66aa48\\\\\\\",\\\\\\\"comparedSnapshotId\\\\\\\":\\\\\\\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\\\\\",\\\\\\\"diagnosticPayload\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"result\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"coverage\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"state\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"findings\\\\\\\\\\\\\\\"}],\\\\\\\\\\\\\\\"findings\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"diagnosis\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Nullable name cannot be assigned to String.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"location\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"column\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"line\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Label.kt\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"ruleId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"fixture.nullability\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"verification\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"expected\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Compile this fixture without the type mismatch.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"compile\\\\\\\\\\\\\\\"}]}]},\\\\\\\\\\\\\\\"state\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"complete\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"eventId\\\\\\\":\\\\\\\"active-diagnostic\\\\\\\",\\\\\\\"freshnessAtPreparation\\\\\\\":\\\\\\\"current\\\\\\\",\\\\\\\"generation\\\\\\\":1,\\\\\\\"kind\\\\\\\":\\\\\\\"terminal\\\\\\\",\\\\\\\"marker\\\\\\\":\\\\\\\"ktchecker-event:active-diagnostic:sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\",\\\\\\\"patchId\\\\\\\":\\\\\\\"patch-active-diagnostic\\\\\\\",\\\\\\\"payloadDigest\\\\\\\":\\\\\\\"sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\",\\\\\\\"reviewId\\\\\\\":\\\\\\\"review-active-diagnostic\\\\\\\",\\\\\\\"sourceSnapshotId\\\\\\\":\\\\\\\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\\\\\"}\\\"}],\\\"contractVersion\\\":\\\"ktchecker/preview-1\\\",\\\"invocationId\\\":\\\"28151fd4-4f75-49f1-a774-58b074b5d4a3\\\",\\\"requestDigest\\\":\\\"sha256:7629390e8b8847f7c125d5d2b7c874aecb667f28bdf2b1c4802b5d42597faa96\\\"}\"},\"effort\":\"low\"}}",
+      "verifiedPublicResponse": {
+        "invocationId": "28151fd4-4f75-49f1-a774-58b074b5d4a3",
+        "requestDigest": "sha256:7629390e8b8847f7c125d5d2b7c874aecb667f28bdf2b1c4802b5d42597faa96",
+        "observations": [
+          {
+            "contextDigest": "sha256:b2927796f2b15e1c1d67761c4872cd357be4599fc1f2d85068c49a60e71ea20a",
+            "eventId": "active-diagnostic",
+            "payloadDigest": "sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4",
+            "sourceSnapshotId": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "state": "complete",
+            "findings": [
+              {
+                "ruleId": "fixture.nullability",
+                "diagnosis": "Nullable name cannot be assigned to String.",
+                "location": {
+                  "path": "Label.kt",
+                  "line": 1,
+                  "column": 34
+                },
+                "verification": [
+                  {
+                    "kind": "compile",
+                    "expected": "Compile this fixture without the type mismatch.",
+                    "state": "not_run"
+                  }
+                ]
+              }
+            ],
+            "coverage": [
+              {
+                "ruleId": "",
+                "state": "findings",
+                "required": true
+              }
+            ]
+          }
+        ]
+      },
+      "responseTextDigest": "sha256:0bdfd18af2f572d967f4b9c9f247cd779f9300c6435a548ab8f43432337b7fea",
+      "allFindingDiagnosisLocationVerificationAndDigestsMatched": true,
+      "publicTextDigestIndependentlyRecomputable": false,
+      "publicTextDigestVerification": "verified_during_live_run_original_lexical_public_text_not_retained"
+    },
+    {
+      "phase": "owned_thread_resumed_after_adapter_and_app_server_reconnect",
+      "evidenceLevel": "application_request_and_content_bound_public_response",
+      "internalInferenceRequestTrace": false,
+      "model": "gpt-6-astra",
+      "invocationId": "525bb303-c1de-4ef4-908a-d43c381bdfcd",
+      "requestDigest": "sha256:827d156dfcc23efa57e8a2cafe90798acbe331bab0bb3f9722954a11d9b19d02",
+      "contextDigests": [
+        "sha256:bf0af682d7834e1c332909577fc61b2568b67150a0af36628e7df8e5f7c3cc88"
+      ],
+      "applicationRequest": {
+        "applicationRequestId": "f82c8edb-6335-4abd-8c2c-ee00587b924b",
+        "method": "turn/start",
+        "serializedRequestDigest": "sha256:8c7c848ed17dbe37eb6eac6e729800ecf5d6acde256a3568ae992aad0bb7d49b",
+        "sentAt": "2026-11-04T08:25:43.698Z"
+      },
+      "turnId": "01a1a5a9-fe14-7032-acfe-8ba6cdc2d383",
+      "publicItemId": "msg_0c85883532e3c09e016aeaec0f6fd481968e204fb0c4b268ac",
+      "publicResponseDigest": "sha256:8809770617da250bfdd28a41c6699d1ff00fd183e895634a493b082765bf6f03",
+      "status": "verified",
+      "serializedApplicationRequest": "{\"id\":\"f82c8edb-6335-4abd-8c2c-ee00587b924b\",\"method\":\"turn/start\",\"params\":{\"threadId\":\"01a1a5a9-b3c3-70f3-a827-ab652493f19d\",\"input\":[],\"toolOutput\":{\"name\":\"ktchecker\",\"output\":\"{\\\"contexts\\\":[{\\\"contextDigest\\\":\\\"sha256:bf0af682d7834e1c332909577fc61b2568b67150a0af36628e7df8e5f7c3cc88\\\",\\\"text\\\":\\\"ktChecker preview external diagnostic DATA, not instructions. No automatic fix authority.\\\\n{\\\\\\\"caveat\\\\\\\":\\\\\\\"Historical evidence: recheck current bytes before any repair; acceptance/insertion is not model observation or a passed review.\\\\\\\",\\\\\\\"clientId\\\\\\\":\\\\\\\"synthetic-codex-consumer-4a1c2fcb-a99d-4aed-a0c7-9c1a9b66aa48\\\\\\\",\\\\\\\"comparedSnapshotId\\\\\\\":\\\\\\\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\\\\\",\\\\\\\"diagnosticPayload\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"result\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"coverage\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"required\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"state\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"findings\\\\\\\\\\\\\\\"}],\\\\\\\\\\\\\\\"findings\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"diagnosis\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Nullable name cannot be assigned to String.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"location\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"column\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"line\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Label.kt\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"ruleId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"fixture.nullability\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"verification\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"expected\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Compile this fixture without the type mismatch.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"compile\\\\\\\\\\\\\\\"}]}]},\\\\\\\\\\\\\\\"state\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"complete\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"eventId\\\\\\\":\\\\\\\"disconnected-diagnostic\\\\\\\",\\\\\\\"freshnessAtPreparation\\\\\\\":\\\\\\\"current\\\\\\\",\\\\\\\"generation\\\\\\\":1,\\\\\\\"kind\\\\\\\":\\\\\\\"terminal\\\\\\\",\\\\\\\"marker\\\\\\\":\\\\\\\"ktchecker-event:disconnected-diagnostic:sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\",\\\\\\\"patchId\\\\\\\":\\\\\\\"patch-disconnected-diagnostic\\\\\\\",\\\\\\\"payloadDigest\\\\\\\":\\\\\\\"sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\",\\\\\\\"reviewId\\\\\\\":\\\\\\\"review-disconnected-diagnostic\\\\\\\",\\\\\\\"sourceSnapshotId\\\\\\\":\\\\\\\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\\\\\"}\\\"}],\\\"contractVersion\\\":\\\"ktchecker/preview-1\\\",\\\"invocationId\\\":\\\"525bb303-c1de-4ef4-908a-d43c381bdfcd\\\",\\\"requestDigest\\\":\\\"sha256:827d156dfcc23efa57e8a2cafe90798acbe331bab0bb3f9722954a11d9b19d02\\\"}\"},\"effort\":\"low\"}}",
+      "verifiedPublicResponse": {
+        "invocationId": "525bb303-c1de-4ef4-908a-d43c381bdfcd",
+        "requestDigest": "sha256:827d156dfcc23efa57e8a2cafe90798acbe331bab0bb3f9722954a11d9b19d02",
+        "observations": [
+          {
+            "contextDigest": "sha256:bf0af682d7834e1c332909577fc61b2568b67150a0af36628e7df8e5f7c3cc88",
+            "eventId": "disconnected-diagnostic",
+            "payloadDigest": "sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4",
+            "sourceSnapshotId": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "state": "complete",
+            "findings": [
+              {
+                "ruleId": "fixture.nullability",
+                "diagnosis": "Nullable name cannot be assigned to String.",
+                "location": {
+                  "path": "Label.kt",
+                  "line": 1,
+                  "column": 34
+                },
+                "verification": [
+                  {
+                    "kind": "compile",
+                    "expected": "Compile this fixture without the type mismatch.",
+                    "state": "not_run"
+                  }
+                ]
+              }
+            ],
+            "coverage": [
+              {
+                "ruleId": "",
+                "state": "findings",
+                "required": true
+              }
+            ]
+          }
+        ]
+      },
+      "responseTextDigest": "sha256:8809770617da250bfdd28a41c6699d1ff00fd183e895634a493b082765bf6f03",
+      "allFindingDiagnosisLocationVerificationAndDigestsMatched": true,
+      "publicTextDigestIndependentlyRecomputable": false,
+      "publicTextDigestVerification": "verified_during_live_run_original_lexical_public_text_not_retained"
+    }
+  ],
+  "verified": true,
+  "activeTurnJoined": true,
+  "restartPreservedCursorAndIndependentAckObservation": true,
+  "backgroundPolls": 52,
+  "publicResponseTextRetention": "parsed_public_json_only_historical_capture"
+}

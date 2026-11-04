@@ -1,5 +1,7 @@
 # ktChecker CLI, MCP, and host-delivery contract
 
+Implementation additions: [concurrent clients and experimental preview contract](implementation-contract.md).
+
 **Status: proposed v1 contract. No commands, server, or host integration described here are implemented by this document.** JSON examples are synthetic contract fixtures, not observed runs. “MUST” below is a requirement for a future conforming implementation, not a present capability claim. Research checked **2026-11-04** is in [MCP/host sources](research/mcp-hosts.md); engine identity and snapshot rules are in [architecture](architecture.md).
 
 ## 1. Boundaries and non-negotiable invariants

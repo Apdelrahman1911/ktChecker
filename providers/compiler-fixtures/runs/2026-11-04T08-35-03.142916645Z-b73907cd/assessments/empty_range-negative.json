@@ -1,0 +1,47 @@
+{
+    "rule_id": "ktc.compiler.common.empty_range",
+    "upstream_id": "EMPTY_RANGE",
+    "kind": "negative",
+    "passed": true,
+    "assertions": "Corrected control actually compiled successfully without the selected internal ID; unexecuted/failed builds do not count as absence.",
+    "jobs": [
+        {
+            "label": "negative-cohort-1",
+            "analysis_key": "sha256:297b0cfb34a2faa8993628381dd0d0820ef189cefeb913be02832e14dc6f76a0",
+            "snapshot_id": "sha256:4ff0b8463c1204db15f8e7fd6c95638840063f1383a3f4c8a46f8510750ae2ff",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/010-negative-cohort-1/input.json",
+            "sha256": "3c68ab876c5a9006bbc7fa7ffff48f6bb0946471c898f68c221d6485b56c4199"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/010-negative-cohort-1/process.json",
+            "sha256": "912eaefaf11cba1808312aaa784c58b8653b8be88b8353b061dc89984e5f1ef8"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/010-negative-cohort-1/result.json",
+            "sha256": "1ef3dee1319cea996224c5b2825b5c36dc9333b7f3e96006d265522b607f69ef"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/010-negative-cohort-1/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/010-negative-cohort-1/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/010-negative-cohort-1/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/010-negative-cohort-1/sources/cases/empty_range.kt",
+            "sha256": "b3378e9db441a069f191ff92f8bd20357fd3af99da14537c87e3a70fdb290c94"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

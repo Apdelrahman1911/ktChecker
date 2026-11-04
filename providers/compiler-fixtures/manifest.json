@@ -1,0 +1,554 @@
+{
+  "schema_version": 1,
+  "kotlin_version": "2.4.21",
+  "fixtures": [
+    {
+      "rule_id": "ktc.compiler.common.unresolved_reference",
+      "upstream_id": "UNRESOLVED_REFERENCE",
+      "positive": "cases/unresolved_reference/positive.kt",
+      "negative": "cases/unresolved_reference/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L206",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unresolved_import",
+      "upstream_id": "UNRESOLVED_IMPORT",
+      "positive": "cases/unresolved_import/positive.kt",
+      "negative": "cases/unresolved_import/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L209",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_type_mismatch",
+      "upstream_id": "RETURN_TYPE_MISMATCH",
+      "positive": "cases/return_type_mismatch/positive.kt",
+      "negative": "cases/return_type_mismatch/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L507",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.initializer_type_mismatch",
+      "upstream_id": "INITIALIZER_TYPE_MISMATCH",
+      "positive": "cases/initializer_type_mismatch/positive.kt",
+      "negative": "cases/initializer_type_mismatch/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L509",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.assignment_type_mismatch",
+      "upstream_id": "ASSIGNMENT_TYPE_MISMATCH",
+      "positive": "cases/assignment_type_mismatch/positive.kt",
+      "negative": "cases/assignment_type_mismatch/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L511",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.argument_type_mismatch",
+      "upstream_id": "ARGUMENT_TYPE_MISMATCH",
+      "positive": "cases/argument_type_mismatch/positive.kt",
+      "negative": "cases/argument_type_mismatch/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L506",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.null_for_nonnull_type",
+      "upstream_id": "NULL_FOR_NONNULL_TYPE",
+      "positive": "cases/null_for_nonnull_type/positive.kt",
+      "negative": "cases/null_for_nonnull_type/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L917",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_call",
+      "upstream_id": "UNSAFE_CALL",
+      "positive": "cases/unsafe_call/positive.kt",
+      "negative": "cases/unsafe_call/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L918",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_value_for_parameter",
+      "upstream_id": "NO_VALUE_FOR_PARAMETER",
+      "positive": "cases/no_value_for_parameter/positive.kt",
+      "negative": "cases/no_value_for_parameter/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L485",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.too_many_arguments",
+      "upstream_id": "TOO_MANY_ARGUMENTS",
+      "positive": "cases/too_many_arguments/positive.kt",
+      "negative": "cases/too_many_arguments/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L486",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.named_parameter_not_found",
+      "upstream_id": "NAMED_PARAMETER_NOT_FOUND",
+      "positive": "cases/named_parameter_not_found/positive.kt",
+      "negative": "cases/named_parameter_not_found/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L487",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.argument_passed_twice",
+      "upstream_id": "ARGUMENT_PASSED_TWICE",
+      "positive": "cases/argument_passed_twice/positive.kt",
+      "negative": "cases/argument_passed_twice/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L489",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_vararg_spread",
+      "upstream_id": "NON_VARARG_SPREAD",
+      "positive": "cases/non_vararg_spread/positive.kt",
+      "negative": "cases/non_vararg_spread/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L493",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.spread_of_nullable",
+      "upstream_id": "SPREAD_OF_NULLABLE",
+      "positive": "cases/spread_of_nullable/positive.kt",
+      "negative": "cases/spread_of_nullable/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L494",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.val_reassignment",
+      "upstream_id": "VAL_REASSIGNMENT",
+      "positive": "cases/val_reassignment/positive.kt",
+      "negative": "cases/val_reassignment/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L898",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.uninitialized_variable",
+      "upstream_id": "UNINITIALIZED_VARIABLE",
+      "positive": "cases/uninitialized_variable/positive.kt",
+      "negative": "cases/uninitialized_variable/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L894",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_else_in_when",
+      "upstream_id": "NO_ELSE_IN_WHEN",
+      "positive": "cases/no_else_in_when/positive.kt",
+      "negative": "cases/no_else_in_when/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L952",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.wrong_annotation_target",
+      "upstream_id": "WRONG_ANNOTATION_TARGET",
+      "positive": "cases/wrong_annotation_target/positive.kt",
+      "negative": "cases/wrong_annotation_target/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L351",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_function_return_type",
+      "upstream_id": "EXPOSED_FUNCTION_RETURN_TYPE",
+      "positive": "cases/exposed_function_return_type/positive.kt",
+      "negative": "cases/exposed_function_return_type/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L404",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.upper_bound_violated",
+      "upstream_id": "UPPER_BOUND_VIOLATED",
+      "positive": "cases/upper_bound_violated/positive.kt",
+      "negative": "cases/upper_bound_violated/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L552",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.division_by_zero",
+      "upstream_id": "DIVISION_BY_ZERO",
+      "positive": "cases/division_by_zero/positive.kt",
+      "negative": "cases/division_by_zero/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L190",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unreachable_code",
+      "upstream_id": "UNREACHABLE_CODE",
+      "positive": "cases/unreachable_code/positive.kt",
+      "negative": "cases/unreachable_code/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Wextra"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L909",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.cast_never_succeeds",
+      "upstream_id": "CAST_NEVER_SUCCEEDS",
+      "positive": "cases/cast_never_succeeds/positive.kt",
+      "negative": "cases/cast_never_succeeds/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L938",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_cast",
+      "upstream_id": "USELESS_CAST",
+      "positive": "cases/useless_cast/positive.kt",
+      "negative": "cases/useless_cast/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L939",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unnecessary_safe_call",
+      "upstream_id": "UNNECESSARY_SAFE_CALL",
+      "positive": "cases/unnecessary_safe_call/positive.kt",
+      "negative": "cases/unnecessary_safe_call/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L926",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.unnecessary_not_null_assertion",
+      "upstream_id": "UNNECESSARY_NOT_NULL_ASSERTION",
+      "positive": "cases/unnecessary_not_null_assertion/positive.kt",
+      "negative": "cases/unnecessary_not_null_assertion/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L927",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.deprecation",
+      "upstream_id": "DEPRECATION",
+      "positive": "cases/deprecation/positive.kt",
+      "negative": "cases/deprecation/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L340",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.common.empty_range",
+      "upstream_id": "EMPTY_RANGE",
+      "positive": "cases/empty_range/positive.kt",
+      "negative": "cases/empty_range/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17",
+        "-Xuse-fir-experimental-checkers"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1021",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.jvm_static_not_in_object_or_companion",
+      "upstream_id": "JVM_STATIC_NOT_IN_OBJECT_OR_COMPANION",
+      "positive": "cases/jvm_static_not_in_object_or_companion/positive.kt",
+      "negative": "cases/jvm_static_not_in_object_or_companion/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L54",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.jvm_inline_without_value_class",
+      "upstream_id": "JVM_INLINE_WITHOUT_VALUE_CLASS",
+      "positive": "cases/jvm_inline_without_value_class/positive.kt",
+      "negative": "cases/jvm_inline_without_value_class/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L62",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.value_class_without_jvm_inline_annotation",
+      "upstream_id": "VALUE_CLASS_WITHOUT_JVM_INLINE_ANNOTATION",
+      "positive": "cases/value_class_without_jvm_inline_annotation/positive.kt",
+      "negative": "cases/value_class_without_jvm_inline_annotation/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L61",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.inapplicable_jvm_field",
+      "upstream_id": "INAPPLICABLE_JVM_FIELD",
+      "positive": "cases/inapplicable_jvm_field/positive.kt",
+      "negative": "cases/inapplicable_jvm_field/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L172",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.overloads_without_default_arguments",
+      "upstream_id": "OVERLOADS_WITHOUT_DEFAULT_ARGUMENTS",
+      "positive": "cases/overloads_without_default_arguments/positive.kt",
+      "negative": "cases/overloads_without_default_arguments/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L104",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.overloads_interface",
+      "upstream_id": "OVERLOADS_INTERFACE",
+      "positive": "cases/overloads_interface/positive.kt",
+      "negative": "cases/overloads_interface/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L106",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.overloads_abstract",
+      "upstream_id": "OVERLOADS_ABSTRACT",
+      "positive": "cases/overloads_abstract/positive.kt",
+      "negative": "cases/overloads_abstract/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L105",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.synchronized_on_suspend_error",
+      "upstream_id": "SYNCHRONIZED_ON_SUSPEND_ERROR",
+      "positive": "cases/synchronized_on_suspend_error/positive.kt",
+      "negative": "cases/synchronized_on_suspend_error/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L103",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.synchronized_on_inline",
+      "upstream_id": "SYNCHRONIZED_ON_INLINE",
+      "positive": "cases/synchronized_on_inline/positive.kt",
+      "negative": "cases/synchronized_on_inline/negative.kt",
+      "declared_severity": "warning",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L101",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.synchronized_on_abstract",
+      "upstream_id": "SYNCHRONIZED_ON_ABSTRACT",
+      "positive": "cases/synchronized_on_abstract/positive.kt",
+      "negative": "cases/synchronized_on_abstract/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L98",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.external_declaration_cannot_have_body",
+      "upstream_id": "EXTERNAL_DECLARATION_CANNOT_HAVE_BODY",
+      "positive": "cases/external_declaration_cannot_have_body/positive.kt",
+      "negative": "cases/external_declaration_cannot_have_body/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L152",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.non_data_class_jvm_record",
+      "upstream_id": "NON_DATA_CLASS_JVM_RECORD",
+      "positive": "cases/non_data_class_jvm_record/positive.kt",
+      "negative": "cases/non_data_class_jvm_record/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L130",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.jvm_record_not_val_parameter",
+      "upstream_id": "JVM_RECORD_NOT_VAL_PARAMETER",
+      "positive": "cases/jvm_record_not_val_parameter/positive.kt",
+      "negative": "cases/jvm_record_not_val_parameter/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L132",
+      "status": "unrun_synthetic_input"
+    },
+    {
+      "rule_id": "ktc.compiler.jvm.field_in_jvm_record",
+      "upstream_id": "FIELD_IN_JVM_RECORD",
+      "positive": "cases/field_in_jvm_record/positive.kt",
+      "negative": "cases/field_in_jvm_record/negative.kt",
+      "declared_severity": "error",
+      "flags": [
+        "-jvm-target",
+        "17"
+      ],
+      "source": "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/checkers.jvm/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/jvm/FirJvmErrors.kt#L135",
+      "status": "unrun_synthetic_input"
+    }
+  ]
+}

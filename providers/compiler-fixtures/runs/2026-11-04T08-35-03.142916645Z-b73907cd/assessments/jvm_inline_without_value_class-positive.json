@@ -1,0 +1,91 @@
+{
+    "rule_id": "ktc.compiler.jvm.jvm_inline_without_value_class",
+    "upstream_id": "JVM_INLINE_WITHOUT_VALUE_CLASS",
+    "kind": "positive",
+    "passed": true,
+    "assertions": "Actual exact internal ID normalized to its reviewed rule with sealed UTF-8 point provenance; compilation failure remains failure.",
+    "jobs": [
+        {
+            "label": "positive-cohort-3",
+            "analysis_key": "sha256:7fd7191a4dca2caaed7a6c49330bc056de19ad986797b7efd5bd3f51a87ee7b4",
+            "snapshot_id": "sha256:e3a73272b41f8c9997e4c14c5e4df55c486f6ba94f5ac1c58afefc491da1645f",
+            "actual_exit_code": 1,
+            "provider_status": "failed"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/input.json",
+            "sha256": "6c024e3a2768a456f1d889daef2278acdbfec3225e34f90c80665602a38fd964"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/process.json",
+            "sha256": "3bcbea490619cee49e0cecd87c9cf7ffca398f5e00a64fc2906c963528715392"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/result.json",
+            "sha256": "1a6a802080ae9f8dc6e1a832661f987f620822f49ac31ecd8a37508b4db8da26"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/stderr.txt",
+            "sha256": "7262965fbd1c34ccfbe9844c1db2e874c0155a08eaf7fc89920abf621e18ba7b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/external_declaration_cannot_have_body.kt",
+            "sha256": "8b64781a0667b325d7e715efdb3845e4210ff8bd15e974bc65b6b3c02c441669"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/field_in_jvm_record.kt",
+            "sha256": "66b92c8378a9df8fd02153d7e69991736b2925be8debdbf656baaaacc1fc5a22"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/inapplicable_jvm_field.kt",
+            "sha256": "fa7ffd55841ebcce4c84b94886982fbea10079e8175241967f24e459fd02051d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/jvm_inline_without_value_class.kt",
+            "sha256": "95a5b2916882ac920002f5cc6e5e813cfe7cccd4513a385b21deccc9fc4779ce"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/jvm_record_not_val_parameter.kt",
+            "sha256": "92055ea6a5f487c36a93a08fa7be1b8fd83289450e5ff7c8f0d104905f399e49"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/jvm_static_not_in_object_or_companion.kt",
+            "sha256": "e7be9832a7faf93fd48fea27bed75f836145ae746c4cd0459c250549ca5f9a88"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/non_data_class_jvm_record.kt",
+            "sha256": "ca919b1c863819f48f365752a348b440fb74580576dd3bb8d43ed4dc01bcfb37"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/overloads_abstract.kt",
+            "sha256": "f267bce2c4c7a1f302626a535208c9747476f01f6497dff5ca2fb6285d373654"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/overloads_interface.kt",
+            "sha256": "53ed21646366bc097838318d558128412c41861ff4e687205701d998b89ccda5"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/synchronized_on_abstract.kt",
+            "sha256": "faa782995219cd8213520c430ed99ab2130b4102fe5bc1f11388663afbca6145"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/synchronized_on_suspend_error.kt",
+            "sha256": "38cf0b428a803a6d92cf436b45e45b21104a460fb6ab1e3c33d8b7e5b6a22d3d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/004-positive-cohort-3/sources/cases/value_class_without_jvm_inline_annotation.kt",
+            "sha256": "1b1efa55fa59f3d9c9a0e71bfeefa00bf443dd1cedf5176a7232ea29beabe81b"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

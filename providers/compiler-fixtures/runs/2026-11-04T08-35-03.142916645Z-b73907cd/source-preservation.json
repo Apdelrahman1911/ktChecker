@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "preserved_at": "2026-11-04T08:51:23.524452+00:00",
+  "capture_timing": "post_run_verified_unchanged_source_preservation",
+  "historical_run": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd",
+  "original_sidecar": {
+    "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/original-sidecar-before-preservation.json",
+    "sha256": "dd7292991d3a478fb06f219a70bc6feceb9f4aeb93e5956db3e513724dcb078a"
+  },
+  "source_files": [
+    {
+      "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt",
+      "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/post-run-source-archive/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt",
+      "sha256": "db0048e7083bfc8d1565d0505d1b3c00ad574e6e50ef2dc39797a947912e3f3e"
+    },
+    {
+      "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt",
+      "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/post-run-source-archive/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt",
+      "sha256": "42a781d9b09ee36556a3909fba297aad7c2c7d4c86238a1e1220d3688b8e055b"
+    },
+    {
+      "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+      "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/post-run-source-archive/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+      "sha256": "4acda521ed44c2c30232c2ebd47ef4ed7ecde85e589736d48a98937a0191e667"
+    },
+    {
+      "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt",
+      "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/post-run-source-archive/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt",
+      "sha256": "d089b942352d99fa4f0920338669d0fbc35bbc4112fc7d032f7e8ff0684015b7"
+    },
+    {
+      "original_path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt",
+      "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/post-run-source-archive/modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt",
+      "sha256": "d52988e23b8fbd0df1861deac0620a1df7a40f8d4cfaf81a3b27d9ddd23169a7"
+    }
+  ],
+  "limits": [
+    "These exact bytes were preserved after the run and matched every source digest previously recorded by that run.",
+    "This is not startup capture, source-to-bytecode proof, or captured executed-bytecode evidence for the historical run.",
+    "The historical run executed 80 compiler jobs; 39 of 42 fixture sets passed all six kinds, 14 assessments failed, and zero rules were qualified.",
+    "Production, runner, or fixture edits after this preservation require a new execution before current-code evidence can be claimed."
+  ]
+}

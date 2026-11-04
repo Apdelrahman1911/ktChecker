@@ -1,0 +1,4 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-8659187634376104935/sources/cases/inapplicable_jvm_field.kt:3:17: error: [WRONG_ANNOTATION_TARGET] This annotation is not applicable to target 'member property without backing field or delegate'. Applicable targets: field
+object Holder { @JvmField val result: Int get() = 1 }
+                ^^^^^^^^^

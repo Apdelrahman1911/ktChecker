@@ -1,0 +1,192 @@
+{
+  "schema": "ktchecker-host-evidence/preview-1",
+  "date": "2026-11-04T08:33:39.159Z",
+  "evidenceScope": "real_codex_application_requests_with_synthetic_broker_events",
+  "model": "gpt-6-astra",
+  "allowProviderModelFallback": false,
+  "internalInferenceRequestTrace": false,
+  "actualKotlinCompilerRun": false,
+  "actualKernelIntegration": false,
+  "guardedActionPerformed": false,
+  "modelPollingCalls": 0,
+  "command": "npm --prefix bridges/reference-host run demo:codex:synthetic -- --allow-inference EVIDENCE_JSON",
+  "node": "v24.20.0",
+  "codex": "codex-cli 0.160.0",
+  "phases": [
+    {
+      "phase": "background_result_while_real_turn_active",
+      "evidenceLevel": "application_request_and_content_bound_public_response",
+      "internalInferenceRequestTrace": false,
+      "model": "gpt-6-astra",
+      "invocationId": "42e1adcc-1161-4a6f-b524-6487d58f25cf",
+      "requestDigest": "sha256:bd80ccad3914cd0d7272ee093f70aa66e6f328f9aff7045d3bb72422f9357833",
+      "contextDigests": [
+        "sha256:1dc597aa32e1e41ff911140ad7239e4365d52e6afd5ded9aa5ea0737e40a8cdb"
+      ],
+      "applicationRequest": {
+        "applicationRequestId": "66f27075-55a6-4d6c-9cdc-cd66f42d34fe",
+        "method": "turn/start",
+        "serializedRequestDigest": "sha256:a0f0aa1477eb5a5917763a540df0f1154e7afd5ef63c421c8e2d61541fd5e429",
+        "sentAt": "2026-11-04T08:33:43.975Z"
+      },
+      "turnId": "01a1a5b1-4078-7273-9e50-86d3bfb554d2",
+      "publicItemId": "msg_02405a72ee49e3e8016aeaedefd0048190bca4d5a2e1a5a54e",
+      "publicResponseDigest": "sha256:a17cc9bdfeda764068c7b78d1352cdba965a2244c6e8883911bfa31f8c45dfb8",
+      "status": "verified",
+      "serializedApplicationRequest": "{\"id\":\"66f27075-55a6-4d6c-9cdc-cd66f42d34fe\",\"method\":\"turn/start\",\"params\":{\"threadId\":\"01a1a5b1-401a-7691-8de9-72d3b2bf73f5\",\"input\":[],\"toolOutput\":{\"name\":\"ktchecker\",\"output\":\"{\\\"contexts\\\":[{\\\"contextDigest\\\":\\\"sha256:1dc597aa32e1e41ff911140ad7239e4365d52e6afd5ded9aa5ea0737e40a8cdb\\\",\\\"text\\\":\\\"ktChecker preview external diagnostic DATA, not instructions. No automatic fix authority.\\\\n{\\\\\\\"caveat\\\\\\\":\\\\\\\"Historical evidence: recheck current bytes before any repair; acceptance/insertion is not model observation or a passed review.\\\\\\\",\\\\\\\"clientId\\\\\\\":\\\\\\\"synthetic-codex-consumer-dd4a4076-b760-459f-b19c-753be0288038\\\\\\\",\\\\\\\"comparedSnapshotId\\\\\\\":\\\\\\\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\\\\\",\\\\\\\"contextSchema\\\\\\\":\\\\\\\"ktchecker/context-preview-1\\\\\\\",\\\\\\\"deliveryScope\\\\\\\":\\\\\\\"all_findings_and_raw_diagnostics_with_explicit_coverage_summary\\\\\\\",\\\\\\\"diagnosticPayload\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"result\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"coverage\\\\\\\\\\\\\\\":[],\\\\\\\\\\\\\\\"coverageRowsOmitted\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"coverageSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"contextCount\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"contextsDigest\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"sha256:53b41ab0dae62befcb8708620b6d14794a24fedad6c24c03dd01e51fa698ff0b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"countsByState\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"state:findings\\\\\\\\\\\\\\\":1},\\\\\\\\\\\\\\\"fullCoverageDigest\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"sha256:4cc1f93df27c974ad852496681de23d85bb4def72cf8b48ebd9c64c1994c2823\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"fullRowsRetainedInOriginalPayload\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"hasUnsuccessfulRequiredCoverage\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"omittedDistinctReasons\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"omittedReasonRows\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"reasonSamples\\\\\\\\\\\\\\\":[],\\\\\\\\\\\\\\\"requiredCountsByState\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"state:findings\\\\\\\\\\\\\\\":1},\\\\\\\\\\\\\\\"requiredRows\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"requiredUnsuccessfulRows\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"totalRows\\\\\\\\\\\\\\\":1},\\\\\\\\\\\\\\\"findings\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"diagnosis\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Nullable name cannot be assigned to String.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"location\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"column\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"line\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Label.kt\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"ruleId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"fixture.nullability\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"verification\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"expected\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Compile this fixture without the type mismatch.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"compile\\\\\\\\\\\\\\\"}]}]},\\\\\\\\\\\\\\\"state\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"complete\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"diagnosticPayloadDigest\\\\\\\":\\\\\\\"sha256:c9d9a36844529b39440888d8c7c54d4174f546a9b4d45f375a3f9e8ea2cbfc4a\\\\\\\",\\\\\\\"eventId\\\\\\\":\\\\\\\"active-diagnostic\\\\\\\",\\\\\\\"findingObligations\\\\\\\":[{\\\\\\\"findingDigest\\\\\\\":\\\\\\\"sha256:6d170d2593857aa66a23e1dee06a60ea8286e243d32d65f8fe4f84d1a4025660\\\\\\\",\\\\\\\"index\\\\\\\":0,\\\\\\\"obligationId\\\\\\\":\\\\\\\"sha256:9d8dc77e33bcf2feb5d4104dfb230014a030588423b1c4f04c3d3e09069467f0\\\\\\\"}],\\\\\\\"freshnessAtPreparation\\\\\\\":\\\\\\\"current\\\\\\\",\\\\\\\"generation\\\\\\\":1,\\\\\\\"kind\\\\\\\":\\\\\\\"terminal\\\\\\\",\\\\\\\"marker\\\\\\\":\\\\\\\"ktchecker-event:active-diagnostic:sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\",\\\\\\\"originalPayloadRef\\\\\\\":{\\\\\\\"bytes\\\\\\\":334,\\\\\\\"clientId\\\\\\\":\\\\\\\"synthetic-codex-consumer-dd4a4076-b760-459f-b19c-753be0288038\\\\\\\",\\\\\\\"eventId\\\\\\\":\\\\\\\"active-diagnostic\\\\\\\",\\\\\\\"generation\\\\\\\":1,\\\\\\\"kind\\\\\\\":\\\\\\\"private_durable_inbox\\\\\\\",\\\\\\\"payloadDigest\\\\\\\":\\\\\\\"sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\"},\\\\\\\"patchId\\\\\\\":\\\\\\\"patch-active-diagnostic\\\\\\\",\\\\\\\"payloadDigest\\\\\\\":\\\\\\\"sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\",\\\\\\\"receiptScope\\\\\\\":\\\\\\\"projected_context_only\\\\\\\",\\\\\\\"reviewId\\\\\\\":\\\\\\\"review-active-diagnostic\\\\\\\",\\\\\\\"sourceSnapshotId\\\\\\\":\\\\\\\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\\\\\"}\\\"}],\\\"contractVersion\\\":\\\"ktchecker/preview-1\\\",\\\"invocationId\\\":\\\"42e1adcc-1161-4a6f-b524-6487d58f25cf\\\",\\\"requestDigest\\\":\\\"sha256:bd80ccad3914cd0d7272ee093f70aa66e6f328f9aff7045d3bb72422f9357833\\\"}\"},\"effort\":\"low\"}}",
+      "verifiedPublicResponse": {
+        "invocationId": "42e1adcc-1161-4a6f-b524-6487d58f25cf",
+        "requestDigest": "sha256:bd80ccad3914cd0d7272ee093f70aa66e6f328f9aff7045d3bb72422f9357833",
+        "observations": [
+          {
+            "contextDigest": "sha256:1dc597aa32e1e41ff911140ad7239e4365d52e6afd5ded9aa5ea0737e40a8cdb",
+            "eventId": "active-diagnostic",
+            "payloadDigest": "sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4",
+            "sourceSnapshotId": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "state": "complete",
+            "findings": [
+              {
+                "ruleId": "fixture.nullability",
+                "diagnosis": "Nullable name cannot be assigned to String.",
+                "location": {
+                  "path": "Label.kt",
+                  "line": 1,
+                  "column": 34
+                },
+                "verification": [
+                  {
+                    "kind": "compile",
+                    "expected": "Compile this fixture without the type mismatch.",
+                    "state": "not_run"
+                  }
+                ]
+              }
+            ],
+            "coverage": [],
+            "receiptScope": "projected_context_only",
+            "findingObligations": [
+              {
+                "findingDigest": "sha256:6d170d2593857aa66a23e1dee06a60ea8286e243d32d65f8fe4f84d1a4025660",
+                "index": 0,
+                "obligationId": "sha256:9d8dc77e33bcf2feb5d4104dfb230014a030588423b1c4f04c3d3e09069467f0"
+              }
+            ],
+            "coverageSummary": {
+              "contextCount": 1,
+              "contextsDigest": "sha256:53b41ab0dae62befcb8708620b6d14794a24fedad6c24c03dd01e51fa698ff0b",
+              "countsByState": {
+                "state:findings": 1
+              },
+              "fullCoverageDigest": "sha256:4cc1f93df27c974ad852496681de23d85bb4def72cf8b48ebd9c64c1994c2823",
+              "fullRowsRetainedInOriginalPayload": true,
+              "hasUnsuccessfulRequiredCoverage": true,
+              "omittedDistinctReasons": 0,
+              "omittedReasonRows": 0,
+              "reasonSamples": [],
+              "requiredCountsByState": {
+                "state:findings": 1
+              },
+              "requiredRows": 1,
+              "requiredUnsuccessfulRows": 1,
+              "totalRows": 1
+            }
+          }
+        ]
+      },
+      "responseTextDigest": "sha256:a17cc9bdfeda764068c7b78d1352cdba965a2244c6e8883911bfa31f8c45dfb8",
+      "allFindingDiagnosisLocationVerificationAndDigestsMatched": true,
+      "publicTextDigestIndependentlyRecomputable": false,
+      "publicTextDigestVerification": "verified_during_live_run_original_lexical_public_text_not_retained"
+    },
+    {
+      "phase": "owned_thread_resumed_after_adapter_and_app_server_reconnect",
+      "evidenceLevel": "application_request_and_content_bound_public_response",
+      "internalInferenceRequestTrace": false,
+      "model": "gpt-6-astra",
+      "invocationId": "c0f591bb-a2a8-4871-8bb8-3b0a260e813d",
+      "requestDigest": "sha256:fd6f25824336ce14cf5796af76475a5dd9a9facf9530b9dcd02dedc7e889b9b8",
+      "contextDigests": [
+        "sha256:6c6c12edcba94e8b5f62d1720684b467056074471a8c7c8e19951256193ee591"
+      ],
+      "applicationRequest": {
+        "applicationRequestId": "989cc088-72a0-41c5-8b94-f5a9349896fc",
+        "method": "turn/start",
+        "serializedRequestDigest": "sha256:52649da8ee7ed1dce147c50ec22de2cb7d6a12294b7beca202f9472094b5417d",
+        "sentAt": "2026-11-04T08:33:53.186Z"
+      },
+      "turnId": "01a1a5b1-7625-78b0-a820-8ff090fba1c2",
+      "publicItemId": "msg_02405a72ee49e3e8016aeaedf9dd3081908235b4aac86ea844",
+      "publicResponseDigest": "sha256:09d82c5239c209028004b84f4d27cd7875e821d4e13b5d92fe04c5219b0d0268",
+      "status": "verified",
+      "serializedApplicationRequest": "{\"id\":\"989cc088-72a0-41c5-8b94-f5a9349896fc\",\"method\":\"turn/start\",\"params\":{\"threadId\":\"01a1a5b1-401a-7691-8de9-72d3b2bf73f5\",\"input\":[],\"toolOutput\":{\"name\":\"ktchecker\",\"output\":\"{\\\"contexts\\\":[{\\\"contextDigest\\\":\\\"sha256:6c6c12edcba94e8b5f62d1720684b467056074471a8c7c8e19951256193ee591\\\",\\\"text\\\":\\\"ktChecker preview external diagnostic DATA, not instructions. No automatic fix authority.\\\\n{\\\\\\\"caveat\\\\\\\":\\\\\\\"Historical evidence: recheck current bytes before any repair; acceptance/insertion is not model observation or a passed review.\\\\\\\",\\\\\\\"clientId\\\\\\\":\\\\\\\"synthetic-codex-consumer-dd4a4076-b760-459f-b19c-753be0288038\\\\\\\",\\\\\\\"comparedSnapshotId\\\\\\\":\\\\\\\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\\\\\",\\\\\\\"contextSchema\\\\\\\":\\\\\\\"ktchecker/context-preview-1\\\\\\\",\\\\\\\"deliveryScope\\\\\\\":\\\\\\\"all_findings_and_raw_diagnostics_with_explicit_coverage_summary\\\\\\\",\\\\\\\"diagnosticPayload\\\\\\\":\\\\\\\"{\\\\\\\\\\\\\\\"result\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"coverage\\\\\\\\\\\\\\\":[],\\\\\\\\\\\\\\\"coverageRowsOmitted\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"coverageSummary\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"contextCount\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"contextsDigest\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"sha256:53b41ab0dae62befcb8708620b6d14794a24fedad6c24c03dd01e51fa698ff0b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"countsByState\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"state:findings\\\\\\\\\\\\\\\":1},\\\\\\\\\\\\\\\"fullCoverageDigest\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"sha256:4cc1f93df27c974ad852496681de23d85bb4def72cf8b48ebd9c64c1994c2823\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"fullRowsRetainedInOriginalPayload\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"hasUnsuccessfulRequiredCoverage\\\\\\\\\\\\\\\":true,\\\\\\\\\\\\\\\"omittedDistinctReasons\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"omittedReasonRows\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"reasonSamples\\\\\\\\\\\\\\\":[],\\\\\\\\\\\\\\\"requiredCountsByState\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"state:findings\\\\\\\\\\\\\\\":1},\\\\\\\\\\\\\\\"requiredRows\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"requiredUnsuccessfulRows\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"totalRows\\\\\\\\\\\\\\\":1},\\\\\\\\\\\\\\\"findings\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"diagnosis\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Nullable name cannot be assigned to String.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"location\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"column\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"line\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"path\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Label.kt\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"ruleId\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"fixture.nullability\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"verification\\\\\\\\\\\\\\\":[{\\\\\\\\\\\\\\\"expected\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"Compile this fixture without the type mismatch.\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"kind\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"compile\\\\\\\\\\\\\\\"}]}]},\\\\\\\\\\\\\\\"state\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"complete\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"diagnosticPayloadDigest\\\\\\\":\\\\\\\"sha256:c9d9a36844529b39440888d8c7c54d4174f546a9b4d45f375a3f9e8ea2cbfc4a\\\\\\\",\\\\\\\"eventId\\\\\\\":\\\\\\\"disconnected-diagnostic\\\\\\\",\\\\\\\"findingObligations\\\\\\\":[{\\\\\\\"findingDigest\\\\\\\":\\\\\\\"sha256:6d170d2593857aa66a23e1dee06a60ea8286e243d32d65f8fe4f84d1a4025660\\\\\\\",\\\\\\\"index\\\\\\\":0,\\\\\\\"obligationId\\\\\\\":\\\\\\\"sha256:9bd54f9401f711cb897f01dd90b5b0bf3deec207911ea323a0ce2b6b3a3c952b\\\\\\\"}],\\\\\\\"freshnessAtPreparation\\\\\\\":\\\\\\\"current\\\\\\\",\\\\\\\"generation\\\\\\\":1,\\\\\\\"kind\\\\\\\":\\\\\\\"terminal\\\\\\\",\\\\\\\"marker\\\\\\\":\\\\\\\"ktchecker-event:disconnected-diagnostic:sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\",\\\\\\\"originalPayloadRef\\\\\\\":{\\\\\\\"bytes\\\\\\\":334,\\\\\\\"clientId\\\\\\\":\\\\\\\"synthetic-codex-consumer-dd4a4076-b760-459f-b19c-753be0288038\\\\\\\",\\\\\\\"eventId\\\\\\\":\\\\\\\"disconnected-diagnostic\\\\\\\",\\\\\\\"generation\\\\\\\":1,\\\\\\\"kind\\\\\\\":\\\\\\\"private_durable_inbox\\\\\\\",\\\\\\\"payloadDigest\\\\\\\":\\\\\\\"sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\"},\\\\\\\"patchId\\\\\\\":\\\\\\\"patch-disconnected-diagnostic\\\\\\\",\\\\\\\"payloadDigest\\\\\\\":\\\\\\\"sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4\\\\\\\",\\\\\\\"receiptScope\\\\\\\":\\\\\\\"projected_context_only\\\\\\\",\\\\\\\"reviewId\\\\\\\":\\\\\\\"review-disconnected-diagnostic\\\\\\\",\\\\\\\"sourceSnapshotId\\\\\\\":\\\\\\\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\\\\\\"}\\\"}],\\\"contractVersion\\\":\\\"ktchecker/preview-1\\\",\\\"invocationId\\\":\\\"c0f591bb-a2a8-4871-8bb8-3b0a260e813d\\\",\\\"requestDigest\\\":\\\"sha256:fd6f25824336ce14cf5796af76475a5dd9a9facf9530b9dcd02dedc7e889b9b8\\\"}\"},\"effort\":\"low\"}}",
+      "verifiedPublicResponse": {
+        "invocationId": "c0f591bb-a2a8-4871-8bb8-3b0a260e813d",
+        "requestDigest": "sha256:fd6f25824336ce14cf5796af76475a5dd9a9facf9530b9dcd02dedc7e889b9b8",
+        "observations": [
+          {
+            "contextDigest": "sha256:6c6c12edcba94e8b5f62d1720684b467056074471a8c7c8e19951256193ee591",
+            "eventId": "disconnected-diagnostic",
+            "payloadDigest": "sha256:441ea163f33a3b0bf1517e4fea8b4cdb894585cf4fcc7a1281e9646fa3bf03a4",
+            "sourceSnapshotId": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "state": "complete",
+            "findings": [
+              {
+                "ruleId": "fixture.nullability",
+                "diagnosis": "Nullable name cannot be assigned to String.",
+                "location": {
+                  "path": "Label.kt",
+                  "line": 1,
+                  "column": 34
+                },
+                "verification": [
+                  {
+                    "kind": "compile",
+                    "expected": "Compile this fixture without the type mismatch.",
+                    "state": "not_run"
+                  }
+                ]
+              }
+            ],
+            "coverage": [],
+            "receiptScope": "projected_context_only",
+            "findingObligations": [
+              {
+                "findingDigest": "sha256:6d170d2593857aa66a23e1dee06a60ea8286e243d32d65f8fe4f84d1a4025660",
+                "index": 0,
+                "obligationId": "sha256:9bd54f9401f711cb897f01dd90b5b0bf3deec207911ea323a0ce2b6b3a3c952b"
+              }
+            ],
+            "coverageSummary": {
+              "contextCount": 1,
+              "contextsDigest": "sha256:53b41ab0dae62befcb8708620b6d14794a24fedad6c24c03dd01e51fa698ff0b",
+              "countsByState": {
+                "state:findings": 1
+              },
+              "fullCoverageDigest": "sha256:4cc1f93df27c974ad852496681de23d85bb4def72cf8b48ebd9c64c1994c2823",
+              "fullRowsRetainedInOriginalPayload": true,
+              "hasUnsuccessfulRequiredCoverage": true,
+              "omittedDistinctReasons": 0,
+              "omittedReasonRows": 0,
+              "reasonSamples": [],
+              "requiredCountsByState": {
+                "state:findings": 1
+              },
+              "requiredRows": 1,
+              "requiredUnsuccessfulRows": 1,
+              "totalRows": 1
+            }
+          }
+        ]
+      },
+      "responseTextDigest": "sha256:09d82c5239c209028004b84f4d27cd7875e821d4e13b5d92fe04c5219b0d0268",
+      "allFindingDiagnosisLocationVerificationAndDigestsMatched": true,
+      "publicTextDigestIndependentlyRecomputable": false,
+      "publicTextDigestVerification": "verified_during_live_run_original_lexical_public_text_not_retained"
+    }
+  ],
+  "verified": true,
+  "activeTurnJoined": true,
+  "restartPreservedCursorAndIndependentAckObservation": true,
+  "backgroundPolls": 48,
+  "publicResponseTextRetention": "parsed_public_json_only_historical_capture"
+}

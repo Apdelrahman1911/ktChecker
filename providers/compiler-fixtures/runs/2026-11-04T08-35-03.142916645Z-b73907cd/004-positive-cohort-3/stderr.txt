@@ -1,0 +1,37 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/external_declaration_cannot_have_body.kt:3:1: error: [EXTERNAL_DECLARATION_CANNOT_HAVE_BODY] External declaration cannot have a body.
+external fun use() {}
+^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/field_in_jvm_record.kt:3:48: error: [FIELD_IN_JVM_RECORD] Non-constructor properties with backing field in '@JvmRecord' class are prohibited.
+@JvmRecord data class Record(val value: Int) { val extra = 1 }
+                                               ^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/inapplicable_jvm_field.kt:3:17: error: [WRONG_ANNOTATION_TARGET] This annotation is not applicable to target 'member property without backing field or delegate'. Applicable targets: field
+object Holder { @JvmField val result: Int get() = 1 }
+                ^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/jvm_inline_without_value_class.kt:3:1: error: [JVM_INLINE_WITHOUT_VALUE_CLASS] '@JvmInline' annotation is applicable only to value classes.
+@JvmInline class Wrapper(val value: Int)
+^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/jvm_record_not_val_parameter.kt:3:30: error: [JVM_RECORD_NOT_VAL_PARAMETER] Constructor parameter of '@JvmRecord' class must be a 'val'.
+@JvmRecord data class Record(var value: Int)
+                             ^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/jvm_static_not_in_object_or_companion.kt:3:15: error: [JVM_STATIC_NOT_IN_OBJECT_OR_COMPANION] Only members in named objects and companion objects can be annotated with '@JvmStatic'.
+class Plain { @JvmStatic fun call() = 1 }
+              ^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/non_data_class_jvm_record.kt:3:1: error: [NON_DATA_CLASS_JVM_RECORD] Only data classes are allowed to be marked as '@JvmRecord'.
+@JvmRecord class Record(val value: Int)
+^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/overloads_abstract.kt:3:22: error: [OVERLOADS_ABSTRACT] '@JvmOverloads' annotation cannot be used on abstract methods.
+abstract class Api { @JvmOverloads abstract fun use(x: Int = 1): Int }
+                     ^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/overloads_interface.kt:3:17: error: [OVERLOADS_INTERFACE] '@JvmOverloads' annotation cannot be used on interface methods.
+interface Api { @JvmOverloads fun use(x: Int = 1): Int }
+                ^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/synchronized_on_abstract.kt:3:22: error: [SYNCHRONIZED_ON_ABSTRACT] '@Synchronized' annotation cannot be used on abstract functions.
+abstract class Api { @Synchronized abstract fun use() }
+                     ^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/synchronized_on_suspend_error.kt:3:1: error: [SYNCHRONIZED_ON_SUSPEND_ERROR] '@Synchronized' annotation is not applicable to 'suspend' functions and lambdas.
+@Synchronized suspend fun use() = 1
+^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11439972881268308068/sources/cases/value_class_without_jvm_inline_annotation.kt:3:1: error: [VALUE_CLASS_WITHOUT_JVM_INLINE_ANNOTATION] Value classes without '@JvmInline' annotation are not yet supported.
+value class Wrapper(val value: Int)
+^^^^^

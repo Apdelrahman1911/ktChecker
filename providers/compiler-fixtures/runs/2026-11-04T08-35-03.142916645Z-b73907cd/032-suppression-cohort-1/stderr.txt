@@ -1,0 +1,19 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-3815296818861484518/sources/unsuppressed/cast_never_succeeds.kt:3:37: warning: [CAST_NEVER_SUCCEEDS] This cast can never succeed.
+fun deliberatelyNull(x: String) = x as? Int
+                                    ^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-3815296818861484518/sources/unsuppressed/deprecation.kt:4:14: warning: [DEPRECATION] 'fun old(): Int' is deprecated. Use another.
+val result = old()
+             ^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-3815296818861484518/sources/unsuppressed/division_by_zero.kt:3:14: warning: [DIVISION_BY_ZERO] Division by zero.
+val result = 1 / 0
+             ^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-3815296818861484518/sources/unsuppressed/unnecessary_not_null_assertion.kt:3:26: warning: [UNNECESSARY_NOT_NULL_ASSERTION] Unnecessary non-null assertion (!!) on a non-null receiver of type 'String'.
+fun length(x: String) = x!!.length
+                         ^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-3815296818861484518/sources/unsuppressed/unnecessary_safe_call.kt:3:26: warning: [UNNECESSARY_SAFE_CALL] Unnecessary safe call on a non-null receiver of type 'String'.
+fun length(x: String) = x?.length
+                         ^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-3815296818861484518/sources/unsuppressed/useless_cast.kt:3:25: warning: [USELESS_CAST] Cast is redundant.
+fun same(x: String) = x as String
+                        ^^^^^^^^^

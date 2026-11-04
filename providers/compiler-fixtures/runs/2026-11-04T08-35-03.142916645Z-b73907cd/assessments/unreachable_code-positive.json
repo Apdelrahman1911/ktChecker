@@ -1,0 +1,47 @@
+{
+    "rule_id": "ktc.compiler.common.unreachable_code",
+    "upstream_id": "UNREACHABLE_CODE",
+    "kind": "positive",
+    "passed": false,
+    "assertions": "Actual exact internal ID normalized to its reviewed rule with sealed UTF-8 point provenance; compilation failure remains failure.",
+    "jobs": [
+        {
+            "label": "positive-single-UNREACHABLE_CODE",
+            "analysis_key": "sha256:41cb9b7a9a06f7a8c39693d877637523dcdefb24b825a63ec97b2b91fc23fa62",
+            "snapshot_id": "sha256:451d2850a678ee7e5388f7a48e71136b56e2fd516af76650e4f6ecb6bc492a4e",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/input.json",
+            "sha256": "6b042a643593051c35f55b3265d8782eeb0947ee0ff5a4f213ae5aa9497a873c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/process.json",
+            "sha256": "0fbd8e5c562d63da0bc2fc3be2bffd6ed94421eda9d30928a66b0e8300e1e63b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/result.json",
+            "sha256": "c50a5349dc8580d6ed4f5435e0c5c43d3f81d12d4f9065232670d0f4ff7ea55a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/sources/cases/unreachable_code.kt",
+            "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

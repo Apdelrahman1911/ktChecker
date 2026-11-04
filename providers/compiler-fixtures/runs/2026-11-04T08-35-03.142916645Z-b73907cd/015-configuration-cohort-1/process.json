@@ -1,0 +1,93 @@
+{
+    "analysis_key": "sha256:091e55fbc18f3f2bf45d87cada14600bc505c3f77a83b7f755092197b1f9a39b",
+    "snapshot_id": "sha256:761d7ae8fb13c481a7bee64d5210bb9a86f337164e34d0d080d1b018469d9997",
+    "context_id": "[\":compiler-fixtures\",\"synthetic\",\"jvm\",\"main\"]",
+    "status": "executed",
+    "reasons": [],
+    "exit_code": 1,
+    "command": [
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+        "-Xmx512m",
+        "-Dfile.encoding=UTF-8",
+        "-Duser.language=en",
+        "-Duser.country=US",
+        "-Djava.io.tmpdir=/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/tmp",
+        "-cp",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/compiler/0.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/compiler/1.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/compiler/2.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/compiler/3.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/compiler/4.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/compiler/5.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/compiler/6.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/compiler/7.jar",
+        "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler",
+        "-version",
+        "-Xrender-internal-diagnostic-names",
+        "-no-stdlib",
+        "-no-reflect",
+        "-d",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/classes",
+        "-classpath",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/dependencies/0.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/dependencies/1.jar",
+        "-jvm-target",
+        "17",
+        "-Xwarning-level=DIVISION_BY_ZERO:error",
+        "-Xwarning-level=UNREACHABLE_CODE:error",
+        "-Xwarning-level=CAST_NEVER_SUCCEEDS:error",
+        "-Xwarning-level=USELESS_CAST:error",
+        "-Xwarning-level=UNNECESSARY_SAFE_CALL:error",
+        "-Xwarning-level=UNNECESSARY_NOT_NULL_ASSERTION:error",
+        "-Xwarning-level=DEPRECATION:error",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/sources/cases/division_by_zero.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/sources/cases/unreachable_code.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/sources/cases/cast_never_succeeds.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/sources/cases/useless_cast.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/sources/cases/unnecessary_safe_call.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/sources/cases/unnecessary_not_null_assertion.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881/sources/cases/deprecation.kt"
+    ],
+    "output_directory": "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-11604797226308972881",
+    "cancelled": false,
+    "timed_out": false,
+    "truncated": false,
+    "elapsed_millis": 2971,
+    "output_bytes": 1590,
+    "stdout_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "sha256:d0aae0a4a4c3112d4e22f5c1c4c5588d351acf77962ee28222114b0eebbfb6c9",
+    "sealed_source_files": [
+        {
+            "path": "build.gradle.kts",
+            "sha256": "sha256:a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d",
+            "size": 68
+        },
+        {
+            "path": "cases/cast_never_succeeds.kt",
+            "sha256": "sha256:4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138",
+            "size": 82
+        },
+        {
+            "path": "cases/deprecation.kt",
+            "sha256": "sha256:a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399",
+            "size": 90
+        },
+        {
+            "path": "cases/division_by_zero.kt",
+            "sha256": "sha256:620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc",
+            "size": 54
+        },
+        {
+            "path": "cases/unnecessary_not_null_assertion.kt",
+            "sha256": "sha256:8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2",
+            "size": 84
+        },
+        {
+            "path": "cases/unnecessary_safe_call.kt",
+            "sha256": "sha256:ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548",
+            "size": 74
+        },
+        {
+            "path": "cases/unreachable_code.kt",
+            "sha256": "sha256:4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f",
+            "size": 90
+        },
+        {
+            "path": "cases/useless_cast.kt",
+            "sha256": "sha256:08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4",
+            "size": 65
+        }
+    ]
+}

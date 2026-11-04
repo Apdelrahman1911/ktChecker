@@ -1,0 +1,24 @@
+{
+    "schema_version": 1,
+    "mappings": 443,
+    "jvm_available_mappings": 400,
+    "original_fixture_ids": 42,
+    "implemented": 39,
+    "tested": 39,
+    "qualified": 0,
+    "failed_case_count": 14,
+    "actual_executions": 80,
+    "unique_output_directories": 80,
+    "toolchain_evidence": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/toolchain.json",
+        "sha256": "9cdc2a49377be831cebcc740744960bfa44e3b8f163143183d8600458ad576f1"
+    },
+    "intent_control_evidence": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/intent-controls.json",
+        "sha256": "71257861d8bd5ff337d2179bf439ea41b94b608dc755f7df32bffa42536dd237"
+    },
+    "transport_control_evidence": {
+        "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/transport-controls.json",
+        "sha256": "f3232200d523832048b24a85bed96550e9361e1a21d4e8f3e3929b01b54682f1"
+    }
+}

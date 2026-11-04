@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "actual_isolated_lint_xml_controls",
+  "provider_version": "32.3.1",
+  "retained_at": "2026-11-04T08:57:33.877358+00:00",
+  "test_suite_started_at": "2026-11-04T08:52:08.017Z",
+  "junit_sha256": "22de97a439638e26a2cacf4582b0421cf9de442b8ae22791b4cceabd7a9cae4b",
+  "tests": 2,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "test_names": [
+    "actual lint32_3_1 diagnoses positive and accepts legal and provider suppression controls()",
+    "prerequisite failures produce structured unavailable output not an absent report()"
+  ],
+  "qualifies_rules": false,
+  "qualifies_release": false,
+  "source_provenance": "Post-run retention of existing receipt/fixture identities; no source-to-executed-bytecode qualification proof.",
+  "current_implementation_references": [
+    {
+      "path": "modules/provider-lint/src/main/kotlin/dev/ktchecker/providers/lint/AndroidLintProvider.kt",
+      "sha256": "5ede95f7b5bc7018bcfbeac67dd74bbcef07503388e4205b40965da7a25c692d"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"schema_version":1,"case_kind":"version","actual_exit_code":0,"stdout":"2.0.0-alpha.6\n","stderr":"","reported_detekt_version":"2.0.0-alpha.6","embedded_kotlin_pin":"2.4.10","project_compiler":"2.4.21","compatibility_qualified":false}

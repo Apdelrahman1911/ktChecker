@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "owner_license": null,
+  "owner_license_status": "No owner license has been chosen; public availability is not a license grant.",
+  "known_license_assets": {
+    "Apache-2.0": [
+      {"path": "third_party/licenses/Apache-2.0.txt", "digest": "sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"}
+    ]
+  },
+  "notice_rules": [
+    {
+      "coordinate_pattern": "^org\\.jetbrains\\.kotlin:[^:]+:2\\.4\\.21$",
+      "evidence_url": "https://github.com/JetBrains/kotlin/tree/v2.4.21/license",
+      "required_assets": [
+        {"path": "third_party/licenses/Kotlin-NOTICE.txt", "digest": "sha256:0b09a83d3ef7795c7dec65e815866597c066c53898f2852a76599b8f5552941a"},
+        {"path": "third_party/licenses/Kotlin-COPYRIGHT.txt", "digest": "sha256:8f1a1700adb5490604c6094fb137bf73f6c28d3ee554b58f3ff8ef975a79672d"}
+      ],
+      "review_complete": false,
+      "review_gap": "Retained upstream notices are required, but complete per-artifact/shaded exception review is still pending."
+    }
+  ],
+  "shaded_review_rules": [
+    {
+      "coordinate_pattern": "^org\\.jetbrains\\.kotlin:kotlin-compiler-embeddable:2\\.4\\.21$",
+      "review_complete": false,
+      "review_gap": "Compiler-embeddable may contain shaded third-party components; its Apache POM declaration is not a complete license/NOTICE inventory."
+    }
+  ],
+  "required_distribution_files": ["THIRD_PARTY_NOTICES.md"],
+  "qualification": "Declared POM licenses and retained text are evidence, not an invented owner license or release qualification."
+}

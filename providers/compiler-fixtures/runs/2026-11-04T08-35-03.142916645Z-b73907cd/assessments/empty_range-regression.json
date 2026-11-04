@@ -1,0 +1,82 @@
+{
+    "rule_id": "ktc.compiler.common.empty_range",
+    "upstream_id": "EMPTY_RANGE",
+    "kind": "regression",
+    "passed": false,
+    "assertions": "Fresh changed/moved snapshot re-emitted the exact ID at the verified two-line shift with new source digest/key and a unique job output; no stale span or result was reused.",
+    "jobs": [
+        {
+            "label": "positive-single-EMPTY_RANGE",
+            "analysis_key": "sha256:35661b79c1e3a68581cf7ce4976b0cfe28048238a22ad8cd5fdab5cd94069644",
+            "snapshot_id": "sha256:bec756539101d32666d995c234d81ad002ec4a72cf844999bb99e05bc5b2fad9",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        },
+        {
+            "label": "regression-single-EMPTY_RANGE",
+            "analysis_key": "sha256:339145cf5f631e2d6a28da6f06a710fb15f63ef85ea0edccdd294aa90e57b091",
+            "snapshot_id": "sha256:72ab4fab32213c5a8079c887b1405cd73dabef6734a4b8ea019bd30d952c1479",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/007-positive-single-empty_range/input.json",
+            "sha256": "b6e63da780d1811e6cc80cd6fd01b45c206b06536f155b4f7e659a1bc5af264d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/007-positive-single-empty_range/process.json",
+            "sha256": "c3e121379bb2903d1203679063bf8515cc4d189912954a3d43fcf028904dfe5e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/007-positive-single-empty_range/result.json",
+            "sha256": "929d7aa393de3f5e0b1764e5c3c317a8a3042a3274dff7122270635bbc73e3b1"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/007-positive-single-empty_range/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/007-positive-single-empty_range/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/007-positive-single-empty_range/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/007-positive-single-empty_range/sources/cases/empty_range.kt",
+            "sha256": "6338084ea41f16c226b59591197f7fd94782b4ff0501486b9e473d728c1fc778"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/076-regression-single-empty_range/input.json",
+            "sha256": "285fc6f99c9c5e81ab0e748e25581d2b4efe26f90d6fe94737a6ce6edff58097"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/076-regression-single-empty_range/process.json",
+            "sha256": "66e1b88350e0ad0ecf2573bbe6f30bcb9428a9bb0d7208f559e7bfac41e1abe9"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/076-regression-single-empty_range/result.json",
+            "sha256": "cf5ce757ac60b62d3028fc882a815e5a366d20d545d62ac862c8ef7d34fb5648"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/076-regression-single-empty_range/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/076-regression-single-empty_range/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/076-regression-single-empty_range/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/076-regression-single-empty_range/sources/moved/empty_range.kt",
+            "sha256": "a32d0705093d9f5c4c5f1a2231a24e0e61e537407895ceca0357d167d7a42ba7"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "adapter_id": "kotlin-fir-2.4.21/v1",
+  "compiler_version": "2.4.21",
+  "purpose": "M0 executable semantic feasibility, not diagnostic-rule qualification",
+  "cases": [
+    {"id": "dependency", "evidence": "actual separate JAR or target KLIB"},
+    {"id": "positive", "evidence": "resolved symbols/calls/types/source-set/expect-actual and UTF8 spans"},
+    {"id": "unresolved", "evidence": "unknown abstention and retained compiler failure"},
+    {"id": "malformed", "evidence": "syntax failure is never complete semantics"},
+    {"id": "missing-dependency", "evidence": "missing binary invalidates dependent semantics"}
+  ],
+  "contexts": [
+    {"target": "jvm", "source_sets": ["commonMain", "intermediateMain", "jvmMain"], "qualified": false},
+    {"target": "iosArm64", "source_sets": ["commonMain", "intermediateMain", "nativeMain"], "qualified": false},
+    {"target": "iosSimulatorArm64", "source_sets": ["commonMain", "intermediateMain", "nativeMain"], "qualified": false}
+  ],
+  "test_reports": "Actual local/private results.json and per-case *-facts.json; CI uploads metadata-only summary.json generated only by execution",
+  "custom_rules_qualified": false,
+  "launch_scope_reduced": false
+}

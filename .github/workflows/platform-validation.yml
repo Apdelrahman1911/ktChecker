@@ -1,0 +1,240 @@
+name: Preview platform execution (actual KMP targets)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fixtures/kmp/**'
+      - 'modules/**'
+      - 'scripts/ci/**'
+      - '.github/workflows/platform-validation.yml'
+      - 'gradle/**'
+      - 'gradlew*'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+  pull_request:
+    paths:
+      - 'fixtures/kmp/**'
+      - 'modules/**'
+      - 'scripts/ci/**'
+      - '.github/workflows/platform-validation.yml'
+      - 'gradle/**'
+      - 'gradlew*'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Small target controls to execute (not release qualification)
+        required: true
+        default: all
+        type: choice
+        options: [all, desktop, android, ios]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}-${{ inputs.profile || 'all' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  desktop-jvm:
+    name: Actual Desktop/JVM KMP common boundary tests
+    if: github.event_name != 'workflow_dispatch' || inputs.profile == 'all' || inputs.profile == 'desktop'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out candidate (no persisted credentials)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up evidence runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Select project/compiler JVM 25 (not broker JVM 21)
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Provision exact SDK required by Android plugin configuration
+        run: python scripts/ci/provision_android.py --output build/ci-evidence/sdk.json
+      - name: Execute pinned wrapper version
+        run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
+      - name: Record actual environment, even on preflight failure
+        if: always()
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 25 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+      - name: Execute Desktop/JVM KMP fixture tests
+        run: python scripts/ci/run_platform_checks.py --profile desktop --output build/ci-evidence/desktop.json
+      - name: Collect exact Desktop/JVM test reports
+        if: always()
+        env:
+          KT_CI_JOB_STATUS: ${{ job.status }}
+        run: >-
+          python scripts/ci/collect_evidence.py --profile desktop-jvm
+          --output build/ci-evidence/evidence.json --environment build/ci-evidence/environment.json
+          --reports "fixtures/kmp/build/test-results/desktopTest/*.xml"
+          --require-report "fixtures/kmp/build/test-results/desktopTest/*.xml" --require-tests
+          --command-result build/ci-evidence/sdk.json
+          --command-result build/ci-evidence/gradle-version.json
+          --command-result build/ci-evidence/desktop.json
+      - name: Retain sanitized target evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-desktop-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/*.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain original Desktop/JVM controlled-fixture JUnit reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-desktop-original-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: fixtures/kmp/build/test-results/desktopTest/*.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+  android:
+    name: Actual Android KMP compile, host tests and NewApi adapter controls
+    if: github.event_name != 'workflow_dispatch' || inputs.profile == 'all' || inputs.profile == 'android'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out candidate (no persisted credentials)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up evidence runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Install separate engine/broker JVM 21 toolchain
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Select project/compiler JVM 25 (active JAVA_HOME)
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Provision exact Android SDK packages
+        run: python scripts/ci/provision_android.py --output build/ci-evidence/sdk.json
+      - name: Execute pinned wrapper version
+        run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
+      - name: Record actual environment, even on preflight failure
+        if: always()
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 25 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+      - name: Execute Android host tests and clean/invalid actual Lint controls
+        run: python scripts/ci/run_platform_checks.py --profile android --output build/ci-evidence/android.json
+      - name: Exercise real Lint adapter against immutable fixture captures
+        run: python scripts/ci/run_provider_checks.py --profile android --output build/ci-evidence/android-provider.json
+      - name: Collect exact Android host-side reports and provider outcomes
+        if: always()
+        env:
+          KT_CI_JOB_STATUS: ${{ job.status }}
+        run: >-
+          python scripts/ci/collect_evidence.py --profile android-host-and-lint
+          --output build/ci-evidence/evidence.json --environment build/ci-evidence/environment.json
+          --reports "fixtures/kmp/build/test-results/**/*.xml" --require-tests
+          --command-result build/ci-evidence/sdk.json
+          --command-result build/ci-evidence/gradle-version.json
+          --command-result build/ci-evidence/android.json
+          --command-result build/ci-evidence/android-provider.json
+      - name: Retain sanitized Android evidence (not device runtime claims)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-android-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/*.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain original Android controlled-fixture host JUnit reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-android-original-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: fixtures/kmp/build/test-results/**/*.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+  ios-native:
+    name: Real iOS arm64 compile/link and iOS 26.4 simulator execution
+    if: github.event_name != 'workflow_dispatch' || inputs.profile == 'all' || inputs.profile == 'ios'
+    # Ephemeral hosted arm64 Mac, never a privileged self-hosted fork checkout.
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.1.app/Contents/Developer
+    steps:
+      - name: Check out candidate (no persisted credentials)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up evidence runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Install separate engine/broker JVM 21 toolchain
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Select project/compiler JVM 25 (active JAVA_HOME)
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Provision SDK needed to configure the full KMP project
+        run: python scripts/ci/provision_android.py --output build/ci-evidence/sdk.json
+      - name: Execute pinned wrapper version
+        run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
+      - name: Verify selected Xcode version/build and record actual SDK/runtime inventory
+        if: always()
+        run: >-
+          python scripts/ci/record_environment.py --output build/ci-evidence/environment.json
+          --require-java-major 25
+          --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+          --require-xcode 26.4.1 --require-xcode-build 17E202
+      - name: Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals
+        run: python scripts/ci/run_platform_checks.py --profile ios --timeout 1200 --output build/ci-evidence/ios.json
+      - name: Exercise actual Native adapter against immutable common/iOS captures
+        run: python scripts/ci/run_provider_checks.py --profile ios --timeout 1200 --output build/ci-evidence/ios-provider.json
+      - name: Collect exact simulator reports, linked frameworks and provider outcomes
+        if: always()
+        env:
+          KT_CI_JOB_STATUS: ${{ job.status }}
+        run: >-
+          python scripts/ci/collect_evidence.py --profile ios-native
+          --output build/ci-evidence/evidence.json --environment build/ci-evidence/environment.json
+          --reports "fixtures/kmp/build/test-results/iosSimulatorArm64Test/*.xml"
+          --require-report "fixtures/kmp/build/test-results/iosSimulatorArm64Test/*.xml" --require-tests
+          --require-artifact "fixtures/kmp/build/bin/iosArm64/debugFramework/*.framework"
+          --require-artifact "fixtures/kmp/build/bin/iosSimulatorArm64/debugFramework/*.framework"
+          --command-result build/ci-evidence/sdk.json
+          --command-result build/ci-evidence/gradle-version.json
+          --command-result build/ci-evidence/ios.json
+          --command-result build/ci-evidence/ios-provider.json
+      - name: Retain sanitized Apple target evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-ios-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/*.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain original iOS simulator controlled-fixture JUnit reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-ios-original-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: fixtures/kmp/build/test-results/iosSimulatorArm64Test/*.xml
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,0 +1,116 @@
+{
+    "analysis_key": "sha256:0160098476ea0d0a5883a0e926829f8d17ac839ff7e35a5bde8cadcb3ff3589d",
+    "snapshot_id": "sha256:426d418af0c3e454d104e39a0f88f096125f3a0b831bc8477cccfb972420fc73",
+    "context_id": "[\":compiler-fixtures\",\"synthetic\",\"jvm\",\"main\"]",
+    "status": "executed",
+    "reasons": [],
+    "exit_code": 1,
+    "command": [
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+        "-Xmx512m",
+        "-Dfile.encoding=UTF-8",
+        "-Duser.language=en",
+        "-Duser.country=US",
+        "-Djava.io.tmpdir=/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/tmp",
+        "-cp",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/compiler/0.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/compiler/1.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/compiler/2.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/compiler/3.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/compiler/4.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/compiler/5.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/compiler/6.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/compiler/7.jar",
+        "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler",
+        "-version",
+        "-Xrender-internal-diagnostic-names",
+        "-no-stdlib",
+        "-no-reflect",
+        "-d",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/classes",
+        "-classpath",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/dependencies/0.jar:/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/dependencies/1.jar",
+        "-jvm-target",
+        "17",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/jvm_static_not_in_object_or_companion.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/jvm_inline_without_value_class.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/value_class_without_jvm_inline_annotation.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/inapplicable_jvm_field.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/overloads_interface.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/overloads_abstract.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/synchronized_on_suspend_error.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/synchronized_on_abstract.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/external_declaration_cannot_have_body.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/non_data_class_jvm_record.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/jvm_record_not_val_parameter.kt",
+        "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458/sources/cases/field_in_jvm_record.kt"
+    ],
+    "output_directory": "/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-688089236865696458",
+    "cancelled": false,
+    "timed_out": false,
+    "truncated": false,
+    "elapsed_millis": 3029,
+    "output_bytes": 421,
+    "stdout_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderr_sha256": "sha256:ac369825f37f38b15d62960ebfca375b5e2da49984b8b5281020f7f65ecfa598",
+    "sealed_source_files": [
+        {
+            "path": "build.gradle.kts",
+            "sha256": "sha256:a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d",
+            "size": 68
+        },
+        {
+            "path": "cases/external_declaration_cannot_have_body.kt",
+            "sha256": "sha256:f40bc88de4172ea6bfd59779cb8a08514b3088281b58692413af80c27c233655",
+            "size": 134
+        },
+        {
+            "path": "cases/field_in_jvm_record.kt",
+            "sha256": "sha256:5aee5c0094b63cd4acdbd0cddc6829834b110cbc1f98531e33dcda0067d62ac7",
+            "size": 139
+        },
+        {
+            "path": "cases/inapplicable_jvm_field.kt",
+            "sha256": "sha256:f25a5e0e3f86b32c058f9034ba9b8ea0ecb4afa5edb2d9aef80118715ec4cd9b",
+            "size": 136
+        },
+        {
+            "path": "cases/jvm_inline_without_value_class.kt",
+            "sha256": "sha256:0ed8a6e01804894e3ea02547dd7165ada3bbddd0f0a3ce7dabdbd242bdc703f5",
+            "size": 139
+        },
+        {
+            "path": "cases/jvm_record_not_val_parameter.kt",
+            "sha256": "sha256:c494a33b38437a5e950e6f8eb20d0ac2c09fac3595f334e8ec1790249ec5a9a7",
+            "size": 139
+        },
+        {
+            "path": "cases/jvm_static_not_in_object_or_companion.kt",
+            "sha256": "sha256:c67cf9b76ff5e547e309dcb1a2673a977a218456fe1c98aad7979ccee1dacf8d",
+            "size": 154
+        },
+        {
+            "path": "cases/non_data_class_jvm_record.kt",
+            "sha256": "sha256:5715de9f0ff001a402c486ecea81b33c8cf17a6acb23d8b5ba8500c22c68fb70",
+            "size": 128
+        },
+        {
+            "path": "cases/overloads_abstract.kt",
+            "sha256": "sha256:70937c9b8112a406c1a038aadc05bd2568a13d04b3f21ab1f93851d9db28a67d",
+            "size": 145
+        },
+        {
+            "path": "cases/overloads_interface.kt",
+            "sha256": "sha256:2aa9e1abb08605158e4ab88a463202776b458529e87d49b1cfcf2a2f33426b8e",
+            "size": 133
+        },
+        {
+            "path": "cases/synchronized_on_abstract.kt",
+            "sha256": "sha256:dfa31c237f81de4acc05f4d0be2c1bc04340d679e5e21407e3d8204de99dabdc",
+            "size": 142
+        },
+        {
+            "path": "cases/synchronized_on_suspend_error.kt",
+            "sha256": "sha256:8828710c06e3097a3e1f805b99c88fffca66953ffe7f590c6e74f8a1b863e3fc",
+            "size": 132
+        },
+        {
+            "path": "cases/value_class_without_jvm_inline_annotation.kt",
+            "sha256": "sha256:74dcc573e1bf94f44eb9e2b08e1cdde7c49a5424d7f14357ce414a784ee18284",
+            "size": 156
+        }
+    ]
+}

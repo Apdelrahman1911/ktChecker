@@ -1,0 +1,72 @@
+import groovy.json.JsonOutput
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
+import org.gradle.maven.MavenModule
+import org.gradle.maven.MavenPomArtifact
+
+// Owner-trusted packaging metadata only. Run with the real checked-in wrapper.
+// No coordinates or licenses are inferred from JAR filenames/group names.
+gradle.projectsEvaluated {
+    def cli = gradle.rootProject.findProject(':cli')
+    if (cli == null) throw new GradleException('CLI project is required for distribution inventory')
+    cli.tasks.register('writeDistributionDependencyManifest') {
+        group = 'distribution'
+        description = 'Record actual resolved distribution artifacts and their exact Maven POMs.'
+        dependsOn(cli.tasks.named('installDist'))
+        def destination = gradle.rootProject.file(
+            gradle.rootProject.providers.gradleProperty('distributionDependencyManifest')
+                .orElse('build/ci-evidence/raw/distribution-dependencies.json').get())
+        outputs.file(destination)
+        outputs.upToDateWhen { false }
+        doLast {
+            def resolved = []
+            ['runtimeClasspath', 'bundledCompiler'].each { name ->
+                def configuration = cli.configurations.getByName(name)
+                configuration.incoming.artifacts.artifacts.each { artifact ->
+                    resolved << [configuration: name, artifact: artifact]
+                }
+            }
+            def modules = resolved.collect { it.artifact.id.componentIdentifier }
+                .findAll { it instanceof ModuleComponentIdentifier }.unique()
+            def poms = [:]
+            def query = cli.dependencies.createArtifactResolutionQuery().forComponents(modules)
+                .withArtifacts(MavenModule, MavenPomArtifact).execute()
+            query.resolvedComponents.each { component ->
+                component.getArtifacts(MavenPomArtifact).each { pom ->
+                    if (pom instanceof ResolvedArtifactResult) poms[component.id] = pom.file.absolutePath
+                }
+            }
+            def artifacts = resolved.collect { row ->
+                def artifact = row.artifact
+                def component = artifact.id.componentIdentifier
+                def coordinate
+                def origin
+                if (component instanceof ModuleComponentIdentifier) {
+                    coordinate = "${component.group}:${component.module}:${component.version}"
+                    origin = 'maven'
+                } else if (component instanceof ProjectComponentIdentifier) {
+                    def project = gradle.rootProject.findProject(component.projectPath)
+                    if (project == null) throw new GradleException('Included-build identity needs an explicit packaging mapping')
+                    coordinate = "${project.group}:${project.name}:${project.version}"
+                    origin = 'owner_project'
+                } else {
+                    throw new GradleException('Unidentified distribution dependency needs an explicit component mapping')
+                }
+                [coordinate: coordinate, origin: origin, configuration: row.configuration,
+                 artifactIdentity: artifact.id.displayName, file: artifact.file.absolutePath, pom: poms[component]]
+            }
+            def archive = cli.tasks.named('jar').get().archiveFile.get().asFile
+            artifacts << [coordinate: "${cli.group}:${cli.name}:${cli.version}", origin: 'owner_project',
+                configuration: 'application', artifactIdentity: ':cli:jar', file: archive.absolutePath, pom: null]
+            if (artifacts.any { !new File(it.file).isFile() }) throw new GradleException('Resolved distribution artifact bytes are absent')
+            def value = [schemaVersion: 1, producer: 'gradle-resolved-distribution-artifacts/1',
+                gradleVersion: gradle.gradleVersion, project: ':cli',
+                distribution: cli.tasks.named('installDist').get().destinationDir.absolutePath,
+                artifacts: artifacts.sort { a, b -> (a.coordinate + a.configuration + a.file) <=> (b.coordinate + b.configuration + b.file) }]
+            destination.parentFile.mkdirs()
+            destination.setText(JsonOutput.prettyPrint(JsonOutput.toJson(value)) + '\n', 'UTF-8')
+            println('Recorded actual distribution coordinates/POM paths; license clearance is a separate report.')
+        }
+    }
+}

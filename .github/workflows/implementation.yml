@@ -1,0 +1,130 @@
+name: Preview implementation (real pinned JVM)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: implementation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checker-host:
+    name: JVM 21 checker build and installed launcher (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - name: Check out candidate (no persisted credentials)
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up CI evidence runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Set up broker JVM 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify the evidence harness failure paths
+        run: python -m unittest discover -s scripts/ci -p "test_*.py" -v
+      - name: Record initial host and pinned wrapper
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment-initial.json --require-java-major 21
+      - name: Execute the checksum-pinned Gradle wrapper
+        run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
+      - name: Bind observed Gradle to the selected JVM
+        if: always()
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 21 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+      - name: Build and test actual modules; assemble preview distributions
+        run: >-
+          python scripts/ci/run_gradle.py
+          --output build/ci-evidence/host-build.json --timeout 1200
+          --require-task :contracts:test --require-task :audit:test
+          --require-task :cli:installDist --require-task :cli:distZip --require-task :cli:distTar
+          -- --rerun-tasks --no-build-cache test :cli:installDist :cli:distZip :cli:distTar
+      - name: Resolve actual installed distribution coordinates and Maven POMs
+        run: >-
+          python scripts/ci/run_gradle.py
+          --output build/ci-evidence/dependency-manifest-command.json --timeout 300
+          --require-task :cli:writeDistributionDependencyManifest
+          -- --no-build-cache --init-script scripts/ci/distribution-dependencies.init.gradle
+          :cli:writeDistributionDependencyManifest
+      - name: Execute installed native launcher from a spaces and Unicode path
+        run: python scripts/ci/smoke_distribution.py --output build/ci-evidence/distribution-smoke.json
+      - name: Inventory actual dependency bytes, declared licenses and retained notices
+        if: always()
+        # Preview inventory may pass while legal review is explicitly blocked.
+        # No owner license is invented and no release/signing gate is granted.
+        run: >-
+          python scripts/ci/report_distribution.py
+          --dependencies build/ci-evidence/raw/distribution-dependencies.json
+          --output build/ci-evidence/package-report.json
+          --sbom build/ci-evidence/distribution.cdx.json
+          --notice build/ci-evidence/NOTICE.dependency-report.txt
+      - name: Collect actual suites and artifact identities, including failures
+        if: always()
+        env:
+          KT_CI_JOB_STATUS: ${{ job.status }}
+        run: >-
+          python scripts/ci/collect_evidence.py
+          --output build/ci-evidence/evidence.json --profile checker-host
+          --environment build/ci-evidence/environment.json
+          --reports "modules/*/build/test-results/**/*.xml"
+          --reports "tests/audit/build/test-results/**/*.xml"
+          --require-report "modules/contracts/build/test-results/test/*.xml"
+          --require-report "tests/audit/build/test-results/test/*.xml"
+          --require-tests
+          --require-artifact "modules/cli/build/distributions/*.zip"
+          --require-artifact "modules/cli/build/distributions/*.tar"
+          --command-result build/ci-evidence/gradle-version.json
+          --command-result build/ci-evidence/host-build.json
+          --command-result build/ci-evidence/dependency-manifest-command.json
+          --command-result build/ci-evidence/distribution-smoke.json
+          --command-result build/ci-evidence/package-report.json
+      - name: Retain sanitized observed evidence (not terminal transcripts)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-evidence-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/*.json
+            build/ci-evidence/NOTICE.dependency-report.txt
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain original controlled-fixture JUnit and kernel stress reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: preview-original-reports-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            modules/*/build/test-results/**/*.xml
+            tests/audit/build/test-results/**/*.xml
+            modules/kernel/build/reports/stress/*.json
+          # A failure before tests emits no fabricated empty report.
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Retain the actual tested unsigned preview distribution
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: unsigned-preview-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            modules/cli/build/distributions/*.zip
+            modules/cli/build/distributions/*.tar
+            build/ci-evidence/package-report.json
+            build/ci-evidence/distribution.cdx.json
+            build/ci-evidence/NOTICE.dependency-report.txt
+          if-no-files-found: error
+          retention-days: 14

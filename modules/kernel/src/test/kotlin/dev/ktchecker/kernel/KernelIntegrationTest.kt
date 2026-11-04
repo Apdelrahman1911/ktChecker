@@ -1,0 +1,787 @@
+package dev.ktchecker.kernel
+
+import dev.ktchecker.contracts.*
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
+import java.util.Collections
+import java.util.UUID
+import java.util.concurrent.Callable
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.*
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+
+/** Real SQLite/files/threads; the provider and model/source authorities are explicitly synthetic. */
+class KernelIntegrationTest {
+    @TempDir lateinit var temp: Path
+    private val rule = "test/no-defect"
+    private val testConfig = KernelConfig(workerCount = 2, globalParallelism = 2, perWorktreeParallelism = 1,
+        heartbeatMillis = 30, leaseMillis = 120, pollMillis = 5, analysisTimeoutMillis = 15_000)
+
+    private fun fixtureInput(name: String, text: String = "fun main() = Unit\n", worktree: String = "tree", parent: String? = null,
+                      context: RuleContext = RuleContext()): AnalysisInput {
+        val root = temp.resolve("source-$name")
+        Files.createDirectories(root)
+        Files.writeString(root.resolve("Main.kt"), text)
+        val snapshot = SnapshotManifest(Digests.sha256("snapshot:$name:$text:$parent"), "workspace", worktree,
+            listOf(SnapshotFile("Main.kt", Digests.sha256(text), text.toByteArray().size.toLong())),
+            ownerId = "owner", parentSnapshotId = parent, declaredRoots = listOf("."))
+        return AnalysisInput(snapshot, root.toString(), AnalysisContext(scope = context,
+            modelDigest = Digests.sha256("model"), dependencyDigest = Digests.sha256("deps"),
+            toolchainDigest = Digests.sha256("tools"), configurationDigest = Digests.sha256("config"), fullProject = true), listOf(rule))
+    }
+
+    private fun binding(id: String, tree: String = "tree") = ClientBinding("owner", "workspace", tree, id, "lineage-$id", 1, "session-$id")
+    private fun request(id: String, input: AnalysisInput) = SubmitRequest("patch-$id", "idempotency-$id", input)
+
+    private class Provider(private val body: (AnalysisInput, CancellationToken) -> ProviderResult) : AnalysisProvider {
+        override val id = "synthetic-test"
+        override val supportedRuleIds = setOf("test/no-defect")
+        val calls = AtomicInteger()
+        override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
+            calls.incrementAndGet()
+            return body(input, cancellation)
+        }
+    }
+
+    private fun passed(input: AnalysisInput, findings: List<Finding> = emptyList()) = ProviderResult("synthetic-test", "complete", findings,
+        input.requiredRuleIds.map { Coverage(it, input.context.scope, if (findings.any { f -> f.ruleId == it }) "findings" else "passed",
+            provenance = "executed", certificateId = Digests.sha256("synthetic-certificate:${input.analysisKey()}:$it"),
+            implemented = true, tested = true, qualified = true) })
+
+    private fun finding(input: AnalysisInput) = Finding(rule, "Synthetic defect", "Synthetic test diagnosis", "Fixture only",
+        SourceLocation("Main.kt", input.snapshot.files.single().digest), Digests.sha256("finding:${input.snapshot.snapshotId}"), "synthetic-test",
+        context = input.context.scope)
+
+    /** This is a controlled test authority, not evidence of a production host or live scan. */
+    private class SyntheticFence(initial: AnalysisInput) : SnapshotGate {
+        private val lock = Any()
+        private var current = initial
+        private var epoch = 1L
+        fun update(input: AnalysisInput) = synchronized(lock) { current = input; epoch++ }
+        override fun <T> withCurrentSnapshot(input: AnalysisInput, action: (SnapshotCheck) -> T): T = synchronized(lock) {
+            action(SnapshotCheck(current.snapshot.snapshotId == input.snapshot.snapshotId, current.snapshot.snapshotId, epoch,
+                current.context.configurationDigest, current.context.modelDigest, current.context.dependencyDigest,
+                current.context.toolchainDigest, "synthetic-config-source-epoch:$epoch", authoritative = true))
+        }
+    }
+
+    private fun await(service: KernelService, client: ClientRegistration, reviewId: String): ReviewStatus {
+        var status = service.status(client.client, reviewId)
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
+        while (status.result == null && System.nanoTime() < deadline) {
+            Thread.sleep(5)
+            status = service.status(client.client, reviewId)
+        }
+        assertNotNull(status.result, "Review did not finish: $status")
+        return status
+    }
+    private fun allEvents(service: KernelService, client: ClientRegistration): List<ReviewEvent> = buildList {
+        var cursor: String? = null
+        do {
+            val page = service.events(client.client, cursor, 7)
+            addAll(page.events)
+            cursor = page.cursor
+        } while (page.hasMore)
+    }
+    private fun insertAll(service: KernelService, client: ClientRegistration, observe: Boolean = true): List<ReviewEvent> {
+        val events = allEvents(service, client)
+        for (event in events) {
+            assertEquals(Digests.sha256(event.payload), event.payloadDigest)
+            val contextDigest = Digests.sha256("synthetic context item:${event.payload}")
+            service.acknowledge(client.adapter, listOf(event.eventId), ContextReceipt("ack-${event.eventId}", contextDigest,
+                "item-${event.eventId}", Instant.EPOCH.toString()))
+            if (observe) service.observe(client.adapter, listOf(event.eventId), ObservationReceipt("observe-${event.eventId}",
+                "synthetic-model-request-${event.eventId}", listOf(contextDigest)))
+        }
+        return events
+    }
+    private fun assertCode(code: String, block: () -> Unit) = assertEquals(code, assertFailsWith<KernelException>(block = block).code)
+    private fun submitRetry(service: KernelService, client: ClientRegistration, request: SubmitRequest): ReviewStatus {
+        repeat(1000) {
+            try { return service.submit(client.client, request) }
+            catch (e: KernelException) { if (e.code != "ingestion_busy") throw e; Thread.sleep(2) }
+        }
+        error("bounded retry exhausted")
+    }
+
+    @Test fun sharedExecutionKeepsCancellationPermissionsAndDeliverySeparate() {
+        val input = fixtureInput("shared")
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val provider = Provider { effective, cancellation ->
+            entered.countDown()
+            assertTrue(release.await(10, TimeUnit.SECONDS))
+            assertFalse(cancellation.isCancelled(), "One client must not cancel shared computation")
+            passed(effective)
+        }
+        KernelService.open(temp.resolve("ledger"), provider, testConfig, SyntheticFence(input)).use { service ->
+            val a = service.registerClient(binding("a"))
+            val b = service.registerClient(binding("b"))
+            val ar = service.submit(a.client, request("same", input))
+            assertTrue(entered.await(5, TimeUnit.SECONDS))
+            val br = service.submit(b.client, request("same", input))
+            service.cancel(a.client, ar.reviewId)
+            release.countDown()
+            assertEquals("cancelled", await(service, a, ar.reviewId).state)
+            assertEquals("complete", await(service, b, br.reviewId).state)
+            assertEquals(1, provider.calls.get())
+            assertCode("review_not_found") { service.status(a.client, br.reviewId) }
+            assertCode("unauthorized") { service.acknowledge(AdapterCredential(a.client.clientId, a.client.token),
+                listOf(allEvents(service, a).first().eventId), ContextReceipt("fake", Digests.sha256("x"), "item", Instant.EPOCH.toString())) }
+            insertAll(service, b)
+            val cutB = service.prepareGate(b.client)
+            assertTrue(cutB.ready, cutB.reasons.toString())
+            assertTrue(service.completeGate(b.client, cutB.cutId).allowed)
+            insertAll(service, a)
+            assertTrue(service.prepareGate(a.client).reasons.any { it.startsWith("review_cancelled:") })
+            assertTrue(allEvents(service, a).map { it.eventId }.intersect(allEvents(service, b).map { it.eventId }.toSet()).isEmpty())
+        }
+    }
+
+    @Test fun insertionIsNotObservationAndFiniteCutRequiresExactTrustedReceipt() {
+        val input = fixtureInput("receipts")
+        KernelService.open(temp.resolve("ledger"), Provider { i, _ -> passed(i) }, testConfig, SyntheticFence(input)).use { service ->
+            val a = service.registerClient(binding("a"))
+            val b = service.registerClient(binding("b"))
+            val review = service.submit(a.client, request("1", input))
+            await(service, a, review.reviewId)
+            val event = allEvents(service, a).first()
+            assertCode("insertion_required") { service.observe(a.adapter, listOf(event.eventId),
+                ObservationReceipt("premature", "request", listOf(event.payloadDigest))) }
+            assertCode("event_not_found") { service.acknowledge(b.adapter, listOf(event.eventId),
+                ContextReceipt("foreign", event.payloadDigest, "item", Instant.EPOCH.toString())) }
+            val aCursor = service.events(a.client, limit = 1).cursor
+            assertCode("invalid_cursor") { service.events(b.client, aCursor) }
+            assertCode("invalid_cursor") { service.events(a.client, aCursor + "x") }
+            val originalCount = allEvents(service, a).size
+            insertAll(service, a, observe = false)
+            val cut = service.prepareGate(a.client)
+            assertFalse(cut.ready)
+            assertTrue(cut.reasons.any { it.startsWith("model_observation_missing:") })
+            assertFalse(service.completeGate(a.client, cut.cutId).allowed)
+            assertCode("observation_mismatch") { service.observe(a.adapter, listOf(event.eventId),
+                ObservationReceipt("wrong", "request", listOf(Digests.sha256("not inserted")))) }
+            insertAll(service, a)
+            var performed = 0
+            val result = service.completeGate(a.client, cut.cutId) { performed++ }
+            assertTrue(result.allowed, result.reasons.toString())
+            assertTrue(result.actionPerformed)
+            assertEquals(1, performed)
+            assertFalse(service.completeGate(a.client, cut.cutId) { performed++ }.allowed)
+            assertEquals(1, performed)
+            assertEquals(originalCount, allEvents(service, a).size, "Gate and receipt control must not recursively require delivery")
+        }
+    }
+
+    @Test fun gateChecksSourceAndConfigEpochAtTheActualSynchronousAction() {
+        val input = fixtureInput("fence")
+        val changed = fixtureInput("changed", "fun changed() = 1\n", parent = input.snapshot.snapshotId)
+        val fence = SyntheticFence(input)
+        KernelService.open(temp.resolve("ledger"), Provider { i, _ -> passed(i) }, testConfig, fence).use { service ->
+            val client = service.registerClient(binding("client"))
+            val review = service.submit(client.client, request("1", input))
+            await(service, client, review.reviewId)
+            insertAll(service, client)
+            val stale = service.prepareGate(client.client)
+            fence.update(changed)
+            assertFalse(service.completeGate(client.client, stale.cutId).allowed)
+            fence.update(input)
+            assertFalse(service.completeGate(client.client, stale.cutId).allowed, "Source ABA must invalidate the captured epoch")
+            val cut = service.prepareGate(client.client)
+            val entered = CountDownLatch(1)
+            val release = CountDownLatch(1)
+            val changedDone = CountDownLatch(1)
+            val pool = Executors.newFixedThreadPool(2)
+            try {
+                val final = pool.submit<GateResult> { service.completeGate(client.client, cut.cutId) {
+                    entered.countDown(); assertTrue(release.await(5, TimeUnit.SECONDS))
+                } }
+                assertTrue(entered.await(5, TimeUnit.SECONDS))
+                pool.submit { fence.update(changed); changedDone.countDown() }
+                assertFalse(changedDone.await(75, TimeUnit.MILLISECONDS), "Source fence must span the guarded action")
+                release.countDown()
+                assertTrue(final.get(5, TimeUnit.SECONDS).actionPerformed)
+                assertTrue(changedDone.await(5, TimeUnit.SECONDS))
+            } finally { release.countDown(); pool.shutdownNow() }
+        }
+    }
+
+    @Test fun durableAcceptanceSurvivesRestartAndOriginalMaterializationChanges() {
+        val input = fixtureInput("durable", "val original = 7\n")
+        val database = temp.resolve("ledger")
+        val provider = Provider { i, _ ->
+            assertNotEquals(input.materializedRoot, i.materializedRoot)
+            assertEquals("val original = 7\n", Files.readString(Path.of(i.materializedRoot).resolve("Main.kt")))
+            passed(i)
+        }
+        lateinit var client: ClientRegistration
+        lateinit var accepted: ReviewStatus
+        KernelService.open(database, provider, testConfig.copy(workerCount = 0)).use { service ->
+            client = service.registerClient(binding("durable"))
+            accepted = service.submit(client.client, request("1", input))
+            assertEquals("queued", accepted.state)
+        }
+        Files.writeString(Path.of(input.materializedRoot).resolve("Main.kt"), "different mutable bytes")
+        KernelService.open(database, provider, testConfig, SyntheticFence(input)).use { recovered ->
+            assertEquals("complete", await(recovered, client, accepted.reviewId).state)
+            assertEquals(accepted.reviewId, recovered.submit(client.client, request("1", input)).reviewId)
+            assertCode("client_exists") { recovered.registerClient(binding("durable").copy(generation = 2)) }
+            assertTrue(allEvents(recovered, client).any { it.kind == "accepted" })
+            assertTrue(allEvents(recovered, client).any { it.kind == "result" })
+        }
+    }
+
+    @Test fun concurrentIdempotencyAndMultipleServiceInstancesRetainEveryPatch() {
+        val input = fixtureInput("concurrent")
+        val provider = Provider { i, _ -> passed(i) }
+        val config = testConfig.copy(workerCount = 0)
+        val database = temp.resolve("ledger")
+        KernelService.open(database, provider, config).use { first ->
+            KernelService.open(database, provider, config).use { second ->
+                val client = first.registerClient(binding("concurrent"))
+                val pool = Executors.newFixedThreadPool(8)
+                try {
+                    val duplicates = pool.invokeAll((1..24).map { index -> Callable {
+                        submitRetry(if (index % 2 == 0) first else second, client, request("duplicate", input))
+                    } }).map { it.get().reviewId }
+                    assertEquals(1, duplicates.distinct().size)
+                    val distinct = pool.invokeAll((1..40).map { index -> Callable {
+                        submitRetry(if (index % 2 == 0) first else second, client, request("$index", input))
+                    } }).map { it.get() }
+                    assertEquals(40, distinct.map { it.reviewId }.distinct().size)
+                    assertEquals((1L..41L).toList(), (distinct.map { it.sequence } + 1L).sorted())
+                    assertEquals(41, allEvents(first, client).count { it.kind == "accepted" })
+                    assertCode("idempotency_conflict") { first.submit(client.client, request("duplicate", input).copy(patchId = "different")) }
+                    assertCode("patch_id_conflict") { first.submit(client.client, request("duplicate", input).copy(idempotencyKey = "different")) }
+                    KernelService.open(database, provider, testConfig).use { worker ->
+                        distinct.forEach { assertEquals("complete", await(worker, client, it.reviewId).state) }
+                    }
+                    assertEquals(1, provider.calls.get(), "Only full-identical inputs share work, not obligations")
+                    assertEquals(41, allEvents(second, client).count { it.kind == "result" })
+                } finally { pool.shutdownNow() }
+            }
+        }
+    }
+
+    @Test fun fairQueueDoesNotLetAHotWorktreeStarveColdWorktrees() {
+        val order = Collections.synchronizedList(mutableListOf<String>())
+        val provider = Provider { i, _ -> order += i.snapshot.worktreeId; passed(i) }
+        val config = testConfig.copy(workerCount = 0, globalParallelism = 1)
+        val database = temp.resolve("ledger")
+        KernelService.open(database, provider, config).use { service ->
+            val a = service.registerClient(binding("a", "a"))
+            val b = service.registerClient(binding("b", "b"))
+            val c = service.registerClient(binding("c", "c"))
+            val records = (1..5).map { a to service.submit(a.client, request("a$it", fixtureInput("a$it", worktree = "a"))) } +
+                (b to service.submit(b.client, request("b", fixtureInput("b", worktree = "b")))) +
+                (c to service.submit(c.client, request("c", fixtureInput("c", worktree = "c"))))
+            KernelService.open(database, provider, config.copy(workerCount = 1)).use { worker ->
+                records.forEach { (client, review) -> await(worker, client, review.reviewId) }
+            }
+            assertEquals(listOf("a", "b", "c"), order.take(3))
+            assertEquals(7, order.size)
+        }
+    }
+
+    @Test fun clientFairnessPreventsOneAgentBacklogFromStarvingOthersInTheSameWorktree() {
+        val order = Collections.synchronizedList(mutableListOf<String>())
+        val provider = Provider { i, _ -> order += i.snapshot.snapshotId; passed(i) }
+        val config = testConfig.copy(workerCount = 0, globalParallelism = 1)
+        val database = temp.resolve("client-fair-ledger")
+        KernelService.open(database, provider, config).use { submitter ->
+            val hot = submitter.registerClient(binding("hot"))
+            val coldB = submitter.registerClient(binding("cold-b"))
+            val coldC = submitter.registerClient(binding("cold-c"))
+            val inputs = (1..24).map { fixtureInput("hot-$it") }
+            val b = fixtureInput("cold-b")
+            val c = fixtureInput("cold-c")
+            val records = inputs.mapIndexed { index, input -> hot to submitter.submit(hot.client, request("h$index", input)) } +
+                (coldB to submitter.submit(coldB.client, request("b", b))) +
+                (coldC to submitter.submit(coldC.client, request("c", c)))
+            KernelService.open(database, provider, config.copy(workerCount = 1)).use { worker ->
+                records.forEach { (client, review) -> await(worker, client, review.reviewId) }
+            }
+            assertEquals(listOf(inputs.first().snapshot.snapshotId, b.snapshot.snapshotId, c.snapshot.snapshotId), order.take(3))
+            assertEquals(inputs.map { it.snapshot.snapshotId }, order.filter { it != b.snapshot.snapshotId && it != c.snapshot.snapshotId },
+                "The sponsoring client's own queued obligations remain FIFO")
+            assertEquals(26, order.size)
+        }
+    }
+
+    @Test fun coalescedDispatchDoesNotSpendOtherSubscribersTurnsAndServiceAgesSurviveRestart() {
+        val shared = fixtureInput("fair-shared")
+        val oldB = fixtureInput("fair-b-old")
+        val oldC = fixtureInput("fair-c-old")
+        val laterA = fixtureInput("fair-a-later")
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val order = Collections.synchronizedList(mutableListOf<String>())
+        val provider = Provider { i, token ->
+            order += i.snapshot.snapshotId
+            if (i.snapshot.snapshotId == shared.snapshot.snapshotId) {
+                entered.countDown()
+                assertTrue(release.await(10, TimeUnit.SECONDS))
+                assertFalse(token.isCancelled(), "A co-subscriber's cancellation cannot stop the sponsor's computation")
+            }
+            passed(i)
+        }
+        val config = testConfig.copy(workerCount = 0, globalParallelism = 1)
+        val database = temp.resolve("shared-client-fair-ledger")
+        var ages = emptyMap<String, Long>()
+        KernelService.open(database, provider, config).use { submitter ->
+            val a = submitter.registerClient(binding("a"))
+            val b = submitter.registerClient(binding("b"))
+            val c = submitter.registerClient(binding("c"))
+            val ar = submitter.submit(a.client, request("shared", shared))
+            val br = submitter.submit(b.client, request("old", oldB))
+            val bs = submitter.submit(b.client, request("shared", shared))
+            val cr = submitter.submit(c.client, request("old", oldC))
+            val al = submitter.submit(a.client, request("later", laterA))
+            KernelService.open(database, provider, config.copy(workerCount = 1)).use { worker ->
+                try {
+                    assertTrue(entered.await(5, TimeUnit.SECONDS))
+                    val firstAges = submitter.ledger.read { connection -> connection.query(
+                        "SELECT client_id,last_served FROM fair_clients") { it.getString(1) to it.getLong(2) }.toMap() }
+                    assertEquals(mapOf("a" to 1L, "b" to 0L, "c" to 0L), firstAges,
+                        "Incidental shared service must not consume B's turn for its older exclusive work")
+                    submitter.cancel(b.client, bs.reviewId)
+                    release.countDown()
+                    listOf(a to ar, b to br, b to bs, c to cr, a to al).forEach { (client, review) -> await(worker, client, review.reviewId) }
+                    assertEquals("cancelled", worker.status(b.client, bs.reviewId).state)
+                    assertEquals("complete", worker.status(a.client, ar.reviewId).state)
+                } finally { release.countDown() }
+            }
+            assertEquals(listOf(shared, oldB, oldC, laterA).map { it.snapshot.snapshotId }, order)
+            ages = submitter.ledger.read { connection -> connection.query(
+                "SELECT client_id,last_served FROM fair_clients") { it.getString(1) to it.getLong(2) }.toMap() }
+            assertEquals(mapOf("a" to 4L, "b" to 2L, "c" to 3L), ages)
+        }
+        KernelService.open(database, provider, config).use { restarted ->
+            assertEquals(ages, restarted.ledger.read { connection -> connection.query(
+                "SELECT client_id,last_served FROM fair_clients") { it.getString(1) to it.getLong(2) }.toMap() })
+            assertEquals(4, provider.calls.get())
+        }
+    }
+
+    @Test fun newlyAdmittedClientJoinsTheCurrentFairRoundBehindAlreadyWaitingClients() {
+        val order = Collections.synchronizedList(mutableListOf<String>())
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val first = fixtureInput("fair-first")
+        val waiting = fixtureInput("fair-waiting")
+        val newcomer = fixtureInput("fair-newcomer")
+        val provider = Provider { i, _ ->
+            order += i.snapshot.snapshotId
+            if (i.snapshot.snapshotId == first.snapshot.snapshotId) {
+                entered.countDown(); assertTrue(release.await(10, TimeUnit.SECONDS))
+            }
+            passed(i)
+        }
+        val config = testConfig.copy(workerCount = 0, globalParallelism = 1)
+        val database = temp.resolve("fair-new-client-ledger")
+        KernelService.open(database, provider, config).use { submitter ->
+            val a = submitter.registerClient(binding("a"))
+            val b = submitter.registerClient(binding("b"))
+            val ar = submitter.submit(a.client, request("a", first))
+            val br = submitter.submit(b.client, request("b", waiting))
+            KernelService.open(database, provider, config.copy(workerCount = 1)).use { worker ->
+                try {
+                    assertTrue(entered.await(5, TimeUnit.SECONDS))
+                    val c = submitter.registerClient(binding("new"))
+                    val cr = submitter.submit(c.client, request("c", newcomer))
+                    assertEquals(1L, submitter.ledger.read { connection -> connection.count(
+                        "SELECT last_served FROM fair_clients WHERE client_id='new'") })
+                    release.countDown()
+                    listOf(a to ar, b to br, c to cr).forEach { (client, review) -> await(worker, client, review.reviewId) }
+                } finally { release.countDown() }
+            }
+            assertEquals(listOf(first, waiting, newcomer).map { it.snapshot.snapshotId }, order)
+        }
+    }
+
+    @Test fun reopeningPreClientFairnessLedgerBackfillsAcceptedQueuesWithoutNewSubmissions() {
+        val input = fixtureInput("legacy-fairness")
+        val provider = Provider { i, _ -> passed(i) }
+        val database = temp.resolve("legacy-fairness-ledger")
+        lateinit var client: ClientRegistration
+        lateinit var review: ReviewStatus
+        KernelService.open(database, provider, testConfig.copy(workerCount = 0)).use { service ->
+            client = service.registerClient(binding("legacy-fairness"))
+            review = service.submit(client.client, request("legacy", input))
+            // Simulates an accepted preview ledger from before the additive fair_clients table.
+            service.ledger.transaction { c -> c.execute("DROP TABLE fair_clients") }
+        }
+        KernelService.open(database, provider, testConfig).use { recovered ->
+            assertEquals("complete", await(recovered, client, review.reviewId).state)
+            assertEquals(1, provider.calls.get())
+            assertEquals(1L, recovered.ledger.read { c -> c.count("SELECT COUNT(*) FROM fair_clients WHERE client_id=?", client.binding.clientId) })
+            assertEquals(1, allEvents(recovered, client).count { it.kind == "accepted" })
+            assertEquals(1, allEvents(recovered, client).count { it.kind == "result" })
+        }
+    }
+
+    @Test fun globalAndPerWorktreeCapsSpanIndependentServiceInstances() {
+        val concurrent = AtomicInteger()
+        val maximum = AtomicInteger()
+        val perTree = ConcurrentHashMap<String, AtomicInteger>()
+        val maximumPerTree = ConcurrentHashMap<String, AtomicInteger>()
+        val provider = Provider { i, _ ->
+            val n = concurrent.incrementAndGet(); maximum.accumulateAndGet(n, ::maxOf)
+            val tree = perTree.computeIfAbsent(i.snapshot.worktreeId) { AtomicInteger() }.incrementAndGet()
+            maximumPerTree.computeIfAbsent(i.snapshot.worktreeId) { AtomicInteger() }.accumulateAndGet(tree, ::maxOf)
+            Thread.sleep(25)
+            perTree.getValue(i.snapshot.worktreeId).decrementAndGet(); concurrent.decrementAndGet()
+            passed(i)
+        }
+        val database = temp.resolve("ledger")
+        KernelService.open(database, provider, testConfig.copy(workerCount = 0)).use { submitter ->
+            val jobs = (1..3).flatMap { tree ->
+                val client = submitter.registerClient(binding("client$tree", "tree$tree"))
+                (1..5).map { n -> client to submitter.submit(client.client,
+                    request("$tree-$n", fixtureInput("$tree-$n", worktree = "tree$tree"))) }
+            }
+            KernelService.open(database, provider, testConfig).use { first ->
+                KernelService.open(database, provider, testConfig).use {
+                    jobs.forEach { (client, review) -> await(first, client, review.reviewId) }
+                }
+            }
+            assertTrue(maximum.get() <= 2)
+            assertEquals(2, maximum.get())
+            assertTrue(maximumPerTree.values.all { it.get() == 1 })
+        }
+    }
+
+    @Test fun queueAndMetadataBoundsRejectBeforeAcceptanceWithoutDiscardingOldPatches() {
+        val provider = Provider { i, _ -> passed(i) }
+        KernelService.open(temp.resolve("ledger"), provider, testConfig.copy(workerCount = 0, maxQueuedWork = 1)).use { service ->
+            val client = service.registerClient(binding("bounded"))
+            val first = service.submit(client.client, request("1", fixtureInput("one")))
+            assertCode("queue_full") { service.submit(client.client, request("2", fixtureInput("two"))) }
+            assertEquals("queued", service.status(client.client, first.reviewId).state)
+            assertEquals(1, allEvents(service, client).size)
+            assertCode("snapshot_scope_mismatch") { service.submit(client.client, request("foreign", fixtureInput("foreign", worktree = "foreign"))) }
+        }
+    }
+
+    @Test fun exactCoverageImplementationIdentityAndSourceValidationFailClosed() {
+        val variations: List<(AnalysisInput) -> ProviderResult> = listOf(
+            { i -> passed(i).copy(coverage = emptyList()) },
+            { i -> passed(i).copy(coverage = passed(i).coverage.map { it.copy(context = RuleContext(sourceSet = "test")) }) },
+            { i -> passed(i).copy(coverage = passed(i).coverage.map { it.copy(implemented = false) }) },
+            { i -> passed(i).copy(coverage = passed(i).coverage.map { it.copy(qualified = false) }) },
+            { i -> passed(i).copy(providerId = "untrusted") },
+            { i -> passed(i, listOf(finding(i).copy(location = SourceLocation("Main.kt", Digests.sha256("other"))))) },
+            { i -> passed(i, listOf(finding(i).copy(disposition = "fixed"))) },
+        )
+        variations.forEachIndexed { index, result ->
+            val input = fixtureInput("invalid-$index")
+            KernelService.open(temp.resolve("ledger-$index"), Provider { i, _ -> result(i) }, testConfig, SyntheticFence(input)).use { service ->
+                val client = service.registerClient(binding("bad$index"))
+                val review = service.submit(client.client, request("1", input))
+                assertEquals("incomplete", await(service, client, review.reviewId).state)
+                insertAll(service, client)
+                assertFalse(service.prepareGate(client.client).ready)
+            }
+        }
+    }
+
+    @Test fun emptyRequestedPlanExpandsToExplicitSupportedRulesInsteadOfVacuousSuccess() {
+        val input = fixtureInput("empty-plan").copy(requiredRuleIds = emptyList())
+        val provider = Provider { i, _ -> assertEquals(listOf(rule), i.requiredRuleIds); passed(i) }
+        KernelService.open(temp.resolve("ledger"), provider, testConfig, SyntheticFence(input)).use { service ->
+            val client = service.registerClient(binding("empty"))
+            val review = service.submit(client.client, request("1", input))
+            assertEquals("complete", await(service, client, review.reviewId).state)
+            insertAll(service, client)
+            assertTrue(service.prepareGate(client.client).ready)
+        }
+    }
+
+    @Test fun laterCompleteAncestralCertificateResolvesButLateOldCompletionCannotOverwriteIt() {
+        val old = fixtureInput("old", "val bug = 1\n")
+        val current = fixtureInput("fixed", "val fixed = 2\n", parent = old.snapshot.snapshotId)
+        val oldStarted = CountDownLatch(1)
+        val releaseOld = CountDownLatch(1)
+        val provider = Provider { i, _ ->
+            if (i.snapshot.snapshotId == old.snapshot.snapshotId) {
+                oldStarted.countDown(); assertTrue(releaseOld.await(10, TimeUnit.SECONDS)); passed(i, listOf(finding(i)))
+            } else passed(i)
+        }
+        KernelService.open(temp.resolve("ledger"), provider, testConfig.copy(perWorktreeParallelism = 2), SyntheticFence(current)).use { service ->
+            val client = service.registerClient(binding("lineage"))
+            val first = service.submit(client.client, request("old", old))
+            assertTrue(oldStarted.await(5, TimeUnit.SECONDS))
+            val second = service.submit(client.client, request("fixed", current))
+            assertEquals("complete", await(service, client, second.reviewId).state)
+            assertFalse(service.prepareGate(client.client).ready, "All accepted patches, including intermediate ones, remain obligations")
+            releaseOld.countDown()
+            assertEquals(1, await(service, client, first.reviewId).result!!.findings.size)
+            insertAll(service, client)
+            val cut = service.prepareGate(client.client)
+            assertTrue(cut.ready, cut.reasons.toString())
+            assertTrue(service.completeGate(client.client, cut.cutId).allowed)
+        }
+    }
+
+    @Test fun localPolicyNeverLeaksThroughSharedComputationAndCannotRewriteFailures() {
+        val input = fixtureInput("policy")
+        val provider = Provider { i, _ -> passed(i, listOf(finding(i))) }
+        val policy = ResultPolicy { binding, _, raw ->
+            if (binding.clientId == "accepted") raw.copy(findings = raw.findings.map { it.copy(disposition = "accepted") }) else raw
+        }
+        KernelService.open(temp.resolve("ledger"), provider, testConfig, SyntheticFence(input), resultPolicy = policy).use { service ->
+            val a = service.registerClient(binding("accepted"))
+            val b = service.registerClient(binding("open"))
+            val ar = service.submit(a.client, request("1", input))
+            val br = service.submit(b.client, request("1", input))
+            assertEquals("accepted", await(service, a, ar.reviewId).result!!.findings.single().disposition)
+            assertEquals("open", await(service, b, br.reviewId).result!!.findings.single().disposition)
+            assertEquals(1, provider.calls.get())
+            insertAll(service, a); insertAll(service, b)
+            assertTrue(service.prepareGate(a.client).ready)
+            assertTrue(service.prepareGate(b.client).reasons.any { it.startsWith("open_finding:") })
+            val raw = service.ledger.read { c -> c.one("SELECT result_json FROM work") { it.getString(1) }!! }
+            assertEquals("open", ContractJson.decodeFromString<ProviderResult>(raw).findings.single().disposition)
+        }
+        val incomplete = Provider { _ , _ -> ProviderResult("synthetic-test", "incomplete", reasons = listOf("missing-proof")) }
+        val rewriting = ResultPolicy { _, i, _ -> passed(i) }
+        KernelService.open(temp.resolve("bad-policy"), incomplete, testConfig, SyntheticFence(input), resultPolicy = rewriting).use { service ->
+            val client = service.registerClient(binding("bad-policy"))
+            val review = service.submit(client.client, request("1", input))
+            val status = await(service, client, review.reviewId)
+            assertEquals("incomplete", status.state)
+            assertTrue("result_policy_changed_protected_evidence" in status.reasons)
+        }
+    }
+
+    @Test fun unavailableAuthorityAndIncompleteScopeNeverReportAnAllowedGate() {
+        val input = fixtureInput("unknown")
+        KernelService.open(temp.resolve("unavailable"), Provider { i, _ -> passed(i) }, testConfig).use { service ->
+            val client = service.registerClient(binding("unknown"))
+            val review = service.submit(client.client, request("1", input))
+            await(service, client, review.reviewId); insertAll(service, client)
+            assertFalse(service.prepareGate(client.client).ready)
+        }
+        val scoped = input.copy(snapshot = input.snapshot.copy(unknownInputs = listOf("generated model unavailable")))
+        KernelService.open(temp.resolve("scope"), Provider { i, _ -> passed(i) }, testConfig, SyntheticFence(scoped)).use { service ->
+            val client = service.registerClient(binding("scope"))
+            val review = service.submit(client.client, request("1", scoped))
+            await(service, client, review.reviewId); insertAll(service, client)
+            assertTrue("source_scope_incomplete" in service.prepareGate(client.client).reasons)
+        }
+    }
+
+    @Test fun progressiveEventsAreDurableDeduplicatedAndReplayedToLateSubscribersWithoutCompletion() {
+        val input = fixtureInput("progress")
+        val progressed = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val provider = object : ProgressiveAnalysisProvider {
+            override val id = "synthetic-test"
+            override val supportedRuleIds = setOf(rule)
+            override fun analyzeProgressive(input: AnalysisInput, cancellation: CancellationToken, onProgress: (ProviderResult) -> Unit): ProviderResult {
+                val partial = passed(input, listOf(finding(input))).copy(status = "partial")
+                onProgress(partial); onProgress(partial)
+                progressed.countDown()
+                assertTrue(release.await(10, TimeUnit.SECONDS))
+                return passed(input, listOf(finding(input)))
+            }
+        }
+        KernelService.open(temp.resolve("ledger"), provider, testConfig, SyntheticFence(input)).use { service ->
+            val a = service.registerClient(binding("a"))
+            val b = service.registerClient(binding("b"))
+            val ar = service.submit(a.client, request("1", input))
+            assertTrue(progressed.await(5, TimeUnit.SECONDS))
+            assertEquals("running", service.status(a.client, ar.reviewId).state)
+            assertEquals(1, allEvents(service, a).count { it.kind == "progress" })
+            val br = service.submit(b.client, request("1", input))
+            assertEquals(1, allEvents(service, b).count { it.kind == "progress" })
+            assertFalse(service.prepareGate(a.client).ready)
+            release.countDown()
+            await(service, a, ar.reviewId); await(service, b, br.reviewId)
+            assertEquals(1, allEvents(service, b).count { it.kind == "result" })
+        }
+    }
+    @Test fun killedWorkerProcessRecoversEveryAcceptedRequestFromItsDurableArchive() {
+        val input = fixtureInput("crash", "val durable = 19\n")
+        val database = temp.resolve("crash-ledger")
+        val provider = Provider { i, _ -> passed(i) }
+        lateinit var client: ClientRegistration
+        lateinit var review: ReviewStatus
+        KernelService.open(database, provider, testConfig.copy(workerCount = 0)).use { service ->
+            client = service.registerClient(binding("crash"))
+            review = service.submit(client.client, request("crash", input))
+        }
+        val configFile = temp.resolve("crash-config.json")
+        Files.writeString(configFile, canonical(testConfig.copy(workerCount = 1)))
+        val started = temp.resolve("child-started")
+        val log = temp.resolve("child.log")
+        val javaExecutable = Path.of(System.getProperty("java.home"), "bin", if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java")
+        val classpath = buildSet<String> {
+            System.getProperty("java.class.path").split(java.io.File.pathSeparator).filter { it.isNotBlank() }.forEach(::add)
+            var loader: ClassLoader? = KernelCrashChild::class.java.classLoader
+            while (loader != null) {
+                if (loader is java.net.URLClassLoader) loader.urLs.filter { it.protocol == "file" }.forEach { add(Path.of(it.toURI()).toString()) }
+                loader = loader.parent
+            }
+            listOf(KernelCrashChild::class.java, KernelService::class.java, AnalysisInput::class.java,
+                kotlin.Unit::class.java, kotlinx.serialization.KSerializer::class.java, kotlinx.serialization.json.Json::class.java,
+                Class.forName("org.sqlite.JDBC")).forEach { add(Path.of(it.protectionDomain.codeSource.location.toURI()).toString()) }
+        }.joinToString(java.io.File.pathSeparator)
+        val child = ProcessBuilder(javaExecutable.toString(), "-cp", classpath, KernelCrashChild::class.java.name,
+            database.toString(), configFile.toString(), started.toString()).redirectErrorStream(true).redirectOutput(log.toFile()).start()
+        try {
+            val until = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
+            while (!Files.exists(started) && child.isAlive && System.nanoTime() < until) Thread.sleep(10)
+            assertTrue(Files.exists(started), "Child did not enter durable work: " + Files.readString(log).take(2000))
+            child.destroyForcibly()
+            assertTrue(child.waitFor(10, TimeUnit.SECONDS))
+            Files.delete(Path.of(input.materializedRoot).resolve("Main.kt"))
+            KernelService.open(database, provider, testConfig).use { service ->
+                assertEquals("complete", await(service, client, review.reviewId).state)
+                val events = allEvents(service, client)
+                assertEquals(1, events.count { it.kind == "accepted" })
+                assertEquals(1, events.count { it.kind == "result" })
+                assertTrue(events.any { it.kind == "recovered" })
+            }
+        } finally { if (child.isAlive) { child.destroyForcibly(); child.waitFor(10, TimeUnit.SECONDS) } }
+    }
+
+    @Test fun fencedOldAttemptCannotPublishOverAReplacementResult() {
+        // This deliberately injects a newer token in SQLite. Production only reclaims confirmed
+        // dead processes; this fixture specifically proves the stale publication guard itself.
+        val input = fixtureInput("fenced")
+        val firstStarted = CountDownLatch(1)
+        val releaseFirst = CountDownLatch(1)
+        val firstReturned = CountDownLatch(1)
+        val counter = AtomicInteger()
+        val provider = Provider { i, _ ->
+            if (counter.incrementAndGet() == 1) {
+                firstStarted.countDown(); assertTrue(releaseFirst.await(10, TimeUnit.SECONDS))
+                firstReturned.countDown(); passed(i, listOf(finding(i)))
+            } else passed(i)
+        }
+        val config = testConfig.copy(workerCount = 1, globalParallelism = 1)
+        val database = temp.resolve("fenced-ledger")
+        KernelService.open(database, provider, config).use { first ->
+            val client = first.registerClient(binding("fenced"))
+            val review = first.submit(client.client, request("1", input))
+            assertTrue(firstStarted.await(5, TimeUnit.SECONDS))
+            first.ledger.transaction { c ->
+                c.execute("UPDATE work SET state='queued',owner_instance=NULL,attempt=attempt+1 WHERE state='running'")
+            }
+            KernelService.open(database, provider, config).use { replacement ->
+                assertTrue(await(replacement, client, review.reviewId).result!!.findings.isEmpty())
+                releaseFirst.countDown()
+                assertTrue(firstReturned.await(5, TimeUnit.SECONDS))
+                Thread.sleep(100)
+                assertTrue(replacement.status(client.client, review.reviewId).result!!.findings.isEmpty())
+                assertEquals(1, allEvents(replacement, client).count { it.kind == "result" })
+            }
+        }
+    }
+
+    @Test fun unknownGuardedActionOutcomeCannotBeReplayedEvenWithANewCutOrAfterRestart() {
+        val input = fixtureInput("action-failure")
+        val provider = Provider { i, _ -> passed(i) }
+        val database = temp.resolve("action-failure-ledger")
+        val fence = SyntheticFence(input)
+        lateinit var client: ClientRegistration
+        lateinit var cut: GateCut
+        var sideEffects = 0
+        KernelService.open(database, provider, testConfig, fence).use { service ->
+            client = service.registerClient(binding("action"))
+            val review = service.submit(client.client, request("1", input))
+            await(service, client, review.reviewId); insertAll(service, client)
+            cut = service.prepareGate(client.client)
+            val result = service.completeGate(client.client, cut.cutId) { sideEffects++; throw IllegalStateException("synthetic post-effect failure") }
+            assertFalse(result.allowed)
+            assertEquals(listOf("guarded_action_outcome_unknown"), result.reasons)
+            assertFalse(service.completeGate(client.client, cut.cutId) { sideEffects++ }.allowed)
+            val another = service.prepareGate(client.client)
+            assertFalse(another.ready)
+            assertFalse(service.completeGate(client.client, another.cutId) { sideEffects++ }.allowed)
+            assertCode("lineage_finalized") { service.submit(client.client, request("2", input)) }
+        }
+        KernelService.open(database, provider, testConfig, fence).use { restarted ->
+            assertFalse(restarted.completeGate(client.client, cut.cutId) { sideEffects++ }.allowed)
+            assertFalse(restarted.prepareGate(client.client).ready)
+        }
+        assertEquals(1, sideEffects)
+    }
+
+    @Test fun trustedEnrollmentIntentIsIdempotentButCannotReplaceCredentialsOrGeneration() {
+        val provider = Provider { i, _ -> passed(i) }
+        val database = temp.resolve("enrollment-ledger")
+        lateinit var registration: ClientRegistration
+        KernelService.open(database, provider, testConfig.copy(workerCount = 0)).use { service ->
+            registration = service.registerClient(binding("enrollment"))
+            assertEquals(registration, service.registerClient(registration))
+            assertFalse(registration.toString().contains(registration.adapter.token))
+            assertCode("client_exists") { service.registerClient(registration.copy(binding = registration.binding.copy(generation = 2))) }
+            assertCode("client_exists") { service.registerClient(registration.copy(adapter = registration.adapter.copy(token = "z".repeat(43)))) }
+        }
+        KernelService.open(database, provider, testConfig.copy(workerCount = 0)).use { service ->
+            assertEquals(registration, service.registerClient(registration))
+        }
+    }
+
+    @Test fun aLiveProviderIgnoringCancellationRetainsItsGlobalSlotPastDeadlineAndLease() {
+        val first = fixtureInput("hung-first")
+        val second = fixtureInput("waiting-second")
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val count = AtomicInteger()
+        val provider = Provider { i, cancellation ->
+            if (count.incrementAndGet() == 1) {
+                entered.countDown(); assertTrue(release.await(10, TimeUnit.SECONDS))
+                assertTrue(cancellation.isCancelled(), "The soft deadline must reach the provider")
+            }
+            passed(i)
+        }
+        val config = testConfig.copy(workerCount = 1, globalParallelism = 1, analysisTimeoutMillis = 500)
+        val database = temp.resolve("hung-ledger")
+        KernelService.open(database, provider, config).use { a ->
+            KernelService.open(database, provider, config).use { b ->
+                val client = a.registerClient(binding("hung"))
+                val firstReview = a.submit(client.client, request("first", first))
+                assertTrue(entered.await(5, TimeUnit.SECONDS))
+                val secondReview = b.submit(client.client, request("second", second))
+                try {
+                    Thread.sleep(700)
+                    assertEquals(1, count.get(), "Do not oversubscribe by reclaiming a merely expired live worker")
+                    assertEquals("queued", b.status(client.client, secondReview.reviewId).state)
+                } finally { release.countDown() }
+                assertEquals("incomplete", await(a, client, firstReview.reviewId).state)
+                assertEquals("complete", await(b, client, secondReview.reviewId).state)
+            }
+        }
+    }
+
+    @Test fun byteBoundedEventPagesNeverSkipAnEventAndNewAcceptedWorkInvalidatesCuts() {
+        val input = fixtureInput("paged")
+        KernelService.open(temp.resolve("paged-ledger"), Provider { i, _ -> passed(i) }, testConfig.copy(maxEventPageBytes = 64), SyntheticFence(input)).use { service ->
+            val client = service.registerClient(binding("paged"))
+            val first = service.submit(client.client, request("1", input))
+            await(service, client, first.reviewId)
+            val page = service.events(client.client, limit = 100)
+            assertEquals(1, page.events.size)
+            assertTrue(page.hasMore)
+            val next = service.events(client.client, page.cursor, 100)
+            assertEquals(1, next.events.size)
+            assertEquals(2L, next.events.single().sequence)
+            insertAll(service, client)
+            val cut = service.prepareGate(client.client)
+            service.submit(client.client, request("2", input))
+            insertAll(service, client)
+            assertTrue("lineage_epoch_changed" in service.completeGate(client.client, cut.cutId).reasons)
+            assertTrue(service.prepareGate(client.client).ready)
+        }
+    }
+
+}

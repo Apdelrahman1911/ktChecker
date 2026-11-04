@@ -1,0 +1,158 @@
+{
+    "rule_id": "ktc.compiler.common.null_for_nonnull_type",
+    "upstream_id": "NULL_FOR_NONNULL_TYPE",
+    "kind": "suppression",
+    "passed": true,
+    "assertions": "Real error-suppression input was executed individually. Any failed compilation remained failed; even compiler-accepted suppression did not produce successful ktChecker coverage. See actual exit/diagnostics; no clean compilation is fabricated.",
+    "jobs": [
+        {
+            "label": "suppression-error-single-NULL_FOR_NONNULL_TYPE",
+            "analysis_key": "sha256:975068c7417dc364110e04810ff3b4f436969ee325707faae8e0332219700401",
+            "snapshot_id": "sha256:fc446ec9b3d953bbd188f253e42027028566fcfa4d38f5b024a051486d0db9e5",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        },
+        {
+            "label": "positive-cohort-0",
+            "analysis_key": "sha256:1dc99beabd4f6259763a1ef23a392bd57b936ac8e537b9a0883640866cabe51a",
+            "snapshot_id": "sha256:74528979d45b4113b20f1f49166cd4a67aa72ed7cf233e735cc4a254b9c9dd72",
+            "actual_exit_code": 1,
+            "provider_status": "failed"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/042-suppression-error-single-null_for_nonnull_type/input.json",
+            "sha256": "5f13993d0b03777cfc9316d4fb1de01d375fea3656e8fd1ef052ebabb04e6288"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/042-suppression-error-single-null_for_nonnull_type/process.json",
+            "sha256": "09dfaed6dcb2ac9108a76905008176ec4ede61a90824fdb854e2c422a1ce85ec"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/042-suppression-error-single-null_for_nonnull_type/result.json",
+            "sha256": "2442c76e1e0686469225c23b04048d6fb09d1a2fa25aec783c23dc2dd2ac79c4"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/042-suppression-error-single-null_for_nonnull_type/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/042-suppression-error-single-null_for_nonnull_type/stderr.txt",
+            "sha256": "e93d9fcfa1ee87a1bcd8a75107fa40b19bd13a00dc83d2557ee1e2c1e2e683e3"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/042-suppression-error-single-null_for_nonnull_type/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/042-suppression-error-single-null_for_nonnull_type/sources/cases/null_for_nonnull_type.kt",
+            "sha256": "6917b2f3219bd22bc4e85e8558b53acfd464a34324c5eb9bce94ce0f55f7bae9"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/input.json",
+            "sha256": "e3dae4eeae30fe8914f9925569e8c735ce12a52484f6adaca767794972ad3081"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/process.json",
+            "sha256": "aa8e47321cb8a49e93dda39a36317514885bc574d8297167b8c78246b7bc70ff"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/result.json",
+            "sha256": "e1cb1f20c782b47a8ed6e635eeccc94d7046117fef293f37ddf3c423575b7406"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/stderr.txt",
+            "sha256": "9367ae01cdb348b1e2853eb51798923c72a35aa5f11549d8e561b3bf2987a4eb"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/argument_passed_twice.kt",
+            "sha256": "ea61635a65c3ff235a0bd1e8f8e2e78d4aa9bc9a6c861ffcac1a83a6d0d80470"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/argument_type_mismatch.kt",
+            "sha256": "e3ca48f35c28d63c5df1a72ce786fefd02da2cb052cd104f5859951f4a76b0f7"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/assignment_type_mismatch.kt",
+            "sha256": "67b5b7ba4da08a6349637de33f955c029067001675c138e4571280df3e03d048"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/exposed_function_return_type.kt",
+            "sha256": "8963fb30a263ae6a268ed19743d7d7c8706781eebc15b62c1c381f963bd22d1e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/initializer_type_mismatch.kt",
+            "sha256": "09b2517fe550b84a8e18b33f99941e866fd0e76bd7bf757ea319fda4cca4f155"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/named_parameter_not_found.kt",
+            "sha256": "d8a874bc538fcd2399712682d6d6b255c0ebedb495c8c2762a912ce567223706"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/no_else_in_when.kt",
+            "sha256": "5d8f5be96dcbe428c44cf261201a0a02afc48c4734e8e7850c117bfd3d14e575"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/no_value_for_parameter.kt",
+            "sha256": "870e8886fa5dbdf28e79b57226ef0c303b2672f1304d8adf7f090a97c0f0634d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/non_vararg_spread.kt",
+            "sha256": "02dd78ac96f8906436e5cb2609f34fa2416cba1b665deac09abd6fedde4c6f90"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/null_for_nonnull_type.kt",
+            "sha256": "960419f714930897b4c5910942d4cdedc2804949357043766e0ff14c7f508a5e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/return_type_mismatch.kt",
+            "sha256": "c986ad1553c671aae2f601948702d049951977d9249a240493d7fda39f3ad88e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/spread_of_nullable.kt",
+            "sha256": "fbb0192f4de9a69c5229ada9655571d9d4c143aeb48e6b5d6873b9a9c1c44d4d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/too_many_arguments.kt",
+            "sha256": "94f3450e4cccca25c787bd9f2f34518d4dd9bb03e9974d372e122005be9ed7a3"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/uninitialized_variable.kt",
+            "sha256": "50b19de9b95ef105643f1515b5d12b5b7b6074329a982e913378533e3c946465"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/unresolved_import.kt",
+            "sha256": "ed407fd6fcb4501abac71543be3b3dbb5eb3d69c3016e900c6e52157d22dfaf7"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/unresolved_reference.kt",
+            "sha256": "cc58d834595d3f05f4dad1f3a568ea60561c63a08974847a5024d627cc3e940a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/unsafe_call.kt",
+            "sha256": "4f903026cb19f77c8a7e8fa600cd8bbc75609f9aeb03d7bbe6297bbac5d193f0"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/upper_bound_violated.kt",
+            "sha256": "d4c523be141bce9e62df159a14cb7e31c3bc7842cedca3630dca17b2223b0f50"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/val_reassignment.kt",
+            "sha256": "3bf39cc517c492848601e06ff06ee5f6ec0fec12b80b99309a129cb8a8a11ac3"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/001-positive-cohort-0/sources/cases/wrong_annotation_target.kt",
+            "sha256": "2b118d54a8d08ec37128a443af8394088f1b9006fbf5bde609e4d69fc801f2cc"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

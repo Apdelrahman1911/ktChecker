@@ -1,0 +1,82 @@
+{
+    "rule_id": "ktc.compiler.jvm.inapplicable_jvm_field",
+    "upstream_id": "INAPPLICABLE_JVM_FIELD",
+    "kind": "configuration",
+    "passed": false,
+    "assertions": "The exact error was re-emitted under explicit JVM target21; target17 baseline remains separate.",
+    "jobs": [
+        {
+            "label": "configuration-single-INAPPLICABLE_JVM_FIELD",
+            "analysis_key": "sha256:4587d619b4166188a9a9fb65b6f64ca699ba477e4bf4f847ed711f841cf36111",
+            "snapshot_id": "sha256:20c83150748504ef574e5a23465bc4f9bb3d9beede61721348ce7af15d984b12",
+            "actual_exit_code": 1,
+            "provider_status": "failed"
+        },
+        {
+            "label": "positive-single-INAPPLICABLE_JVM_FIELD",
+            "analysis_key": "sha256:6b42c8af809e70e6ecdd890358d585b86a13336d69ac39729a9842343361d697",
+            "snapshot_id": "sha256:20c83150748504ef574e5a23465bc4f9bb3d9beede61721348ce7af15d984b12",
+            "actual_exit_code": 1,
+            "provider_status": "failed"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/021-configuration-single-inapplicable_jvm_field/input.json",
+            "sha256": "a936fe2fa06fa267b6e6d62d2f7ef61dbe2093e377e4afae52c64dedcac0f602"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/021-configuration-single-inapplicable_jvm_field/process.json",
+            "sha256": "d9a475e086c2e74c8a2e4ff56122b1329bf6e96f84872f2fbbb9c938c37ddeda"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/021-configuration-single-inapplicable_jvm_field/result.json",
+            "sha256": "f3f379d2aed0d6abf108d360e07b2af9b94b448d9adfe553b245c7ee63a06dd9"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/021-configuration-single-inapplicable_jvm_field/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/021-configuration-single-inapplicable_jvm_field/stderr.txt",
+            "sha256": "e29d2437fb9a0bf5aff67cfbfad7288d06ebf1703953db692112c1fb74f5b2f7"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/021-configuration-single-inapplicable_jvm_field/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/021-configuration-single-inapplicable_jvm_field/sources/cases/inapplicable_jvm_field.kt",
+            "sha256": "fa7ffd55841ebcce4c84b94886982fbea10079e8175241967f24e459fd02051d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/008-positive-single-inapplicable_jvm_field/input.json",
+            "sha256": "535a6322c50fb28b43cdd6152c1428696ab6b5be703b583ca34a1be4c062758e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/008-positive-single-inapplicable_jvm_field/process.json",
+            "sha256": "db0d99c21ec660e5b8d63ec0515b5fe1e1c9b5850707588775043316e24f4e16"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/008-positive-single-inapplicable_jvm_field/result.json",
+            "sha256": "9b7b3bf4b68d44cc2a8bef84b2599891f8d5958c57f570de4b2413c62e4cacbe"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/008-positive-single-inapplicable_jvm_field/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/008-positive-single-inapplicable_jvm_field/stderr.txt",
+            "sha256": "4a7123a3725652bb246d48df3b40f9f3081dca99204c34f089cecec9f15a8108"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/008-positive-single-inapplicable_jvm_field/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/008-positive-single-inapplicable_jvm_field/sources/cases/inapplicable_jvm_field.kt",
+            "sha256": "fa7ffd55841ebcce4c84b94886982fbea10079e8175241967f24e459fd02051d"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

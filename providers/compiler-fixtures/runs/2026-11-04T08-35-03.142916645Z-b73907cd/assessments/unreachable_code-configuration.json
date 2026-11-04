@@ -1,0 +1,141 @@
+{
+    "rule_id": "ktc.compiler.common.unreachable_code",
+    "upstream_id": "UNREACHABLE_CODE",
+    "kind": "configuration",
+    "passed": false,
+    "assertions": "The actual compiler warning was explicitly promoted to error without rewriting source-declared severity.",
+    "jobs": [
+        {
+            "label": "configuration-single-UNREACHABLE_CODE",
+            "analysis_key": "sha256:ed95943c362c2f4a02e2fc719310c5be01b866034ba4da8390d383b288496238",
+            "snapshot_id": "sha256:451d2850a678ee7e5388f7a48e71136b56e2fd516af76650e4f6ecb6bc492a4e",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        },
+        {
+            "label": "positive-single-UNREACHABLE_CODE",
+            "analysis_key": "sha256:41cb9b7a9a06f7a8c39693d877637523dcdefb24b825a63ec97b2b91fc23fa62",
+            "snapshot_id": "sha256:451d2850a678ee7e5388f7a48e71136b56e2fd516af76650e4f6ecb6bc492a4e",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        },
+        {
+            "label": "warning-disabled-cohort-0",
+            "analysis_key": "sha256:a58240bac3e79132b61ae58956fcd6c5ab174025b8a3636c4ab502be2b8cd823",
+            "snapshot_id": "sha256:761d7ae8fb13c481a7bee64d5210bb9a86f337164e34d0d080d1b018469d9997",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/019-configuration-single-unreachable_code/input.json",
+            "sha256": "d0ada65e6a5aa3d8358fb45406cdbb8b1657f3b7911774b4a390640230a15847"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/019-configuration-single-unreachable_code/process.json",
+            "sha256": "2aceb311f3f0003677e8e1a195545f8710e4dd185335ac4f7c537b1469008372"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/019-configuration-single-unreachable_code/result.json",
+            "sha256": "208fab041b27b52fa4c33599ffd4e835f6d7ae7ae4276e72de5fe0edae3626af"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/019-configuration-single-unreachable_code/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/019-configuration-single-unreachable_code/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/019-configuration-single-unreachable_code/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/019-configuration-single-unreachable_code/sources/cases/unreachable_code.kt",
+            "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/input.json",
+            "sha256": "6b042a643593051c35f55b3265d8782eeb0947ee0ff5a4f213ae5aa9497a873c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/process.json",
+            "sha256": "0fbd8e5c562d63da0bc2fc3be2bffd6ed94421eda9d30928a66b0e8300e1e63b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/result.json",
+            "sha256": "c50a5349dc8580d6ed4f5435e0c5c43d3f81d12d4f9065232670d0f4ff7ea55a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/006-positive-single-unreachable_code/sources/cases/unreachable_code.kt",
+            "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/input.json",
+            "sha256": "9e19a5af348f6486594436aaf81d17b48b9c7bdbce621cf520d24eb27728c821"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/process.json",
+            "sha256": "3320049d6b142f238443ae627428c088ff8f30dd47d517114ea10df90a7a8c43"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/result.json",
+            "sha256": "e590e6dc634a6a5abb56075a1439babe5943b8c5138fc8356982348921c11a77"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/sources/cases/cast_never_succeeds.kt",
+            "sha256": "4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/sources/cases/deprecation.kt",
+            "sha256": "a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/sources/cases/division_by_zero.kt",
+            "sha256": "620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/sources/cases/unnecessary_not_null_assertion.kt",
+            "sha256": "8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/sources/cases/unnecessary_safe_call.kt",
+            "sha256": "ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/sources/cases/unreachable_code.kt",
+            "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/011-warning-disabled-cohort-0/sources/cases/useless_cast.kt",
+            "sha256": "08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

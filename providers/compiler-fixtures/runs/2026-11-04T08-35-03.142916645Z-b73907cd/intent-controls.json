@@ -1,0 +1,44 @@
+{
+    "passed": true,
+    "scope": "Actual compiler warning transport only; intentional NaN/infinity/empty sentinels may still warn.",
+    "absence_required": false,
+    "no_behavioral_intent_inferred": true,
+    "emitted_ids": [
+        "DIVISION_BY_ZERO",
+        "DIVISION_BY_ZERO"
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/078-intent-preserving-warning-controls/input.json",
+            "sha256": "7f01bfafdac90dafb2e986fa1a47dfdd0348f26a82163c3b74a5c6a7659f1751"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/078-intent-preserving-warning-controls/process.json",
+            "sha256": "e10f2f3faaa96b4dc2e735814844ae5c0c1ecd2bacbed82477a8f495059f7950"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/078-intent-preserving-warning-controls/result.json",
+            "sha256": "ce68696ffd88eeed1929a55d0564ca3a4b3acbc652c9e23adc9c74b7b6f1a20b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/078-intent-preserving-warning-controls/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/078-intent-preserving-warning-controls/stderr.txt",
+            "sha256": "f439b5823086d47b62e392d4b74d16a40ba8f2b8811cd4fdefaa9dd75a5dab7f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/078-intent-preserving-warning-controls/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/078-intent-preserving-warning-controls/sources/intent/division.kt",
+            "sha256": "f2d3ad5c78bdc6fa4ae9301d908fce6fe768f2b13fce88ab73d1b72562af6b63"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/078-intent-preserving-warning-controls/sources/intent/sentinel.kt",
+            "sha256": "ca23bcca3c7a260d17d950d10ba2129e046acc0429624feb636669b2f4e859f3"
+        }
+    ]
+}

@@ -1,0 +1,71 @@
+{
+    "rule_id": "ktc.compiler.common.useless_cast",
+    "upstream_id": "USELESS_CAST",
+    "kind": "positive",
+    "passed": true,
+    "assertions": "Actual exact internal ID normalized to its reviewed rule with sealed UTF-8 point provenance; compilation failure remains failure.",
+    "jobs": [
+        {
+            "label": "positive-cohort-1",
+            "analysis_key": "sha256:b4f9da5c953d8ef1b97be5befbc3bfd097263624016faf34f3284fc0aa0bc0f8",
+            "snapshot_id": "sha256:761d7ae8fb13c481a7bee64d5210bb9a86f337164e34d0d080d1b018469d9997",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/input.json",
+            "sha256": "cbfb866c814eb723aa279dfea98720943d6d0b0cb53de46764c3828b1d274d40"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/process.json",
+            "sha256": "214a29307a41b7e6552e0b4253ea22cc523bce15909f7db53ba150c907c18df2"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/result.json",
+            "sha256": "105e04224af0627efa73b707b435d4e4799a609a880abd451ab10299ab79c949"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/stderr.txt",
+            "sha256": "48b55409212ce15b866cdc44811537c8d8231297558920c62c30dd0b9ec98889"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/sources/cases/cast_never_succeeds.kt",
+            "sha256": "4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/sources/cases/deprecation.kt",
+            "sha256": "a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/sources/cases/division_by_zero.kt",
+            "sha256": "620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/sources/cases/unnecessary_not_null_assertion.kt",
+            "sha256": "8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/sources/cases/unnecessary_safe_call.kt",
+            "sha256": "ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/sources/cases/unreachable_code.kt",
+            "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/002-positive-cohort-1/sources/cases/useless_cast.kt",
+            "sha256": "08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

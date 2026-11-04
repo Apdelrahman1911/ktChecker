@@ -1,17 +1,24 @@
-# Third-party attribution for this planning repository
+# Third-party attribution and preview distribution status
 
 The rule catalogs and generated indexes contain **extracted or adapted upstream
 diagnostic descriptions, identifiers and small example excerpts**, alongside new
 ktChecker applicability, classification and validation-planning metadata. Sources
 are linked per record. Those transformations are ktChecker planning work, not
-upstream changes or endorsements. No analyzer binaries or complete provider
-implementations are distributed here.
+upstream changes or endorsements. The repository now also contains executable
+adapter implementations. Building the **unqualified preview** CLI distribution
+bundles Kotlin compiler and runtime JARs separately from the engine classloader;
+optional Detekt/Ktlint installations are not downloaded during review. Android and
+Apple SDKs are not bundled.
 
 These notices apply to the incorporated upstream material **now**, not only to a
-future executable release. They do not choose a license for the owner's original
+future qualified release. They do not choose a license for the owner's original
 ktChecker work. Public availability alone does not grant an open-source license
-for that original work. Future distributions need a separate complete dependency,
-license, NOTICE, SDK-redistribution and SBOM review.
+for that original work. Preview dependency inventories, JAR-contained license
+entries and POM declarations are not a completed legal/redistribution review.
+An owner-selected original-code license, complete shaded/transitive dependency
+notices, SDK-redistribution review and release SBOM remain release blockers.
+Do not describe the unlicensed original work as open source merely because the
+repository is public.
 
 | Source and researched version | Incorporated material / attribution | Applicable notice |
 |---|---|---|
@@ -32,12 +39,16 @@ license; no root NOTICE was present in its fetched tree. This is not an assertio
 that every transitive dependency has the same license.
 
 Kotlin's [license-scope explanation](https://github.com/JetBrains/kotlin/blob/v2.4.21/license/README.md)
-documents third-party exceptions inside its repository. Those complete components
-are not bundled by this plan; a future compiler distribution must preserve their
-applicable terms. Android/Apple SDKs and downloaded toolchains have separate terms;
+documents third-party exceptions inside its repository. Preview compiler JARs
+retain their internal licenses/notices unmodified; those embedded components must
+also be inventoried and reviewed before qualified redistribution. The retained
+`third_party/licenses` tree is copied into CLI archives. It is not a claim that
+these few top-level notices cover every bundled component. Android/Apple SDKs and
+downloaded toolchains have separate terms;
 an Apache license on a diagnostic source does not authorize all SDK redistribution.
 
-Other library/API statements are attributed research and proposed checks, not
-bundled implementations. Follow their per-rule primary-source links and the
+Other library/API statements include attributed research, proposed checks and
+explicitly identified provider implementations. Follow per-rule implementation
+status, primary-source links and the
 [research evidence map](docs/research/README.md) for exact provenance, version
 limitations and implementation-license checks still required.

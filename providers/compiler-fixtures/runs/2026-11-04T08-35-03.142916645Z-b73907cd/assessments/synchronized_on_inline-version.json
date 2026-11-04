@@ -1,0 +1,86 @@
+{
+    "rule_id": "ktc.compiler.jvm.synchronized_on_inline",
+    "upstream_id": "SYNCHRONIZED_ON_INLINE",
+    "kind": "version",
+    "passed": true,
+    "assertions": "Executed Kotlin2.4.21 banner and internal-name renderer under explicit language/API2.4. A2.4.20 request was denied before execution; no alternate compiler version is claimed.",
+    "jobs": [
+        {
+            "label": "version-cohort-4",
+            "analysis_key": "sha256:e4972197e160d7065d56116a6b8b701d73851190c30b36464f3ca2d9c9e3bd9b",
+            "snapshot_id": "sha256:528f482577fe2efcd98e2f44a5e427bb153b7465baf59a0c9a634609904c1a11",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        },
+        {
+            "label": "wrong-requested-compiler-version",
+            "analysis_key": "sha256:818701daacb616797467ec1732b3fbb72dc71fdae43dacf0871f8b02cef04760",
+            "snapshot_id": "sha256:49628275553e12881269d2ae3c0ec1a4184607e91a042aa43b24e841f68f0221",
+            "actual_exit_code": null,
+            "provider_status": "unavailable"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/026-version-cohort-4/input.json",
+            "sha256": "5c6a0209a58ad0f6179242a28ff9799c75ca850f5a89e0b998cdff91427c03ed"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/026-version-cohort-4/process.json",
+            "sha256": "60c329260cd2cc6a416f926fd747616e34d19bd155c8385db86d81f6546c1b5b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/026-version-cohort-4/result.json",
+            "sha256": "269fb35f612a539899fa5005bb147bea999647f54ebfb489eb6181035d7b3909"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/026-version-cohort-4/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/026-version-cohort-4/stderr.txt",
+            "sha256": "5f85a668854a2c1730d6ee2e651ca23ae2c653b563576dc58440b53d54ee0b7a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/026-version-cohort-4/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/026-version-cohort-4/sources/cases/overloads_without_default_arguments.kt",
+            "sha256": "c46dd40de00400bbe0b26406c1c6b4dcaf19e757742c813feb15f72c2d53f74d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/026-version-cohort-4/sources/cases/synchronized_on_inline.kt",
+            "sha256": "deed6c4c156441afcd5541bf99fe17e89f5691d5248bc974a67841c47457f8c5"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/027-wrong-requested-compiler-version/input.json",
+            "sha256": "c18b6e5454327214b879f426bf5bab42f35451d5c419dc571897b080e044b954"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/027-wrong-requested-compiler-version/process.json",
+            "sha256": "5104e3a106cfce45daab823368b11fa61524635ac3bcae14a2a6853ca729afff"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/027-wrong-requested-compiler-version/result.json",
+            "sha256": "4ca9427ba19a06ca3d75a221527dacbc6508efb5b44c9b80983da424ac95695f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/027-wrong-requested-compiler-version/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/027-wrong-requested-compiler-version/stderr.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/027-wrong-requested-compiler-version/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/027-wrong-requested-compiler-version/sources/version-control.kt",
+            "sha256": "dbd1f33ebda74e25e251ae2865879bda03dbf0fb4aae42319d78808f10d12504"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

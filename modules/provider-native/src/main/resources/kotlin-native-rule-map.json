@@ -1,0 +1,4823 @@
+{
+  "schema_version": 1,
+  "provider_id": "kotlin-native",
+  "provider_version": "2.4.21",
+  "mappings": [
+    {
+      "rule_id": "ktc.compiler.common.abstract_class_member_not_implemented",
+      "upstream_id": "ABSTRACT_CLASS_MEMBER_NOT_IMPLEMENTED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.abstract_member_not_implemented",
+      "upstream_id": "ABSTRACT_MEMBER_NOT_IMPLEMENTED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.abstract_member_not_implemented_by_enum_entry",
+      "upstream_id": "ABSTRACT_MEMBER_NOT_IMPLEMENTED_BY_ENUM_ENTRY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_annotations_not_match_expect",
+      "upstream_id": "ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_function_with_default_arguments",
+      "upstream_id": "ACTUAL_FUNCTION_WITH_DEFAULT_ARGUMENTS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_ignorability_not_match_expect",
+      "upstream_id": "ACTUAL_IGNORABILITY_NOT_MATCH_EXPECT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_missing",
+      "upstream_id": "ACTUAL_MISSING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_type_alias_not_to_class",
+      "upstream_id": "ACTUAL_TYPE_ALIAS_NOT_TO_CLASS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_type_alias_to_class_with_declaration_site_variance",
+      "upstream_id": "ACTUAL_TYPE_ALIAS_TO_CLASS_WITH_DECLARATION_SITE_VARIANCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_type_alias_to_nothing",
+      "upstream_id": "ACTUAL_TYPE_ALIAS_TO_NOTHING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_type_alias_to_nullable_type",
+      "upstream_id": "ACTUAL_TYPE_ALIAS_TO_NULLABLE_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_type_alias_with_complex_substitution",
+      "upstream_id": "ACTUAL_TYPE_ALIAS_WITH_COMPLEX_SUBSTITUTION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_type_alias_with_use_site_variance",
+      "upstream_id": "ACTUAL_TYPE_ALIAS_WITH_USE_SITE_VARIANCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_typealias_to_special_annotation",
+      "upstream_id": "ACTUAL_TYPEALIAS_TO_SPECIAL_ANNOTATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.actual_without_expect",
+      "upstream_id": "ACTUAL_WITHOUT_EXPECT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.ambiguous_anonymous_type_inferred",
+      "upstream_id": "AMBIGUOUS_ANONYMOUS_TYPE_INFERRED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.ambiguous_context_argument",
+      "upstream_id": "AMBIGUOUS_CONTEXT_ARGUMENT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.ambiguous_expects",
+      "upstream_id": "AMBIGUOUS_EXPECTS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.api_not_available",
+      "upstream_id": "API_NOT_AVAILABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.argument_passed_twice",
+      "upstream_id": "ARGUMENT_PASSED_TWICE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.argument_type_mismatch",
+      "upstream_id": "ARGUMENT_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.array_equality_operator_can_be_replaced_with_content_equals",
+      "upstream_id": "ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.assigned_value_is_never_read",
+      "upstream_id": "ASSIGNED_VALUE_IS_NEVER_READ",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.assignment_type_mismatch",
+      "upstream_id": "ASSIGNMENT_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.callable_reference_to_contextual_declaration",
+      "upstream_id": "CALLABLE_REFERENCE_TO_CONTEXTUAL_DECLARATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.can_be_val",
+      "upstream_id": "CAN_BE_VAL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.can_be_val_delayed_initialization",
+      "upstream_id": "CAN_BE_VAL_DELAYED_INITIALIZATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.can_be_val_lateinit",
+      "upstream_id": "CAN_BE_VAL_LATEINIT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_change_access_privilege",
+      "upstream_id": "CANNOT_CHANGE_ACCESS_PRIVILEGE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_change_access_privilege_warning",
+      "upstream_id": "CANNOT_CHANGE_ACCESS_PRIVILEGE_WARNING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_check_for_erased",
+      "upstream_id": "CANNOT_CHECK_FOR_ERASED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_infer_visibility",
+      "upstream_id": "CANNOT_INFER_VISIBILITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_infer_visibility_warning",
+      "upstream_id": "CANNOT_INFER_VISIBILITY_WARNING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_override_invisible_member",
+      "upstream_id": "CANNOT_OVERRIDE_INVISIBLE_MEMBER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_weaken_access_privilege",
+      "upstream_id": "CANNOT_WEAKEN_ACCESS_PRIVILEGE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cannot_weaken_access_privilege_warning",
+      "upstream_id": "CANNOT_WEAKEN_ACCESS_PRIVILEGE_WARNING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.captured_member_val_initialization",
+      "upstream_id": "CAPTURED_MEMBER_VAL_INITIALIZATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.captured_val_initialization",
+      "upstream_id": "CAPTURED_VAL_INITIALIZATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cast_never_succeeds",
+      "upstream_id": "CAST_NEVER_SUCCEEDS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.comma_in_when_condition_with_when_guard",
+      "upstream_id": "COMMA_IN_WHEN_CONDITION_WITH_WHEN_GUARD",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.comma_in_when_condition_without_argument",
+      "upstream_id": "COMMA_IN_WHEN_CONDITION_WITHOUT_ARGUMENT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.compare_to_type_mismatch",
+      "upstream_id": "COMPARE_TO_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.component_function_ambiguity",
+      "upstream_id": "COMPONENT_FUNCTION_AMBIGUITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.component_function_missing",
+      "upstream_id": "COMPONENT_FUNCTION_MISSING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.component_function_on_nullable",
+      "upstream_id": "COMPONENT_FUNCTION_ON_NULLABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.component_function_return_type_mismatch",
+      "upstream_id": "COMPONENT_FUNCTION_RETURN_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.condition_type_mismatch",
+      "upstream_id": "CONDITION_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.conflicting_inherited_members",
+      "upstream_id": "CONFLICTING_INHERITED_MEMBERS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.conflicting_upper_bounds",
+      "upstream_id": "CONFLICTING_UPPER_BOUNDS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.confusing_branch_condition_error",
+      "upstream_id": "CONFUSING_BRANCH_CONDITION_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.context_parameter_with_default",
+      "upstream_id": "CONTEXT_PARAMETER_WITH_DEFAULT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.context_parameter_without_name",
+      "upstream_id": "CONTEXT_PARAMETER_WITHOUT_NAME",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.context_parameters_with_backing_field",
+      "upstream_id": "CONTEXT_PARAMETERS_WITH_BACKING_FIELD",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.contextual_overload_shadowed",
+      "upstream_id": "CONTEXTUAL_OVERLOAD_SHADOWED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.contract_not_allowed",
+      "upstream_id": "CONTRACT_NOT_ALLOWED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.coroutine_context_as_context_parameter_is_reserved",
+      "upstream_id": "COROUTINE_CONTEXT_AS_CONTEXT_PARAMETER_IS_RESERVED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cyclic_constructor_delegation_call",
+      "upstream_id": "CYCLIC_CONSTRUCTOR_DELEGATION_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.cyclic_inheritance_hierarchy",
+      "upstream_id": "CYCLIC_INHERITANCE_HIERARCHY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.data_class_override_conflict",
+      "upstream_id": "DATA_CLASS_OVERRIDE_CONFLICT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.data_class_override_default_values",
+      "upstream_id": "DATA_CLASS_OVERRIDE_DEFAULT_VALUES",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.default_arguments_in_expect_actualized_by_fake_override",
+      "upstream_id": "DEFAULT_ARGUMENTS_IN_EXPECT_ACTUALIZED_BY_FAKE_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.default_arguments_in_expect_with_actual_typealias",
+      "upstream_id": "DEFAULT_ARGUMENTS_IN_EXPECT_WITH_ACTUAL_TYPEALIAS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.delegate_special_function_ambiguity",
+      "upstream_id": "DELEGATE_SPECIAL_FUNCTION_AMBIGUITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.delegate_special_function_missing",
+      "upstream_id": "DELEGATE_SPECIAL_FUNCTION_MISSING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.delegate_special_function_return_type_mismatch",
+      "upstream_id": "DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.delegated_member_hides_supertype_override",
+      "upstream_id": "DELEGATED_MEMBER_HIDES_SUPERTYPE_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.deprecation",
+      "upstream_id": "DEPRECATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.deprecation_error",
+      "upstream_id": "DEPRECATION_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.different_names_for_the_same_parameter_in_supertypes",
+      "upstream_id": "DIFFERENT_NAMES_FOR_THE_SAME_PARAMETER_IN_SUPERTYPES",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.division_by_zero",
+      "upstream_id": "DIVISION_BY_ZERO",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.dsl_scope_violation",
+      "upstream_id": "DSL_SCOPE_VIOLATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.duplicate_branch_condition_in_when",
+      "upstream_id": "DUPLICATE_BRANCH_CONDITION_IN_WHEN",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.else_misplaced_in_when",
+      "upstream_id": "ELSE_MISPLACED_IN_WHEN",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.empty_range",
+      "upstream_id": "EMPTY_RANGE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.enum_entry_as_type",
+      "upstream_id": "ENUM_ENTRY_AS_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.equality_not_applicable",
+      "upstream_id": "EQUALITY_NOT_APPLICABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.error_in_contract_description",
+      "upstream_id": "ERROR_IN_CONTRACT_DESCRIPTION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_classifiers_are_in_beta_warning",
+      "upstream_id": "EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_class_kind",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_CLASS_KIND",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_class_modifiers",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_CLASS_MODIFIERS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_class_scope",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_CLASS_SCOPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_class_type_parameter_count",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_CLASS_TYPE_PARAMETER_COUNT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_context_parameter_names",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_CONTEXT_PARAMETER_NAMES",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_enum_entries",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_ENUM_ENTRIES",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_fun_interface_modifier",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_FUN_INTERFACE_MODIFIER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_function_modifiers_not_subset",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_FUNCTION_MODIFIERS_NOT_SUBSET",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_illegal_requires_opt_in",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_ILLEGAL_REQUIRES_OPT_IN",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_modality",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_MODALITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_nested_type_alias",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_NESTED_TYPE_ALIAS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_parameter_names",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_PARAMETER_NAMES",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_property_kind",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_KIND",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_property_lateinit_modifier",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_LATEINIT_MODIFIER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_property_setter_visibility",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_PROPERTY_SETTER_VISIBILITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_return_type",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_RETURN_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_supertypes",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_SUPERTYPES",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_type_parameter_names",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_TYPE_PARAMETER_NAMES",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_type_parameter_variance",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_TYPE_PARAMETER_VARIANCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_value_parameter_crossinline",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_CROSSINLINE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_value_parameter_noinline",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_NOINLINE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_value_parameter_vararg",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_VALUE_PARAMETER_VARARG",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_incompatible_visibility",
+      "upstream_id": "EXPECT_ACTUAL_INCOMPATIBLE_VISIBILITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_actual_opt_in_annotation",
+      "upstream_id": "EXPECT_ACTUAL_OPT_IN_ANNOTATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_refinement_annotation_missing",
+      "upstream_id": "EXPECT_REFINEMENT_ANNOTATION_MISSING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expect_refinement_annotation_wrong_target",
+      "upstream_id": "EXPECT_REFINEMENT_ANNOTATION_WRONG_TARGET",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_class_constructor_delegation_call",
+      "upstream_id": "EXPECTED_CLASS_CONSTRUCTOR_DELEGATION_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_class_constructor_property_parameter",
+      "upstream_id": "EXPECTED_CLASS_CONSTRUCTOR_PROPERTY_PARAMETER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_condition",
+      "upstream_id": "EXPECTED_CONDITION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_declaration_with_body",
+      "upstream_id": "EXPECTED_DECLARATION_WITH_BODY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_delegated_property",
+      "upstream_id": "EXPECTED_DELEGATED_PROPERTY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_enum_constructor",
+      "upstream_id": "EXPECTED_ENUM_CONSTRUCTOR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_enum_entry_with_body",
+      "upstream_id": "EXPECTED_ENUM_ENTRY_WITH_BODY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_external_declaration",
+      "upstream_id": "EXPECTED_EXTERNAL_DECLARATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_lateinit_property",
+      "upstream_id": "EXPECTED_LATEINIT_PROPERTY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_parameter_type_mismatch",
+      "upstream_id": "EXPECTED_PARAMETER_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_private_declaration",
+      "upstream_id": "EXPECTED_PRIVATE_DECLARATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_property_initializer",
+      "upstream_id": "EXPECTED_PROPERTY_INITIALIZER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.expected_tailrec_function",
+      "upstream_id": "EXPECTED_TAILREC_FUNCTION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_function_return_type",
+      "upstream_id": "EXPOSED_FUNCTION_RETURN_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_parameter_type",
+      "upstream_id": "EXPOSED_PARAMETER_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_property_type",
+      "upstream_id": "EXPOSED_PROPERTY_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_property_type_in_constructor_error",
+      "upstream_id": "EXPOSED_PROPERTY_TYPE_IN_CONSTRUCTOR_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_receiver_type",
+      "upstream_id": "EXPOSED_RECEIVER_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_super_class",
+      "upstream_id": "EXPOSED_SUPER_CLASS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_super_interface",
+      "upstream_id": "EXPOSED_SUPER_INTERFACE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_type_parameter_bound",
+      "upstream_id": "EXPOSED_TYPE_PARAMETER_BOUND",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_type_parameter_bound_deprecation_warning",
+      "upstream_id": "EXPOSED_TYPE_PARAMETER_BOUND_DEPRECATION_WARNING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.exposed_typealias_expanded_type",
+      "upstream_id": "EXPOSED_TYPEALIAS_EXPANDED_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.field_initializer_type_mismatch",
+      "upstream_id": "FIELD_INITIALIZER_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.forbidden_identity_equals",
+      "upstream_id": "FORBIDDEN_IDENTITY_EQUALS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.has_next_function_type_mismatch",
+      "upstream_id": "HAS_NEXT_FUNCTION_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.has_next_missing",
+      "upstream_id": "HAS_NEXT_MISSING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.illegal_declaration_in_when_subject",
+      "upstream_id": "ILLEGAL_DECLARATION_IN_WHEN_SUBJECT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.implementation_by_delegation_in_expect_class",
+      "upstream_id": "IMPLEMENTATION_BY_DELEGATION_IN_EXPECT_CLASS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.implicit_boxing_in_identity_equals",
+      "upstream_id": "IMPLICIT_BOXING_IN_IDENTITY_EQUALS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.inapplicable_all_target",
+      "upstream_id": "INAPPLICABLE_ALL_TARGET",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.incompatible_enum_comparison_error",
+      "upstream_id": "INCOMPATIBLE_ENUM_COMPARISON_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.inferred_invisible_when_type_warning",
+      "upstream_id": "INFERRED_INVISIBLE_WHEN_TYPE_WARNING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.initialization_before_declaration",
+      "upstream_id": "INITIALIZATION_BEFORE_DECLARATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.initialization_before_declaration_warning",
+      "upstream_id": "INITIALIZATION_BEFORE_DECLARATION_WARNING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.initializer_type_mismatch",
+      "upstream_id": "INITIALIZER_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.inline_property_with_backing_field",
+      "upstream_id": "INLINE_PROPERTY_WITH_BACKING_FIELD",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.int_literal_out_of_range",
+      "upstream_id": "INT_LITERAL_OUT_OF_RANGE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.integer_literal_cast_instead_of_to_call",
+      "upstream_id": "INTEGER_LITERAL_CAST_INSTEAD_OF_TO_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.invalid_if_as_expression",
+      "upstream_id": "INVALID_IF_AS_EXPRESSION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.invisible_abstract_member_from_super_error",
+      "upstream_id": "INVISIBLE_ABSTRACT_MEMBER_FROM_SUPER_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.invisible_reference",
+      "upstream_id": "INVISIBLE_REFERENCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.invisible_setter",
+      "upstream_id": "INVISIBLE_SETTER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.is_enum_entry",
+      "upstream_id": "IS_ENUM_ENTRY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.iterator_ambiguity",
+      "upstream_id": "ITERATOR_AMBIGUITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.iterator_missing",
+      "upstream_id": "ITERATOR_MISSING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.iterator_on_nullable",
+      "upstream_id": "ITERATOR_ON_NULLABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.leaked_in_place_lambda",
+      "upstream_id": "LEAKED_IN_PLACE_LAMBDA",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.many_impl_member_not_implemented",
+      "upstream_id": "MANY_IMPL_MEMBER_NOT_IMPLEMENTED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.many_interfaces_member_not_implemented",
+      "upstream_id": "MANY_INTERFACES_MEMBER_NOT_IMPLEMENTED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.missing_branch_for_non_abstract_sealed_class",
+      "upstream_id": "MISSING_BRANCH_FOR_NON_ABSTRACT_SEALED_CLASS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.multiple_context_lists",
+      "upstream_id": "MULTIPLE_CONTEXT_LISTS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.named_arguments_not_allowed",
+      "upstream_id": "NAMED_ARGUMENTS_NOT_ALLOWED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.named_context_parameter_in_function_type",
+      "upstream_id": "NAMED_CONTEXT_PARAMETER_IN_FUNCTION_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.named_parameter_not_found",
+      "upstream_id": "NAMED_PARAMETER_NOT_FOUND",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.next_missing",
+      "upstream_id": "NEXT_MISSING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_actual_class_member_for_expected_class",
+      "upstream_id": "NO_ACTUAL_CLASS_MEMBER_FOR_EXPECTED_CLASS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_context_argument",
+      "upstream_id": "NO_CONTEXT_ARGUMENT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_else_in_when",
+      "upstream_id": "NO_ELSE_IN_WHEN",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_explicit_return_type_in_api_mode",
+      "upstream_id": "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_explicit_visibility_in_api_mode",
+      "upstream_id": "NO_EXPLICIT_VISIBILITY_IN_API_MODE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_get_method",
+      "upstream_id": "NO_GET_METHOD",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_set_method",
+      "upstream_id": "NO_SET_METHOD",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_value_for_parameter",
+      "upstream_id": "NO_VALUE_FOR_PARAMETER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_final_member_in_final_class",
+      "upstream_id": "NON_FINAL_MEMBER_IN_FINAL_CLASS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_final_member_in_object",
+      "upstream_id": "NON_FINAL_MEMBER_IN_OBJECT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_inline_member_val_initialization",
+      "upstream_id": "NON_INLINE_MEMBER_VAL_INITIALIZATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_public_call_from_public_inline",
+      "upstream_id": "NON_PUBLIC_CALL_FROM_PUBLIC_INLINE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_public_inline_call_from_public_inline",
+      "upstream_id": "NON_PUBLIC_INLINE_CALL_FROM_PUBLIC_INLINE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_suspend_overridden_by_suspend",
+      "upstream_id": "NON_SUSPEND_OVERRIDDEN_BY_SUSPEND",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.non_vararg_spread",
+      "upstream_id": "NON_VARARG_SPREAD",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.none_applicable",
+      "upstream_id": "NONE_APPLICABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.not_null_assertion_on_callable_reference",
+      "upstream_id": "NOT_NULL_ASSERTION_ON_CALLABLE_REFERENCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.not_null_assertion_on_lambda_expression",
+      "upstream_id": "NOT_NULL_ASSERTION_ON_LAMBDA_EXPRESSION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.nothing_to_override",
+      "upstream_id": "NOTHING_TO_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.null_for_nonnull_type",
+      "upstream_id": "NULL_FOR_NONNULL_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.numeric_cast_never_succeeds_but_can_be_replaced_with_to_call",
+      "upstream_id": "NUMERIC_CAST_NEVER_SUCCEEDS_BUT_CAN_BE_REPLACED_WITH_TO_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_argument_is_not_marker",
+      "upstream_id": "OPT_IN_ARGUMENT_IS_NOT_MARKER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_can_only_be_used_as_annotation",
+      "upstream_id": "OPT_IN_CAN_ONLY_BE_USED_AS_ANNOTATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_marker_can_only_be_used_as_annotation_or_argument_in_opt_in",
+      "upstream_id": "OPT_IN_MARKER_CAN_ONLY_BE_USED_AS_ANNOTATION_OR_ARGUMENT_IN_OPT_IN",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_marker_on_wrong_target",
+      "upstream_id": "OPT_IN_MARKER_ON_WRONG_TARGET",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_marker_with_wrong_retention",
+      "upstream_id": "OPT_IN_MARKER_WITH_WRONG_RETENTION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_marker_with_wrong_target",
+      "upstream_id": "OPT_IN_MARKER_WITH_WRONG_TARGET",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_override",
+      "upstream_id": "OPT_IN_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_override_error",
+      "upstream_id": "OPT_IN_OVERRIDE_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_to_inheritance",
+      "upstream_id": "OPT_IN_TO_INHERITANCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_to_inheritance_error",
+      "upstream_id": "OPT_IN_TO_INHERITANCE_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_usage",
+      "upstream_id": "OPT_IN_USAGE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_usage_error",
+      "upstream_id": "OPT_IN_USAGE_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.opt_in_without_arguments",
+      "upstream_id": "OPT_IN_WITHOUT_ARGUMENTS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.optional_declaration_outside_of_annotation_entry",
+      "upstream_id": "OPTIONAL_DECLARATION_OUTSIDE_OF_ANNOTATION_ENTRY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.optional_declaration_usage_in_non_common_source",
+      "upstream_id": "OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.optional_expectation_not_on_expected",
+      "upstream_id": "OPTIONAL_EXPECTATION_NOT_ON_EXPECTED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.overload_resolution_ambiguity",
+      "upstream_id": "OVERLOAD_RESOLUTION_AMBIGUITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.overriding_final_member",
+      "upstream_id": "OVERRIDING_FINAL_MEMBER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.overriding_final_member_by_delegation",
+      "upstream_id": "OVERRIDING_FINAL_MEMBER_BY_DELEGATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.overriding_ignorable_with_must_use",
+      "upstream_id": "OVERRIDING_IGNORABLE_WITH_MUST_USE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.parameter_name_changed_on_override",
+      "upstream_id": "PARAMETER_NAME_CHANGED_ON_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.property_type_mismatch_by_delegation",
+      "upstream_id": "PROPERTY_TYPE_MISMATCH_BY_DELEGATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.property_type_mismatch_on_inheritance",
+      "upstream_id": "PROPERTY_TYPE_MISMATCH_ON_INHERITANCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.property_type_mismatch_on_override",
+      "upstream_id": "PROPERTY_TYPE_MISMATCH_ON_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.protected_call_from_public_inline_error",
+      "upstream_id": "PROTECTED_CALL_FROM_PUBLIC_INLINE_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.protected_constructor_call_from_public_inline",
+      "upstream_id": "PROTECTED_CONSTRUCTOR_CALL_FROM_PUBLIC_INLINE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.recursion_in_inline",
+      "upstream_id": "RECURSION_IN_INLINE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.recursive_typealias_expansion",
+      "upstream_id": "RECURSIVE_TYPEALIAS_EXPANSION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.redundant_call_of_conversion_method",
+      "upstream_id": "REDUNDANT_CALL_OF_CONVERSION_METHOD",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.redundant_else_in_when",
+      "upstream_id": "REDUNDANT_ELSE_IN_WHEN",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.redundant_modality_modifier",
+      "upstream_id": "REDUNDANT_MODALITY_MODIFIER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.redundant_return_unit_type",
+      "upstream_id": "REDUNDANT_RETURN_UNIT_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.redundant_setter_parameter_type",
+      "upstream_id": "REDUNDANT_SETTER_PARAMETER_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.redundant_single_expression_string_template",
+      "upstream_id": "REDUNDANT_SINGLE_EXPRESSION_STRING_TEMPLATE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.redundant_visibility_modifier",
+      "upstream_id": "REDUNDANT_VISIBILITY_MODIFIER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.repeated_annotation",
+      "upstream_id": "REPEATED_ANNOTATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.result_type_mismatch",
+      "upstream_id": "RESULT_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_type_mismatch",
+      "upstream_id": "RETURN_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_type_mismatch_by_delegation",
+      "upstream_id": "RETURN_TYPE_MISMATCH_BY_DELEGATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_type_mismatch_on_inheritance",
+      "upstream_id": "RETURN_TYPE_MISMATCH_ON_INHERITANCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_type_mismatch_on_override",
+      "upstream_id": "RETURN_TYPE_MISMATCH_ON_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_value_not_used",
+      "upstream_id": "RETURN_VALUE_NOT_USED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_value_not_used_coercion",
+      "upstream_id": "RETURN_VALUE_NOT_USED_COERCION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.safe_cast_relying_on_null",
+      "upstream_id": "SAFE_CAST_RELYING_ON_NULL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.sealed_inheritor_in_different_module",
+      "upstream_id": "SEALED_INHERITOR_IN_DIFFERENT_MODULE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.sealed_inheritor_in_different_package",
+      "upstream_id": "SEALED_INHERITOR_IN_DIFFERENT_PACKAGE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.sealed_supertype_in_local_class",
+      "upstream_id": "SEALED_SUPERTYPE_IN_LOCAL_CLASS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.senseless_comparison",
+      "upstream_id": "SENSELESS_COMPARISON",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.senseless_null_in_when",
+      "upstream_id": "SENSELESS_NULL_IN_WHEN",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.setter_projected_out",
+      "upstream_id": "SETTER_PROJECTED_OUT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.smartcast_impossible",
+      "upstream_id": "SMARTCAST_IMPOSSIBLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.smartcast_impossible_on_implicit_invoke_receiver",
+      "upstream_id": "SMARTCAST_IMPOSSIBLE_ON_IMPLICIT_INVOKE_RECEIVER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.spread_of_nullable",
+      "upstream_id": "SPREAD_OF_NULLABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.subclass_opt_in_argument_is_not_marker",
+      "upstream_id": "SUBCLASS_OPT_IN_ARGUMENT_IS_NOT_MARKER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.subclass_opt_in_inapplicable",
+      "upstream_id": "SUBCLASS_OPT_IN_INAPPLICABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.supertype_initialized_in_expected_class",
+      "upstream_id": "SUPERTYPE_INITIALIZED_IN_EXPECTED_CLASS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.supertype_not_initialized",
+      "upstream_id": "SUPERTYPE_NOT_INITIALIZED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.suspend_overridden_by_non_suspend",
+      "upstream_id": "SUSPEND_OVERRIDDEN_BY_NON_SUSPEND",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.throwable_type_mismatch",
+      "upstream_id": "THROWABLE_TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.too_many_arguments",
+      "upstream_id": "TOO_MANY_ARGUMENTS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.trim_margin_blank_prefix",
+      "upstream_id": "TRIM_MARGIN_BLANK_PREFIX",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.type_mismatch",
+      "upstream_id": "TYPE_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.type_variance_conflict_error",
+      "upstream_id": "TYPE_VARIANCE_CONFLICT_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.typealias_expands_to_array_of_nothings",
+      "upstream_id": "TYPEALIAS_EXPANDS_TO_ARRAY_OF_NOTHINGS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.typealias_expansion_deprecation",
+      "upstream_id": "TYPEALIAS_EXPANSION_DEPRECATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.typealias_expansion_deprecation_error",
+      "upstream_id": "TYPEALIAS_EXPANSION_DEPRECATION_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unchecked_cast",
+      "upstream_id": "UNCHECKED_CAST",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unexpected_safe_call",
+      "upstream_id": "UNEXPECTED_SAFE_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.uninitialized_enum_companion",
+      "upstream_id": "UNINITIALIZED_ENUM_COMPANION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.uninitialized_enum_entry",
+      "upstream_id": "UNINITIALIZED_ENUM_ENTRY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.uninitialized_variable",
+      "upstream_id": "UNINITIALIZED_VARIABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unnecessary_not_null_assertion",
+      "upstream_id": "UNNECESSARY_NOT_NULL_ASSERTION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unnecessary_safe_call",
+      "upstream_id": "UNNECESSARY_SAFE_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unreachable_code",
+      "upstream_id": "UNREACHABLE_CODE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unresolved_import",
+      "upstream_id": "UNRESOLVED_IMPORT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unresolved_reference",
+      "upstream_id": "UNRESOLVED_REFERENCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unresolved_reference_wrong_receiver",
+      "upstream_id": "UNRESOLVED_REFERENCE_WRONG_RECEIVER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_call",
+      "upstream_id": "UNSAFE_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_callable_reference",
+      "upstream_id": "UNSAFE_CALLABLE_REFERENCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_cast_relying_on_null",
+      "upstream_id": "UNSAFE_CAST_RELYING_ON_NULL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_implicit_invoke_call",
+      "upstream_id": "UNSAFE_IMPLICIT_INVOKE_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_infix_call",
+      "upstream_id": "UNSAFE_INFIX_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsafe_operator_call",
+      "upstream_id": "UNSAFE_OPERATOR_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unsupported_contextual_declaration_call",
+      "upstream_id": "UNSUPPORTED_CONTEXTUAL_DECLARATION_CALL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unused_anonymous_parameter",
+      "upstream_id": "UNUSED_ANONYMOUS_PARAMETER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unused_expression",
+      "upstream_id": "UNUSED_EXPRESSION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unused_lambda_expression",
+      "upstream_id": "UNUSED_LAMBDA_EXPRESSION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.unused_variable",
+      "upstream_id": "UNUSED_VARIABLE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.upper_bound_violated",
+      "upstream_id": "UPPER_BOUND_VIOLATED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.upper_bound_violated_in_typealias_expansion",
+      "upstream_id": "UPPER_BOUND_VIOLATED_IN_TYPEALIAS_EXPANSION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_call_on_not_null",
+      "upstream_id": "USELESS_CALL_ON_NOT_NULL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_cast",
+      "upstream_id": "USELESS_CAST",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_elvis",
+      "upstream_id": "USELESS_ELVIS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_elvis_left_is_null",
+      "upstream_id": "USELESS_ELVIS_LEFT_IS_NULL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_elvis_right_is_null",
+      "upstream_id": "USELESS_ELVIS_RIGHT_IS_NULL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_is_check",
+      "upstream_id": "USELESS_IS_CHECK",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.val_reassignment",
+      "upstream_id": "VAL_REASSIGNMENT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.val_reassignment_via_backing_field_error",
+      "upstream_id": "VAL_REASSIGNMENT_VIA_BACKING_FIELD_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.var_overridden_by_val",
+      "upstream_id": "VAR_OVERRIDDEN_BY_VAL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.var_overridden_by_val_by_delegation",
+      "upstream_id": "VAR_OVERRIDDEN_BY_VAL_BY_DELEGATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.var_type_mismatch_on_inheritance",
+      "upstream_id": "VAR_TYPE_MISMATCH_ON_INHERITANCE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.var_type_mismatch_on_override",
+      "upstream_id": "VAR_TYPE_MISMATCH_ON_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.variable_initializer_is_redundant",
+      "upstream_id": "VARIABLE_INITIALIZER_IS_REDUNDANT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.variable_never_read",
+      "upstream_id": "VARIABLE_NEVER_READ",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.variable_with_no_type_no_initializer",
+      "upstream_id": "VARIABLE_WITH_NO_TYPE_NO_INITIALIZER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.virtual_member_hidden",
+      "upstream_id": "VIRTUAL_MEMBER_HIDDEN",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.when_guard_without_subject",
+      "upstream_id": "WHEN_GUARD_WITHOUT_SUBJECT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.wrong_annotation_target",
+      "upstream_id": "WRONG_ANNOTATION_TARGET",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.wrong_annotation_target_with_use_site_target",
+      "upstream_id": "WRONG_ANNOTATION_TARGET_WITH_USE_SITE_TARGET",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.wrong_condition_suggest_guard",
+      "upstream_id": "WRONG_CONDITION_SUGGEST_GUARD",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.common.wrong_invocation_kind",
+      "upstream_id": "WRONG_INVOCATION_KIND",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.actual_annotation_conflicting_default_argument_value",
+      "upstream_id": "ACTUAL_ANNOTATION_CONFLICTING_DEFAULT_ARGUMENT_VALUE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.ambiguous_actuals",
+      "upstream_id": "AMBIGUOUS_ACTUALS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.expect_actual_ir_incompatibility",
+      "upstream_id": "EXPECT_ACTUAL_IR_INCOMPATIBILITY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.expect_actual_ir_mismatch",
+      "upstream_id": "EXPECT_ACTUAL_IR_MISMATCH",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.java_direct_actual_without_expect",
+      "upstream_id": "JAVA_DIRECT_ACTUAL_WITHOUT_EXPECT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.java_direct_actualization_default_parameters_in_actual_function",
+      "upstream_id": "JAVA_DIRECT_ACTUALIZATION_DEFAULT_PARAMETERS_IN_ACTUAL_FUNCTION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.java_direct_actualization_default_parameters_in_expect_function",
+      "upstream_id": "JAVA_DIRECT_ACTUALIZATION_DEFAULT_PARAMETERS_IN_EXPECT_FUNCTION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.kotlin_actual_annotation_missing",
+      "upstream_id": "KOTLIN_ACTUAL_ANNOTATION_MISSING",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.ir.no_actual_for_expect",
+      "upstream_id": "NO_ACTUAL_FOR_EXPECT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.callable_references_to_variadic_c_functions_are_not_supported",
+      "upstream_id": "CALLABLE_REFERENCES_TO_VARIADIC_C_FUNCTIONS_ARE_NOT_SUPPORTED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.callable_references_to_variadic_objective_c_methods_are_not_supported",
+      "upstream_id": "CALLABLE_REFERENCES_TO_VARIADIC_OBJECTIVE_C_METHODS_ARE_NOT_SUPPORTED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.cannot_check_for_forward_declaration",
+      "upstream_id": "CANNOT_CHECK_FOR_FORWARD_DECLARATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.conflicting_objc_overloads",
+      "upstream_id": "CONFLICTING_OBJC_OVERLOADS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.constructor_does_not_override_any_super_constructor",
+      "upstream_id": "CONSTRUCTOR_DOES_NOT_OVERRIDE_ANY_SUPER_CONSTRUCTOR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.constructor_overrides_already_overridden_objc_initializer",
+      "upstream_id": "CONSTRUCTOR_OVERRIDES_ALREADY_OVERRIDDEN_OBJC_INITIALIZER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.empty_objc_name",
+      "upstream_id": "EMPTY_OBJC_NAME",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.forward_declaration_as_class_literal",
+      "upstream_id": "FORWARD_DECLARATION_AS_CLASS_LITERAL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.forward_declaration_as_reified_type_argument",
+      "upstream_id": "FORWARD_DECLARATION_AS_REIFIED_TYPE_ARGUMENT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.identity_hash_code_on_value_type",
+      "upstream_id": "IDENTITY_HASH_CODE_ON_VALUE_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.inapplicable_exact_objc_name",
+      "upstream_id": "INAPPLICABLE_EXACT_OBJC_NAME",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.inapplicable_objc_name",
+      "upstream_id": "INAPPLICABLE_OBJC_NAME",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.inapplicable_objc_override",
+      "upstream_id": "INAPPLICABLE_OBJC_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.inapplicable_shared_immutable_property",
+      "upstream_id": "INAPPLICABLE_SHARED_IMMUTABLE_PROPERTY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.inapplicable_shared_immutable_top_level",
+      "upstream_id": "INAPPLICABLE_SHARED_IMMUTABLE_TOP_LEVEL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.inapplicable_thread_local",
+      "upstream_id": "INAPPLICABLE_THREAD_LOCAL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.inapplicable_thread_local_top_level",
+      "upstream_id": "INAPPLICABLE_THREAD_LOCAL_TOP_LEVEL",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.incompatible_objc_name_override",
+      "upstream_id": "INCOMPATIBLE_OBJC_NAME_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.incompatible_objc_refinement_override",
+      "upstream_id": "INCOMPATIBLE_OBJC_REFINEMENT_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.incompatible_throws_inherited",
+      "upstream_id": "INCOMPATIBLE_THROWS_INHERITED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.incompatible_throws_override",
+      "upstream_id": "INCOMPATIBLE_THROWS_OVERRIDE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.invalid_characters_native_error",
+      "upstream_id": "INVALID_CHARACTERS_NATIVE_ERROR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.invalid_objc_hides_targets",
+      "upstream_id": "INVALID_OBJC_HIDES_TARGETS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.invalid_objc_name",
+      "upstream_id": "INVALID_OBJC_NAME",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.invalid_objc_name_chars",
+      "upstream_id": "INVALID_OBJC_NAME_CHARS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.invalid_objc_name_first_char",
+      "upstream_id": "INVALID_OBJC_NAME_FIRST_CHAR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.invalid_refines_in_swift_targets",
+      "upstream_id": "INVALID_REFINES_IN_SWIFT_TARGETS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.missing_exact_objc_name",
+      "upstream_id": "MISSING_EXACT_OBJC_NAME",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.missing_exception_in_throws_on_suspend",
+      "upstream_id": "MISSING_EXCEPTION_IN_THROWS_ON_SUSPEND",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.must_be_objc_object_type",
+      "upstream_id": "MUST_BE_OBJC_OBJECT_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.must_be_unit_type",
+      "upstream_id": "MUST_BE_UNIT_TYPE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.must_not_have_extension_receiver",
+      "upstream_id": "MUST_NOT_HAVE_EXTENSION_RECEIVER",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.native_specific_atomic",
+      "upstream_id": "NATIVE_SPECIFIC_ATOMIC",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.property_must_be_var",
+      "upstream_id": "PROPERTY_MUST_BE_VAR",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.redundant_swift_refinement",
+      "upstream_id": "REDUNDANT_SWIFT_REFINEMENT",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.string_as_variadic_objc_param_is_ambiguous",
+      "upstream_id": "STRING_AS_VARIADIC_OBJC_PARAM_IS_AMBIGUOUS",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.subtype_of_hidden_from_objc",
+      "upstream_id": "SUBTYPE_OF_HIDDEN_FROM_OBJC",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.throws_list_empty",
+      "upstream_id": "THROWS_LIST_EMPTY",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.two_or_less_parameters_are_supported_here",
+      "upstream_id": "TWO_OR_LESS_PARAMETERS_ARE_SUPPORTED_HERE",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.unchecked_cast_to_forward_declaration",
+      "upstream_id": "UNCHECKED_CAST_TO_FORWARD_DECLARATION",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.variadic_c_spread_is_supported_only_for_arrayof",
+      "upstream_id": "VARIADIC_C_SPREAD_IS_SUPPORTED_ONLY_FOR_ARRAYOF",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.variadic_function_pointers_are_not_supported",
+      "upstream_id": "VARIADIC_FUNCTION_POINTERS_ARE_NOT_SUPPORTED",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    },
+    {
+      "rule_id": "ktc.compiler.native.variadic_objc_spread_is_supported_only_for_arrayof",
+      "upstream_id": "VARIADIC_OBJC_SPREAD_IS_SUPPORTED_ONLY_FOR_ARRAYOF",
+      "relation": "exact",
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+          "sha256": "f5d21fad2b2d67cae6cae36b80bb943ae9eda5675646af77e7ad783e411d9d6a"
+        }
+      ],
+      "gaps": [
+        "Mapping is not executable Apple-host coverage; Native M0 qualification is separate."
+      ]
+    }
+  ]
+}

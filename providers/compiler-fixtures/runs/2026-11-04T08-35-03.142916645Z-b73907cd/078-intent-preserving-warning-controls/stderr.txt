@@ -1,0 +1,7 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-14338101234350740024/sources/intent/division.kt:2:26: warning: [DIVISION_BY_ZERO] Division by zero.
+val deliberateInfinity = 1.0 / 0.0
+                         ^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-14338101234350740024/sources/intent/division.kt:3:21: warning: [DIVISION_BY_ZERO] Division by zero.
+val deliberateNaN = 0.0 / 0.0
+                    ^^^^^^^^^

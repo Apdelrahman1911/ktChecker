@@ -1,0 +1,5 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+error: warnings found and -Werror specified
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-5224887535380361846/sources/transport/werror.kt:1:16: warning: [DIVISION_BY_ZERO] Division by zero.
+val division = 1 / 0
+               ^^^^^

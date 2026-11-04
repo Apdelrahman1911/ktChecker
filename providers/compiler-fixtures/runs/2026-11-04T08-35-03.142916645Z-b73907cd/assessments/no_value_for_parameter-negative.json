@@ -1,0 +1,207 @@
+{
+    "rule_id": "ktc.compiler.common.no_value_for_parameter",
+    "upstream_id": "NO_VALUE_FOR_PARAMETER",
+    "kind": "negative",
+    "passed": true,
+    "assertions": "Corrected control actually compiled successfully without the selected internal ID; unexecuted/failed builds do not count as absence.",
+    "jobs": [
+        {
+            "label": "negative-cohort-0",
+            "analysis_key": "sha256:b3ab195c9687629e50a92ee312fbaba3db29287d5d238b97573e558741566841",
+            "snapshot_id": "sha256:9af26ee9ee9c1ff7346ffd3fe738ac6fe45ceb03dd8984ff082dae8521c6b4fa",
+            "actual_exit_code": 0,
+            "provider_status": "partial"
+        }
+    ],
+    "evidence": [
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/input.json",
+            "sha256": "30427285cae4af3e83bd19f531535e75e9134c39575a577db216498d76af941d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/process.json",
+            "sha256": "0c9fae1127cf5b2ad018b2cc2bc79d4c2194faa54caac1e922ff75bfd88cc223"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/result.json",
+            "sha256": "47d72376ff9fac11322ff9969b1590904a867cdd209b270e42b1c2807bae9f43"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/stdout.txt",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/stderr.txt",
+            "sha256": "f361fcb45b45b8ca58846bbea0e7503ed27f0027db4449a8bd681c11e56bee5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/build.gradle.kts",
+            "sha256": "a9978e99acb193972b054ebb18b3f10b80e39090aff540a3ebcb77b96f8c357d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/argument_passed_twice.kt",
+            "sha256": "37051bf8322e7c636d451de85296d640d79121bb4fb45f0bcfc24674d1b397cc"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/argument_type_mismatch.kt",
+            "sha256": "84ddc70e56de0a4da5dbc3c603d8978a57c146d1acfaf98b6ee3a136c5dd4c71"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/assignment_type_mismatch.kt",
+            "sha256": "0e2a8e5c13bd454f0f33f0b54c3cee6f19180852e89fbc8d2c4dcc51f0d12399"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/cast_never_succeeds.kt",
+            "sha256": "eec391d9fcce29e433f582ce9fdfd14bdbafac4c0b9ed5ad4eb3a1ff719f3a68"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/deprecation.kt",
+            "sha256": "bd72e7cab839f26de91a9265f6a325150e0c20b736f3d16dff8080791fad54b0"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/division_by_zero.kt",
+            "sha256": "768029687bcb1f822397d08592dc6dddf337c2eb1dfa1b949a4297df99c3076a"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/exposed_function_return_type.kt",
+            "sha256": "f593184550060456f13aad945e690e8b35a5d35690aafb64b3b3cb781415ce47"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/external_declaration_cannot_have_body.kt",
+            "sha256": "909b551935117bb94e0432fca13903d5bb254f2775cc9c70f4bcf108cd6f5650"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/field_in_jvm_record.kt",
+            "sha256": "decca913e3c2f1f3b4ac213fc74106be3df3a202e264a7e2d55e1780200600eb"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/inapplicable_jvm_field.kt",
+            "sha256": "f5fe1ea129f8033c79feb7440f41bf11d0b6ce8b64be34615b58932f3cf53e0d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/initializer_type_mismatch.kt",
+            "sha256": "08997eea65a80881d420c90bf9d806bf242475791103c6e1fbaf1d0885533c44"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/jvm_inline_without_value_class.kt",
+            "sha256": "25a249a86e91aba07c9b9a69f6441e2eaa12207d1aa68585d464c784d4364f94"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/jvm_record_not_val_parameter.kt",
+            "sha256": "21afc3f91a6e01a9c991cb8a5bbec10e5a910b6e7455aed448c6210683bd63b5"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/jvm_static_not_in_object_or_companion.kt",
+            "sha256": "b86ef61cf9806a9d0b0b6938a9d6973a57a79f1f5a0fb96ce01f739ab31e523f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/named_parameter_not_found.kt",
+            "sha256": "5c20a523e3eb890796ef6c3b21940fe0f16b0bbd1e64f6e9e1aedd3140df4545"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/no_else_in_when.kt",
+            "sha256": "4aafd331666be6854bf57d3642bd7257d60163803b0dc3ae982691bd59dd6b5c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/no_value_for_parameter.kt",
+            "sha256": "168700c9d126cd38057b379840e8f4d722825e3d41676619ad3b255562db536f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/non_data_class_jvm_record.kt",
+            "sha256": "e28b0b5ccaa935d7ffe5c80d16fab36fc943211fd205b4368c4836fda322ce57"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/non_vararg_spread.kt",
+            "sha256": "8dac2d7a498631eeb6e3e235cf26e2a0b01387115c5690db91dec2f50a96a274"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/null_for_nonnull_type.kt",
+            "sha256": "1bbfb915c432d6f14bcb4086ec22d6b1731ea2a640f39ab7f6773faca66b1fa9"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/overloads_abstract.kt",
+            "sha256": "4f1d0d2bc8de320edae518649f70176df7bfc8b81f9aed36eee221db6270cb81"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/overloads_interface.kt",
+            "sha256": "5988fb3c335705efc1ed053807422f64fb2543c25c356f9aa8a7eb428a4d54c3"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/overloads_without_default_arguments.kt",
+            "sha256": "cc302a10c855f2dbe851317a4e38aac4b1ce9d5e32549b84a86f9ce20ffbd6d3"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/return_type_mismatch.kt",
+            "sha256": "0193c131a5bb90f961699f6da6c2803a41a7b7c0986471468838da0a425bee1d"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/spread_of_nullable.kt",
+            "sha256": "54133866b669f4c598a416a2085af7104e0005ba0b2418e94eccc5dbd3d10db0"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/synchronized_on_abstract.kt",
+            "sha256": "2dffa2b068a6f44545603aa4cf8246779e11c97424b0302e9f1a26bcccb64d33"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/synchronized_on_inline.kt",
+            "sha256": "8e69a7864553d650fcc43b3f98dd43dacda874d8bba77a57997f6c63fc12a81f"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/synchronized_on_suspend_error.kt",
+            "sha256": "08f28afe892afd4f8c23ea8290721d41ea847afd542ad8bbb46baed3aeea20fd"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/too_many_arguments.kt",
+            "sha256": "d07b0b6ce2d154e827627cd6ce7b2f0ad2a8c750712e189875f1edd3f875ab5b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/uninitialized_variable.kt",
+            "sha256": "a38a03ced2e492e0d67299b1ab4b12ff674435bf080b2dee38d4d67f8ff544e2"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/unnecessary_not_null_assertion.kt",
+            "sha256": "3c9dbcee9ae1e837ef55c6286d76490ab04384b3f4a945fe681650429aa88e4b"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/unnecessary_safe_call.kt",
+            "sha256": "809ccd608c17ae112809fd952f506cf1166196b008acd1189277b9b20af5b159"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/unreachable_code.kt",
+            "sha256": "c116121d5e27e7f351736fb701838c0ab3f793c25d81e8be4ddadb11c8b95af4"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/unresolved_import.kt",
+            "sha256": "312ef33f114811ca282e51a44c617bcdc91838f79e1d86731355f2bc57c7a919"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/unresolved_reference.kt",
+            "sha256": "b806e34702c37d638d0a6452ff9b6c90484a256f6e285ca51a08ae33b5f0970e"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/unsafe_call.kt",
+            "sha256": "f2a9d838a60636e6383e842c6f819fe32e9ecd60fee6b2d47215f0a02d66b9ca"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/upper_bound_violated.kt",
+            "sha256": "d48e64516ae15b1c4fb1fca18bcca2b2e2992fe8b300b80bc1793b5b10e30be3"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/useless_cast.kt",
+            "sha256": "4963806bb8acc6e0d49d6e8e711c701aae8a5fd25420a013c6de50c72dfd9d28"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/val_reassignment.kt",
+            "sha256": "3ad282b3a83b8f21f31eb83a10aee22ad8b21a5c5b512e2694c52f85fc5d34fb"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/value_class_without_jvm_inline_annotation.kt",
+            "sha256": "066b585e95d08c5459a48bd9fc34655bae4c2eda1608c4c69df3071c31c1441c"
+        },
+        {
+            "path": "providers/compiler-fixtures/runs/2026-11-04T08-35-03.142916645Z-b73907cd/009-negative-cohort-0/sources/cases/wrong_annotation_target.kt",
+            "sha256": "6fbe78a340fee808c5cfdfa929359a9237e370718c25bafe144707d4764a244a"
+        }
+    ],
+    "qualification": "not established by synthetic fixtures"
+}

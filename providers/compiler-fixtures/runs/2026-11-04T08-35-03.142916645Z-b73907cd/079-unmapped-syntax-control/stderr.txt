@@ -1,0 +1,7 @@
+info: kotlinc-jvm 2.4.21 (JRE 21.0.12+8-1-24.04-Ubuntu)
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-13855873935108928590/sources/transport/syntax.kt:1:1: error: [NON_MEMBER_FUNCTION_NO_BODY] Function 'malformed' must have a body.
+fun malformed() =
+^^^^^^^^^^^^^^^
+/tmp/ktc-compiler-fixtures-3695252427111664520/outputs/provider-13855873935108928590/sources/transport/syntax.kt:1:18: error: [SYNTAX] Syntax error: Expecting an expression.
+fun malformed() =
+                 ^

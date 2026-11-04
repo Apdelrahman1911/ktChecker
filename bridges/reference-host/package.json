@@ -1,0 +1,19 @@
+{
+  "name": "@ktchecker/reference-host-preview",
+  "version": "0.1.0-preview.1",
+  "private": true,
+  "files": ["dist/src/**", "README.md"],
+  "type": "module",
+  "bin": {"ktchecker-reference-host-preview": "dist/src/main.js"},
+  "exports": {".": "./dist/src/adapter.js", "./codex": "./dist/src/codex-host.js", "./journal": "./dist/src/journal.js", "./broker": "./dist/src/broker.js", "./types": "./dist/src/types.js"},
+  "engines": {"node": ">=24.20.0 <25"},
+  "scripts": {
+    "build": "npm --prefix ../mcp run build && tsc -p tsconfig.json",
+    "test": "npm run build && node --test --test-concurrency=1 dist/test/*.test.js",
+    "probe:codex": "npm run build && node dist/src/probe-codex.js",
+    "demo:codex:synthetic": "npm run build && node dist/test/demo-codex-inbox.js",
+    "demo:cli:codex": "npm run build && node dist/test/demo-cli-codex.js"
+  },
+  "dependencies": {"@ktchecker/mcp-preview": "file:../mcp", "zod": "4.6.7"},
+  "devDependencies": {"@types/node": "24.10.0", "typescript": "5.9.3"}
+}
