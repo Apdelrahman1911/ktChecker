@@ -23,6 +23,11 @@ class RealLintFixtureTest {
             assertTrue(Digests.valid(envelope.snapshotId))
             assertEquals("32.3.1", envelope.providerResult.providerVersion)
             assertEquals("incomplete", envelope.providerResult.status)
+            val binding = assertNotNull(envelope.modelBinding)
+            assertEquals(RuleContext("android", "main", ":fixture", "xml"), binding.scope)
+            assertTrue(Digests.valid(binding.modelDigest))
+            assertEquals(setOf("main"), binding.sourceSetByFile.values.toSet())
+            assertTrue(binding.requiredTaskPaths.isEmpty())
             val diagnosed = envelope.providerResult.findings.mapNotNull { it.upstreamId }.toSet()
             assertEquals(if (case == "positive") setOf("ContentDescription", "HardcodedText") else emptySet(), diagnosed)
             assertTrue(envelope.providerResult.coverage.all { it.provenance == "executed" && it.certificateId != null &&
@@ -31,8 +36,12 @@ class RealLintFixtureTest {
             envelope.providerResult.findings.forEach { finding ->
                 assertEquals("res/layout/example.xml", finding.location.path)
                 assertTrue(Digests.valid(finding.location.fileDigest))
-                assertEquals("android", finding.context.target)
+                assertEquals(binding.scope, finding.context)
                 assertTrue(finding.location.line > 1)
+                assertEquals("main", binding.sourceSetByFile[finding.location.path])
+                val ownership = finding.evidence.single { it.kind == "compilation_source_membership" && it.artifactRef == finding.location.path }
+                assertEquals(binding.modelDigest, ownership.digest)
+                assertContains(ownership.summary, "Imported source set main;")
             }
         }
         assertEquals(before, before.keys.associateWith(::fileDigest), "Original producer fixture bytes stay read-only")

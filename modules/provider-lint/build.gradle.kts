@@ -30,6 +30,8 @@ tasks.register<JavaExec>("lintFixture") {
             "--case", providers.gradleProperty("platformCase").orElse("positive").get(),
             "--result", providers.gradleProperty("platformResult").get(),
             "--lint-classpath", lintBaselineRuntime.asPath,
-        ) + providers.gradleProperty("platformJavaHome").orNull?.let { listOf("--java-home", it) }.orEmpty()
+        ) + providers.gradleProperty("platformJavaHome").orNull?.let { listOf("--java-home", it) }.orEmpty() +
+            providers.gradleProperty("platformLintAnalysisTask").orNull?.let { listOf("--lint-analysis-task", it) }.orEmpty() +
+            providers.gradleProperty("platformLintReportTask").orNull?.let { listOf("--lint-report-task", it) }.orEmpty()
     }
 }

@@ -6,6 +6,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
+import kotlinx.serialization.decodeFromString
 import kotlin.test.*
 
 /** Executes a report transport probe, not Lint detectors; detector controls are separate. */
@@ -13,6 +14,8 @@ class AndroidLintProviderTest {
     private val content = "ktc.android.lint.ContentDescription"
     private val hardcoded = "ktc.android.lint.HardcodedText"
     private val builtin = "com.android.tools.lint.checks.BuiltinIssueRegistry"
+    private val transportScope = RuleContext("android", "main", ":fixture", "debug")
+    private val transportModelDigest = Digests.sha256("transport model")
 
     @Test fun `normalized finding binds provider artifact immutable source target variant and related locations`() {
         val result = analyze(xml("""
@@ -27,7 +30,7 @@ class AndroidLintProviderTest {
         assertEquals(content, finding.ruleId)
         assertEquals("ContentDescription", finding.upstreamId)
         assertEquals("android-lint", finding.providerId)
-        assertEquals("androidMain", finding.context.sourceSet)
+        assertEquals(transportScope, finding.context)
         assertEquals("android", finding.context.target)
         assertEquals("debug", finding.context.compilation)
         assertEquals("src/androidMain/Main.kt", finding.location.path)
@@ -35,10 +38,29 @@ class AndroidLintProviderTest {
         assertEquals(2, finding.location.column)
         assertTrue(Digests.valid(finding.location.fileDigest))
         assertEquals("src/commonMain/Api.kt", finding.relatedLocations.single().path)
+        assertOwnership(finding, "src/androidMain/Main.kt", "androidMain")
+        assertOwnership(finding, "src/commonMain/Api.kt", "commonMain")
         assertTrue(finding.evidence.any { it.summary.contains(builtin) && it.summary.contains("com.android.tools.lint:lint-checks:32.3.1") })
         assertTrue(result.coverage.all { it.state == "incomplete" && it.provenance == "executed" &&
             it.certificateId != null && !it.successful() && !it.tested && !it.qualified })
         assertFalse(result.complete())
+    }
+
+    @Test fun `common source finding retains exact selected Android leaf context without expanding suppression authority`() {
+        val selected = transportScope.copy(sourceSet = "androidMain")
+        val result = analyze(xml(issue("ContentDescription", "src/commonMain/Api.kt")),
+            inputChange = { it.copy(context = it.context.copy(scope = selected)) },
+            planChange = { it.copy(compilationModel = it.compilationModel!!.copy(scope = selected)) })
+        if (unsupported(result)) return
+        assertEquals("incomplete", result.status, result.reasons.toString())
+        val finding = result.findings.single()
+        assertEquals(selected, finding.context)
+        assertTrue(result.coverage.all { it.context == selected })
+        assertOwnership(finding, "src/commonMain/Api.kt", "commonMain")
+        assertEquals(Digests.sha256(listOf(content, finding.location.path, finding.location.fileDigest,
+            finding.location.line.toString(), finding.location.column.toString(), selected.id,
+            finding.evidence.single { it.kind == "provider_artifact" }.digest).joinToString("\u0000")), finding.fingerprint)
+        assertTrue(result.coverage.none { it.successful() || it.tested || it.qualified })
     }
 
     @Test fun `zero source diagnostics are incomplete not clean inventory coverage`() {
@@ -75,19 +97,25 @@ class AndroidLintProviderTest {
     @Test fun `captured sibling compilation member cannot be relabeled as this Android variant`() {
         val result = analyze(xml(issue("ContentDescription")), inputChange = {
             it.copy(context = it.context.copy(compilationFiles = listOf("src/commonMain/Api.kt")))
+        }, planChange = {
+            it.copy(compilationModel = it.compilationModel!!.copy(sourceSetByFile = mapOf("src/commonMain/Api.kt" to "commonMain")))
         })
         if (unsupported(result)) return
         assertEquals("failed", result.status)
-        assertContains(result.reasons, "lint_location_outside_compilation")
+        assertContains(result.reasons, "location_outside_compilation")
     }
 
     @Test fun `explicit source inclusion is distinct from silently ignoring a reported excluded source`() {
-        val result = analyze(xml(issue("ContentDescription", "src/test/Test.kt")), planChange = {
-            it.copy(explicitlyIncludedPaths = setOf("src/test/Test.kt"), sourceSets = mapOf("src/test/" to "test"))
+        val result = analyze(xml(issue("ContentDescription", "src/test/Test.kt")), inputChange = {
+            it.copy(context = it.context.copy(compilationFiles = it.context.compilationFiles!! + "src/test/Test.kt"))
+        }, planChange = {
+            it.copy(explicitlyIncludedPaths = setOf("src/test/Test.kt"), compilationModel = it.compilationModel!!.copy(
+                sourceSetByFile = it.compilationModel!!.sourceSetByFile + ("src/test/Test.kt" to "test")))
         })
         if (unsupported(result)) return
         assertEquals("incomplete", result.status)
-        assertEquals("test", result.findings.single().context.sourceSet)
+        assertEquals(transportScope, result.findings.single().context)
+        assertOwnership(result.findings.single(), "src/test/Test.kt", "test")
         assertEquals("src/test/Test.kt", result.findings.single().location.path)
     }
 
@@ -130,24 +158,93 @@ class AndroidLintProviderTest {
         assertEquals("error", sourceError.findings.single().severity)
     }
 
-    @Test fun `aggregate cached skipped and unrelated failing Gradle tasks cannot prove lint execution`() {
+    @Test fun `aggregate cached skipped sibling variant and unrelated module tasks cannot prove exact lint execution`() {
+        val analysis = ":fixture:lintAnalyzeDebug"
+        val report = ":fixture:lintReportDebug"
+        val required = setOf(analysis, report)
+        val plan: (LintRunPlan) -> LintRunPlan = { it.copy(mode = "gradle", requiredTaskPaths = required) }
+        val selection: (AnalysisInput) -> AnalysisInput = {
+            it.copy(execution = it.execution!!.copy(arguments = it.execution!!.arguments + required))
+        }
         for (tasks in listOf(
-            "> Task :lint\nBUILD SUCCESSFUL", "> Task :lintAnalyzeAndroidMain UP-TO-DATE\nBUILD SUCCESSFUL",
-            "> Task :lintAnalyzeAndroidMain FROM-CACHE\nBUILD SUCCESSFUL", "> Task :lintAnalyzeAndroidMain SKIPPED\nBUILD SUCCESSFUL",
+            "> Task :fixture:lint\nBUILD SUCCESSFUL", "> Task $analysis UP-TO-DATE\n> Task $report\nBUILD SUCCESSFUL",
+            "> Task $analysis FROM-CACHE\n> Task $report\nBUILD SUCCESSFUL", "> Task $analysis SKIPPED\n> Task $report\nBUILD SUCCESSFUL",
+            "> Task $analysis NO-SOURCE\n> Task $report\nBUILD SUCCESSFUL",
+            "> Task :fixture:lintAnalyzeRelease\n> Task $report\nBUILD SUCCESSFUL",
+            "> Task :other:lintAnalyzeDebug\n> Task $report\nBUILD SUCCESSFUL",
+            "> Task $analysis\n> Task $analysis\n> Task $report\nBUILD SUCCESSFUL",
         )) {
-            val result = analyze(xml(""), stdout = tasks, planChange = { it.copy(requiredTaskPrefixes = setOf("lint")) })
+            val result = analyze(xml(""), stdout = tasks, inputChange = selection, planChange = plan)
             if (unsupported(result)) return
             assertEquals("failed", result.status)
             assertContains(result.reasons, "lint_task_execution_unverified")
         }
-        val actual = analyze(xml(""), stdout = "> Task :lintAnalyzeAndroidMain\n> Task :lint\nBUILD SUCCESSFUL",
-            planChange = { it.copy(requiredTaskPrefixes = setOf("lint")) })
+        val actual = analyze(xml(""), stdout = "> Task $analysis\n> Task $report\nBUILD SUCCESSFUL",
+            inputChange = selection, planChange = plan)
         assertEquals("incomplete", actual.status)
         val unrelated = analyze(xml(issue("ContentDescription", severity = "Error")), 1,
-            stdout = "> Task :lintAnalyzeAndroidMain\n> Task :unrelated FAILED",
-            planChange = { it.copy(requiredTaskPrefixes = setOf("lint")) })
+            stdout = "> Task $analysis\n> Task $report FAILED\n> Task :other:lintReportDebug FAILED",
+            inputChange = selection, planChange = plan)
         assertEquals("failed", unrelated.status)
         assertContains(unrelated.reasons, "lint_unrelated_task_failure")
+        val unfinished = analyze(xml(""), stdout = "> Task $analysis\n> Task $report", inputChange = selection, planChange = plan)
+        assertContains(unfinished.reasons, "lint_gradle_completion_unverified")
+    }
+
+    @Test fun `missing exact compilation members or guessed directory ownership never authorizes lint sources`() {
+        val missingMembers = analyze(xml(""), inputChange = { it.copy(context = it.context.copy(compilationFiles = null)) })
+        assertEquals(listOf("compilation_members_unavailable"), missingMembers.reasons)
+        val missingModel = analyze(xml(""), planChange = { it.copy(compilationModel = null) })
+        assertEquals(listOf("compilation_model_unavailable"), missingModel.reasons)
+        val prefixGuess = analyze(xml(""), planChange = { it.copy(compilationModel = it.compilationModel!!.copy(
+            sourceSetByFile = mapOf("src/androidMain/" to "androidMain", "src/commonMain/" to "commonMain"))) })
+        assertEquals(listOf("compilation_source_ownership_unavailable"), prefixGuess.reasons)
+        assertTrue(listOf(missingMembers, missingModel, prefixGuess).all { it.coverage.none { row -> row.certificateId != null } })
+    }
+
+    @Test fun `captured related locations need exact ownership in the selected compilation too`() {
+        val result = analyze(xml("""
+            <issue id="ContentDescription" severity="Warning" message="specific source issue">
+                <location file="src/androidMain/Main.kt" line="2" column="3"/>
+                <location file="src/commonMain/Api.kt" line="1" column="1"/>
+            </issue>
+        """), inputChange = { it.copy(context = it.context.copy(compilationFiles = listOf("src/androidMain/Main.kt"))) },
+            planChange = { it.copy(compilationModel = it.compilationModel!!.copy(sourceSetByFile = mapOf("src/androidMain/Main.kt" to "androidMain"))) })
+        if (unsupported(result)) return
+        assertEquals("failed", result.status)
+        assertContains(result.reasons, "location_outside_compilation")
+        assertTrue(result.findings.isEmpty())
+        assertTrue(result.coverage.none { it.certificateId != null })
+    }
+
+    @Test fun `Gradle lint admission rejects unselected paths basenames other modules and aggregates`() {
+        val required = setOf(":fixture:lintAnalyzeDebug", ":fixture:lintReportDebug")
+        val unselected = analyze(xml(""), planChange = { it.copy(mode = "gradle", requiredTaskPaths = required) })
+        assertEquals(listOf("gradle_exact_task_not_selected"), unselected.reasons)
+        for ((paths, reason) in listOf(
+            setOf("lintAnalyzeDebug") to "gradle_exact_task_model_required",
+            setOf(":other:lintAnalyzeDebug") to "gradle_task_module_mismatch",
+            setOf(":fixture:lint") to "lint_aggregate_task_not_detector_proof",
+        )) {
+            val result = analyze(xml(""), inputChange = { it.copy(execution = it.execution!!.copy(arguments = it.execution!!.arguments + paths)) },
+                planChange = { it.copy(mode = "gradle", requiredTaskPaths = paths) })
+            assertEquals(listOf(reason), result.reasons)
+            assertTrue(result.coverage.none { it.certificateId != null })
+        }
+    }
+
+    @Test fun `KMP driver has no guessed lint task fallback when exact model paths are missing`() {
+        val repository = Path.of(requireNotNull(System.getProperty("ktchecker.repository")))
+        val report = Files.createTempDirectory("ktchecker-lint-missing-model-").resolve("result.json")
+        LintFixtureMain.main(arrayOf("--fixture", repository.resolve("fixtures/kmp").toString(), "--case", "positive",
+            "--result", report.toString(), "--lint-classpath", requireNotNull(System.getProperty("ktchecker.lint.classpath")),
+            "--gradle", repository.resolve("does-not-exist").toString()))
+        val result = ContractJson.decodeFromString<FixtureCheckEnvelope>(Files.readString(report))
+        assertEquals("unavailable", result.state)
+        assertTrue(Digests.valid(result.snapshotId))
+        assertEquals(listOf("lint_fixture_exact_tasks_required"), result.providerResult.reasons)
+        assertTrue(result.providerResult.coverage.isEmpty())
+        assertNull(result.modelBinding)
     }
 
     @Test fun `transport approval missing frozen model and relabeled context never grant authority`() {
@@ -159,7 +256,7 @@ class AndroidLintProviderTest {
         val ios = analyze(xml(""), inputChange = { it.copy(context = it.context.copy(scope = it.context.scope.copy(target = "iosArm64"))) })
         assertEquals(listOf("android_compilation_required"), ios.reasons)
         val stalePermit = analyze(xml(""), relabelAfterPermit = true)
-        assertContains(stalePermit.reasons, "execution_not_authorized")
+        assertContains(stalePermit.reasons, "compilation_model_binding_mismatch")
         assertTrue(listOf(notAuthorized, noModel, ios, stalePermit).all { !it.complete() && it.coverage.none { row -> row.successful() } })
     }
 
@@ -187,15 +284,19 @@ class AndroidLintProviderTest {
         val execution = TrustedExecution(executable.toString(), listOf("-cp", classpath, LintReportProbe::class.java.name,
             "{output}/lint-results.xml", report?.let(::encoded) ?: "MISSING", exitCode.toString(), encoded(stdout), encoded(stderr)),
             true, fileDigest(executable), timeoutMillis = 10000)
-        val context = AnalysisContext(RuleContext("android", "main", ":fixture", "debug"),
-            modelDigest = Digests.sha256("transport model"), dependencyDigest = Digests.sha256("transport dependency"),
-            toolchainDigest = registry.artifact.digest, configurationDigest = Digests.sha256("transport configuration"), fullProject = true)
+        val scope = transportScope
+        val modelDigest = transportModelDigest
+        val sourceSetByFile = mapOf("src/androidMain/Main.kt" to "androidMain", "src/commonMain/Api.kt" to "commonMain")
+        val context = AnalysisContext(scope,
+            modelDigest = modelDigest, dependencyDigest = Digests.sha256("transport dependency"),
+            toolchainDigest = registry.artifact.digest, configurationDigest = Digests.sha256("transport configuration"), fullProject = true,
+            compilationFiles = sourceSetByFile.keys.sorted())
         val input = inputChange(AnalysisInput(frozen.manifest, frozen.root.toString(), context, requested,
             execution = execution, outputRoot = work.resolve("outputs").toString()))
-        val authority = if (authorized) ExactExecutionAuthority(ExecutionPermit(execution, frozen.manifest.snapshotId, frozen.root,
+        val authority = if (authorized) ExactExecutionAuthority(ExecutionPermit(input.execution!!, frozen.manifest.snapshotId, frozen.root,
             input.analysisKey(), frozen.verify)) else ExecutionAuthority.DENY
         val plan = planChange(LintRunPlan("32.3.1", listOf(registry), setOf(content),
-            sourceSets = mapOf("src/androidMain/" to "androidMain", "src/commonMain/" to "commonMain")))
+            compilationModel = ExactCompilationModel(scope, modelDigest, sourceSetByFile)))
         return AndroidLintProvider(authority, plan).analyze(if (relabelAfterPermit) input.copy(
             context = input.context.copy(scope = input.context.scope.copy(compilation = "release"))) else input)
     }
@@ -205,6 +306,15 @@ class AndroidLintProviderTest {
         assertEquals("unavailable", result.status)
         assertTrue(result.coverage.none { it.provenance == "executed" || it.successful() })
         return true
+    }
+
+    private fun assertOwnership(finding: Finding, path: String, sourceSet: String) {
+        val evidence = finding.evidence.single { it.kind == "compilation_source_membership" && it.artifactRef == path }
+        assertEquals(transportModelDigest, evidence.digest)
+        assertContains(evidence.summary, "Imported source set $sourceSet;")
+        assertContains(evidence.summary, "selected analysis context ${finding.context.id};")
+        assertContains(evidence.summary, "immutable snapshot sha256:")
+        assertContains(evidence.summary, "informational ownership only, not cross-context suppression authority")
     }
 
     private fun xml(issues: String, client: String = "9.3.1"): String = "<issues format=\"6\" by=\"lint $client\">$issues</issues>"

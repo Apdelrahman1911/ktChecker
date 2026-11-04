@@ -2,6 +2,8 @@ package dev.ktchecker.providers.native
 
 import dev.ktchecker.contracts.ContractJson
 import dev.ktchecker.providers.runtime.ExecutionProblem
+import dev.ktchecker.providers.runtime.ExactGradleTaskProof
+import dev.ktchecker.providers.runtime.GradleTaskObservation
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 
@@ -31,10 +33,7 @@ data class NativeDiagnostic(
     val name: String?, val severity: String, val message: String,
     val path: String? = null, val line: Int? = null, val column: Int? = null,
 )
-data class NativeTask(val path: String, val outcome: String) {
-    val name: String get() = path.substringAfterLast(':')
-    val actuallyExecuted: Boolean get() = outcome in setOf("EXECUTED", "FAILED")
-}
+typealias NativeTask = GradleTaskObservation
 data class NativeOutput(val diagnostics: List<NativeDiagnostic>, val tasks: List<NativeTask>, val buildSuccessful: Boolean)
 
 /** Named Native compiler output. Unknown/unnamed diagnostics are preserved, never guessed by text. */
@@ -43,7 +42,6 @@ object NativeDiagnosticParser {
     private val old = Regex("^(error|warning|info):\\s+(.+?):\\s*\\((\\d+),\\s*(\\d+)\\):\\s*(.*)$")
     private val direct = Regex("^(.+?):(\\d+):(\\d+):\\s*(error|warning|info):\\s*(.*)$")
     private val global = Regex("^([ewi]|error|warning|info):\\s*(.*)$")
-    private val task = Regex("^> Task (:[^ ]+)(?: (UP-TO-DATE|FROM-CACHE|SKIPPED|NO-SOURCE|FAILED))?\\s*$")
     private val name = Regex("^\\[([A-Z][A-Z0-9_]*)]\\s*(.*)$")
     private val ansi = Regex("\\u001B\\[[0-?]*[ -/]*[@-~]")
 
@@ -52,9 +50,9 @@ object NativeDiagnosticParser {
         val tasks = mutableListOf<NativeTask>()
         for (original in (stdout + "\n" + stderr).lineSequence()) {
             val line = ansi.replace(original, "").trimEnd()
-            val t = task.matchEntire(line)
+            val t = ExactGradleTaskProof.parseLine(line)
             if (t != null) {
-                tasks += NativeTask(t.groupValues[1], t.groupValues[2].ifBlank { "EXECUTED" })
+                tasks += t
                 continue
             }
             val p = prefix.matchEntire(line)

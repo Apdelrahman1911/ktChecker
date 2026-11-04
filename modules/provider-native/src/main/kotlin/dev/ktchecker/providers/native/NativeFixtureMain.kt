@@ -34,7 +34,7 @@ object NativeFixtureMain {
         val work = Files.createTempDirectory("ktchecker-native-fixture-")
         val frozen = FixtureSnapshots.materialize(fixture, work)
         onSnapshot(frozen.manifest.snapshotId)
-        val scope = RuleContext(target, "commonMain", ":fixture", "main")
+        val scope = RuleContext(target, "commonMain", ":", "main")
         val blank = AnalysisInput(frozen.manifest, frozen.root.toString(), AnalysisContext(scope, compilerVersion = "2.4.21"),
             outputRoot = work.resolve("outputs").toString())
         val host = System.getProperty("os.name").lowercase()
@@ -69,24 +69,34 @@ object NativeFixtureMain {
         }
         val gradle = Path.of(requireNotNull(options["gradle"]) { "--gradle is required on Apple hosts" }).toAbsolutePath().toRealPath()
         val targetTask = if (target == "iosArm64") "compileKotlinIosArm64" else "compileKotlinIosSimulatorArm64"
-        val execution = TrustedExecution(gradle.toString(), gradleFixtureArguments(listOf("compileCommonMainKotlinMetadata", targetTask), case) +
+        val requiredTasks = setOf(":compileCommonMainKotlinMetadata", ":$targetTask")
+        val execution = TrustedExecution(gradle.toString(), gradleFixtureArguments(requiredTasks.toList(), case) +
             listOf("-Dorg.gradle.java.home=${projectJava.home}", "-Pkotlin.native.home=$nativeHome"),
             true, fileDigest(gradle), timeoutMillis = 3_600_000, maxOutputBytes = 8_388_608,
             environment = projectJava.environment(nativeEnvironmentKeys))
         val artifacts = compilerArtifacts + gradleArtifacts(gradle) + projectJava.artifacts
         onArtifacts(artifacts)
         val toolchain = Digests.sha256(ContractJson.encodeToJsonElement(artifacts).toString())
+        // These roots are the fixed fixture producer's declared model, not a directory heuristic
+        // in the production adapter or a claim that an arbitrary Gradle project was imported.
+        val declaredRoots = mapOf("src/commonMain/kotlin/" to "commonMain", "src/${target}Main/kotlin/" to "${target}Main") + when (case) {
+            "positive" -> mapOf("src/iosMain/kotlin/" to "iosMain")
+            "wrong-actual" -> mapOf("negative/wrong-actual/iosMain/" to "iosMain")
+            else -> emptyMap()
+        }
+        val sourceSetByFile = frozen.manifest.files.filter { it.path.endsWith(".kt") }.mapNotNull { file ->
+            declaredRoots.entries.singleOrNull { file.path.startsWith(it.key) }?.let { file.path to it.value }
+        }.toMap()
+        val modelDigest = Digests.sha256("fixture-native-model/v2\n${frozen.manifest.snapshotId}\n${scope.id}\n$case\n" +
+            Digests.canonical(ContractJson.encodeToJsonElement(sourceSetByFile)) + "\n" + requiredTasks.sorted().joinToString("\n"))
+        val compilationModel = ExactCompilationModel(scope, modelDigest, sourceSetByFile)
         val context = AnalysisContext(scope, compilerVersion = "2.4.21", classpath = artifacts,
             compilerArguments = listOf("-Xrender-internal-diagnostic-names", "actual Native target $target"),
             libraries = mapOf("kotlin-stdlib-native" to "2.4.21"),
-            modelDigest = Digests.sha256("fixture-native-model/v1|${frozen.manifest.snapshotId}|$target|$case"),
+            modelDigest = modelDigest,
             dependencyDigest = toolchain, toolchainDigest = toolchain,
             configurationDigest = Digests.sha256("fixture-native-policy/v1|$case"), fullProject = true,
-            compilationFiles = frozen.manifest.files.map { it.path }.filter { it.endsWith(".kt") && (
-                it.startsWith("src/commonMain/") ||
-                (case == "positive" && it.startsWith("src/iosMain/")) ||
-                (case == "wrong-actual" && it.startsWith("negative/wrong-actual/iosMain/")) ||
-                it.startsWith("src/${target}Main/")) })
+            compilationFiles = sourceSetByFile.keys.sorted())
         val input = blank.copy(context = context, execution = execution)
         val verify = {
             frozen.verify()
@@ -98,9 +108,7 @@ object NativeFixtureMain {
         }
         val authority = ExactExecutionAuthority(ExecutionPermit(execution, input.snapshot.snapshotId, frozen.root,
             input.analysisKey(), verify, ::prepareGradleOutput))
-        val plan = NativeRunPlan(target, compilerArtifacts,
-            sourceSets = mapOf("src/commonMain/" to "commonMain", "src/iosMain/" to "iosMain",
-                "negative/wrong-actual/iosMain/" to "iosMain"))
+        val plan = NativeRunPlan(target, compilerArtifacts, requiredTasks = requiredTasks, compilationModel = compilationModel)
         val provider = KotlinNativeProvider(authority, plan).analyze(input)
         val diagnosed = provider.findings.filter { it.severity == "error" }
         val expected = when (case) {
@@ -111,7 +119,8 @@ object NativeFixtureMain {
         val assertions = mutableListOf("Actual Kotlin/Native 2.4.21 version probe bound to fingerprinted compiler artifacts.",
             "Native target is $target, not JVM.", "Immutable fixture materialization verified before and after execution.",
             "Project JDK 25 selected explicitly, pinned and version-probed; Gradle uses that JAVA_HOME.",
-            "Gradle kotlin.native.home is explicitly the same distribution as the Native version probe.")
+            "Gradle kotlin.native.home is explicitly the same distribution as the Native version probe.",
+            "Exact qualified common+iOS tasks and per-file source-set membership bind the explicit fixture producer model, not a general Gradle importer.")
         val taskGap = provider.reasons.any { it.startsWith("native_task_not_executed:") }
         val executed = provider.coverage.isNotEmpty() && provider.coverage.all { it.provenance == "executed" }
         val passed = provider.status == "incomplete" && executed && !taskGap && provider.rawDiagnostics.isEmpty() && when (case) {
@@ -121,9 +130,11 @@ object NativeFixtureMain {
         assertions += if (case == "positive") "Positive expects actual common+iOS compile tasks and no source-error diagnosis."
             else "Negative expects an individually mapped expect/actual source-error diagnosis from the actual target task."
         assertions += "Per-ID Apple precision/corpus qualification remains false for all 344 mappings."
+        assertions += "Distribution fingerprints do not qualify complete LLVM/libffi/Apple SDK/header/cinterop dependency closure or linking."
         return FixtureCheckEnvelope(state = if (passed) "passed" else if (provider.status == "unavailable") "unavailable" else "failed", case = case,
             target = target, snapshotId = input.snapshot.snapshotId, providerResult = provider,
-            artifactIdentities = artifacts, assertions = assertions)
+            artifactIdentities = artifacts, assertions = assertions,
+            modelBinding = FixtureModelBinding(scope, modelDigest, sourceSetByFile, requiredTasks.sorted()))
     }
 
     private fun nativeHome(explicit: String?): Path {
@@ -138,14 +149,15 @@ object NativeFixtureMain {
     }
 
     private fun nativeArtifacts(home: Path, target: String): List<ArtifactIdentity> {
-        val dirs = listOf(home.resolve("bin"), home.resolve("konan"), home.resolve("klib/common"),
+        val dirs = listOf(home.resolve("bin"), home.resolve("tools"), home.resolve("konan"), home.resolve("klib/common"),
             home.resolve("klib/platform/" + if (target == "iosArm64") "ios_arm64" else "ios_simulator_arm64"))
         val files = dirs.flatMap { directory ->
             if (!Files.isDirectory(directory)) emptyList() else Files.walk(directory).use { paths ->
                 paths.filter { Files.isRegularFile(it, NOFOLLOW_LINKS) }.toList()
             }
         }.distinct().sorted()
-        require(files.any { it.fileName.toString().endsWith(".jar") } && files.any { it.fileName.toString() == "konanc" }) {
+        require(files.any { it.fileName.toString().endsWith(".jar") } && files.any { it.fileName.toString() == "konanc" } &&
+            files.any { it.fileName.toString() == "env_blacklist" }) {
             "Native compiler implementation artifacts are unavailable"
         }
         return files.map { ArtifactIdentity("org.jetbrains.kotlin.native:${home.relativize(it).toString().replace('\\', '/')}:2.4.21",

@@ -30,10 +30,11 @@ class KernelService private constructor(
     internal val preparedInputObserver: PreparedInputObserver,
     findingProviders: Map<String, Set<String>>,
     private val resultPolicy: ResultPolicy,
+    planAuthority: ReviewPlanAuthority,
 ) : AutoCloseable {
     internal val root = dataDir.toAbsolutePath().normalize()
     internal val ledger = Ledger(root, config)
-    private val archive = InputArchive(root.resolve("inputs"), config)
+    internal val archive = InputArchive(root.resolve("inputs"), config)
     internal val providerId = provider.id
     internal val providerVersion = provider.version
     internal val supportedRules = provider.supportedRuleIds.toSortedSet().toSet()
@@ -41,9 +42,10 @@ class KernelService private constructor(
     internal val providerKey = Digests.sha256(canonical(listOf(providerId, providerVersion,
         canonical(supportedRules.toList()), canonical(authorizedFindingProviders.mapValues { it.value.sorted() }))))
     private val stopped = AtomicBoolean(false)
-    private val ingestion = Semaphore(maxOf(1, config.workerCount))
+    internal val ingestion = Semaphore(maxOf(1, config.workerCount))
     private val cursorSecret: ByteArray
     private val scheduler: WorkScheduler
+    internal val plans = ParentPlans(this, planAuthority)
 
     init {
         require(providerId.isNotBlank() && providerVersion.isNotBlank())
@@ -68,8 +70,9 @@ class KernelService private constructor(
             preparedInputObserver: PreparedInputObserver = PreparedInputObserver.NONE,
             findingProviders: Map<String, Set<String>> = provider.supportedRuleIds.associateWith { setOf(provider.id) },
             resultPolicy: ResultPolicy = ResultPolicy.NONE,
+            planAuthority: ReviewPlanAuthority = ReviewPlanAuthority.DENY,
         ): KernelService = KernelService(dataDir, provider, ContractJson.decodeFromString<KernelConfig>(canonical(config)),
-            snapshotGate, preparedInputObserver, findingProviders, resultPolicy)
+            snapshotGate, preparedInputObserver, findingProviders, resultPolicy, planAuthority)
     }
 
     fun registerClient(binding: ClientBinding): ClientRegistration = registerClient(ClientRegistration(binding,
@@ -147,7 +150,8 @@ class KernelService private constructor(
                     val duplicate = idempotent(c, binding.clientId, normalized.idempotencyKey, requestHash)
                     if (duplicate != null) return@transaction duplicate
                     preflightAdmission(c, binding.clientId)
-                    if (c.count("SELECT COUNT(*) FROM reviews WHERE client_id=? AND patch_id=?", binding.clientId, normalized.patchId) != 0L) {
+                    if (c.count("SELECT COUNT(*) FROM reviews WHERE client_id=? AND patch_id=?", binding.clientId, normalized.patchId) != 0L ||
+                        c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=? AND patch_id=?", binding.clientId, normalized.patchId) != 0L) {
                         fail("patch_id_conflict", "Patch ID already has a distinct accepted request in this client lineage")
                     }
                     val workExists = c.count("SELECT COUNT(*) FROM work WHERE work_key=?", key) != 0L
@@ -206,6 +210,10 @@ class KernelService private constructor(
             readStatus(c, reviewId, binding.clientId)
         }
     }
+
+    fun submitPlan(credential: ClientCredential, request: SubmitPlanRequest): ParentPlanStatus = plans.submit(credential, request)
+    fun planStatus(credential: ClientCredential, planId: String): ParentPlanStatus = plans.status(credential, planId)
+    fun cancelPlan(credential: ClientCredential, planId: String): ParentPlanStatus = plans.cancel(credential, planId)
 
     fun cancel(credential: ClientCredential, reviewId: String): ReviewStatus {
         ensureOpen()
@@ -309,7 +317,7 @@ class KernelService private constructor(
             val binding = authenticate(c, credential)
             lineageFacts(c, binding)
         }
-        return withSnapshotCheck(expected.input) { check ->
+        return withSnapshotCheck(expected) { check ->
             ledger.transaction { c ->
                 val binding = authenticate(c, credential)
                 val input = latestInput(c, binding.clientId)
@@ -319,6 +327,7 @@ class KernelService private constructor(
                 }
                 reasons += expected.reasons
                 reasons += sourceReasons(input, check)
+                reasons += planSourceReasons(expected, check)
                 if (c.one("SELECT gate_state FROM clients WHERE client_id=?", binding.clientId) { it.getString(1) } != "open") {
                     reasons += "lineage_finalization_already_claimed"
                 }
@@ -352,7 +361,7 @@ class KernelService private constructor(
             val binding = authenticate(c, credential)
             loadCut(c, binding.clientId, cutId) to lineageFacts(c, binding)
         }
-        return withSnapshotCheck(prepared.first.input) { check ->
+        return withSnapshotCheck(prepared.second) { check ->
             // Persist a non-replayable intent BEFORE any irreversible host effect. The source/config
             // fence remains held across both short DB transactions. Crash/throw after this point
             // makes the outcome unknown and freezes this client generation instead of replaying it.
@@ -402,11 +411,14 @@ class KernelService private constructor(
         }
     }
 
-    private data class LineageFacts(val input: AnalysisInput?, val epoch: Long, val reasons: List<String>)
+    private data class LineageFacts(val input: AnalysisInput?, val epoch: Long, val reasons: List<String>,
+        val plan: ParentPlans.Stored?, val reviewFrontier: Long)
     private fun lineageFacts(c: Connection, binding: ClientBinding): LineageFacts {
         val input = latestInput(c, binding.clientId)
+        val plan = plans.latest(c, binding.clientId)
         return LineageFacts(input, c.count("SELECT epoch FROM clients WHERE client_id=?", binding.clientId),
-            lineageReasons(c, binding, input))
+            lineageReasons(c, binding, input, plan) + plans.lineageReasons(c, binding.clientId), plan,
+            c.count("SELECT next_review-1 FROM clients WHERE client_id=?", binding.clientId))
     }
 
     private fun gateReasons(c: Connection, binding: ClientBinding, saved: SavedCut, check: SnapshotCheck, facts: LineageFacts): List<String> = buildList {
@@ -421,6 +433,7 @@ class KernelService private constructor(
         addAll(deliveryReasons(c, binding.clientId, saved.cut.requiredEventIds, saved.cut.eventFrontier))
         // Check expiry last, immediately before the guarded action, not before a possibly long DB wait.
         addAll(sourceReasons(saved.input, check))
+        addAll(planSourceReasons(facts, check))
     }
 
     override fun close() {
@@ -428,9 +441,9 @@ class KernelService private constructor(
     }
 
     internal fun isStopped(): Boolean = stopped.get()
-    private fun ensureOpen() { if (stopped.get()) fail("service_closed", "Kernel service is closed") }
+    internal fun ensureOpen() { if (stopped.get()) fail("service_closed", "Kernel service is closed") }
 
-    private fun validateInput(binding: ClientBinding, request: SubmitRequest) {
+    internal fun validateInput(binding: ClientBinding, request: SubmitRequest) {
         identifier(request.patchId, "patch ID")
         identifier(request.idempotencyKey, "idempotency key")
         val input = request.input
@@ -454,7 +467,7 @@ class KernelService private constructor(
             .forEach { identifier(it, "analysis context") }
     }
 
-    private fun preflightAdmission(c: Connection, clientId: String) {
+    internal fun preflightAdmission(c: Connection, clientId: String) {
         if (c.one("SELECT gate_state FROM clients WHERE client_id=?", clientId) { it.getString(1) } != "open") {
             fail("lineage_finalized", "A final action was already claimed for this client generation")
         }
@@ -465,6 +478,9 @@ class KernelService private constructor(
     }
 
     private fun idempotent(c: Connection, clientId: String, key: String, hash: String): ReviewStatus? {
+        if (c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=? AND idempotency_key=?", clientId, key) != 0L) {
+            fail("idempotency_conflict", "Idempotency key already belongs to an atomic parent plan")
+        }
         val prior = c.one("SELECT review_id,request_hash FROM reviews WHERE client_id=? AND idempotency_key=?", clientId, key) {
             it.getString(1) to it.getString(2)
         } ?: return null
@@ -541,7 +557,7 @@ class KernelService private constructor(
         row.getString("kind"), row.getInt("delivery_required") != 0, row.getString("payload_digest"),
         row.getString("payload"), row.getLong("generation"))
 
-    private fun authenticate(c: Connection, credential: ClientCredential): ClientBinding =
+    internal fun authenticate(c: Connection, credential: ClientCredential): ClientBinding =
         authenticate(c, credential.clientId, credential.token, adapter = false)
     private fun authenticate(c: Connection, credential: AdapterCredential): ClientBinding =
         authenticate(c, credential.clientId, credential.token, adapter = true)
@@ -604,10 +620,26 @@ class KernelService private constructor(
         it.getString("check_json")?.let { text -> ContractJson.decodeFromString<SnapshotCheck>(text) }, it.getInt("consumed") != 0) }
         ?: fail("gate_cut_not_found", "Gate cut is not available to this client")
 
-    private fun <T> withSnapshotCheck(input: AnalysisInput?, action: (SnapshotCheck) -> T): T {
+    private fun <T> withSnapshotCheck(facts: LineageFacts, action: (SnapshotCheck) -> T): T {
+        val input = facts.input
         if (input == null) return action(SnapshotCheck(false, reasons = listOf("no_review_input")))
         // Do not catch the callback: DB/auth/action failures must not execute it for a second time.
-        return snapshotGate.withCurrentSnapshot(input, action)
+        val detached: (SnapshotCheck) -> T = { check -> action(ContractJson.decodeFromString(canonical(check))) }
+        return if (facts.plan == null) snapshotGate.withCurrentSnapshot(input, detached)
+        else snapshotGate.withCurrentSnapshots(facts.plan.definition.slots.asReversed().map { it.input }, detached)
+    }
+
+    private fun planSourceReasons(facts: LineageFacts, check: SnapshotCheck): List<String> = buildList {
+        val plan = facts.plan ?: return@buildList
+        val definition = plan.definition
+        // A newer manual submission must not inherit an older plan's gate authority, even on the
+        // same snapshot with identical scalar digests but changed compiler/classpath/policy inputs.
+        if (facts.reviewFrontier != plan.frontier || facts.input?.snapshot != definition.slots.first().input.snapshot) add("current_parent_plan_missing")
+        if (check.sourceBindingDigest != definition.sourceBindingDigest) add("plan_source_binding_authority_mismatch")
+        if (check.generatedInputsDigest != definition.generatedInputsDigest) add("plan_generated_input_authority_mismatch")
+        val required = definition.slots.filter { it.state == "pending" }.mapNotNull { it.identity }
+        if (check.contextIdentities.map { it.context }.distinct().size != check.contextIdentities.size ||
+            check.contextIdentities.toSet() != required.toSet()) add("plan_context_vector_authority_mismatch")
     }
 
     private fun sourceReasons(input: AnalysisInput?, check: SnapshotCheck): List<String> = buildList {
@@ -628,7 +660,7 @@ class KernelService private constructor(
     }
 
     private data class ReviewRecord(val status: ReviewStatus, val input: AnalysisInput, val certificateValid: Boolean)
-    private fun lineageReasons(c: Connection, binding: ClientBinding, latest: AnalysisInput?): List<String> {
+    private fun lineageReasons(c: Connection, binding: ClientBinding, latest: AnalysisInput?, plan: ParentPlans.Stored?): List<String> {
         val records = c.query("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM reviews r JOIN work w
             ON w.work_key=r.work_key WHERE r.client_id=? ORDER BY r.sequence""", binding.clientId) {
             val input = ContractJson.decodeFromString<AnalysisInput>(it.getString("input_json"))
@@ -659,10 +691,11 @@ class KernelService private constructor(
         }
         val current = records.filter { record ->
             record.status.state == "complete" && record.certificateValid && record.input.snapshot.snapshotId == latest.snapshot.snapshotId &&
-                record.input.context.configurationDigest == latest.context.configurationDigest &&
-                record.input.context.modelDigest == latest.context.modelDigest &&
-                record.input.context.dependencyDigest == latest.context.dependencyDigest &&
-                record.input.context.toolchainDigest == latest.context.toolchainDigest &&
+                (if (plan == null) record.input.context.configurationDigest == latest.context.configurationDigest &&
+                    record.input.context.modelDigest == latest.context.modelDigest &&
+                    record.input.context.dependencyDigest == latest.context.dependencyDigest &&
+                    record.input.context.toolchainDigest == latest.context.toolchainDigest
+                else plan.definition.slots.any { it.state == "pending" && it.identity == contextIdentity(record.input) }) &&
                 record.input.context.fullProject && record.input.snapshot.scopeExclusions.isEmpty() && record.input.snapshot.unknownInputs.isEmpty()
         }
         val obligations = records.flatMap { record -> record.input.requiredRuleIds.map { record.input.context.scope to it } }.distinct()
@@ -689,8 +722,10 @@ class KernelService private constructor(
                     continue
                 }
                 if (finding.severity !in config.blockingSeverities) continue
+                val currentConfiguration = if (plan == null) latest.context.configurationDigest else
+                    plan.definition.slots.firstOrNull { it.identity?.context == record.input.context.scope }?.identity?.configurationDigest
                 if (finding.disposition in setOf("accepted", "suppressed", "disabled", "baselined") &&
-                    record.certificateValid && record.input.context.configurationDigest == latest.context.configurationDigest) continue
+                    record.certificateValid && record.input.context.configurationDigest == currentConfiguration) continue
                 val recheck = current.lastOrNull {
                     it.status.sequence >= record.status.sequence && it.input.context.scope == finding.context &&
                         finding.ruleId in it.input.requiredRuleIds &&

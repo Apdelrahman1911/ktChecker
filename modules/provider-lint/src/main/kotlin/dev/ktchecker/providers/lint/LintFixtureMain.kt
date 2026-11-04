@@ -35,6 +35,11 @@ object LintFixtureMain {
         val selectedFixture = if (kmp) fixture else fixture.resolve(case)
         val frozen = FixtureSnapshots.materialize(selectedFixture, work)
         onSnapshot(frozen.manifest.snapshotId)
+        val requiredTasks = if (kmp) setOf(
+            options["lint-analysis-task"] ?: throw ExecutionProblem("lint_fixture_exact_tasks_required", "Select the actual qualified Android variant analysis task"),
+            options["lint-report-task"] ?: throw ExecutionProblem("lint_fixture_exact_tasks_required", "Select the actual qualified Android variant report task"),
+        ).also { if (it.size != 2) throw ExecutionProblem("lint_fixture_exact_tasks_required", "Distinct Android analysis and report model task paths are required") }
+        else emptySet()
         val projectJava = if (kmp) fixtureProjectJava(options["java-home"]) else null
         projectJava?.verifyVersion(AnalysisInput(frozen.manifest, frozen.root.toString(),
             outputRoot = work.resolve("outputs").toString()), frozen.verify)
@@ -46,7 +51,7 @@ object LintFixtureMain {
             else setOf("ktc.android.lint.ContentDescription", "ktc.android.lint.HardcodedText")
         val executable = if (kmp) Path.of(requireNotNull(options["gradle"])).toAbsolutePath().toRealPath()
             else Path.of(System.getProperty("java.home"), "bin", if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java").toRealPath()
-        val command = if (kmp) gradleFixtureArguments(listOf("lint"), case) +
+        val command = if (kmp) gradleFixtureArguments(requiredTasks.toList(), case) +
             listOf("-Dorg.gradle.java.home=${requireNotNull(projectJava).home}") else listOf(
             "-Xmx512m", "-cp", classpath.joinToString(File.pathSeparator), "com.android.tools.lint.Main",
             "--check", "ContentDescription,HardcodedText", "--xml", "{output}/lint-results.xml", "--exitcode", "--fullpath", "--offline", "{snapshot}")
@@ -60,14 +65,23 @@ object LintFixtureMain {
         val execution = TrustedExecution(executable.toString(), command, true, fileDigest(executable),
             timeoutMillis = if (kmp) 3_600_000 else 120000, maxOutputBytes = 8_388_608,
             environment = projectJava?.environment(lintEnvironmentKeys) ?: lintEnvironment())
-        val context = AnalysisContext(RuleContext("android", if (kmp) "androidMain" else "main", ":fixture", if (kmp) "androidMain" else "xml"),
+        val scope = RuleContext("android", if (kmp) "androidMain" else "main", if (kmp) ":" else ":fixture", if (kmp) "androidMain" else "xml")
+        // Fixed fixture producer declarations only; the production adapter receives exact files,
+        // never this directory-prefix enumeration or an inferred arbitrary project model.
+        val declaredRoots = mapOf("src/androidMain/kotlin/" to "androidMain", "src/commonMain/kotlin/" to "commonMain") +
+            (if (case == "new-api") mapOf("negative/new-api/androidMain/" to "androidMain") else emptyMap())
+        val sourceSetByFile = if (kmp) frozen.manifest.files.filter { it.path.endsWith(".kt") }.mapNotNull { file ->
+            declaredRoots.entries.singleOrNull { file.path.startsWith(it.key) }?.let { file.path to it.value }
+        }.toMap() else frozen.manifest.files.associate { it.path to "main" }
+        val modelDigest = Digests.sha256("fixture-lint-model/v2\n${frozen.manifest.snapshotId}\n${scope.id}\n$case\n" +
+            Digests.canonical(ContractJson.encodeToJsonElement(sourceSetByFile)) + "\n" + requiredTasks.sorted().joinToString("\n"))
+        val compilationModel = ExactCompilationModel(scope, modelDigest, sourceSetByFile)
+        val context = AnalysisContext(scope,
             compilerVersion = if (kmp) "2.4.21" else null, classpath = allArtifacts,
-            modelDigest = Digests.sha256("fixture-lint-model/v1|${frozen.manifest.snapshotId}|$case|$kmp"),
+            modelDigest = modelDigest,
             dependencyDigest = toolchain, toolchainDigest = toolchain,
             configurationDigest = Digests.sha256("fixture-lint-policy/v1|$case"), fullProject = true,
-            compilationFiles = frozen.manifest.files.map { it.path }.filter { !kmp ||
-                it.startsWith("src/androidMain/") || it.startsWith("src/commonMain/") ||
-                (case == "new-api" && it.startsWith("negative/new-api/androidMain/")) })
+            compilationFiles = sourceSetByFile.keys.sorted())
         val input = AnalysisInput(frozen.manifest, frozen.root.toString(), context, selected.toList(),
             execution = execution, outputRoot = work.resolve("outputs").toString())
         val verify = {
@@ -80,8 +94,7 @@ object LintFixtureMain {
             input.analysisKey(), verify, if (kmp) ::prepareGradleOutput else { _: Path -> }))
         val plan = LintRunPlan("32.3.1", listOf(registry), selected,
             reportPath = if (kmp) "build/reports/lint-results.xml" else "lint-results.xml",
-            sourceSets = if (kmp) mapOf("src/androidMain/" to "androidMain", "negative/new-api/androidMain/" to "androidMain") else emptyMap(),
-            requiredTaskPrefixes = if (kmp) setOf("lint") else emptySet())
+            compilationModel = compilationModel, mode = if (kmp) "gradle" else "standalone", requiredTaskPaths = requiredTasks)
         var attempt: ProcessOutcome? = null
         val provider = AndroidLintProvider(authority, plan, IsolatedProcessRunner { attempt = it }).analyze(input)
         val expected = if (kmp) setOf("NewApi") else setOf("ContentDescription", "HardcodedText")
@@ -98,7 +111,9 @@ object LintFixtureMain {
                 "Explicit fixture expectation: " + if (expectFindings) expected.joinToString() else "no selected IDs",
                 "Execution output digest: " + Digests.sha256((attempt?.stdout ?: "") + "\n" + (attempt?.stderr ?: "")),
                 if (kmp) "Project JDK 25 explicitly selected, pinned and version-probed; broker JVM is not the project toolchain." else "Standalone XML controls use the pinned isolated Lint JVM.",
-                "No per-ID corpus/precision qualification or full inventory release coverage claimed."))
+                "Exact per-file source-set membership and model scope bind the explicit fixture producer model, not a general project importer.",
+                "No per-ID corpus/precision qualification or full inventory release coverage claimed."),
+            modelBinding = FixtureModelBinding(scope, modelDigest, sourceSetByFile, requiredTasks.sorted()))
     }
 
     private val lintEnvironmentKeys = listOf("JAVA_HOME", "ANDROID_HOME", "ANDROID_SDK_ROOT", "GRADLE_USER_HOME", "HOME", "DEVELOPER_DIR")

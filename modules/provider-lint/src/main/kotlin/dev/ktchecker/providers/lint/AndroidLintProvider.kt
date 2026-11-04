@@ -17,11 +17,12 @@ data class LintRunPlan(
         "32.5.0" -> "9.5.0"
         else -> lintVersion
     },
-    val sourceSets: Map<String, String> = emptyMap(),
+    val compilationModel: ExactCompilationModel? = null,
     val excludedPathPrefixes: Set<String> = setOf("build/", "src/test/", "src/androidTest/"),
     val explicitlyIncludedPaths: Set<String> = emptySet(),
     val disabledRuleIds: Set<String> = emptySet(),
-    val requiredTaskPrefixes: Set<String> = emptySet(),
+    val mode: String = "standalone",
+    val requiredTaskPaths: Set<String> = emptySet(),
 )
 
 class AndroidLintProvider(
@@ -30,9 +31,10 @@ class AndroidLintProvider(
     private val runner: IsolatedProcessRunner = IsolatedProcessRunner(),
 ) : AnalysisProvider {
     private val plan = plan?.let { selected -> selected.copy(registries = selected.registries.toList(), checkedRuleIds = selected.checkedRuleIds.toSet(),
-        sourceSets = selected.sourceSets.toMap(), excludedPathPrefixes = selected.excludedPathPrefixes.toSet(),
+        compilationModel = selected.compilationModel?.let { it.copy(sourceSetByFile = it.sourceSetByFile.toMap()) },
+        excludedPathPrefixes = selected.excludedPathPrefixes.toSet(),
         explicitlyIncludedPaths = selected.explicitlyIncludedPaths.toSet(), disabledRuleIds = selected.disabledRuleIds.toSet(),
-        requiredTaskPrefixes = selected.requiredTaskPrefixes.toSet()) }
+        requiredTaskPaths = selected.requiredTaskPaths.toSet()) }
     override val id = "android-lint"
     override val version: String get() = plan?.lintVersion ?: "32.3.1/32.5.0"
     override val supportedRuleIds: Set<String> get() = LintCatalog.ruleIds
@@ -50,8 +52,23 @@ class AndroidLintProvider(
                 input.context.toolchainDigest, input.context.configurationDigest).any { it == null || !Digests.valid(it) }) {
             return unavailable("lint_resolved_frozen_model_required")
         }
+        val compilationSources: ExactCompilationSources
         try {
+            compilationSources = ExactCompilationSources(input, activePlan.compilationModel)
             safeRelativePath(activePlan.reportPath)
+            when (activePlan.mode) {
+                "standalone" -> if (activePlan.requiredTaskPaths.isNotEmpty()) {
+                    throw ExecutionProblem("lint_execution_mode_mismatch", "Standalone Lint does not use Gradle task proof")
+                }
+                "gradle" -> {
+                    ExactGradleTaskProof.requireSelection(input.execution?.arguments.orEmpty(), activePlan.requiredTaskPaths,
+                        input.context.scope.module)
+                    if (activePlan.requiredTaskPaths.any { it.substringAfterLast(':') == "lint" }) {
+                        throw ExecutionProblem("lint_aggregate_task_not_detector_proof", "An aggregate lint task is not a selected variant detector task")
+                    }
+                }
+                else -> throw ExecutionProblem("lint_execution_mode_unsupported", "Explicit Lint execution mode is required")
+            }
             if (activePlan.registries.isEmpty() || activePlan.registries.map { it.registry }.toSet().size != activePlan.registries.size) {
                 throw ExecutionProblem("lint_registry_plan_invalid", "Exact artifact registry set is required")
             }
@@ -105,18 +122,20 @@ class AndroidLintProvider(
                     if (issue.locations.isEmpty()) throw ExecutionProblem("lint_location_unavailable", "Provider did not supply a captured source location")
                     val locations = issue.locations.map { sources.location(it.file, it.line, it.column, it.endLine, it.endColumn) }
                     val primary = locations.first()
-                    if (input.context.compilationFiles?.let { primary.path !in it } == true) {
-                        throw ExecutionProblem("lint_location_outside_compilation", "Captured file is not a member of the selected Android model")
+                    for (location in locations) {
+                        if (location.path !in activePlan.explicitlyIncludedPaths &&
+                            activePlan.excludedPathPrefixes.any { location.path.startsWith(it) }) {
+                            throw ExecutionProblem("lint_excluded_source_reported:${location.path}", "Provider reported an explicitly excluded source")
+                        }
                     }
-                    if (primary.path !in activePlan.explicitlyIncludedPaths &&
-                        activePlan.excludedPathPrefixes.any { primary.path.startsWith(it) }) {
-                        errors += "lint_excluded_source_reported:${primary.path}"
-                        raw += RawDiagnostic(issue.message, issue.severity, issue.upstreamId, primary)
-                        continue
+                    val importedSets = locations.map { compilationSources.sourceSet(it.path) }
+                    // A common-source location does not change the selected analysis/coverage tuple.
+                    val scope = input.context.scope
+                    val ownershipEvidence = locations.zip(importedSets).distinctBy { it.first.path }.map { (location, sourceSet) ->
+                        Evidence("compilation_source_membership",
+                            "Imported source set $sourceSet; selected analysis context ${scope.id}; immutable snapshot ${input.snapshot.snapshotId}; informational ownership only, not cross-context suppression authority.",
+                            location.path, input.context.modelDigest)
                     }
-                    val set = activePlan.sourceSets.entries.filter { primary.path.startsWith(it.key) }
-                        .maxByOrNull { it.key.length }?.value ?: input.context.scope.sourceSet
-                    val scope = input.context.scope.copy(sourceSet = set)
                     val artifact = activePlan.registries.single { it.registry == rule.registry }.artifact
                     findings += Finding(
                         rule.ruleId, rule.title, issue.message,
@@ -129,7 +148,7 @@ class AndroidLintProvider(
                                 activePlan.reportPath, reportDigest),
                             Evidence("provider_artifact", "${artifact.coordinate}; ${rule.registry}; upstream ${issue.upstreamId}",
                                 artifact.coordinate, artifact.digest),
-                        ),
+                        ) + ownershipEvidence,
                         fixHint = "Inspect the issue-specific provider evidence; re-run the same frozen Android variant after the repair.",
                         verification = listOf(Verification(expected = "No ${issue.upstreamId} in the same Android variant", command = attempt.command)),
                         upstreamId = issue.upstreamId, relatedLocations = locations.drop(1),
@@ -147,13 +166,13 @@ class AndroidLintProvider(
         if (attempt.stderr.contains("Exception in thread") || attempt.stderr.contains("Could not initialize class")) {
             errors += "lint_provider_crashed"
         }
-        if (activePlan.requiredTaskPrefixes.isNotEmpty()) {
-            val tasks = Regex("(?m)^> Task (:[^ ]+)(?: (UP-TO-DATE|FROM-CACHE|SKIPPED|NO-SOURCE|FAILED))?\\s*$")
-                .findAll(attempt.stdout).map { it.groupValues[1].substringAfterLast(':') to it.groupValues[2] }.toList()
-            if (tasks.none { (name, outcome) -> name != "lint" && activePlan.requiredTaskPrefixes.any { name.startsWith(it) } &&
-                    outcome in setOf("", "FAILED") }) errors += "lint_task_execution_unverified"
-            if (tasks.any { (name, outcome) -> outcome == "FAILED" && activePlan.requiredTaskPrefixes.none { name.startsWith(it) } }) {
-                errors += "lint_unrelated_task_failure"
+        if (activePlan.mode == "gradle") {
+            val tasks = attempt.stdout.lineSequence().mapNotNull { ExactGradleTaskProof.parseLine(it.trimEnd()) }.toList()
+            val missing = ExactGradleTaskProof.missingExecution(activePlan.requiredTaskPaths, tasks)
+            if (missing.isNotEmpty()) errors += listOf("lint_task_execution_unverified") + missing.map { "lint_task_not_executed:$it" }
+            if (ExactGradleTaskProof.hasUnrelatedFailure(activePlan.requiredTaskPaths, tasks)) errors += "lint_unrelated_task_failure"
+            if (attempt.exitCode == 0 && attempt.stdout.lineSequence().none { it.startsWith("BUILD SUCCESSFUL") }) {
+                errors += "lint_gradle_completion_unverified"
             }
         }
         val rows = requested.map { ruleId ->

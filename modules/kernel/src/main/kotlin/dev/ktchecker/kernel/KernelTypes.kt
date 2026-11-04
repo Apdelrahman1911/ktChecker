@@ -3,6 +3,8 @@ package dev.ktchecker.kernel
 import dev.ktchecker.contracts.AnalysisInput
 import dev.ktchecker.contracts.PREVIEW_CONTRACT
 import dev.ktchecker.contracts.ProviderResult
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
 /** Preview API, NOT the protocol-1 host/observation certification described in the design. */
@@ -37,6 +39,7 @@ import kotlinx.serialization.Serializable
     val input: AnalysisInput,
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable data class ReviewStatus(
     val reviewId: String,
     val clientId: String,
@@ -48,6 +51,9 @@ import kotlinx.serialization.Serializable
     val reasons: List<String> = emptyList(),
     val cancelled: Boolean = false,
     val contractVersion: String = PREVIEW_CONTRACT,
+    /** Present on the required plan_accepted event; binds every child, never an accepted prefix. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val parentPlan: ParentPlanStatus? = null,
 )
 
 /** Payload is immutable canonical JSON; its digest binds insertion and observation receipts. */
@@ -129,6 +135,17 @@ import kotlinx.serialization.Serializable
 interface SnapshotGate {
     fun <T> withCurrentSnapshot(input: AnalysisInput, action: (SnapshotCheck) -> T): T
 
+    /**
+     * One composite config -> source fence over the COMPLETE context vector. Implementations must
+     * not loop independent scalar fences: none would span the eventual guarded action together.
+     * Scalar-only adapters cannot authorize a multi-context plan by accident.
+     * The first supplied input is the latest child/scalar representative; independently verify it
+     * and supply its scalar SnapshotCheck fields alongside the complete context-indexed vector.
+     */
+    fun <T> withCurrentSnapshots(inputs: List<AnalysisInput>, action: (SnapshotCheck) -> T): T =
+        if (inputs.size == 1) withCurrentSnapshot(inputs.single(), action)
+        else action(SnapshotCheck(false, reasons = listOf("snapshot_vector_authority_unavailable")))
+
     companion object {
         val UNAVAILABLE: SnapshotGate = object : SnapshotGate {
             override fun <T> withCurrentSnapshot(input: AnalysisInput, action: (SnapshotCheck) -> T): T =
@@ -149,6 +166,10 @@ interface SnapshotGate {
     val authoritative: Boolean = false,
     val reasons: List<String> = emptyList(),
     val validUntilEpochMillis: Long? = null,
+    /** Trusted vector attestation, not identities copied from unchecked request inputs. */
+    val contextIdentities: List<PlanContextIdentity> = emptyList(),
+    val sourceBindingDigest: String? = null,
+    val generatedInputsDigest: String? = null,
 )
 
 @Serializable data class KernelConfig(

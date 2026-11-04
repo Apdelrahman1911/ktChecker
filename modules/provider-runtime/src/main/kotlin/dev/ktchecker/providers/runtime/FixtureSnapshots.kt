@@ -58,6 +58,16 @@ object FixtureSnapshots {
     val assertions: List<String> = emptyList(),
     val limitations: List<String> = listOf("Fixture driver success is not runtime qualification or release coverage.",
         "Same-user permissions and trusted process groups are cooperative isolation, not a security sandbox."),
+    val modelBinding: FixtureModelBinding? = null,
+)
+
+/** Explicit fixture producer model receipt, not a general project-model import attestation. */
+@Serializable data class FixtureModelBinding(
+    val scope: RuleContext,
+    val modelDigest: String,
+    val sourceSetByFile: Map<String, String>,
+    val requiredTaskPaths: List<String>,
+    val provenance: String = "explicit_fixture_producer_model_not_general_project_import",
 )
 
 fun writeFixtureEnvelope(path: Path, envelope: FixtureCheckEnvelope) {

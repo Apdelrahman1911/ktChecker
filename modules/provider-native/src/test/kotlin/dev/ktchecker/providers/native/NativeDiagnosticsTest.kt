@@ -82,8 +82,129 @@ class NativeDiagnosticsTest {
         assertTrue(parsed.tasks.take(4).none { it.actuallyExecuted })
         assertTrue(parsed.tasks.takeLast(2).all { it.actuallyExecuted })
         assertTrue(parsed.buildSuccessful)
-        assertEquals(setOf("compileCommonMainKotlinMetadata", "compileKotlinIosArm64"), NativeRunPlan("iosArm64", emptyList()).requiredTasks)
-        assertEquals(setOf("compileCommonMainKotlinMetadata", "compileKotlinIosSimulatorArm64"), NativeRunPlan("iosSimulatorArm64", emptyList()).requiredTasks)
+        assertTrue(NativeRunPlan("iosArm64", emptyList()).requiredTasks.isEmpty())
+        assertTrue(NativeRunPlan("iosSimulatorArm64", emptyList()).requiredTasks.isEmpty())
+        assertNull(NativeRunPlan("iosArm64", emptyList()).compilationModel)
+    }
+
+    @Test fun `task admission and proof require exact selected module common and ios paths`() {
+        for ((target, task) in listOf("iosArm64" to "compileKotlinIosArm64", "iosSimulatorArm64" to "compileKotlinIosSimulatorArm64")) {
+            val required = setOf(":selected:compileCommonMainKotlinMetadata", ":selected:$task")
+            val plan = NativeRunPlan(target, emptyList(), requiredTasks = required)
+            requireNativeTaskSelection(plan, required.toList(), ":selected")
+            assertEquals("gradle_exact_task_not_selected", assertFailsWith<ExecutionProblem> {
+                requireNativeTaskSelection(plan, required.map { it.replace(":selected:", ":other:") }, ":selected")
+            }.code)
+            val unrelated = NativeDiagnosticParser.parse(
+                "> Task :other:compileCommonMainKotlinMetadata\n> Task :other:$task\nBUILD SUCCESSFUL", "")
+            assertEquals(required.toList(), ExactGradleTaskProof.missingExecution(required, unrelated.tasks))
+            val failed = NativeDiagnosticParser.parse("> Task :selected:$task\n> Task :other:$task FAILED", "")
+            assertTrue(ExactGradleTaskProof.hasUnrelatedFailure(required, failed.tasks))
+        }
+    }
+
+    @Test fun `partial or basename Native task models do not prove common and selected ios compilation`() {
+        assertEquals("native_required_task_model_incomplete", assertFailsWith<ExecutionProblem> {
+            val plan = NativeRunPlan("iosArm64", emptyList(), requiredTasks = setOf(":selected:compileKotlinIosArm64"))
+            requireNativeTaskSelection(plan, plan.requiredTasks.toList(), ":selected")
+        }.code)
+        assertEquals("gradle_exact_task_model_required", assertFailsWith<ExecutionProblem> {
+            val plan = NativeRunPlan("iosArm64", emptyList(), requiredTasks = setOf("compileKotlinIosArm64"))
+            requireNativeTaskSelection(plan, plan.requiredTasks.toList(), ":selected")
+        }.code)
+    }
+
+    @Test fun `pure Native factory keeps common file findings in the exact selected ios leaf context`() {
+        val fingerprints = mutableSetOf<String>()
+        for (target in listOf("iosArm64", "iosSimulatorArm64")) {
+            val input = findingInput(target)
+            val model = ExactCompilationModel(input.context.scope, input.context.modelDigest!!,
+                mapOf("src/commonMain/Api.kt" to "commonMain"))
+            val factory = NativeFindingFactory(input, NativeRunPlan(target, emptyList(), compilationModel = model))
+            val rule = NativeCatalog.byName.getValue("ACTUAL_WITHOUT_EXPECT")
+            val diagnostic = NativeDiagnostic(rule.upstreamId, "error", "synthetic factory regression", "src/commonMain/Api.kt", 2, 3)
+            val location = SourceLocation("src/commonMain/Api.kt", input.snapshot.files.first().digest, 2, 3)
+            val finding = factory.create(rule, diagnostic, location, Digests.sha256("synthetic output, never executed"), emptyList())
+            assertEquals(input.context.scope, finding.context)
+            assertEquals("iosMain", finding.context.sourceSet)
+            assertEquals(location, finding.location)
+            assertEquals(input.analysisKey(), finding.semanticDigest)
+            assertEquals("kotlin-native", finding.providerId)
+            val ownership = finding.evidence.single { it.kind == "compilation_source_membership" }
+            assertEquals(location.path, ownership.artifactRef)
+            assertEquals(model.modelDigest, ownership.digest)
+            assertContains(ownership.summary, "Imported source set commonMain;")
+            assertContains(ownership.summary, "selected analysis context ${input.context.scope.id};")
+            assertContains(ownership.summary, "immutable snapshot ${input.snapshot.snapshotId};")
+            assertContains(ownership.summary, "informational ownership only, not cross-context suppression authority")
+            fingerprints += finding.fingerprint
+        }
+        assertEquals(2, fingerprints.size, "The same common location in distinct consumers must not merge contexts")
+    }
+
+    @Test fun `pure Native factory cannot normalize a captured sibling or a different imported scope`() {
+        val input = findingInput("iosArm64")
+        val model = ExactCompilationModel(input.context.scope, input.context.modelDigest!!,
+            mapOf("src/commonMain/Api.kt" to "commonMain"))
+        val plan = NativeRunPlan("iosArm64", emptyList(), compilationModel = model)
+        val factory = NativeFindingFactory(input, plan)
+        val rule = NativeCatalog.byName.getValue("ACTUAL_WITHOUT_EXPECT")
+        val diagnostic = NativeDiagnostic(rule.upstreamId, "error", "synthetic sibling regression", "src/otherMain/Sibling.kt", 1, 0)
+        val sibling = SourceLocation("src/otherMain/Sibling.kt", input.snapshot.files.last().digest)
+        assertEquals("location_outside_compilation", assertFailsWith<ExecutionProblem> {
+            factory.create(rule, diagnostic, sibling, Digests.sha256("synthetic output, never executed"), emptyList())
+        }.code)
+        assertEquals("compilation_model_binding_mismatch", assertFailsWith<ExecutionProblem> {
+            NativeFindingFactory(input, plan.copy(compilationModel = model.copy(scope = model.scope.copy(sourceSet = "commonMain"))))
+        }.code)
+    }
+
+    @Test fun `pure Native factory refuses findings outside an exact requested subset`() {
+        val selected = NativeCatalog.byName.getValue("ACTUAL_WITHOUT_EXPECT")
+        val unselected = NativeCatalog.byName.getValue("TYPE_MISMATCH")
+        val input = findingInput("iosArm64", listOf(selected.ruleId))
+        val model = ExactCompilationModel(input.context.scope, input.context.modelDigest!!,
+            mapOf("src/commonMain/Api.kt" to "commonMain"))
+        val factory = NativeFindingFactory(input, NativeRunPlan("iosArm64", emptyList(), compilationModel = model))
+        val diagnostic = NativeDiagnostic(unselected.upstreamId, "error", "synthetic unselected compiler error", "src/commonMain/Api.kt", 2, 3)
+        assertEquals("native_unselected_diagnostic:${unselected.ruleId}", assertFailsWith<ExecutionProblem> {
+            factory.create(unselected, diagnostic, SourceLocation("src/commonMain/Api.kt", input.snapshot.files.first().digest, 2, 3),
+                Digests.sha256("synthetic output, never executed"), emptyList())
+        }.code)
+    }
+
+    @Test fun `pure Native subset normalizer retains mixed unselected compiler output without selected certificates`() {
+        val selected = NativeCatalog.byName.getValue("ACTUAL_WITHOUT_EXPECT")
+        val unselectedError = NativeCatalog.byName.getValue("TYPE_MISMATCH")
+        val unselectedWarning = NativeCatalog.byName.getValue("DEPRECATION")
+        val input = findingInput("iosArm64", listOf(selected.ruleId))
+        val model = ExactCompilationModel(input.context.scope, input.context.modelDigest!!,
+            mapOf("src/commonMain/Api.kt" to "commonMain"))
+        val factory = NativeFindingFactory(input, NativeRunPlan("iosArm64", emptyList(), compilationModel = model))
+        val location = SourceLocation("src/commonMain/Api.kt", input.snapshot.files.first().digest, 2, 3)
+        val digest = Digests.sha256("synthetic output, never executed")
+        val selectedDiagnostic = NativeDiagnostic(selected.upstreamId, "warning", "synthetic selected warning", location.path, 2, 3)
+        val otherError = NativeDiagnostic(unselectedError.upstreamId, "error", "synthetic unselected error", location.path, 2, 3)
+        val otherWarning = NativeDiagnostic(unselectedWarning.upstreamId, "warning", "synthetic unselected warning", location.path, 2, 3)
+        var resolved = 0
+        val mixed = factory.normalize(listOf(selectedDiagnostic, otherError, otherWarning), digest, emptyList()) {
+            resolved++
+            location
+        }
+        assertEquals(1, resolved, "Unselected compiler IDs cannot pass through finding construction")
+        assertEquals(listOf(selected.ruleId), mixed.findings.map { it.ruleId })
+        assertEquals(listOf(unselectedError.upstreamId, unselectedWarning.upstreamId), mixed.rawDiagnostics.map { it.upstreamId })
+        assertTrue(mixed.errors.isEmpty(), "Known unrelated compiler output is an incomplete selection, not malformed transport")
+        assertEquals(listOf("native_unselected_diagnostic:${unselectedError.ruleId}", "native_unselected_diagnostic:${unselectedWarning.ruleId}"), mixed.selectionGaps)
+        assertFalse(mixed.exactSelectedOutput)
+        assertTrue(mixed.hasReportedError, "A raw unselected error still prevents clean selected-output evidence")
+        val warningOnly = factory.normalize(listOf(otherWarning), digest, emptyList()) { fail("Unselected warning must stay raw") }
+        assertTrue(warningOnly.errors.isEmpty())
+        assertFalse(warningOnly.exactSelectedOutput)
+        assertFalse(warningOnly.hasReportedError)
+        val selectedOnly = factory.normalize(listOf(selectedDiagnostic), digest, emptyList()) { location }
+        assertTrue(selectedOnly.exactSelectedOutput)
+        assertTrue(selectedOnly.rawDiagnostics.isEmpty())
     }
 
     @Test fun `Linux host absence is explicit for every rule in both actual iOS target contexts`() {
@@ -131,5 +252,16 @@ class NativeDiagnosticsTest {
         Path.of(System.getProperty("java.io.tmpdir")).toString(),
         AnalysisContext(RuleContext(target, "commonMain"), compilerVersion = "2.4.21"),
         execution = TrustedExecution("/bin/true", approved = true),
+    )
+
+    /** In-memory factory inputs only: no OS spoof, executable, source capture, or Native run. */
+    private fun findingInput(target: String, requested: List<String> = emptyList()): AnalysisInput = AnalysisInput(
+        SnapshotManifest(Digests.sha256("synthetic factory descriptor, never executed"), "fixture", "native-factory",
+            listOf("src/commonMain/Api.kt", "src/otherMain/Sibling.kt").map { SnapshotFile(it, Digests.sha256(it), 1) }),
+        "/unused-pure-factory", AnalysisContext(RuleContext(target, "iosMain", ":selected", "main"),
+            compilerVersion = "2.4.21", modelDigest = Digests.sha256("synthetic imported model"),
+            dependencyDigest = Digests.sha256("synthetic dependencies"), toolchainDigest = Digests.sha256("synthetic toolchain"),
+            configurationDigest = Digests.sha256("synthetic configuration"), fullProject = true,
+            compilationFiles = listOf("src/commonMain/Api.kt")), requested,
     )
 }

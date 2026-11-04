@@ -132,6 +132,16 @@ internal class Ledger(val root: Path, config: KernelConfig) {
                 UNIQUE(client_id,idempotency_key),UNIQUE(client_id,patch_id),UNIQUE(client_id,sequence),
                 FOREIGN KEY(client_id) REFERENCES clients(client_id),FOREIGN KEY(work_key) REFERENCES work(work_key))""",
             "CREATE INDEX IF NOT EXISTS reviews_work ON reviews(work_key)",
+            """CREATE TABLE IF NOT EXISTS parent_plans(
+                plan_id TEXT PRIMARY KEY,client_id TEXT NOT NULL,patch_id TEXT NOT NULL,idempotency_key TEXT NOT NULL,
+                request_hash TEXT NOT NULL,definition_json TEXT NOT NULL,plan_digest TEXT NOT NULL,
+                review_frontier INTEGER NOT NULL,cancelled INTEGER NOT NULL DEFAULT 0,
+                UNIQUE(client_id,patch_id),UNIQUE(client_id,idempotency_key),
+                FOREIGN KEY(client_id) REFERENCES clients(client_id))""",
+            """CREATE TABLE IF NOT EXISTS plan_slots(
+                plan_id TEXT NOT NULL,slot_id TEXT NOT NULL,review_id TEXT NOT NULL UNIQUE,
+                PRIMARY KEY(plan_id,slot_id),FOREIGN KEY(plan_id) REFERENCES parent_plans(plan_id),
+                FOREIGN KEY(review_id) REFERENCES reviews(review_id))""",
             """CREATE TABLE IF NOT EXISTS work_progress(
                 work_key TEXT NOT NULL,payload_digest TEXT NOT NULL,payload_json TEXT NOT NULL,
                 sequence INTEGER NOT NULL,byte_count INTEGER NOT NULL,
