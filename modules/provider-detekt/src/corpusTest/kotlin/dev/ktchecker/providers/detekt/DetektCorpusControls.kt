@@ -9,8 +9,12 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.json.*
 
-/** Closed, disjoint plans for the unchanged ten fixtures; no implicit or full-corpus selector. */
-internal class DetektCorpusCohort private constructor(val name: String, analysesByRule: Map<String, Int>) {
+/** Six closed, disjoint plans; old ten/91 identities stay byte-identical. No aggregate selector. */
+internal class DetektCorpusCohort private constructor(val name: String, analysesByRule: Map<String, Int>,
+    private val expansionPlan: String? = null) {
+    val expansion: Boolean get() = expansionPlan != null
+    val evidenceStem: String get() = if (expansion) "syntax-expansion" else "syntax-corpus"
+    val contextId: String get() = "detekt-$evidenceStem-$name"
     val analysesByRule: Map<String, Int> = Collections.unmodifiableMap(LinkedHashMap(analysesByRule))
     val invocationsByKind: Map<CorpusInvocationKind, Int> = Collections.unmodifiableMap(linkedMapOf(
         CorpusInvocationKind.ANALYSIS to this.analysesByRule.values.sum(),
@@ -31,20 +35,38 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
     }
 
     // Keep the exceptions plan's exact identity; changed source/images still require new evidence.
-    val planIdentity: String get() = buildString {
+    val planIdentity: String get() = expansionPlan ?: buildString {
         append("detekt-corpus-cohort/1\n$name\n")
         analysesByRule.forEach { (rule, count) -> append("$rule=$count\n") }
         invocationsByKind.forEach { (kind, count) -> append("${kind.id}=$count\n") }
-        append("full_authoring_scope=$FULL_AUTHORED_RULES/$FULL_AUTHORED_ANALYSES/not_run\n")
+        append("full_authoring_scope=$BASELINE_AUTHORED_RULES/$BASELINE_AUTHORED_ANALYSES/not_run\n")
         append("limits=$MAX_INVOCATIONS/$MAX_AGGREGATE_MILLIS/$MAX_CHILD_MILLIS\n")
     }
+
+    val expectedSchedule: List<CorpusInvocationSpec>? = if (!expansion) null else
+        Collections.unmodifiableList(buildList {
+            this@DetektCorpusCohort.analysesByRule.keys.forEachIndexed { ruleIndex, rule ->
+                (listOf("positive", "negative", "configuration", "version", "suppression", "regression") +
+                    DetektCorpusExpansionPins.controlIds.getValue(rule)).forEach { case ->
+                    add(CorpusInvocationSpec(CorpusInvocationKind.ANALYSIS, rule, case))
+                    if (case == "positive") add(CorpusInvocationSpec(CorpusInvocationKind.AUTHORIZATION_DENIAL, rule, "configuration-permit-replay"))
+                    if (case == "version") {
+                        if (ruleIndex == 0) add(CorpusInvocationSpec(CorpusInvocationKind.CLI_PROBE, rule, "cli-version-probe"))
+                        for (target in listOf("common", "native"))
+                            add(CorpusInvocationSpec(CorpusInvocationKind.ABSTENTION, rule, "unsupported-$target"))
+                    }
+                }
+            }
+        }.also { require(it.size == plannedInvocations) })
 
     companion object {
         const val MAX_INVOCATIONS = 40
         const val MAX_AGGREGATE_MILLIS = 1_200_000L
         const val MAX_CHILD_MILLIS = 60_000L
-        const val FULL_AUTHORED_RULES = 10
-        const val FULL_AUTHORED_ANALYSES = 91
+        const val BASELINE_AUTHORED_RULES = 10
+        const val BASELINE_AUTHORED_ANALYSES = 91
+        const val FULL_AUTHORED_RULES = 16
+        const val FULL_AUTHORED_ANALYSES = 145
         val EXCEPTIONS_CORE = DetektCorpusCohort("exceptions-core-v1", linkedMapOf(
             "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally" to 8,
             "ktc.kotlin.detekt.exceptions.swallowed-exception" to 11,
@@ -64,8 +86,23 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
             "ktc.kotlin.detekt.style.data-class-should-be-immutable" to 9,
             "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public" to 9,
         ))
-        val all: List<DetektCorpusCohort> = Collections.unmodifiableList(listOf(
+        private fun expansion(name: String, rules: Map<String, Int>) =
+            DetektCorpusCohort(name, rules, DetektCorpusExpansionPins.planIdentities.getValue(name))
+        val PERFORMANCE_SHAPES = expansion("performance-shapes-v1", linkedMapOf(
+            "ktc.performance.detekt.performance.for-each-on-range" to 9,
+            "ktc.performance.detekt.performance.unnecessary-init-on-array" to 9,
+            "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression" to 9,
+        ))
+        val PUBLIC_CONTRACT_POLICY = expansion("public-contract-policy-v1", linkedMapOf(
+            "ktc.maintainability.detekt.comments.outdated-documentation" to 9,
+            "ktc.maintainability.detekt.complexity.complex-condition" to 9,
+            "ktc.maintainability.detekt.libraries.forbidden-public-data-class" to 9,
+        ))
+        val baseline: List<DetektCorpusCohort> = Collections.unmodifiableList(listOf(
             EXCEPTIONS_CORE, ITERATION_CORE, VALUE_CORE, OPT_IN_POLICY,
+        ))
+        val all: List<DetektCorpusCohort> = Collections.unmodifiableList(baseline + listOf(
+            PERFORMANCE_SHAPES, PUBLIC_CONTRACT_POLICY,
         ))
         val authoredRuleIds: Set<String> = Collections.unmodifiableSet(linkedSetOf(
             "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally",
@@ -78,9 +115,17 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
             "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression",
             "ktc.kotlin.detekt.style.data-class-should-be-immutable",
             "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public",
+            "ktc.maintainability.detekt.comments.outdated-documentation",
+            "ktc.maintainability.detekt.complexity.complex-condition",
+            "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+            "ktc.performance.detekt.performance.for-each-on-range",
+            "ktc.performance.detekt.performance.unnecessary-init-on-array",
+            "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
         ))
 
         init {
+            require(baseline.flatMap { it.analysesByRule.keys }.size == BASELINE_AUTHORED_RULES)
+            require(baseline.sumOf { it.analysesByRule.values.sum() } == BASELINE_AUTHORED_ANALYSES)
             val selected = all.flatMap { it.analysesByRule.keys }
             require(all.map { it.name }.distinct().size == all.size)
             require(selected.size == FULL_AUTHORED_RULES && selected.toSet() == authoredRuleIds)
@@ -88,10 +133,12 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         }
 
         fun selected(name: String?): DetektCorpusCohort = requireNotNull(all.singleOrNull { it.name == name }) {
-            "Real corpus requires one explicit -PdetektCorpusCohort from ${all.map { it.name }}; no implicit/full-ten execution path"
+            "Real corpus requires one explicit -PdetektCorpusCohort from ${all.map { it.name }}; no implicit/full-ten execution path or full-sixteen/aggregate selector"
         }
     }
 }
+
+internal data class CorpusInvocationSpec(val kind: CorpusInvocationKind, val ruleId: String, val caseId: String)
 
 internal enum class CorpusInvocationKind(val id: String) {
     ANALYSIS("detector_analysis"), CLI_PROBE("cli_probe"),
@@ -187,6 +234,11 @@ internal class DetektCorpusBudget(
         }
         require(ruleId in cohort.analysesByRule)
         require(caseId.matches(Regex("[a-z0-9-]+")))
+        cohort.expectedSchedule?.let { schedule ->
+            require(schedule.getOrNull(reserved) == CorpusInvocationSpec(kind, ruleId, caseId)) {
+                "Invocation does not match the exact selected expansion schedule; no reorder, substitution or extra call"
+            }
+        }
         require(reservedByKind.getValue(kind) < cohort.invocationsByKind.getValue(kind)) { "Cohort kind limit reached; no extra call path" }
         require(invocationIdentities.add(Triple(kind, ruleId, caseId))) { "Duplicate invocation is a forbidden retry" }
         if (kind == CorpusInvocationKind.ANALYSIS) {
@@ -238,10 +290,13 @@ internal class DetektCorpusBudget(
             ++observedRuntimeCallbacks
             if (unexpectedProcess.executionConfirmed) ++confirmedExecutions
         }
-        signal = if (unexpectedProcess == null && result.providerId == "detekt" && result.findings.isEmpty() && result.coverage.size == 1 &&
+        signal = if (unexpectedProcess == null && result.providerId == "detekt" && result.status == "partial" &&
+            result.reasons == listOf("detekt_jvm_provider_does_not_qualify_common_or_native_targets") &&
+            result.findings.isEmpty() && result.coverage.size == 1 &&
             result.coverage.single().ruleId == ticket.ruleId &&
             ticket.caseId == "unsupported-${result.coverage.single().context.target}" &&
             result.coverage.all { it.state == "unsupported" && it.provenance == "not_executed" &&
+                it.reason == "detekt_jvm_provider_does_not_qualify_common_or_native_targets" && it.certificateId == null &&
                 !it.implemented && !it.tested && !it.qualified && !it.successful() })
             Signal.PROVIDER_ABSTENTION else Signal.UNVERIFIED
         event("actual_provider_abstention_retained", ticket, buildJsonObject {

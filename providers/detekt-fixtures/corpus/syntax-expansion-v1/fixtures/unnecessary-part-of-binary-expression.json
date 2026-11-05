@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-expansion-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+  "upstream_id": "performance:UnnecessaryPartOfBinaryExpression",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "28b4c8f95c0c8d96abb0dd527660f8cfbab713736359199738d10b844c4492ff",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-performance/src/main/kotlin/dev/detekt/rules/performance/UnnecessaryPartOfBinaryExpression.kt",
+    "source_file_sha256": "4f1e2a18b789aea3de4bfcce320555e42f364e13c2dc499e7cdad8e95e39b14d",
+    "predicate_line_numbers": [
+      35,
+      38,
+      41,
+      44,
+      46,
+      50,
+      53,
+      65
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/performance/UnnecessaryPartOfBinaryExpression",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:15c4589a9a69e64c0e157b4dc5a9f36ca99072b2f5c9b79628fa78e52f5101cc"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "Flatten same-operator && or || child chains, skip an inner same-operator parent, remove all regex whitespace from each leaf text and report the entire outer expression if two texts match.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.binaryparts\n\nfun redundantAny(ready: Boolean, cached: Boolean): Boolean = ready || cached || ready\nfun redundantAll(valid: Boolean, permitted: Boolean): Boolean = valid && permitted && valid\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 61,
+        "end_line": 3,
+        "end_column": 85,
+        "span": "ready || cached || ready",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 64,
+        "end_line": 4,
+        "end_column": 91,
+        "span": "valid && permitted && valid",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Repeated stable Boolean values in distinct OR and AND chains are genuinely redundant without side effects."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.binaryparts\n\nfun distinctAny(ready: Boolean, cached: Boolean): Boolean = ready || cached\nfun distinctAll(valid: Boolean, permitted: Boolean): Boolean = valid && permitted\n"
+    },
+    "expected": [],
+    "intent": "Independent stable Boolean inputs remain semantically different after removing the redundant repeated term."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.binaryparts\n\nfun redundantAny(ready: Boolean, cached: Boolean): Boolean = ready || cached || ready\nfun redundantAll(valid: Boolean, permitted: Boolean): Boolean = valid && permitted && valid\n",
+      "SuppressedCase.kt": "@file:Suppress(\"UnnecessaryPartOfBinaryExpression\")\n\npackage suppressed.corpus.binaryparts\n\nfun redundantAny(ready: Boolean, cached: Boolean): Boolean = ready || cached || ready\nfun redundantAll(valid: Boolean, permitted: Boolean): Boolean = valid && permitted && valid\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 61,
+        "end_line": 3,
+        "end_column": 85,
+        "span": "ready || cached || ready",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 64,
+        "end_line": 4,
+        "end_column": 91,
+        "span": "valid && permitted && valid",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.binaryparts\n\nclass AvailableEvents {\n    private var checks = 0\n    fun poll(): Boolean {\n        checks += 1\n        return checks >= 2\n    }\n}\n\nfun boundedSecondChance(events: AvailableEvents): Boolean = events.poll() || events.poll()\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 11,
+          "column": 60,
+          "end_line": 11,
+          "end_column": 90,
+          "span": "events.poll() || events.poll()",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The second poll changes the result because the receiver tracks calls. Repeated text is not pure/idempotent behavior; retaining both calls is a valid bounded second attempt.",
+      "id": "stateful-second-poll-is-not-redundant",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.binaryparts\n\nfun acceptsEitherSpelling(value: String): Boolean = value == \"a b\" || value == \"ab\"\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 52,
+          "end_line": 3,
+          "end_column": 83,
+          "span": "value == \"a b\" || value == \"ab\"",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Whitespace removal crosses string-literal boundaries: the two valid spellings are not equal predicates. Preserve the raw false positive and its exact range.",
+      "id": "whitespace-inside-string-literals-is-significant",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.binaryparts\n\nfun repeatedButParenthesized(ready: Boolean): Boolean = ready || (ready)\n"
+      },
+      "expected": [],
+      "intent": "The same stable Boolean value is redundantly checked, but parentheses remain part of leaf text. Do not infer logical normalization from an empty report.",
+      "id": "parenthesized-duplicate-is-not-flattened",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    }
+  ],
+  "limitations": [
+    "Exact source-text comparison after whitespace erasure is neither resolved-expression identity nor proof of purity, idempotence, data-flow or short-circuit equivalence.",
+    "Repeated stateful calls and distinct string contents can be misclassified; parenthesized equivalents can be missed. These are separate documented gap controls, not repaired expectations.",
+    "No benchmark, general Boolean algebra, automatic rewrite safety or compiler-compatibility claim."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, performance, parser, semantic, model or release qualification."
+}

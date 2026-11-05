@@ -29,6 +29,8 @@ class DetektSyntaxCorpusIntegrationTest {
     private lateinit var temporary: Path
     private val repository: Path get() = Path.of(System.getProperty("ktchecker.repositoryRoot")).toAbsolutePath().normalize()
     private val fixtures: Path get() = repository.resolve("providers/detekt-fixtures/corpus/syntax-v1")
+    private val expansionFixtures: Path get() = repository.resolve(DetektCorpusInventory.EXPANSION)
+    private lateinit var inventory: DetektCorpusInventory
     private val enabled: Boolean get() = System.getProperty("ktchecker.detekt.corpus.integration") == "true"
     private lateinit var cohort: DetektCorpusCohort
     private var evidence: DetektCorpusEvidence? = null
@@ -123,8 +125,8 @@ class DetektSyntaxCorpusIntegrationTest {
         assertEquals(DetektCorpusCohort.FULL_AUTHORED_RULES, approved.size)
         assertEquals(DetektCorpusCohort.authoredRuleIds, approved.map { it.ruleId }.toSet())
         assertEquals(DetektCorpusCohort.FULL_AUTHORED_ANALYSES, approved.sumOf { 6 + it.controls.size })
-        assertEquals(8, approved.count { it.activation == "advisory" })
-        assertEquals(2, approved.count { it.activation == "opt_in" })
+        assertEquals(11, approved.count { it.activation == "advisory" })
+        assertEquals(5, approved.count { it.activation == "opt_in" })
         val corpus = cohort.analysesByRule.keys.map { id -> approved.single { it.ruleId == id } }
         for (fixture in corpus) assertEquals(cohort.analysesByRule.getValue(fixture.ruleId), 6 + fixture.controls.size)
         val notRun = approved.filter { it.ruleId !in cohort.analysesByRule }
@@ -134,6 +136,8 @@ class DetektSyntaxCorpusIntegrationTest {
             put("selected_rule_ids", JsonArray(corpus.map { JsonPrimitive(it.ruleId) }))
             put("not_run_rule_ids", JsonArray(notRun.map { JsonPrimitive(it.ruleId) }))
             put("full_corpus_state", "not_run"); put("scope_exclusions", JsonArray(emptyList()))
+            put("approved_corpus_rule_count", DetektCorpusCohort.FULL_AUTHORED_RULES)
+            put("approved_corpus_analysis_count", DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
             put("planned_invocations", cohort.plannedInvocations); put("budget", limits.summary())
         }.toString().toByteArray())
         limits.requireWithinDeadline()
@@ -146,7 +150,7 @@ class DetektSyntaxCorpusIntegrationTest {
         var versionEvidence: List<JsonObject>? = null
         val rows = mutableListOf<JsonObject>()
         for (fixture in corpus) {
-            val identity = SnapshotIdentity("detekt-corpus-owner", "detekt-syntax-corpus-${cohort.name}", fixture.slug)
+            val identity = SnapshotIdentity("detekt-corpus-owner", cohort.contextId, fixture.slug)
             val store = SnapshotStore(temporary.resolve("store-${fixture.slug}"), identity.ownerId)
             store.registerWorktree(identity)
             var head: SnapshotCommit? = null
@@ -178,7 +182,7 @@ class DetektSyntaxCorpusIntegrationTest {
                 head = commit
                 previousPaths = case.fixture.sources.keys
                 val materialized = store.materialize(identity, commit.snapshotId, temporary.resolve("${fixture.slug}-${case.id}-sources"))
-                val context = AnalysisContext(scope = RuleContext(module = ":detekt-syntax-corpus-${cohort.name}", sourceSet = "synthetic"),
+                val context = AnalysisContext(scope = RuleContext(module = ":${cohort.contextId}", sourceSet = "synthetic"),
                     compilerVersion = "2.4.21", compilationFiles = case.fixture.sources.keys.sorted())
                 val settings = DetektSettings(disabledRuleIds = if (case.disabled) setOf(fixture.ruleId) else emptySet(),
                     options = if (case.fixture.options.isEmpty()) emptyMap() else mapOf(fixture.ruleId to case.fixture.options))
@@ -222,6 +226,7 @@ class DetektSyntaxCorpusIntegrationTest {
                 assertEquals(0, actual.exitCode, "${fixture.ruleId}/${case.id}: ${actual.stderr}")
                 assertFalse(actual.cancelled || actual.timedOut || actual.truncated)
                 assertSupervisorIdentity(actual, witness.supervisorIdentity)
+                assertEquals("detekt", result.providerId)
                 assertEquals("partial", result.status, "${fixture.ruleId}/${case.id}: ${result.reasons}; ${result.rawDiagnostics}")
                 assertTrue("detekt_compatibility_tuple_unqualified" in result.reasons)
                 assertTrue("project_compiler_2.4.21_differs_from_detekt_embedded_compiler" in result.reasons)
@@ -229,7 +234,15 @@ class DetektSyntaxCorpusIntegrationTest {
                 assertFalse(result.complete())
                 assertTrue(result.coverage.all { !it.tested && !it.qualified && it.certificateId == null && !it.successful() })
                 val coverage = result.coverage.single()
+                assertEquals(fixture.ruleId, coverage.ruleId)
+                assertEquals(input.context.scope, coverage.context)
                 assertEquals("executed", coverage.provenance)
+                val selectedSarifId = DetektCatalog.byId.getValue(fixture.ruleId).sarifId
+                val parsedReport = DetektReportParser().parse(actual.report("detekt.sarif"), input)
+                assertEquals(!case.disabled, selectedSarifId in parsedReport.enabledSarifIds,
+                    "An enabled negative needs its exact advertised descriptor; empty results are insufficient")
+                assertEquals(if (case.fixture.expected.isEmpty()) "unknown" else "findings", coverage.state)
+                if (!case.disabled) assertEquals("exact_upstream_executed_but_compatibility_and_release_qualification_missing", coverage.reason)
                 if (case.disabled) {
                     assertEquals("rule_disabled_by_owner_selected_configuration", coverage.reason)
                     assertFalse(coverage.implemented)
@@ -244,6 +257,8 @@ class DetektSyntaxCorpusIntegrationTest {
                 val analysisChecked = artifact(run, "$prefix/analysis-checked.json", buildJsonObject {
                     put("case_id", case.id); put("rule_id", fixture.ruleId); put("passed", true); put("qualified", false)
                     put("execution_confirmed", actual.executionConfirmed)
+                    put("selected_sarif_rule_id", selectedSarifId)
+                    put("selected_sarif_descriptor_enabled", selectedSarifId in parsedReport.enabledSarifIds)
                     put("supervisor_identity", actualSupervisorIdentityJson(actual.supervisorIdentity))
                     put("cleanup_signal", "runtime_validated_owned_child_terminal")
                     put("note", "Actual executed/empty-reasons runtime outcome validates cleanup; a permit or confirmation flag alone does not.")
@@ -270,9 +285,18 @@ class DetektSyntaxCorpusIntegrationTest {
                     additional += replayRef
                     val denied = assertNotNull(replayOutcome, "Runtime completion callback must retain the authorization denial")
                     assertAuthorizationDenied(denied)
+                    assertEquals("detekt", replay.providerId)
+                    assertEquals("partial", replay.status)
                     assertEquals(listOf("execution_not_authorized"), replay.reasons)
                     assertTrue(replay.findings.isEmpty())
-                    assertTrue(replay.coverage.all { it.provenance == "not_executed" && !it.implemented && !it.tested && !it.qualified && !it.successful() })
+                    val replayCoverage = replay.coverage.single()
+                    assertEquals(fixture.ruleId, replayCoverage.ruleId)
+                    assertEquals(input.context.scope, replayCoverage.context)
+                    assertEquals("unavailable", replayCoverage.state)
+                    assertEquals("execution_not_authorized", replayCoverage.reason)
+                    assertNull(replayCoverage.certificateId)
+                    assertTrue(replayCoverage.provenance == "not_executed" && !replayCoverage.implemented && !replayCoverage.tested &&
+                        !replayCoverage.qualified && !replayCoverage.successful())
                     val denialProcess = assertNotNull(denialRef)
                     additional += denialProcess
                     val denialReceipt = artifact(run, "$prefix/configuration-permit-replay-denial-receipt.json", buildJsonObject {
@@ -305,8 +329,15 @@ class DetektSyntaxCorpusIntegrationTest {
                         additional += abstentionRef
                         limits.observeAbstention(abstentionTicket, abstained, unsupportedOutcome)
                         assertNull(unsupportedOutcome, "$target must not start a JVM syntax process")
+                        assertEquals("detekt", abstained.providerId)
+                        assertEquals("partial", abstained.status)
+                        assertEquals(listOf("detekt_jvm_provider_does_not_qualify_common_or_native_targets"), abstained.reasons)
                         assertTrue(abstained.findings.isEmpty())
-                        assertEquals("unsupported", abstained.coverage.single().state)
+                        val unsupportedCoverage = abstained.coverage.single()
+                        assertEquals(fixture.ruleId, unsupportedCoverage.ruleId)
+                        assertEquals(request.context.scope, unsupportedCoverage.context)
+                        assertEquals("unsupported", unsupportedCoverage.state)
+                        assertNull(unsupportedCoverage.certificateId)
                         assertTrue(abstained.coverage.all { it.provenance == "not_executed" && !it.successful() })
                         witness.verify()
                         val abstentionReceipt = artifact(run, "$prefix/$target-abstention-receipt.json", buildJsonObject {
@@ -364,7 +395,7 @@ class DetektSyntaxCorpusIntegrationTest {
             put("implementation_evidence", JsonArray(emptyList())); put("cases", JsonArray(emptyList()))
             put("qualification_evidence", JsonArray(emptyList()))
             put("gaps", JsonArray((fixture.limitations +
-                "Approved ten-rule/91-analysis authoring scope retained; this rule is not_run, not a scope exclusion or borrowed execution.").map(::JsonPrimitive)))
+                "Full sixteen-rule/145-analysis authoring scope retained; this rule is not_run, not a scope exclusion or borrowed execution.").map(::JsonPrimitive)))
         }
         witness.verify()
         owned.verifyDirectories()
@@ -374,7 +405,7 @@ class DetektSyntaxCorpusIntegrationTest {
             put("schema_version", 1); put("provider_id", "detekt"); put("provider_version", DETEKT_VERSION)
             put("candidate_only", true); put("run_complete", false); put("publication_committed", false)
             put("context", buildJsonObject {
-                put("id", "detekt-syntax-corpus-${cohort.name}-native-preview1"); put("target", "jvm"); put("source_set", "synthetic")
+                put("id", "${cohort.contextId}-native-preview1"); put("target", "jvm"); put("source_set", "synthetic")
                 put("corpus_cohort", cohort.name)
                 put("cohort_plan_digest", Digests.sha256(cohort.planIdentity))
                 put("corpus_source_tuple_digest", witness.sourceTupleDigest)
@@ -390,10 +421,10 @@ class DetektSyntaxCorpusIntegrationTest {
                 put("runtime_execution_source_digest", witness.runtimeSourceDigest)
                 put("runtime_code_image_digest", witness.runtimeImageDigest)
                 put("native_qualification", false)
-                put("module", ":detekt-syntax-corpus-${cohort.name}"); put("compilation", "main"); put("analysis_mode", "light")
+                put("module", ":${cohort.contextId}"); put("compilation", "main"); put("analysis_mode", "light")
                 put("kotlin_version", "2.4.21"); put("compiler_version", "2.4.21"); put("embedded_kotlin_version", DETEKT_EMBEDDED_KOTLIN)
                 put("jdk_version", System.getProperty("java.version")); put("library_versions", buildJsonObject {})
-                put("scope_note", "${corpus.size} actually checked ${cohort.name} syntax routes only. Full ten/91 authoring scope remains not_run; ${notRun.size} other rows are not exclusions. Unqualified.")
+                put("scope_note", "${corpus.size} actually checked ${cohort.name} syntax routes only. Full sixteen/145 authoring scope remains not_run; ${notRun.size} other rows are not exclusions. Unqualified.")
             })
             put("start_witness", witness.manifestReference); put("rules", JsonArray(rows))
             put("approved_corpus_rule_count", DetektCorpusCohort.FULL_AUTHORED_RULES); put("approved_corpus_analysis_count", DetektCorpusCohort.FULL_AUTHORED_ANALYSES); put("full_corpus_state", "not_run")
@@ -525,13 +556,15 @@ class DetektSyntaxCorpusIntegrationTest {
         val sourceTupleDigest: String, val corpusImageDigest: String, val fixtureSetDigest: String, val verify: () -> Unit)
 
     private fun beginWitness(run: Path, installation: DetektInstallation): Witness {
+        inventory.verify()
         val sourceRoots = listOf("modules/provider-detekt/src/main", "modules/provider-detekt/src/corpusTest",
             "modules/provider-runtime/src/main", "modules/provider-runtime/native", "modules/contracts/src/main", "modules/snapshot/src/main",
-            "providers/detekt-fixtures/corpus/syntax-v1").map(repository::resolve)
+            "providers/detekt-fixtures/corpus/syntax-v1", DetektCorpusInventory.EXPANSION).map(repository::resolve)
         val buildFiles = listOf("build.gradle.kts", "settings.gradle.kts", "gradle.properties", "gradle/wrapper/gradle-wrapper.properties",
             "modules/provider-detekt/build.gradle.kts", "modules/provider-runtime/build.gradle.kts",
             "modules/contracts/build.gradle.kts", "modules/snapshot/build.gradle.kts",
-            "providers/detekt-fixtures/test_syntax_corpus.py", "providers/detekt-fixtures/corpus/syntax-v1/README.md")
+            "providers/detekt-fixtures/test_syntax_corpus.py", "providers/detekt-fixtures/test_syntax_expansion.py",
+            "providers/detekt-fixtures/corpus/syntax-v1/README.md")
             .map(repository::resolve)
         fun sourceFiles(): List<Path> = (sourceRoots.flatMap { directory ->
             Files.walk(directory).use { paths -> paths.filter {
@@ -545,6 +578,7 @@ class DetektSyntaxCorpusIntegrationTest {
         }
         val nativeAnchor = Class.forName("dev.ktchecker.providers.runtime.OwnedProcessSupervisor", false, IsolatedProcessRunner::class.java.classLoader)
         val types = listOf(DetektSyntaxCorpusIntegrationTest::class.java, DetektProvider::class.java, DetektCatalog::class.java,
+            DetektCorpusInventory::class.java, DetektCorpusExpansionPins::class.java, CorpusInvocationSpec::class.java,
             DetektCorpusCohort::class.java, DetektCorpusBudget::class.java, DetektCorpusSettings::class.java, DetektCorpusEvidence::class.java,
             DetektReportParser::class.java, IsolatedProcessRunner::class.java, ExecutionPermit::class.java,
             ExactExecutionAuthority::class.java, OwnedProcessContainment::class.java, OwnedSupervisorIdentity::class.java, nativeAnchor,
@@ -617,10 +651,12 @@ class DetektSyntaxCorpusIntegrationTest {
         val sourceTupleDigest = Digests.sha256(sources.entries.sortedBy { repository.relativize(it.key).toString() }.joinToString("\n") {
             "${repository.relativize(it.key).toString().replace('\\', '/')}:${Digests.sha256(it.value)}"
         })
-        val fixtureSetDigest = Digests.sha256(sources.entries.filter { (path, _) -> path.startsWith(fixtures) && path.toString().endsWith(".json") }
-            .sortedBy { it.key.fileName.toString() }.joinToString("\n") { "${it.key.fileName}:${Digests.sha256(it.value)}" })
+        val fixtureSetDigest = Digests.sha256(sources.entries.filter { (path, _) -> (path.startsWith(fixtures) || path.startsWith(expansionFixtures)) && path.toString().endsWith(".json") }
+            .sortedBy { repository.relativize(it.key).toString() }.joinToString("\n") {
+                "${repository.relativize(it.key).toString().replace('\\', '/')}:${Digests.sha256(it.value)}" })
         return Witness(refs + manifest, manifest, supervisorIdentity, Digests.sha256(sources.getValue(runtimeSource)),
             Digests.sha256(images.getValue(runtimeLocation)), sourceTupleDigest, Digests.sha256(images.getValue(corpusLocation)), fixtureSetDigest) {
+            inventory.verify()
             assertEquals(sources.keys.toList(), sourceFiles(), "Source/resource/fixture membership drift after START")
             for ((path, bytes) in sources) assertContentEquals(bytes, Files.readAllBytes(path), "Source/resource/fixture drift after START: $path")
             for ((type, bytes) in classes) assertContentEquals(bytes, classBytes(type), "Class-resource drift after START: ${type.name}")
@@ -712,11 +748,12 @@ class DetektSyntaxCorpusIntegrationTest {
         val slug: String get() = ruleId.substringAfterLast('.')
     }
 
-    private fun loadCorpus(): List<CorpusFixture> = Files.list(fixtures).use { paths ->
-        paths.filter { it.toString().endsWith(".json") }.sorted().toList().map { path ->
-            val item = Json.parseToJsonElement(Files.readString(path)).jsonObject
+    private fun loadCorpus(): List<CorpusFixture> {
+        inventory = DetektCorpusInventory.load(repository)
+        return inventory.fixtures.map { item ->
             require(item.number("schema_version") == 1 && item.string("authoring_state") == "unexecuted")
-            require(item.string("corpus_id") == "detekt-syntax-corpus-v1")
+            require(item.string("corpus_id") == if (item.string("rule_id") in DetektCorpusExpansionPins.controlIds)
+                "detekt-syntax-expansion-v1" else "detekt-syntax-corpus-v1")
             require(item.string("provider_id") == "detekt" && item.string("provider_version") == DETEKT_VERSION)
             require(item.string("embedded_kotlin_version") == DETEKT_EMBEDDED_KOTLIN)
             val rule = DetektCatalog.byId.getValue(item.string("rule_id"))

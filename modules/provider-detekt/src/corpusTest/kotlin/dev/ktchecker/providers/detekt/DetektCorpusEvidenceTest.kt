@@ -105,15 +105,15 @@ class DetektCorpusEvidenceTest {
         for (selected in DetektCorpusCohort.all) {
             DetektCorpusEvidence(root, "build/evidence/corpus", selected).use { evidence ->
                 assertSame(selected, evidence.cohort)
-                assertTrue(evidence.runDirectory.fileName.toString().endsWith("-syntax-corpus-${selected.name}"))
+                assertTrue(evidence.runDirectory.fileName.toString().endsWith("-${selected.evidenceStem}-${selected.name}"))
                 evidence.publish(sidecar(selected.name))
                 val live = evidence.root.resolve(evidence.liveRelative)
-                assertEquals("verified-jvm-syntax-corpus-${selected.name}-native-preview1.json", live.fileName.toString())
+                assertEquals("verified-jvm-${selected.evidenceStem}-${selected.name}-native-preview1.json", live.fileName.toString())
                 assertFalse(live in originals)
                 originals[live] = Files.readAllBytes(live)
             }
         }
-        assertEquals(4, originals.size)
+        assertEquals(6, originals.size)
         val ordinary = root.resolve("build/evidence/corpus/detekt/evidence/verified-jvm-syntax-native-preview1.json")
         Files.writeString(ordinary, "ordinary unchanged")
         for (selected in DetektCorpusCohort.all) {

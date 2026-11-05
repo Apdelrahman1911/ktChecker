@@ -29,7 +29,7 @@ internal class DetektCorpusEvidence(repository: Path, selected: String?, val coh
     val repository: Path = repository.toAbsolutePath().normalize()
     val root: Path = selectedRoot(this.repository, selected)
     val runDirectory: Path
-    val liveRelative: Path = Path.of("evidence/verified-jvm-syntax-corpus-${cohort.name}-native-preview1.json")
+    val liveRelative: Path = Path.of("evidence/verified-jvm-${cohort.evidenceStem}-${cohort.name}-native-preview1.json")
     private val directoryKeys = linkedMapOf<Path, String>()
     private val fileKeys = linkedMapOf<Path, String>()
     private var bytesWritten = 0L
@@ -48,7 +48,7 @@ internal class DetektCorpusEvidence(repository: Path, selected: String?, val coh
         handle.use {
             require(key(it.getFileAttributeView(BasicFileAttributeView::class.java).readAttributes()) == directoryKeys.getValue(root))
         }
-        val runName = "${Instant.now().toString().replace(':', '-')}-${UUID.randomUUID().toString().take(8)}-syntax-corpus-${cohort.name}"
+        val runName = "${Instant.now().toString().replace(':', '-')}-${UUID.randomUUID().toString().take(8)}-${cohort.evidenceStem}-${cohort.name}"
         ensureDirectory(root.resolve("runs"))
         runDirectory = root.resolve("runs/$runName")
         // A pre-existing run, even a regular directory, must never be reused.
