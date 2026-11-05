@@ -193,6 +193,26 @@ jobs:
           --output build/ci-evidence/package-report.json
           --sbom build/ci-evidence/distribution.cdx.json
           --notice build/ci-evidence/NOTICE.dependency-report.txt
+      - name: Compare actual ZIP and TAR manifests with staged installation
+        id: distribution_archive_integrity
+        if: success() && (runner.os == 'Linux' || runner.os == 'macOS')
+        timeout-minutes: 3
+        # Exact Gradle distributionBaseName/version, not a wildcard selection.
+        # Read-only decoded bytes/names/executable flags; no extraction/runtime,
+        # license approval, historical build binding or atomic upload snapshot.
+        run: >-
+          python scripts/ci/verify_distribution_archives.py
+          --installation modules/cli/build/install/ktchecker
+          --expected-prefix ktchecker-0.1.0-dev.1
+          --archive modules/cli/build/distributions/ktchecker-0.1.0-dev.1.zip
+          --archive modules/cli/build/distributions/ktchecker-0.1.0-dev.1.tar
+          --output build/ci-evidence/distribution-archives.json
+      - name: Declare Windows archive verification unavailable and upload blocked
+        if: always() && runner.os == 'Windows'
+        # Informational only: the verifier step stays skipped, not successful.
+        # Windows build/test/package scope is unchanged; no emulated POSIX pass.
+        run: >-
+          echo "Archive verification unavailable on Windows: POSIX no-follow required; preview archive upload remains blocked."
       - name: Require reviewed licenses before owner-approved preview distribution upload
         id: distribution_upload_license_review
         if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true'
@@ -249,6 +269,7 @@ jobs:
           --require-artifact "modules/kernel/build/reports/stress/kernel-100-patches.json"
           --require-artifact "modules/cli/build/distributions/*.zip"
           --require-artifact "modules/cli/build/distributions/*.tar"
+          --artifact build/ci-evidence/distribution-archives.json
           --command-result build/ci-evidence/gradle-version.json
           --command-result build/ci-evidence/supervisor-prerequisites.json
           --command-result build/ci-evidence/supervisor-controls.json
@@ -288,13 +309,14 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Retain the actual tested unsigned preview distribution
-        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true' && steps.distribution_upload_license_review.outcome == 'success'
+        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true' && steps.distribution_upload_license_review.outcome == 'success' && steps.distribution_archive_integrity.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: unsigned-preview-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            modules/cli/build/distributions/*.zip
-            modules/cli/build/distributions/*.tar
+            modules/cli/build/distributions/ktchecker-0.1.0-dev.1.zip
+            modules/cli/build/distributions/ktchecker-0.1.0-dev.1.tar
+            build/ci-evidence/distribution-archives.json
             build/ci-evidence/package-report.json
             build/ci-evidence/distribution.cdx.json
             build/ci-evidence/NOTICE.dependency-report.txt

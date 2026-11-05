@@ -55,6 +55,15 @@ class KotlinJvmModelCompilerApplication private constructor(
         return try { session.retire() } finally { generationPermit.invalidate() }
     }
 
+    internal fun verifyProducedOutput(value: ModelCompilerJobMaterialization, checkpoint: () -> Unit) {
+        checkLive(); checkpoint()
+        liveCheck(installationCapture != null && materializations.values.any { it === value },
+            "compiler_model_produced_custody_unavailable")
+        generationPermit.verify(); value.verifyInputs(checkpoint); value.verifyOutput(true, checkpoint)
+        requireNotNull(installationCapture).verify(checkpoint)
+        checkLive(); checkpoint()
+    }
+
     internal fun compile(permit: ModelCompilerAttemptPermit, cancellation: CancellationToken,
         providerStartedNanos: Long): OwnedApplicationJobResult<ProviderResult> {
         var admitted = false
@@ -102,6 +111,7 @@ class KotlinJvmModelCompilerApplication private constructor(
                 generationPermit.checkLive(); checkpoint()
             }
 
+            var producedCandidate: ModelSuccessfulJvmOutput? = null
             val runtimePermit = OwnedApplicationJobPermit<ProviderResult>(session, job, permit.originalDeadline,
                 verifyBeforeWrite = { verifyBound(false) },
                 validateResult = { result ->
@@ -114,6 +124,12 @@ class KotlinJvmModelCompilerApplication private constructor(
                     val entireDetachedResult = renderModelObservation(permit.input, permit.capture.sourceTexts,
                         materialized.sourceRoot, request.installation.digest, permit.prepared.bindingIdentity.digest,
                         result, observation, providerStartedNanos, checkpoint, permit.prepared.binding)
+                    val preview = permit.prepared.binding.producedResolution?.preview
+                    if (preview != null && observation.compilerCode() == 0 &&
+                        permit.prepared.binding.compilationId == preview.graph.producerCompilationId) {
+                        producedCandidate = ModelSuccessfulJvmOutput(permit, materialized, result, observation,
+                            entireDetachedResult, materialized.producedMembers())
+                    }
                     checkpoint()
                     entireDetachedResult
                 },
@@ -122,8 +138,11 @@ class KotlinJvmModelCompilerApplication private constructor(
             when (result) {
                 is OwnedApplicationJobResult.Accepted -> {
                     checkpoint()
-                    // State-only gate: absolutely no result parsing, metrics updates, or row changes.
-                    lifecycle.finishAccepted(permit.ticket)
+                    // State-only gate, then one atomic publication of the prebuilt candidate.
+                    // No IO, parsing, metrics or provider-row changes after the acceptance gate.
+                    finishAcceptedModelOutput(producedCandidate,
+                        finishAccepted = { lifecycle.finishAccepted(permit.ticket) },
+                        publish = permit::publishSuccessfulOutput)
                 }
                 is OwnedApplicationJobResult.Unavailable -> lifecycle.failActive(permit.ticket)
             }
@@ -236,6 +255,16 @@ class KotlinJvmModelCompilerApplication private constructor(
             return application
         }
     }
+}
+
+/** Ordering helper, not a producer/Accepted factory. Production calls it ONLY in the real runtime
+ * Accepted branch, with the real lifecycle gate and the exact permit's atomic reference. Its
+ * opaque-value controls can test gate failure/null-candidate behavior without fake compiler pins,
+ * synthetic Accepted objects, actual output capabilities or a test-only acceptance bypass.
+ */
+internal inline fun <T : Any> finishAcceptedModelOutput(candidate: T?, finishAccepted: () -> Unit, publish: (T) -> Unit) {
+    finishAccepted()
+    candidate?.let(publish)
 }
 
 /** Original installation and admitted private copies are checked independently at each fence. */

@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation(project(":contracts"))
     implementation(project(":provider-runtime"))
+    implementation(project(":project-model"))
     testImplementation(project(":snapshot"))
 }
 
@@ -51,7 +52,17 @@ tasks.register<Test>("corpusTest") {
 tasks.withType<Test>().configureEach {
     systemProperty("ktchecker.repositoryRoot", rootProject.projectDir.absolutePath)
     systemProperty("ktchecker.detekt.integration", providers.gradleProperty("detektIntegration").getOrElse("false"))
+    systemProperty("ktchecker.detekt.model.integration", providers.gradleProperty("detektModelIntegration").getOrElse("false"))
     providers.gradleProperty("libraryFixtureEvidenceRoot").orNull?.let {
         systemProperty("ktchecker.libraryFixtureEvidenceRoot", rootProject.file(it).absolutePath)
     }
+}
+
+tasks.named<Test>("test") {
+    // Missing -> installed/changed planning artifacts must not reuse a prior skipped control.
+    inputs.files(rootProject.fileTree(".plan-deps/detekt") { include("*.jar") })
+        .withPropertyName("detektModelPlanningArtifacts").withPathSensitivity(PathSensitivity.RELATIVE)
+    val modelNative = providers.gradleProperty("detektModelIntegration").orElse("false")
+    outputs.upToDateWhen { modelNative.get() != "true" }
+    outputs.doNotCacheIf("Explicit native model LIGHT adapter checks require actual process outcomes") { modelNative.get() == "true" }
 }

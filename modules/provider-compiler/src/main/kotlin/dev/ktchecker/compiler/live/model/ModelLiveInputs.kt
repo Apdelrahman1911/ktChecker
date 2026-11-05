@@ -7,6 +7,7 @@ import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.workerprotocol.CompilerModelWire as ModelWire
 import java.nio.file.Path
 import java.util.Collections
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.json.encodeToJsonElement
 
 /** Hard host bounds, in addition to the separately checked aggregate wire-frame bound. */
@@ -46,15 +47,43 @@ fun KotlinJvmModelBinding.bindPreparedLiveInput(
     provider: KotlinJvmModelLiveCompilerProvider,
     originalDeadline: OwnedApplicationDeadline,
 ): PreparedJvmLiveModelInput {
+    liveCheck(producedResolution?.declarationArchive == null, "compiler_model_produced_archive_capability_required")
+    return prepareLiveInput(original, compilerRuleIds, provider, originalDeadline, null)
+}
+
+/** Only the SAME enrolled declaration/admission can prepare an archived produced execution.
+ * Ordinary input-only preparation above cannot borrow this relation from an equal final P. */
+fun KotlinJvmModelBinding.bindPreparedDeclaredLiveInput(
+    declaration: JvmProducedDeclaredArchive,
+    admissionIdentity: Any,
+    archiveIdentity: Any,
+    original: AnalysisInput,
+    compilerRuleIds: List<String>,
+    provider: KotlinJvmModelLiveCompilerProvider,
+    originalDeadline: OwnedApplicationDeadline,
+): PreparedJvmLiveModelInput {
+    val resolution = producedResolution ?: liveFailure("compiler_model_produced_archive_capability_required")
+    declaration.requireIdentity(resolution.preview, admissionIdentity, archiveIdentity)
+    liveCheck(resolution.declarationArchive === declaration && declaration.compilationId == compilationId,
+        "compiler_model_produced_archive_foreign_identity")
+    liveCheck(resolution.preview.originalDeadline === originalDeadline, "compiler_model_produced_original_deadline_mismatch")
+    return prepareLiveInput(original, compilerRuleIds, provider, originalDeadline, declaration)
+}
+
+private fun KotlinJvmModelBinding.prepareLiveInput(
+    original: AnalysisInput, compilerRuleIds: List<String>, provider: KotlinJvmModelLiveCompilerProvider,
+    originalDeadline: OwnedApplicationDeadline, declaration: JvmProducedDeclaredArchive?,
+): PreparedJvmLiveModelInput {
     modelDeadlineCheckpoint(originalDeadline)
     val frozen = freezeModelLiveInput(original)
-    requireOriginalInput(frozen, requireFinal = true)
-    liveCheck(provider.usesInstallation(installation), "compiler_model_live_installation_mismatch")
+    requireOriginalInput(frozen, requireFinal = true) // Original-root guard stays unchanged for BOTH routes.
+    declaration?.requireResolvedInput(frozen, originalContext)
+    liveCheck(provider.usesInstallation(installation) && provider.usesBinding(this), "compiler_model_live_installation_mismatch")
     requireModelLiveShape(frozen, this)
     liveCheck(frozen.context.policies["ktchecker.execution-plan"] == emptyModelColdProfilesDigest(),
         "compiler_model_live_cold_profile_mismatch")
     var dependencyBytes = 0L
-    compilation.classpath.forEach { artifact ->
+    executionArtifacts.forEach { artifact ->
         val size = artifact.size ?: liveFailure("compiler_model_live_dependency_limit")
         liveCheck(size in 1..ModelLiveLimits.DEPENDENCY_BYTES &&
             size <= ModelLiveLimits.DEPENDENCY_TOTAL_BYTES - dependencyBytes, "compiler_model_live_dependency_limit")
@@ -68,9 +97,14 @@ fun KotlinJvmModelBinding.bindPreparedLiveInput(
         rules.all { it in frozen.requiredRuleIds && it in provider.supportedRuleIds }, "compiler_model_live_rule_projection_invalid")
     val checkpoint = { modelDeadlineCheckpoint(originalDeadline) }
     verifyInstallation(checkpoint)
-    // Admission reads the original model artifacts; the attempt path below never does.
-    verifyDependencies(compilation.classpath, frozen.context.classpath, checkpoint)
+    // Ordinary admission reads originals. Archived admission reads ONLY its exact retained D
+    // projection (+ sole accepted new JAR), while P keeps original model path/argv identities.
+    verifyDependencies(executionArtifacts, producedResolution?.dependencyReadArtifacts(checkpoint) ?: frozen.context.classpath, checkpoint)
     checkpoint()
+    producedResolution?.let {
+        liveCheck(it.preview.originalDeadline === originalDeadline, "compiler_model_produced_original_deadline_mismatch")
+        it.verify(model, installation, compilationId, checkpoint)
+    }
     return PreparedJvmLiveModelInput(this, frozen, rules, provider, originalDeadline)
 }
 
@@ -90,6 +124,7 @@ class PreparedJvmLiveModelInput internal constructor(
     val normalizedCompilerOptions: List<String> get() = binding.normalizedCompilerOptions
     val executableCompilationFiles: List<String> get() = binding.executableCompilationFiles
     val argumentLayoutDigest: String? get() = binding.argumentLayoutDigest
+    private val declaredAttemptReserved = AtomicBoolean(false)
 
     /**
      * Only the trusted kernel observer supplies this tuple and whole-archive callback. P -> K
@@ -106,6 +141,45 @@ class PreparedJvmLiveModelInput internal constructor(
         registerMaterialization: (ModelCompilerJobMaterialization) -> Unit,
         verifyMaterialization: (ModelCompilerJobMaterialization) -> Unit,
     ): ModelCompilerAttemptPermit {
+        liveCheck(binding.producedResolution?.declarationArchive == null, "compiler_model_produced_archive_capability_required")
+        return bindAttemptChecked(kernelOriginal, kernelEffective, compilerChild, application, verifyFrozen,
+            registerMaterialization, verifyMaterialization)
+    }
+
+    /** Typed observer ONLY: caller must additionally check its exact kernel admission/slot/cert/
+     * work/claim tuple before calling. SAME D objects and exact derived K root are mandatory here;
+     * a scalar copied-P call to bindAttempt is always denied. Each declared preparation is one-use. */
+    fun bindDeclaredAttempt(
+        declaration: JvmProducedDeclaredArchive,
+        admissionIdentity: Any,
+        archiveIdentity: Any,
+        resolvedWorkKey: String,
+        kernelOriginal: AnalysisInput,
+        kernelEffective: AnalysisInput,
+        compilerChild: AnalysisInput,
+        application: KotlinJvmModelCompilerApplication,
+        verifyFrozen: () -> Unit,
+        registerMaterialization: (ModelCompilerJobMaterialization) -> Unit,
+        verifyMaterialization: (ModelCompilerJobMaterialization) -> Unit,
+    ): ModelCompilerAttemptPermit {
+        val resolution = binding.producedResolution ?: liveFailure("compiler_model_produced_archive_capability_required")
+        declaration.requireIdentity(resolution.preview, admissionIdentity, archiveIdentity)
+        liveCheck(resolution.declarationArchive === declaration && declaration.compilationId == binding.compilationId,
+            "compiler_model_produced_archive_foreign_identity")
+        declaration.requireKernelArchive(kernelEffective, resolvedWorkKey)
+        liveCheck(kernelOriginal == original && kernelOriginal.analysisKey() == originalAnalysisKey,
+            "compiler_model_live_original_mismatch")
+        liveCheck(declaredAttemptReserved.compareAndSet(false, true), "compiler_model_produced_attempt_replayed")
+        return bindAttemptChecked(kernelOriginal, kernelEffective, compilerChild, application, verifyFrozen,
+            registerMaterialization, verifyMaterialization)
+    }
+
+    private fun bindAttemptChecked(
+        kernelOriginal: AnalysisInput, kernelEffective: AnalysisInput, compilerChild: AnalysisInput,
+        application: KotlinJvmModelCompilerApplication, verifyFrozen: () -> Unit,
+        registerMaterialization: (ModelCompilerJobMaterialization) -> Unit,
+        verifyMaterialization: (ModelCompilerJobMaterialization) -> Unit,
+    ): ModelCompilerAttemptPermit {
         modelDeadlineCheckpoint(originalDeadline)
         val suppliedOriginal = freezeModelLiveInput(kernelOriginal)
         val archived = freezeModelLiveInput(kernelEffective)
@@ -114,13 +188,19 @@ class PreparedJvmLiveModelInput internal constructor(
             "compiler_model_live_original_mismatch")
         liveCheck(provider.usesInstallation(binding.installation) && application.request.installation === binding.installation &&
             application.request.namespace.matches(original), "compiler_model_live_application_binding_mismatch")
+        liveCheck(provider.usesBinding(binding) && (binding.producedResolution != null) ==
+            (application.request.generation.profile() == ModelWire.PRODUCED_PROFILE), "compiler_model_produced_profile_mismatch")
+        binding.producedResolution?.preview?.bindApplication(application)
         requireJvmModelArchiveRelocation(original, archived)
         liveCheck(child == archived.copy(requiredRuleIds = compilerRuleIds, execution = null),
             "compiler_model_live_child_mismatch")
         val checkpoint = { modelDeadlineCheckpoint(originalDeadline) }
         checkpoint(); verifyFrozen(); checkpoint()
+        binding.producedResolution?.declarationArchive?.let { declaration ->
+            liveCheck(declaration.verify(checkpoint) == declaration.frozen, "compiler_model_produced_archive_not_installed")
+        }
         binding.verifyInstallation(checkpoint)
-        verifyDependencies(binding.compilation.classpath, archived.context.classpath, checkpoint)
+        verifyDependencies(binding.executionArtifacts, archived.context.classpath, checkpoint)
         verifyFrozen(); checkpoint()
         return ModelCompilerAttemptPermit(this, archived, child, application, verifyFrozen,
             registerMaterialization, verifyMaterialization)
@@ -178,10 +258,10 @@ internal fun freezeModelLiveInput(input: AnalysisInput, maxRules: Int = ModelLiv
 }
 
 /** Pure structural checks may precede exact attempt lookup; they grant no argument semantics. */
-internal fun requireModelLiveStructure(input: AnalysisInput) {
+internal fun requireModelLiveStructure(input: AnalysisInput, allowDeferredPreview: Boolean = false) {
     liveCheck(input.snapshot.files.size <= ModelLiveLimits.SNAPSHOT_FILES && input.context.classpath.size <= ModelLiveLimits.DEPENDENCIES,
         "compiler_model_live_input_limit")
-    liveCheck(input.context.fullProject && input.context.compilerVersion == CompilerRuleRegistry.VERSION &&
+    liveCheck((input.context.fullProject || allowDeferredPreview) && input.context.compilerVersion == CompilerRuleRegistry.VERSION &&
         input.snapshot.scopeExclusions.isEmpty() && input.snapshot.unknownInputs.isEmpty() &&
         listOf(input.snapshot.snapshotId, input.context.modelDigest, input.context.dependencyDigest,
             input.context.configurationDigest, input.context.toolchainDigest).all { it != null && Digests.valid(it) },
@@ -216,7 +296,7 @@ internal fun requireModelLiveStructure(input: AnalysisInput) {
  * This function never parses, strips, sorts, rewrites or infers roles from an AnalysisInput.
  */
 internal fun requireModelLiveShape(input: AnalysisInput, binding: KotlinJvmModelBinding? = null) {
-    requireModelLiveStructure(input)
+    requireModelLiveStructure(input, binding?.producedResolution != null)
     if (binding == null) {
         requireModelLiveOptions(input.context.compilerArguments)
         return

@@ -109,6 +109,30 @@ class ModelCompilerAttemptPermit internal constructor(
     internal val ticket = application.newAttemptTicket(originalDeadline)
     internal val capture: ModelArchiveCapture
     private val registered = AtomicReference<ModelCompilerJobMaterialization?>(null)
+    private val successfulOutput = AtomicReference<ModelSuccessfulJvmOutput?>(null)
+
+    /** Only compiler code0 AND accepted publication can make this non-null. Not provider coverage. */
+    fun successfulProducedOutput(): ModelSuccessfulJvmOutput? = successfulOutput.get()
+    internal fun retainsSuccessfulOutput(value: ModelSuccessfulJvmOutput): Boolean = successfulOutput.get() === value
+    internal fun publishSuccessfulOutput(value: ModelSuccessfulJvmOutput) {
+        liveCheck(value.permit === this && successfulOutput.compareAndSet(null, value), "compiler_model_produced_success_replayed")
+    }
+
+    /** Completed-output custody, NOT an attempt-ticket renewal. Only the retained accepted token
+     * can invoke this path; the whole original K archive and owner materialization hooks remain
+     * authoritative while later consumers borrow its output. No old model source/artifact reads.
+     */
+    internal fun verifySuccessfulCustody(value: ModelSuccessfulJvmOutput, materialized: ModelCompilerJobMaterialization,
+        checkpoint: () -> Unit) {
+        liveCheck(retainsSuccessfulOutput(value), "compiler_model_produced_not_accepted")
+        application.checkLive(); checkpoint()
+        verifyFrozen(); capture.verify(checkpoint)
+        verifyRegistered(materialized, checkpoint)
+        // Hooks do not get the last word over either complete archive or application liveness.
+        verifyFrozen(); capture.verify(checkpoint)
+        application.checkLive(); checkpoint()
+        liveCheck(retainsSuccessfulOutput(value), "compiler_model_produced_not_accepted")
+    }
 
     init {
         liveCheck(provider.usesInstallation(application.request.installation) &&
@@ -137,7 +161,7 @@ class ModelCompilerAttemptPermit internal constructor(
     internal fun matches(selected: KotlinJvmModelLiveCompilerProvider, request: ModelCompilerAttemptRequest): Boolean =
         selected === provider && selected.usesInstallation(prepared.binding.installation) &&
             application.request.installation === prepared.binding.installation && accepts(request.input) &&
-            providerInputKey == request.analysisKey
+            providerInputKey == request.analysisKey && selected.usesBinding(prepared.binding)
 
     internal fun consume() { application.admitAttempt(this) }
     internal fun checkpoint() {
@@ -149,6 +173,8 @@ class ModelCompilerAttemptPermit internal constructor(
     internal fun verifyOriginal(checkpoint: () -> Unit) {
         checkpoint(); this.checkpoint(); verifyFrozen(); checkpoint(); this.checkpoint()
         prepared.binding.verifyInstallation(checkpoint)
+        prepared.binding.producedResolution?.let { it.verify(prepared.binding.model, prepared.binding.installation,
+            prepared.binding.compilationId, checkpoint) }
         capture.verify(checkpoint)
         checkpoint(); this.checkpoint()
     }

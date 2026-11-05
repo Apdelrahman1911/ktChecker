@@ -171,6 +171,9 @@ class PythonReporterControls(unittest.TestCase):
         return {node.attrib["name"]: node.attrib["value"] for node in tree.findall("properties/property")}
 
     def test_all_unittest_outcomes_and_subtests_are_actual_callbacks_not_console_text(self):
+        # Eight cases and every outcome fsync a real checkpoint. This checks
+        # callback accounting, not three-second process/filesystem throughput.
+        # Genuine deadline controls below retain their explicit short budgets.
         report = self.execute(f"""
             import os, sys, unittest
             class PrivateLabel:
@@ -203,7 +206,7 @@ class PythonReporterControls(unittest.TestCase):
                         raise unittest.SkipTest({CANARY!r})
                 def test_h_runtime_skip(self):
                     raise unittest.SkipTest({CANARY!r})
-        """)
+        """, config=replace(self.config, timeout=10.0))
         self.assertEqual("failed", report["state"])
         self.assertEqual({"tests_run": 8, "successful_tests": 1, "failures": 2, "errors": 2, "skipped": 3,
             "expected_failures": 1, "unexpected_successes": 1}, report["counts"])

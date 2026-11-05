@@ -2,6 +2,7 @@ package dev.ktchecker.compiler
 
 import dev.ktchecker.contracts.*
 import dev.ktchecker.projectmodel.*
+import dev.ktchecker.compiler.live.model.JvmProducedCompilationResolution
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
@@ -39,6 +40,7 @@ class KotlinJvmModelBinding private constructor(
     internal val originalContext: AnalysisContext,
     internal val originalArgumentLayout: VerifiedJvmArgumentLayout?,
     val identity: JvmModelBindingIdentity,
+    internal val producedResolution: JvmProducedCompilationResolution? = null,
 ) {
     /** Typed execution projections are DISTINCT from unchanged raw context/identity at P/K/C/E. */
     val normalizedCompilerOptions: List<String> = Collections.unmodifiableList(
@@ -46,6 +48,7 @@ class KotlinJvmModelBinding private constructor(
     val executableCompilationFiles: List<String> = Collections.unmodifiableList(
         (originalArgumentLayout?.executableCompilationFiles ?: requireNotNull(originalContext.compilationFiles)).toList())
     val argumentLayoutDigest: String? = originalArgumentLayout?.digest
+    internal val executionArtifacts: List<ModelArtifact> = producedResolution?.artifacts ?: compilation.classpath
 
     /** Never reads the old source/dependency paths; those may be gone after kernel acceptance. */
     fun verifyInstallation(checkpoint: () -> Unit = {}) = verifyModelInstallation(installation, checkpoint)
@@ -78,11 +81,13 @@ class KotlinJvmModelBinding private constructor(
         modelCheck(profile == expected, "compiler_model_profile_mismatch", "Captured profile differs from this exact installed model-mode provider.")
         // Admission still verifies original artifacts. Attempt verification below deliberately does not.
         verifyInstallation()
-        verifyDependencies(compilation.classpath, frozen.context.classpath)
+        verifyDependencies(executionArtifacts, frozen.context.classpath)
         return PreparedJvmModelInput(this, frozen, selected, provider, profile)
     }
 
     internal fun requireProvider(provider: KotlinJvmCompilerProvider) {
+        modelCheck(producedResolution == null, "compiler_model_produced_live_preview_required",
+            "Deferred outputs require the explicit live produced-output capability, never the cold route.")
         modelCheck(provider.inputMode == KotlinJvmInputMode.VERIFIED_MODEL && provider.usesInstallation(installation),
             "compiler_model_provider_mismatch", "Model preparation requires the same installation object and a fixed model-only provider route.")
     }
@@ -122,15 +127,25 @@ class KotlinJvmModelBinding private constructor(
             compilationId: String,
             installation: KotlinJvmToolchain,
             checkpoint: () -> Unit = {},
-        ): KotlinJvmModelBinding {
+        ): KotlinJvmModelBinding = bindChecked(model, compilationId, installation, null, checkpoint)
+
+        internal fun verifyAndBindProducedPreview(model: VerifiedProjectModel, compilationId: String,
+            installation: KotlinJvmToolchain, resolution: JvmProducedCompilationResolution,
+            checkpoint: () -> Unit): KotlinJvmModelBinding = bindChecked(model, compilationId, installation, resolution, checkpoint)
+
+        private fun bindChecked(model: VerifiedProjectModel, compilationId: String, installation: KotlinJvmToolchain,
+            resolution: JvmProducedCompilationResolution?, checkpoint: () -> Unit): KotlinJvmModelBinding {
             checkpoint()
             val verified = model.context(compilationId, model.identity.configurationDigest)
             val compilation = verified.compilation
                 ?: modelFailure("compiler_model_compilation_unavailable", "No exact live compilation capability is available.")
-            val context = verified.context
+            val rawContext = verified.context
                 ?: modelFailure("compiler_model_context_unavailable", "No verified compiler context is available.")
-            modelCheck(verified.completeness == ModelCompleteness.COMPLETE && verified.certificateId != null &&
-                model.issues.isEmpty() && context.fullProject && model.snapshot.scopeExclusions.isEmpty() &&
+            resolution?.verify(model, installation, compilationId, checkpoint)
+            val context = resolution?.context ?: rawContext
+            val artifacts = resolution?.artifacts ?: compilation.classpath
+            modelCheck((resolution != null || (verified.completeness == ModelCompleteness.COMPLETE && verified.certificateId != null &&
+                model.issues.isEmpty() && context.fullProject)) && model.snapshot.scopeExclusions.isEmpty() &&
                 model.snapshot.unknownInputs.isEmpty(), "compiler_model_incomplete", "Incomplete model domains cannot establish JVM execution semantics.")
             val chain = compilation.toolchain
                 ?: modelFailure("compiler_model_toolchain_unavailable", "The compilation has no verified toolchain.")
@@ -138,9 +153,9 @@ class KotlinJvmModelBinding private constructor(
                 "Only the actual exported JVM platform/kind is supported; target names grant no platform authority.")
             modelCheck(chain.compilerVersion == CompilerRuleRegistry.VERSION && context.compilerVersion == CompilerRuleRegistry.VERSION,
                 "compiler_model_version_unsupported", "The model must retain the pinned Kotlin 2.4.21 compiler version.")
-            modelCheck(chain.compilerPlugins.isEmpty() && compilation.friendArtifacts.isEmpty() &&
+            modelCheck(chain.compilerPlugins.isEmpty() && (resolution != null || compilation.friendArtifacts.isEmpty()) &&
                 compilation.auxiliaryArtifacts.isEmpty() && compilation.auxiliaryInputFiles.isEmpty() &&
-                compilation.associatedCompilationIds.isEmpty(), "compiler_model_auxiliary_inputs_unsupported",
+                (resolution != null || compilation.associatedCompilationIds.isEmpty()), "compiler_model_auxiliary_inputs_unsupported",
                 "Plugins, friend/associated compilations and auxiliary inputs require separately verified execution semantics.")
             modelCheck(compilation.sourceSetIds.all { model.sourceSet(it)?.dependsOn?.isEmpty() == true } &&
                 compilation.sourceFiles.all { it.path.endsWith(".kt") }, "compiler_model_source_roles_unsupported",
@@ -204,13 +219,25 @@ class KotlinJvmModelBinding private constructor(
                     declared.digest == actual.digest && declared.size == actual.size, "compiler_model_runtime_artifact_mismatch",
                     "Modeled runtime path/bytes/size do not match the selected full runtime image.")
             }
-            verifyDependencies(compilation.classpath, context.classpath, checkpoint)
+            verifyDependencies(artifacts, resolution?.dependencyReadArtifacts(checkpoint) ?: context.classpath, checkpoint)
             verifyModelInstallation(installation, checkpoint)
             val modelContextDigest = jsonDigest(ContractJson.encodeToJsonElement(context))
             val modelToolchainDigest = context.toolchainDigest
                 ?: modelFailure("compiler_model_toolchain_unavailable", "The model has no exact per-compilation toolchain identity.")
             val relation = buildJsonObject {
-                put("schema", if (layout == null) SCHEMA else ORIGINAL_ARGV_SCHEMA)
+                put("schema", if (resolution != null) JVM_PRODUCED_OUTPUT_PREVIEW else if (layout == null) SCHEMA else ORIGINAL_ARGV_SCHEMA)
+                resolution?.let {
+                    put("deferredGraph", it.preview.graph.digest)
+                    put("resolvedDependencyIdentity", requireNotNull(context.dependencyDigest))
+                    put("rawImportedContext", ContractJson.encodeToJsonElement(rawContext))
+                    put("resolvedArtifacts", ContractJson.encodeToJsonElement(artifacts))
+                    put("deferredObligations", ContractJson.encodeToJsonElement(model.issues))
+                    it.declarationArchive?.let { archive ->
+                        put("declaredArchiveKey", archive.archiveKey)
+                        put("declaredOriginalInput", archive.original.analysisKey())
+                        put("declaredFinalArchive", archive.frozen.analysisKey())
+                    }
+                }
                 layout?.let {
                     put("originalArgumentLayout", it.digest)
                     put("normalizedCompilerOptions", ContractJson.encodeToJsonElement(it.normalizedCompilerOptions))
@@ -239,7 +266,7 @@ class KotlinJvmModelBinding private constructor(
             }
             return KotlinJvmModelBinding(model, compilationId, installation, compilation, context, layout,
                 JvmModelBindingIdentity(jsonDigest(relation), compilationId, modelContextDigest, modelToolchainDigest,
-                    installation.digest, view.runtime.digest))
+                    installation.digest, view.runtime.digest), resolution)
         }
     }
 }
@@ -280,7 +307,7 @@ class PreparedJvmModelInput internal constructor(
         verifyFrozen()
         binding.verifyInstallation()
         // Only frozen dependency paths are read here, NEVER the original model dependency paths.
-        verifyDependencies(binding.compilation.classpath, effective.context.classpath)
+        verifyDependencies(binding.executionArtifacts, effective.context.classpath)
         verifyFrozen()
         return KotlinJvmModelPermit(binding, this, child, verifyFrozen)
     }

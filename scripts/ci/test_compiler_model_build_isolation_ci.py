@@ -19,6 +19,7 @@ import re
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 import warnings
 import zipfile
 
@@ -403,6 +404,9 @@ class CompilerModelArchiveEnvelopeTests(unittest.TestCase):
             with zipfile.ZipFile(self.path,'w') as archive:
                 for name,data in entries:
                     info=zipfile.ZipInfo(name,date_time=(1980,1,1,0,0,0))
+                    # ZipInfo replaces backslashes on Windows and truncates NUL.
+                    # Host-independent hostile fixtures must retain literal bytes.
+                    info.filename=name
                     info.compress_type=compression
                     archive.writestr(info,data)
         return self.path
@@ -457,10 +461,42 @@ class CompilerModelArchiveEnvelopeTests(unittest.TestCase):
                     archive_data(self.make_archive(extras=((name,self.CLASS_HEADER),)),MODEL_BRIDGE_CLASSES,MAIN_CLASS)
 
     def test_unsafe_zip_names_reject_even_for_directories(self):
-        for name in ('/absolute/', '../outside/', 'x/../outside/', './alias/', 'x//alias/', 'x\\alias/'):
+        for name in ('/absolute/', '../outside/', 'x/../outside/', './alias/', 'x//alias/',
+                     'x\\alias/', 'x\x00alias/', 'C:/absolute/', 'C:relative/'):
             with self.subTest(name=name):
                 with self.assertRaises(GateFailure):
                     archive_data(self.make_archive(extras=((name,b''),)),MODEL_BRIDGE_CLASSES,MAIN_CLASS)
+
+    def test_hostile_zip_fixture_preserves_literal_central_directory_names(self):
+        names=('x\\alias/', 'x\x00alias/', 'C:/absolute/', 'C:relative/')
+        path=self.make_archive(extras=tuple((name,b'') for name in names))
+        with zipfile.ZipFile(path) as archive:
+            self.assertEqual(list(names),[entry.orig_filename for entry in archive.infolist()[-len(names):]])
+
+    def test_windows_zip_reader_normalization_does_not_admit_a_raw_directory_alias(self):
+        path=self.make_archive(extras=(('x\\alias/',b''),))
+        original_info=zipfile.ZipInfo
+
+        class WindowsNormalizedZipInfo(original_info):
+            """Simulated Windows decoding only; never patch global OS/path APIs."""
+            def __init__(self,*args,**kwargs):
+                super().__init__(*args,**kwargs)
+                self.filename=self.filename.replace('\\','/')
+
+        with patch.object(zipfile,'ZipInfo',WindowsNormalizedZipInfo):
+            with zipfile.ZipFile(path) as archive:
+                entry=archive.infolist()[-1]
+                self.assertEqual('x\\alias/',entry.orig_filename)
+                self.assertEqual('x/alias/',entry.filename)
+                self.assertTrue(entry.is_dir())
+            with self.assertRaises(GateFailure):
+                archive_data(path,MODEL_BRIDGE_CLASSES,MAIN_CLASS)
+
+    def test_safe_directory_and_nested_class_entries_remain_accepted(self):
+        nested=MODEL_WIRE_CLASSES[0]+'$Nested.class'
+        path=self.make_archive(extras=(('dev/',b''),('META-INF/',b''),(nested,self.CLASS_HEADER)))
+        result=archive_data(path,MODEL_BRIDGE_CLASSES,MAIN_CLASS)
+        self.assertEqual(sorted([name+'.class' for name in MODEL_BRIDGE_CLASSES]+[nested]),result['class_entries'])
 
     def test_wrong_manifest_main_or_origin_expansion_rejects(self):
         for manifest in ('Manifest-Version: 1.0\r\nMain-Class: '+M0_MAIN_CLASS+'\r\n\r\n',

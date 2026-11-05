@@ -109,6 +109,8 @@ data class ModelCompilation(
     val auxiliaryArtifacts: List<ModelArtifact> = emptyList(),
     /** Optional full-original-vector facts. Absent legacy fields never infer path-role authority. */
     val jvmArgumentRoles: ModelJvmArgumentRoles? = null,
+    /** Deferred producer obligations never become externally enrolled artifacts after import. */
+    val deferredJvmOutputs: List<ModelJvmProducedOutputReference> = emptyList(),
 )
 
 @Serializable
@@ -170,6 +172,8 @@ class VerifiedProjectModel internal constructor(
     val ingressCertificate: String,
     jvmArgumentLayouts: Map<String, VerifiedJvmArgumentLayout> = emptyMap(),
     jvmArgumentRejections: Map<String, String> = emptyMap(),
+    /** Explicit incomplete-graph preview only; normal context/completeness is unchanged. */
+    val jvmProducedGraph: VerifiedJvmProducedGraph? = null,
 ) {
     private val jvmArgumentLayouts: Map<String, VerifiedJvmArgumentLayout> = immutableMap(jvmArgumentLayouts)
     /** Execution-layout eligibility is separate from unchanged whole-graph completeness issues. */

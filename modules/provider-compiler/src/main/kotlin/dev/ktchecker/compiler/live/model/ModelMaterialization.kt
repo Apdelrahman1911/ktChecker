@@ -193,6 +193,13 @@ class ModelCompilerJobMaterialization internal constructor(
         outputPin.verify(); checkpoint()
     }
 
+    internal fun producedMembers(): List<ModelWire.ProducedMember> {
+        val sealed = output.get() ?: liveFailure("compiler_model_live_output_not_sealed")
+        return Collections.unmodifiableList(sealed.entries.toSortedMap().map { (path, entry) ->
+            ModelWire.ProducedMember(path, entry.directory, entry.size, entry.digest)
+        })
+    }
+
     internal fun outputSealed(): Boolean = output.get() != null
     internal fun outputBytes(): Long = output.get()?.bytes ?: 0L
     internal fun outputEntries(): Int = output.get()?.entries?.size ?: 0
@@ -241,7 +248,7 @@ class ModelCompilerJobMaterialization internal constructor(
                 ModelWire.Dependency(artifact.coordinate, artifact.digest, dependencies[index].size, dependencies[index].fileKey)
             }
             val membersDigest = ModelWire.membersDigest(members)
-            val body = ModelWire.Request(ModelWire.PROFILE,
+            val body = ModelWire.Request(request.generation.profile(),
                 permit.prepared.originalAnalysisKey, permit.archivedInputKey, permit.prepared.bindingIdentity.digest,
                 modelInputIdentity(permit.input, membersDigest), modelInputIdentity(effective, membersDigest),
                 permit.capture.snapshotRoot, permit.capture.classpathRoot, permit.capture.originalOutputRoot,
@@ -250,7 +257,8 @@ class ModelCompilerJobMaterialization internal constructor(
                 // AnalysisContext fields. InputIdentity still hashes each complete raw C/E input.
                 members, permit.prepared.executableCompilationFiles, dependencyMembers,
                 permit.prepared.normalizedCompilerOptions, permit.prepared.normalizedCompilerOptions,
-                ModelWire.profileDigest(request.generation), permit.originalDeadline.identity)
+                ModelWire.profileDigest(request.generation), permit.originalDeadline.identity,
+                permit.prepared.binding.producedResolution?.wire)
             return ModelCompilerJobMaterialization(permit.original, permit.archived, permit.input, effective, body,
                 jobPin, sourcePin, classpathPin, outputPin, snapshotTree(effective, checkpoint),
                 Collections.unmodifiableList(files), Collections.unmodifiableList(dependencies)).also {

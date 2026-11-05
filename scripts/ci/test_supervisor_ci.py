@@ -215,7 +215,7 @@ class NativeFixtureInventoryTests(unittest.TestCase):
             self.assertEqual(("test_live_supervisor.py", "test_supervisor.py"), checks.native_test_file_inventory(fixture.root))
             self.assertEqual(original, checks.native_test_inputs(fixture.root))
             self.assertEqual({"source", "builder", "probe", "tests", "runner"}, set(original))
-            self.assertEqual(22, len(checks.CASES))
+            self.assertEqual(29, len(checks.CASES))
 
     def test_unknown_sibling_and_missing_v1_file_are_rejected(self):
         for alteration in ("unknown_sibling", "missing_v1"):
@@ -459,16 +459,39 @@ class NativeOutcomeTests(unittest.TestCase):
         methods = {f"test_supervisor.{node.name}.{method.name}" for node in document.body if isinstance(node, ast.ClassDef)
                    for method in node.body if isinstance(method, ast.FunctionDef) and method.name.startswith("test_")}
         self.assertEqual(set(checks.CASES), methods)
-        self.assertEqual((4, 18, 22), (len(checks.BUILDER_METHODS), len(checks.NATIVE_METHODS), len(checks.CASES)))
+        self.assertEqual((4, 18, 7, 29), (len(checks.BUILDER_METHODS), len(checks.NATIVE_METHODS),
+                                           len(checks.MOCKED_SHUTDOWN_METHODS), len(checks.CASES)))
 
     def test_exact_linux_passes_and_darwin_linux_only_skips_have_distinct_scope(self):
-        for target, passed, skipped in (("linux-x86_64", 22, 0), ("macos-aarch64", 20, 2)):
+        for target, passed, skipped in (("linux-x86_64", 29, 0), ("macos-aarch64", 27, 2)):
             with tempfile.TemporaryDirectory() as temporary, self.subTest(target=target):
                 fixture = Fixture(Path(temporary), target)
                 result = checks.outcome_metadata(fixture.outcomes(), IDENTITY, fixture.host, checks.native_test_inputs(fixture.root))
                 self.assertEqual((passed, skipped), (result["counts"]["passed"], result["counts"]["skipped"]))
                 self.assertEqual(target.startswith("linux-"), result["linux_syscall_and_owner_death_controls_passed"])
+                self.assertEqual(18 - skipped, result["native_methods_executed"])
+                self.assertEqual(7, result["mocked_shutdown_methods_executed"])
+                self.assertEqual(7, sum(row["scope"] == "mocked_shutdown_state" for row in result["cases"]))
                 self.assertNotIn("PRIVATE", json.dumps(result))
+
+    def test_mocked_shutdown_passes_cannot_replace_unrun_native_methods(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = Fixture(Path(temporary)); value = fixture.outcomes()
+            for row in value["cases"]:
+                if checks.CASES[row["id"]] == "owned_child_runtime":
+                    row.update(state="not_run", skip_reason=None)
+            value["state"] = "failed"
+            value["tests_run"] -= len(checks.NATIVE_METHODS)
+            value["counts"] = {state: sum(row["state"] == state for row in value["cases"])
+                               for state in ("passed", "failed", "error", "skipped", "not_run")}
+            result = checks.outcome_metadata(value, IDENTITY, fixture.host, checks.native_test_inputs(fixture.root))
+            self.assertEqual("failed", result["state"])
+            self.assertEqual(0, result["native_methods_executed"])
+            self.assertEqual(7, result["mocked_shutdown_methods_executed"])
+            self.assertFalse(result["linux_syscall_and_owner_death_controls_passed"])
+            value["state"] = "passed"
+            with self.assertRaises(ValueError):
+                checks.outcome_metadata(value, IDENTITY, fixture.host, checks.native_test_inputs(fixture.root))
 
     def test_missing_duplicate_wrong_skip_boolean_counts_and_qualification_cannot_be_a_pass(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -511,7 +534,7 @@ class NativeOutcomeTests(unittest.TestCase):
                         patch.dict(sys.modules, {"test_supervisor": SimpleNamespace()}), patch.object(runner.sys, "stdout", io.StringIO()):
                     result = runner.run(fixture.args.output, fixture.cc, fixture.root)
                 self.assertEqual("passed", result["state"])
-                self.assertEqual(22, result["tests_run"])
+                self.assertEqual(29, result["tests_run"])
                 discovery.assert_called_once_with(str(fixture.root / checks.MODULE / "native"), pattern="test_supervisor.py")
                 checks.outcome_metadata(result, IDENTITY, fixture.host, checks.native_test_inputs(fixture.root))
 
@@ -543,7 +566,7 @@ class NativeFailureDiagnosticTests(unittest.TestCase):
         return case_type(), partial(runner.OutcomeResult, diagnostic_sources=sources)
 
     def test_first_bound_assertion_line_survives_real_reporter_and_sanitized_projection(self):
-        for target, passed, skipped in (("linux-x86_64", 21, 0), ("macos-aarch64", 19, 2)):
+        for target, passed, skipped in (("linux-x86_64", 28, 0), ("macos-aarch64", 26, 2)):
             with tempfile.TemporaryDirectory() as temporary, self.subTest(target=target):
                 fixture = Fixture(Path(temporary), target)
                 failed, _ = self.synthetic_case(fixture, "def nested(case):\n    PRIVATE_LOCAL = 'PRIVATE local'\n"
@@ -561,7 +584,7 @@ class NativeFailureDiagnosticTests(unittest.TestCase):
                     raw = runner.run(fixture.args.output, fixture.cc, fixture.root)
                 projected = checks.outcome_metadata(raw, IDENTITY, fixture.host, checks.native_test_inputs(fixture.root), fixture.root)
                 self.assertEqual("failed", raw["state"])
-                self.assertEqual(22, raw["tests_run"])
+                self.assertEqual(29, raw["tests_run"])
                 self.assertEqual({"passed": passed, "failed": 1, "error": 0, "skipped": skipped, "not_run": 0}, projected["counts"])
                 self.assertEqual({failed.id(): self.diagnostic(fixture, line=3)}, projected["failure_diagnostics"])
                 self.assertFalse(raw["native_abi_qualified"])
@@ -726,7 +749,9 @@ class NativeControlOrchestrationTests(unittest.TestCase):
             command.assert_not_called()
             self.assertEqual("passed", result["state"])
             self.assertEqual("unavailable", result["controls"]["state"])
-            self.assertEqual(22, result["controls"]["methods_not_executed"])
+            self.assertEqual(29, result["controls"]["methods_not_executed"])
+            self.assertEqual(18, result["controls"]["native_methods_not_executed"])
+            self.assertEqual(7, result["controls"]["mocked_shutdown_methods_not_executed"])
             self.assertFalse(result["native_fixture_controls_passed"])
             self.assertFalse(result["native_helper_executed_by_test_harness"])
 

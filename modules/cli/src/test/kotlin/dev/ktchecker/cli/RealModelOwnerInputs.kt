@@ -266,4 +266,3 @@ internal fun verifyRealModelRuntimeFileBytes(roots: Map<String, Path>, files: Li
         realExpect(Files.isExecutable(path) == file.executable, "real_model_runtime_permissions_changed")
     }
 }
-

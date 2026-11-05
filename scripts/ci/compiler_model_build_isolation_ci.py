@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import struct
 import subprocess
 import sys
@@ -80,15 +80,18 @@ def archive_data(path: Path, families: tuple[str, ...], main_class: str | None) 
     require(path.stat().st_size <= MAX_ARCHIVE_BYTES, "JAR exceeds gate size bound")
     with zipfile.ZipFile(path) as archive:
         entries = archive.infolist()
-        names = [entry.filename for entry in entries]
+        names = [entry.orig_filename for entry in entries]
         require(len(names) == len(set(names)), "Duplicate JAR entries")
         require(sum(entry.file_size for entry in entries) <= MAX_ARCHIVE_BYTES,
                 "Expanded JAR exceeds gate size bound")
         require("META-INF/MANIFEST.MF" in names, "JAR manifest is absent")
         classes = []
         for entry in entries:
-            name = entry.filename
-            require(bool(name) and not name.startswith("/") and "\\" not in name and
+            # ZipInfo normalizes host separators (and truncates NUL) while
+            # reading. Reject the literal archive spelling, never its alias.
+            name = entry.orig_filename
+            require(name == entry.filename and bool(name) and not name.startswith("/") and
+                    "\\" not in name and "\x00" not in name and not PureWindowsPath(name).drive and
                     all(part not in ("", ".", "..") for part in name.removesuffix("/").split("/")),
                     "Unsafe JAR entry path")
             if entry.is_dir() or name == "META-INF/MANIFEST.MF":

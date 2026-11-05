@@ -84,6 +84,26 @@ complete dependency/NOTICE review remain unresolved, so opt-in alone cannot
 authorize publication. Diagnostic reports remain available on failed runs. This
 license gate inspects `installDist`, not the contents of ZIP/TAR archives.
 
+The workflow separately invokes `verify_distribution_archives.py` on Linux and
+macOS after successful preceding steps, even when uploads are not approved. It
+compares both exact Gradle outputs `ktchecker-0.1.0-dev.1.zip` and
+`ktchecker-0.1.0-dev.1.tar` against `modules/cli/build/install/ktchecker`, including
+decoded bytes, relative names, executable flags and the exact
+`ktchecker-0.1.0-dev.1` archive prefix. Upload additionally requires that verifier
+step's successful outcome and lists only those two checked archives, never a
+wildcard that could include unchecked neighbors. The separate metadata-only
+`distribution-archives.json` is retained with existing sanitized evidence; its
+`verified` state is not a generic command, JVM or native test pass.
+
+Windows archive verification remains **unavailable**: the POSIX descriptor-relative
+no-follow interface is not emulated or treated as a pass. Windows still builds,
+tests and inventories distributions, but its skipped archive-verifier step blocks
+archive upload even with owner opt-in. Unsupported formats, unavailable I/O,
+detected drift, mismatch or unconfirmed report delivery cannot pass the verifier.
+This is authored workflow wiring, not evidence of a hosted run. The comparison
+does not establish historical source/build provenance, an atomic snapshot through
+upload, licensing, signing or release qualification.
+
 For an explicit staged installation and existing local archives, the read-only
 archive verifier compares decoded file bytes, names and executable flags without
 extracting or running them. The report parent must already exist and the report

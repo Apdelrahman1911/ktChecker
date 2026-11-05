@@ -15,7 +15,7 @@ import hashlib
 import io
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import shlex
 import shutil
@@ -314,7 +314,8 @@ class SourceAndWorkflowContracts(unittest.TestCase):
                         '[[ "$EXPECTED_COMMIT" == "$WORKFLOW_COMMIT" ]]', '[[ "$GITHUB_RUN_ATTEMPT" == \'1\' ]]',
                         "github.event_name == 'workflow_dispatch' && inputs.confirm_policy == true"):
             self.assertIn(literal, document)
-        self.assertIn(str(producer.DEVELOPER_DIR), document)
+        # The workflow targets macOS even when this source check runs on Windows.
+        self.assertIn(producer.DEVELOPER_DIR.as_posix(), document)
         self.workflow_permission_maps(document)
         self.assertNotRegex(document, r"\b(?:cache|secrets|self-hosted)\s*:")
         action_rows = re.findall(r"^\s+uses: ([^\s#]+)", document, re.M)
@@ -329,6 +330,19 @@ class SourceAndWorkflowContracts(unittest.TestCase):
         self.assertEqual(["python", "scripts/ci/run_native_throws_selftest.py", "--policy", producer.POLICY_ID,
             "--expected-commit", "$NATIVE_THROWS_EXPECTED_COMMIT"], shlex.split(command))
         self.assertNotIn("${{", command)
+
+    def test_workflow_mac_developer_directory_is_independent_of_checker_host_path_flavour(self):
+        literal='/Applications/Xcode_26.4.1.app/Contents/Developer'
+        for flavour in (PurePosixPath,PureWindowsPath):
+            with self.subTest(flavour=flavour.__name__), patch.object(producer,'DEVELOPER_DIR',flavour(literal)):
+                self.test_workflow_is_manual_exact_commit_hosted_and_bounded_with_no_cache_or_write_permission()
+
+    def test_workflow_different_developer_directory_is_not_accepted_after_separator_conversion(self):
+        for path in (PurePosixPath('/Applications/Other.app/Contents/Developer'),
+                     PureWindowsPath('C:/Applications/Xcode_26.4.1.app/Contents/Developer')):
+            with self.subTest(path_flavour=type(path).__name__), patch.object(producer,'DEVELOPER_DIR',path):
+                with self.assertRaises(AssertionError):
+                    self.test_workflow_is_manual_exact_commit_hosted_and_bounded_with_no_cache_or_write_permission()
 
     def test_permission_mutations_reject_global_and_every_job_write_override(self):
         document = (producer.REPO_ROOT / producer.WORKFLOW).read_text(encoding="utf-8")

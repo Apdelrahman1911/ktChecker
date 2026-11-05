@@ -45,6 +45,7 @@ struct supervisor {
     bool owned, group, granted, ready_seen, exec_eof, exec_failed, leader_normal;
     bool signals_finished, reaping_started, stopping, killed, terminal;
     bool wire_broken, control_closed, control_cancelled, wait_failed;
+    bool signal_delivery_uncertain, group_observation_uncertain;
     int child_exit, out, err, ready, gate;
     uint32_t cause, flags;
     uint64_t start, timeout, output_limit, stop_at, kill_at, deadline;
@@ -155,7 +156,10 @@ static void signal_owned(struct supervisor *s, int number) {
         note(s, OWNERSHIP_LOST, F_OWNERSHIP | F_SHUTDOWN); return;
     }
     pid_t destination = s->group ? -s->child : s->child;
-    if (kill(destination, number) != 0 && errno != ESRCH) note(s, SHUTDOWN_UNVERIFIED, F_SHUTDOWN);
+    /* A failed delivery is not proof that any child remains. Preserve its
+     * history, but decide shutdown from the independent post-signal proof or
+     * the original deadline. This does not retry or extend signal authority. */
+    if (kill(destination, number) != 0 && errno != ESRCH) s->signal_delivery_uncertain = true;
 }
 
 static void queue_frame(struct supervisor *s, unsigned char tag, const unsigned char *bytes, size_t size) {
@@ -331,8 +335,20 @@ static void reaped(struct supervisor *s, pid_t pid, int status) {
     s->flags |= F_REAPED; s->owned = false;
 }
 
+/* Called only after a valid leader reap and the platform's independent empty
+ * child-set/group observation. Never rehabilitate a substantive failure or a
+ * first proof obtained at/after the original cleanup deadline. A prior timely
+ * proof remains valid while output is draining. */
+static void confirm_quiescence(struct supervisor *s) {
+    if ((s->flags & F_QUIESCENT) || s->wait_failed || (s->flags & (F_OWNERSHIP | F_SHUTDOWN))) return;
+    uint64_t now = now_ms();
+    if (now == UINT64_MAX) { note(s, IO_FAILURE, F_IO | F_SHUTDOWN); return; }
+    if (now >= s->deadline) { note(s, SHUTDOWN_UNVERIFIED, F_SHUTDOWN); return; }
+    s->flags |= F_QUIESCENT;
+}
+
 static void reap_after_last_signal(struct supervisor *s) {
-    if (!s->signals_finished) return;
+    if (!s->signals_finished || (s->flags & F_QUIESCENT)) return;
     s->reaping_started = true;
 #ifdef __linux__
     /* Subreaping keeps orphaned descendants in our actual waitable child set.
@@ -344,7 +360,7 @@ static void reap_after_last_signal(struct supervisor *s) {
         if (pid > 0) { reaped(s, pid, status); continue; }
         if (pid == 0) return;
         if (errno == EINTR) continue;
-        if (errno == ECHILD && (s->flags & F_REAPED) && !s->wait_failed) s->flags |= F_QUIESCENT;
+        if (errno == ECHILD && (s->flags & F_REAPED) && !s->wait_failed) confirm_quiescence(s);
         else { note(s, SHUTDOWN_UNVERIFIED, F_SHUTDOWN); s->wait_failed = true; }
         return;
     }
@@ -355,16 +371,28 @@ static void reap_after_last_signal(struct supervisor *s) {
         else if (pid < 0 && errno != EINTR) { note(s, SHUTDOWN_UNVERIFIED, F_SHUTDOWN); s->wait_failed = true; }
     }
     if (!(s->flags & F_REAPED) || s->wait_failed) return;
-    if (!s->group && !s->granted) { s->flags |= F_QUIESCENT; return; }
+    if (!s->group && !s->granted) { confirm_quiescence(s); return; }
     /* Darwin: READ-ONLY observation after the LAST signal and leader reap.
      * This number may now be reused. Reuse can only make this proof fail; it
      * MUST NEVER cause another signal. signal_owned cannot run in this phase.
      */
     if (kill(-s->child, 0) != 0) {
-        if (errno == ESRCH) s->flags |= F_QUIESCENT;
-        else { note(s, SHUTDOWN_UNVERIFIED, F_SHUTDOWN); s->wait_failed = true; }
+        if (errno == ESRCH) confirm_quiescence(s);
+        /* EPERM/unknown is NOT emptiness or a wait-custody failure. Keep it
+         * unverified, but allow only bounded read-only observations to continue.
+         * Final failure is sticky if no independent timely proof is obtained. */
+        else s->group_observation_uncertain = true;
     }
 #endif
+}
+
+static bool cleanup_done(struct supervisor *s, uint64_t now) {
+    if (!s->stopping) return false;
+    if ((s->flags & F_QUIESCENT) && s->out < 0 && s->err < 0 && s->ready < 0) return true;
+    if (now < s->deadline) return false;
+    if (!(s->flags & F_QUIESCENT)) note(s, SHUTDOWN_UNVERIFIED, F_SHUTDOWN);
+    if (s->out >= 0 || s->err >= 0 || s->ready >= 0) note(s, IO_FAILURE, F_IO);
+    return true;
 }
 
 static bool configure_signals(void) {
@@ -480,12 +508,7 @@ int main(int argc, char **argv) {
         if (!s.stopping && s.cause != COMPLETED) begin_stop(&s, now);
         if (s.stopping && now >= s.kill_at) finish_signals(&s);
         if (s.signals_finished) reap_after_last_signal(&s);
-        if (s.stopping && (s.flags & F_QUIESCENT) && s.out < 0 && s.err < 0 && s.ready < 0) break;
-        if (s.stopping && now >= s.deadline) {
-            if (!(s.flags & F_QUIESCENT)) note(&s, SHUTDOWN_UNVERIFIED, F_SHUTDOWN);
-            if (s.out >= 0 || s.err >= 0 || s.ready >= 0) note(&s, IO_FAILURE, F_IO);
-            break;
-        }
+        if (cleanup_done(&s, now)) break;
         poll_once(&s, 10);
     }
     /* Nothing after this point signals any PID/group, including on I/O errors. */

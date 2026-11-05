@@ -339,7 +339,7 @@ class KtCheckerPinnedModelApi {
         }
     }
 
-    static String emptyJvmPluginDomain(Object task, Object fullCapture, Object pluginCapture, Object effectiveFiles) {
+    static String emptyJvmPluginDomain(Object task, Object fullCapture, Object pluginCapture, Object effectiveFiles, Object deferred = []) {
         def api = ordinaryJvmProducer(task, fullCapture)
         if (!(pluginCapture instanceof Map) || !(effectiveFiles instanceof List) || !effectiveFiles.isEmpty() ||
             !(pluginCapture.state in ['provider_absent', 'value_absent', 'available']) ||
@@ -383,7 +383,11 @@ class KtCheckerPinnedModelApi {
             getter(arguments, 'getUseFirLT') != Boolean.TRUE) {
             throw new IllegalStateException('Nonordinary script/Java/refinement/frontend domain')
         }
-        ['getFriendPaths', 'getCommonSources', 'getFragments', 'getFragmentSources', 'getFragmentRefines',
+        def allowedFriends = deferred.findAll { it.originalFriendPresent }.collect { it.outputPath }
+        if (pathArray(getter(arguments, 'getFriendPaths')) != allowedFriends) {
+            throw new IllegalStateException('Friend operands lack explicit deferred roles')
+        }
+        ['getCommonSources', 'getFragments', 'getFragmentSources', 'getFragmentRefines',
             'getFragmentDependencies', 'getFragmentFriendDependencies', 'getFragmentIncrementalClasspath',
             'getJavaSourceRoots', 'getScriptTemplates', 'getScriptResolverEnvironment'].each { name ->
             if (!pathArray(getter(arguments, name)).isEmpty()) throw new IllegalStateException('Nonordinary source/input argument domain')
@@ -391,8 +395,56 @@ class KtCheckerPinnedModelApi {
         pluginCapture.state == 'available' ? 'available_empty' : pluginCapture.state
     }
 
+    /** Data only: explicit deferred Kotlin task output, not immutable bytes or producer success.
+     * First slice deliberately rejects Java/resource outputs and all other producer paths. */
+    static List deferredJvmOutputRoles(Object compilation, Object task, Object fullCapture) {
+        ordinaryJvmProducer(task, fullCapture)
+        def associated = compilation.allAssociatedCompilations.toList()
+        if (associated.size() > 1 || compilation.target.name != '' || compilation.target.platformType.toString() != 'jvm') {
+            throw new IllegalStateException('Only one ordinary JVM producer edge is modeled by this preview')
+        }
+        def libraries = originalFiles(getter(task, 'getLibraries'))
+        // Match an actual compile-task output role against the whole ordered library vector.
+        // A nonfriend dependency is not silently upgraded to associateWith. Neither task names
+        // nor output existence identify a producer; foreign Java/resources still become gaps.
+        def candidates = compilation.target.compilations.toList().findAll { !it.is(compilation) }.collect { other ->
+            def otherTask = other.compileTaskProvider.get()
+            def otherOutput = getter(getter(getter(otherTask, 'getDestinationDirectory'), 'get'), 'getAsFile')
+            [compilation: other, task: otherTask, output: otherOutput]
+        }.findAll { candidate -> candidate.output instanceof File &&
+            libraries.any { it.absolutePath == candidate.output.absolutePath } }
+        if (candidates.isEmpty() && associated.isEmpty()) return []
+        if (candidates.size() != 1) throw new IllegalStateException('Exactly one actual producer output role is supported')
+        def producer = candidates[0].compilation
+        if (!producer.project.is(compilation.project) || producer.target.name != '' || producer.target.platformType.toString() != 'jvm') {
+            throw new IllegalStateException('Foreign/nonordinary produced output remains unsupported')
+        }
+        def friend = associated.size() == 1 && associated[0].is(producer)
+        if (!associated.isEmpty() && !friend) throw new IllegalStateException('Actual association differs from the producer output edge')
+        def producerTask = candidates[0].task
+        def output = candidates[0].output
+        if (!(output instanceof File) || output.absolutePath != output.toPath().toAbsolutePath().normalize().toString() ||
+            output.canonicalPath != output.absolutePath || (output.exists() && !output.isDirectory())) {
+            throw new IllegalStateException('Unaliased deferred Kotlin destination required')
+        }
+        def ordinals = libraries.indices.findAll { libraries[it].absolutePath == output.absolutePath }
+        if (ordinals.size() != 1) throw new IllegalStateException('Exact declared producer classpath occurrence unavailable')
+        def actualFriends = pathArray(getter(fullCapture.value, 'getFriendPaths'))
+        def declaredFriends = getter(task, 'getFriendPaths').toList()
+        if (declaredFriends.any { !(it instanceof File) } ||
+            !(actualFriends in [[], [output.absolutePath]]) ||
+            actualFriends != declaredFriends.collect { it.absolutePath } ||
+            (!friend && !actualFriends.isEmpty())) {
+            throw new IllegalStateException('Unmodeled friend-output domain')
+        }
+        [[producerCompilationId: "${producer.project.path}|${producer.target.name}|${producer.name}".toString(),
+            producerCompileTaskPath: getter(producerTask, 'getPath'), outputPath: output.absolutePath,
+            classpathIndex: ordinals[0], originalClasspathPresent: output.exists(), friend: friend,
+            originalFriendPresent: !actualFriends.isEmpty(), declaredFriendPresent: !declaredFriends.isEmpty()]]
+    }
+
     static Map originalJvmArgumentRoles(Object task, Object fullCapture, Object sourceRoot, Object selectedHome,
-        Object sourceFiles, Object classpath, Object pluginDomain) {
+        Object sourceFiles, Object classpath, Object pluginDomain, Object deferred = []) {
         ordinaryJvmProducer(task, fullCapture)
         if (File.separator != '/' || File.pathSeparator != ':' || !(sourceRoot instanceof java.nio.file.Path) ||
             !(selectedHome instanceof String) || !(sourceFiles instanceof List) || !(classpath instanceof List) ||
@@ -423,9 +475,12 @@ class KtCheckerPinnedModelApi {
         if ((operand != null && !(operand instanceof String)) || classpath.any { !(it instanceof Map) || !(it.path instanceof String) } ||
             classpath.collect { it.path } != declared.collect { it.absolutePath } || declared.any { file ->
                 def path = file.toPath().toAbsolutePath().normalize()
-                path.toString() != file.absolutePath || !java.nio.file.Files.isRegularFile(path, java.nio.file.LinkOption.NOFOLLOW_LINKS) ||
-                    path.toRealPath() != path
-            } || (operand == null ? !declared.isEmpty() : operand != declared.collect { it.absolutePath }.join(File.pathSeparator))) {
+                def pending = deferred.find { it.outputPath == file.absolutePath }
+                path.toString() != file.absolutePath || (pending != null ? file.canonicalPath != file.absolutePath ||
+                    (file.exists() && !file.isDirectory()) || file.exists() != pending.originalClasspathPresent :
+                    !java.nio.file.Files.isRegularFile(path, java.nio.file.LinkOption.NOFOLLOW_LINKS) || path.toRealPath() != path)
+            } || (operand == null ? !declared.findAll { it.exists() }.isEmpty() :
+                operand != declared.findAll { it.exists() }.collect { it.absolutePath }.join(File.pathSeparator))) {
             throw new IllegalStateException('Original full ordered classpath role differs from independently captured task files')
         }
         def destination = getter(arguments, 'getDestination')
@@ -442,7 +497,8 @@ class KtCheckerPinnedModelApi {
         // owner source/JDK/default-output provenance; output presence is NOT attestation.
         [schemaVersion: 1, adapterId: 'ktchecker/kgp-2.4.21-original-jvm-roles/1', compileTaskPath: getter(task, 'getPath'),
             sourcePaths: paths, classpathOperand: operand, destinationPath: destination,
-            selectedJdkHome: selectedHome, jdkHomeOperand: jdk, pluginDataState: pluginDomain]
+            selectedJdkHome: selectedHome, jdkHomeOperand: jdk, pluginDataState: pluginDomain,
+            friendPathOperands: pathArray(getter(arguments, 'getFriendPaths'))]
     }
 
     static Map projectOwnerApi(Object project) {
@@ -899,7 +955,22 @@ gradle.projectsEvaluated {
                         if (files.any { !(it instanceof File) }) throw new IllegalStateException('Unsupported friend file vocabulary')
                         files
                     }
-                    if (friendFiles != null) friends = friendFiles.collect { artifact(it, 'friend:' + it.absolutePath, id) }
+                    def deferredJvmOutputs = []
+                    if (target.platformType.toString() == 'jvm' && fullArguments != null && friendFiles != null) {
+                        def observedDeferred = capture('compiler_produced_inputs_unmodeled', id, 'compiler-deferred-jvm-output-roles') {
+                            KtCheckerPinnedModelApi.deferredJvmOutputRoles(c, task, fullArguments)
+                        }
+                        if (observedDeferred != null) deferredJvmOutputs = observedDeferred
+                    }
+                    def compilationArtifact = { File file, String coordinate ->
+                        if (deferredJvmOutputs.any { it.outputPath == file.absolutePath }) {
+                            // ALWAYS pending, even if stale build outputs exist. They are never enrolled as bytes.
+                            [coordinate: coordinate, path: file.absolutePath, digest: null, size: null]
+                        } else artifact(file, coordinate, id)
+                    }
+                    deferredJvmOutputs.each { pending -> issue('jvm_produced_output_deferred', id,
+                        "Deferred JVM output from ${pending.producerCompilationId} at classpath ordinal ${pending.classpathIndex}.".toString()) }
+                    if (friendFiles != null) friends = friendFiles.collect { compilationArtifact(it, 'friend:' + it.absolutePath) }
                     if (fullArguments != null && friendFiles != null && target.platformType.toString() == 'jvm') {
                         capture('compiler_arguments_unmodeled', id, 'compiler-friend-argument-roles') {
                             KtCheckerPinnedModelApi.samePaths(KtCheckerPinnedModelApi.pathArray(known(fullArguments.value, 'getFriendPaths')), friendFiles)
@@ -973,7 +1044,7 @@ gradle.projectsEvaluated {
                     def emptyPluginDomain = null
                     if (target.platformType.toString() == 'jvm' && fullArguments != null && pluginDataCapture != null && pluginFiles != null) {
                         emptyPluginDomain = capture('compiler_arguments_unmodeled', id, 'compiler-jvm-empty-plugin-domain') {
-                            KtCheckerPinnedModelApi.emptyJvmPluginDomain(task, fullArguments, pluginDataCapture, pluginFiles)
+                            KtCheckerPinnedModelApi.emptyJvmPluginDomain(task, fullArguments, pluginDataCapture, pluginFiles, deferredJvmOutputs)
                         }
                     }
                     if (pluginDataCapture != null && pluginDataCapture.state != 'available' && emptyPluginDomain == null) {
@@ -988,7 +1059,7 @@ gradle.projectsEvaluated {
                         // Preserve ALL declared task entries, including absent/generated/tree
                         // outputs. The pinned builder filters missing files for its argv; that
                         // is not proof of authenticated NO-SOURCE absence or new artifact origin.
-                        cp = declaredCompilerFiles.collect { artifact(it, 'resolved:' + it.name, id) }
+                        cp = declaredCompilerFiles.collect { compilationArtifact(it, 'resolved:' + it.name) }
                         if (fullArguments != null && target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compiler-classpath-argument-roles') {
                             def actual = known(fullArguments.value, 'getClasspath')
                             def expected = declaredCompilerFiles.findAll { it.exists() }.collect { it.absolutePath }.join(File.pathSeparator)
@@ -1009,13 +1080,13 @@ gradle.projectsEvaluated {
                     def associated = []
                     try { associated = c.allAssociatedCompilations.collect { a -> "${a.project.path}|${a.target.name}|${a.name}".toString() }.sort() }
                     catch (Exception error) { issue('associated_compilations_unavailable', id, error.class.simpleName + ': actual friend/association graph unavailable') }
-                    if (!associated.isEmpty() && friends.isEmpty()) issue('compiler_arguments_unmodeled', id,
+                    if (!associated.isEmpty() && friends.isEmpty() && !deferredJvmOutputs.any { it.friend }) issue('compiler_arguments_unmodeled', id,
                         'compiler-associated-friend-inputs: associated compilations are retained but no immutable friend-output bytes were established')
                     def jvmArgumentRoles = null
                     if (target.platformType.toString() == 'jvm' && fullArguments != null && selectedJdk != null && emptyPluginDomain != null) {
                         jvmArgumentRoles = capture('compiler_arguments_unmodeled', id, 'compiler-original-jvm-argument-roles') {
                             KtCheckerPinnedModelApi.originalJvmArgumentRoles(task, fullArguments, rootPath, selectedJdk.home,
-                                actualFiles, cp, emptyPluginDomain)
+                                actualFiles, cp, emptyPluginDomain, deferredJvmOutputs)
                         }
                     }
                     def fact = [id: id, moduleId: p.path, target: target.name, platform: target.platformType.toString(), name: c.name,
@@ -1025,7 +1096,7 @@ gradle.projectsEvaluated {
                         toolchain: toolchain, compilerArguments: args, languageVersion: language, apiVersion: api,
                         friendArtifacts: friends, producedVariants: [], associatedCompilationIds: associated,
                         auxiliaryInputFiles: auxiliaryFiles.unique { it.path }.sort { it.path }, auxiliaryArtifacts: auxiliaryArtifacts,
-                        jvmArgumentRoles: jvmArgumentRoles]
+                        jvmArgumentRoles: jvmArgumentRoles, deferredJvmOutputs: deferredJvmOutputs]
                     compilations << fact
                     compilationObjects << [project: p, target: target, compilation: c, task: task, fact: fact]
                 }

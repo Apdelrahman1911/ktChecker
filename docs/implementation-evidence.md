@@ -7,6 +7,48 @@ catalog mapping, mocked diagnostic, or successful prerequisite probe does not
 establish the next category. Release gates in [validation-ci.md](validation-ci.md)
 and [PLAN.md](PLAN.md) remain unchanged.
 
+## Later focused receipts and retained failures — 2026-11-05
+
+**These are separate source-bound observations, not an aggregate pass, a full
+current-source graph, or a new runnable distribution.** Paths below are under
+`build/ci-evidence/` in the isolated integration checkout. SHA-256 source digests
+identify dirty-tree bytes, not just the common base commit `97810cc732edc6b2d24d5dd8038f9085aca237d1`.
+
+| Receipt | Actual scoped result |
+| --- | --- |
+| `focused68-20261105-r3/root-verification.json` | **68/68 methods passed**, zero failures/skips, exit 0; includes three config baseline regressions. CLI helpers compiled; synthetic authorities, not genuine provider/host-model execution or the full graph. |
+| `bridges-integration-20261105-r2/summary.json` | MCP **17/17** and reference host **165/165**, zero failures/skips, both exit 0. No actual model request or host-model observation. |
+| `connected51-focused-20261105-r2/root-verification.json` — retained predecessor | **28 passed, two failed, 21 unexecuted**, zero skipped; 30/51 executed, exit 1. Production compilation failed for a missing `liveCheck` import; CLI helpers were not reached. The two wire-test failures are not erased by R3. |
+| `detekt-iteration-cohort-20261105-r1/root-verification.json` | **28 detector analyses, 29 native confirmations, 38 calls, 116 events; 1/1 JUnit**, zero failures/skips, exit 0. Root rehashed 515 references. Actual synthetic Linux/JVM LIGHT cohort only; seven approved-not-run rules, heuristic gaps and the declared/embedded parser boundary remain unqualified. |
+| `native5-adoption-20261105-asw8nsvo/linux22-root-readback.json` | CI author's original **22 Linux controls passed** (four builder metadata, 18 owned-child runtime), zero failures/skips. Root verified five-file adopted source matching, not a new whole-tree run or macOS qualification; root did not rerun them. |
+
+R3 and both TS runs share unchanged source
+`128590862b3cbcaf9ccac2a7f6f17a2a31717a635eb9c9ab9645ff3d5f121b4f`;
+retained R2 used `5c9f7fc07d4bf4070f3978a9ccac4214e3ab28fbd17ee7417fa0b6a6bcaa1a15`.
+Detekt used unchanged source `379600c0becf37dfd1dfad26befd9f0797520711f817a53acc9ad797bee10a57`;
+that is also the native adoption postimage, **not** a blanket Linux22 execution binding.
+Receipt SHA-256 pins in table order:
+`4bb90b489da491e617b82029dca29e14e80ad9bad1f78bd6d2c7f6c3a99dbaf8`,
+`2a3678b92ec75af5364514c141a40acc3d7d680e78f89dee633d3a2792936e97`,
+`e7501229b9df83ebde1caa95677795f83dd55827eb57bdbdbc9f1d4c3d36b8ae`,
+`99beed21e2bdb1f56549dabac1053f86fbf4ddaa550fd903c7b7b5b5993c91bf`,
+`c886c64f62125a3861876a793d710cdf392a21516578bd31abc0ecbd933b326f`.
+
+The retained hosted PR1 observation remains **12 jobs: two success, ten failure**
+at actual reported merge checkout `87d9f0ac2e3a0b4a65fa634899de289dc181491c`,
+not its API head or later local fixes. Windows timeout/final-source gaps remain.
+Sanitized `hosted-ci-evidence-summary-r1.json` SHA-256:
+`bcf2b09b344789e381d0070dff2ef43cf01f3862c534a1cdcb4cc05f743a7cbf`.
+
+The later metadata-only `current-coverage-97810cc-20261105-independent-r2-kWi8t6Oq/summary.json`
+(SHA-256 `61a37df9838e51c12dfaa3e78dd809902315f49a52726e1e302ef683190ce24e`)
+retains **1,663 × eight = 13,304 rows; two implemented, zero tested, zero qualified**
+at source `6bf2db663bdf26c5b59221320a92597c6d1d354c6f1ddc189af1a771c02aa206`.
+All runtime defaults and qualification aggregates remain false. No coverage credit
+transfers across these tuples; no production runtime/model, platform/ABI, full
+native-supervision or release qualification is claimed. The older installation
+and all earlier failed, incomplete, unavailable and unexecuted evidence remain.
+
 ## Current-source addendum — 2026-11-05
 
 **These later receipts do not establish a complete current-source graph or a new

@@ -29,6 +29,8 @@ public final class CompilerModelWire {
 
     public static final String VERSION = "ktchecker/compiler-model-job/preview-1";
     public static final String PROFILE = "ktchecker/compiler-jvm-model/preview-1";
+    public static final String PRODUCED_PROFILE = "ktchecker/compiler-jvm-model/produced-preview-1";
+    public static final String PRODUCED_API = "kotlin-2.4.21/caller-owned-JvmCliPipeline-produced-1";
     public static final String API = "kotlin-2.4.21/caller-owned-JvmCliPipeline-model-1";
     public static final String COMPILER_VERSION = "2.4.21";
     public static final String COMPILER_SHA256 = "sha256:ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02";
@@ -60,7 +62,7 @@ public final class CompilerModelWire {
     public static final long MAX_GENERATION_DEPENDENCY_BYTES = 536_870_912L;
     private static final int MAX_ARGV = 128;
     private static final int MAX_ARGV_BYTES = ApplicationWire.MAX_RESULT_BODY_BYTES;
-    private static final int GENERATION = 1, REQUEST = 2, OBSERVATION = 3;
+    private static final int GENERATION = 1, REQUEST = 2, OBSERVATION = 3, PRODUCED_REQUEST = 4;
 
     /** File keys name admitted materialized files, not the original installation's artifact paths. */
     public record Artifact(String coordinate, String fileName, String digest, long size, String fileKey) {
@@ -87,7 +89,8 @@ public final class CompilerModelWire {
     public record Generation(String profile, String apiVersion, String compilerVersion,
                              Jdk jdk, Artifact bridge, List<Artifact> compilerArtifacts) {
         public Generation {
-            require(PROFILE.equals(profile) && API.equals(apiVersion)
+            require(((PROFILE.equals(profile) && API.equals(apiVersion)) ||
+                    (PRODUCED_PROFILE.equals(profile) && PRODUCED_API.equals(apiVersion)))
                     && COMPILER_VERSION.equals(compilerVersion), ErrorCode.UNSUPPORTED);
             nonnull(jdk); nonnull(bridge);
             require(bridge.size <= MAX_BRIDGE_BYTES, ErrorCode.LIMIT);
@@ -138,6 +141,89 @@ public final class CompilerModelWire {
         }
     }
 
+    /** Detached lineage, never a host producer-success capability. A worker ALSO checks its own prior result/tree. */
+    public record ProducedDependency(int classpathIndex, String producerCompilationId, String referenceDigest,
+                                     String generation, int producerSequence, String producerBindingDigest,
+                                     String requestDigest, String resultDigest, String outputDigest, boolean friend) {
+        public ProducedDependency {
+            require(classpathIndex >= 0 && classpathIndex < MAX_DEPENDENCIES, ErrorCode.LIMIT);
+            modelCompilationId(producerCompilationId); checkDigest(referenceDigest);
+            ApplicationWire.token(generation); require(producerSequence > 0 && producerSequence <= ApplicationWire.MAX_JOBS, ErrorCode.LIMIT);
+            checkDigest(producerBindingDigest); checkDigest(requestDigest); checkDigest(resultDigest); checkDigest(outputDigest);
+        }
+    }
+
+    public record ProducedExecution(String planDigest, String compilationId, String rawContextDigest,
+                                    String resolutionDigest, List<ProducedDependency> producers) {
+        public ProducedExecution {
+            checkDigest(planDigest); modelCompilationId(compilationId); checkDigest(rawContextDigest); checkDigest(resolutionDigest);
+            producers = ApplicationWire.list(producers, 1); // First reviewed vertical slice: one actual producer edge.
+            for (ProducedDependency producer : producers) require(!producer.producerCompilationId.equals(compilationId), ErrorCode.IDENTITY);
+        }
+    }
+
+    /**
+     * Exact exporter identity: Gradle project path | target name | compilation name.
+     * In particular the JVM plugin's root main compilation is ":||main". This is
+     * opaque lineage metadata, NOT an artifact coordinate or a filesystem path.
+     * Validation never normalizes names or grants model/execution authority.
+     */
+    static void modelCompilationId(String value) {
+        ApplicationWire.text(value, MAX_ID_BYTES, false);
+        String[] parts = value.split("\\|", -1);
+        require(parts.length == 3, ErrorCode.VALUE);
+        require(parts[0].startsWith(":") && (parts[0].equals(":") ||
+                (!parts[0].endsWith(":") && !parts[0].contains("::"))), ErrorCode.VALUE);
+        require((parts[1].isEmpty() || !parts[1].isBlank()) && !parts[2].isBlank(), ErrorCode.VALUE);
+    }
+
+    /** Identifier-safe byte-artifact label; the raw compilation ID stays in ProducedExecution. */
+    public static String producedArtifactCoordinate(String compilationId) {
+        modelCompilationId(compilationId);
+        return "produced-jvm:" + ApplicationWire.sha256(ApplicationWire.utf8(compilationId, MAX_ID_BYTES)).substring(7);
+    }
+
+    /** Complete logical compiler-output inventory, including directories and Kotlin module metadata. */
+    public record ProducedMember(String path, boolean directory, long size, String digest) {
+        public ProducedMember {
+            logicalPath(path); require(size >= 0 && size <= MAX_JOB_OUTPUT_BYTES, ErrorCode.LIMIT);
+            if (directory) require(size == 0 && digest == null, ErrorCode.VALUE);
+            else {
+                checkDigest(digest);
+                require(path.endsWith(".class") || (path.startsWith("META-INF/") && path.endsWith(".kotlin_module")), ErrorCode.UNSUPPORTED);
+            }
+        }
+    }
+
+    /** Streaming bounded inventory hash; inventories cannot inflate the unchanged request frame. */
+    public static String producedOutputDigest(List<ProducedMember> values) {
+        List<ProducedMember> members = ApplicationWire.list(values, MAX_JOB_OUTPUT_FILES);
+        require(!members.isEmpty(), ErrorCode.VALUE);
+        java.security.MessageDigest digest;
+        try { digest = java.security.MessageDigest.getInstance("SHA-256"); }
+        catch (java.security.NoSuchAlgorithmException impossible) { throw new AssertionError(impossible); }
+        digest.update(ApplicationWire.utf8("ktchecker/complete-produced-jvm-tree/1", MAX_ID_BYTES));
+        digest.update(java.nio.ByteBuffer.allocate(4).putInt(members.size()).array());
+        Set<String> directories = new HashSet<>(), names = new HashSet<>();
+        long bytes = 0; String previous = ""; boolean hasClass = false;
+        for (ProducedMember member : members) {
+            require(previous.compareTo(member.path) < 0 && names.add(member.path), ErrorCode.DUPLICATE); previous = member.path;
+            String parent = member.path;
+            while (parent.lastIndexOf('/') >= 0) {
+                parent = parent.substring(0, parent.lastIndexOf('/'));
+                require(directories.contains(parent), ErrorCode.PATH);
+            }
+            if (member.directory) directories.add(member.path); else hasClass |= member.path.endsWith(".class");
+            require(member.size <= MAX_JOB_OUTPUT_BYTES - bytes, ErrorCode.LIMIT); bytes += member.size;
+            ApplicationWire.Writer entry = new ApplicationWire.Writer(1_024);
+            entry.string(member.path, MAX_LOGICAL_PATH_BYTES); entry.bool(member.directory); entry.i64(member.size);
+            if (!member.directory) entry.string(member.digest, 71);
+            byte[] encoded = entry.finish(); digest.update(java.nio.ByteBuffer.allocate(4).putInt(encoded.length).array()); digest.update(encoded);
+        }
+        require(hasClass, ErrorCode.UNSUPPORTED);
+        return "sha256:" + java.util.HexFormat.of().formatHex(digest.digest());
+    }
+
     public record Request(String profile, String ownerInputKey, String archivedInputKey, String modelBindingDigest,
                           InputIdentity original, InputIdentity effective,
                           ApplicationWire.Root snapshotRoot, ApplicationWire.Root originalClasspathRoot,
@@ -145,9 +231,22 @@ public final class CompilerModelWire {
                           ApplicationWire.Root sourceRoot, ApplicationWire.Root classpathRoot,
                           ApplicationWire.Root outputRoot, List<Member> files, List<String> compilationPaths,
                           List<Dependency> dependencies, List<String> originalOptions, List<String> effectiveOptions,
-                          String profileDigest, String deadlineIdentity) {
+                          String profileDigest, String deadlineIdentity, ProducedExecution producedExecution) {
+        /** Legacy source/binary vocabulary remains explicitly separate and keeps its original encoding. */
+        public Request(String profile, String ownerInputKey, String archivedInputKey, String modelBindingDigest,
+                       InputIdentity original, InputIdentity effective, ApplicationWire.Root snapshotRoot,
+                       ApplicationWire.Root originalClasspathRoot, ApplicationWire.Root originalOutputRoot,
+                       ApplicationWire.Root jobRoot, ApplicationWire.Root sourceRoot, ApplicationWire.Root classpathRoot,
+                       ApplicationWire.Root outputRoot, List<Member> files, List<String> compilationPaths,
+                       List<Dependency> dependencies, List<String> originalOptions, List<String> effectiveOptions,
+                       String profileDigest, String deadlineIdentity) {
+            this(profile, ownerInputKey, archivedInputKey, modelBindingDigest, original, effective, snapshotRoot,
+                originalClasspathRoot, originalOutputRoot, jobRoot, sourceRoot, classpathRoot, outputRoot,
+                files, compilationPaths, dependencies, originalOptions, effectiveOptions, profileDigest, deadlineIdentity, null);
+        }
         public Request {
-            require(PROFILE.equals(profile), ErrorCode.UNSUPPORTED);
+            require((PROFILE.equals(profile) && producedExecution == null) ||
+                (PRODUCED_PROFILE.equals(profile) && producedExecution != null), ErrorCode.UNSUPPORTED);
             checkDigest(ownerInputKey); checkDigest(archivedInputKey); checkDigest(modelBindingDigest);
             nonnull(original); nonnull(effective); nonnull(snapshotRoot); nonnull(originalOutputRoot);
             nonnull(jobRoot); nonnull(sourceRoot); nonnull(classpathRoot); nonnull(outputRoot);
@@ -172,11 +271,16 @@ public final class CompilerModelWire {
             for (ApplicationWire.Root root : roots) keys.add(root.fileKey());
             for (Member file : files) require(keys.add(file.fileKey), ErrorCode.DUPLICATE);
             for (Dependency dependency : dependencies) require(keys.add(dependency.fileKey), ErrorCode.DUPLICATE);
+            if (producedExecution != null) {
+                require(producedExecution.resolutionDigest.equals(original.dependencyDigest), ErrorCode.IDENTITY);
+                for (ProducedDependency producer : producedExecution.producers)
+                    require(producer.classpathIndex < dependencies.size(), ErrorCode.IDENTITY);
+            }
             // All per-item maxima cannot be combined to evade the existing application frame cap.
             encodeRequestFields(profile, ownerInputKey, archivedInputKey, modelBindingDigest, original, effective,
                     snapshotRoot, originalClasspathRoot, originalOutputRoot, jobRoot, sourceRoot, classpathRoot,
                     outputRoot, files, compilationPaths, dependencies, originalOptions, effectiveOptions,
-                    profileDigest, deadlineIdentity);
+                    profileDigest, deadlineIdentity, producedExecution);
         }
     }
 
@@ -254,7 +358,7 @@ public final class CompilerModelWire {
         return encodeRequestFields(value.profile, value.ownerInputKey, value.archivedInputKey, value.modelBindingDigest,
                 value.original, value.effective, value.snapshotRoot, value.originalClasspathRoot, value.originalOutputRoot,
                 value.jobRoot, value.sourceRoot, value.classpathRoot, value.outputRoot, value.files, value.compilationPaths,
-                value.dependencies, value.originalOptions, value.effectiveOptions, value.profileDigest, value.deadlineIdentity);
+                value.dependencies, value.originalOptions, value.effectiveOptions, value.profileDigest, value.deadlineIdentity, value.producedExecution);
     }
 
     private static byte[] encodeRequestFields(String profile, String ownerInputKey, String archivedInputKey,
@@ -263,8 +367,8 @@ public final class CompilerModelWire {
             ApplicationWire.Root jobRoot, ApplicationWire.Root sourceRoot, ApplicationWire.Root classpathRoot,
             ApplicationWire.Root outputRoot, List<Member> files, List<String> compilationPaths,
             List<Dependency> dependencies, List<String> originalOptions, List<String> effectiveOptions,
-            String profileDigest, String deadlineIdentity) {
-        ApplicationWire.Writer out = writer(REQUEST, ApplicationWire.MAX_JOB_BODY_BYTES);
+            String profileDigest, String deadlineIdentity, ProducedExecution producedExecution) {
+        ApplicationWire.Writer out = writer(producedExecution == null ? REQUEST : PRODUCED_REQUEST, ApplicationWire.MAX_JOB_BODY_BYTES);
         out.string(profile, MAX_ID_BYTES); out.string(ownerInputKey, 71); out.string(archivedInputKey, 71);
         out.string(modelBindingDigest, 71); writeInput(out, original); writeInput(out, effective);
         ApplicationWire.writeRoot(out, snapshotRoot); out.bool(originalClasspathRoot != null);
@@ -278,11 +382,14 @@ public final class CompilerModelWire {
         out.i32(dependencies.size()); for (Dependency dependency : dependencies) writeDependency(out, dependency);
         writeOptions(out, originalOptions); writeOptions(out, effectiveOptions);
         out.string(profileDigest, 71); out.string(deadlineIdentity, 32);
+        if (producedExecution != null) writeProducedExecution(out, producedExecution);
         return out.finish();
     }
 
     public static Request decodeRequest(byte[] bytes) {
-        ApplicationWire.Reader in = reader(bytes, REQUEST, ApplicationWire.MAX_JOB_BODY_BYTES);
+        ApplicationWire.Reader in = new ApplicationWire.Reader(bytes, ApplicationWire.MAX_JOB_BODY_BYTES);
+        int kind = in.u8(); require(kind == REQUEST || kind == PRODUCED_REQUEST, ErrorCode.KIND);
+        require(in.string(MAX_ID_BYTES).equals(VERSION), ErrorCode.VERSION);
         String profile = in.string(MAX_ID_BYTES), owner = in.string(71), archived = in.string(71), binding = in.string(71);
         InputIdentity original = readInput(in), effective = readInput(in);
         ApplicationWire.Root snapshot = ApplicationWire.readRoot(in);
@@ -300,10 +407,12 @@ public final class CompilerModelWire {
         for (int i = 0; i < count; i++) dependencies.add(readDependency(in));
         List<String> originalOptions = readOptions(in), effectiveOptions = readOptions(in);
         String profileDigest = in.string(71), deadline = in.string(32);
+        ProducedExecution produced = kind == PRODUCED_REQUEST ? readProducedExecution(in) : null;
+        require((kind == REQUEST) == PROFILE.equals(profile), ErrorCode.UNSUPPORTED);
         in.end();
         return new Request(profile, owner, archived, binding, original, effective, snapshot, originalClasspath,
                 originalOutput, job, source, classpath, output, files, compilation, dependencies,
-                originalOptions, effectiveOptions, profileDigest, deadline);
+                originalOptions, effectiveOptions, profileDigest, deadline, produced);
     }
 
     public static byte[] encodeObservation(Observation value) {
@@ -361,6 +470,7 @@ public final class CompilerModelWire {
         ApplicationWire.Writer out = new ApplicationWire.Writer(ApplicationWire.MAX_JOB_BODY_BYTES);
         out.bytes(encodeGeneration(value), ApplicationWire.MAX_LAUNCH_BODY_BYTES);
         out.string("strict-model-options-1", MAX_ID_BYTES);
+        if (PRODUCED_PROFILE.equals(value.profile)) out.string("same-generation-complete-produced-tree-friend-1", MAX_ID_BYTES);
         out.i32(MAX_SNAPSHOT_FILES); out.i32(MAX_SOURCE_BYTES); out.i64(MAX_SNAPSHOT_BYTES);
         out.i32(MAX_COMPILATION_FILES); out.i32(MAX_DEPENDENCIES); out.i64(MAX_DEPENDENCY_BYTES);
         out.i64(MAX_DEPENDENCY_TOTAL_BYTES); out.i32(MAX_LOGICAL_PATH_BYTES); out.i32(MAX_PATH_DEPTH);
@@ -398,6 +508,15 @@ public final class CompilerModelWire {
         return ApplicationWire.digest("compiler-model-exact-work", out.finish());
     }
 
+    public static String workDigest(Request request) {
+        nonnull(request);
+        String base = workDigest(request.files, request.compilationPaths, request.dependencies, request.originalOptions);
+        if (request.producedExecution == null) return base;
+        ApplicationWire.Writer out = new ApplicationWire.Writer(ApplicationWire.MAX_JOB_BODY_BYTES);
+        out.string(base, 71); writeProducedExecution(out, request.producedExecution);
+        return ApplicationWire.digest("compiler-model-produced-exact-work", out.finish());
+    }
+
     public static String diagnosticsDigest(List<Diagnostic> values) {
         List<Diagnostic> diagnostics = diagnosticCopy(values);
         ApplicationWire.Writer out = new ApplicationWire.Writer(MAX_DIAGNOSTIC_BYTES + 256);
@@ -423,7 +542,7 @@ public final class CompilerModelWire {
 
     public static List<String> arguments(ApplicationWire.Launch launch, Generation generation, Request request) {
         matchGeneration(launch, generation); nonnull(request);
-        require(PROFILE.equals(request.profile) && profileDigest(generation).equals(request.profileDigest), ErrorCode.IDENTITY);
+        require(generation.profile.equals(request.profile) && profileDigest(generation).equals(request.profileDigest), ErrorCode.IDENTITY);
         ArrayList<String> values = new ArrayList<>();
         values.add("-no-stdlib"); values.add("-no-reflect"); values.add("-Xrender-internal-diagnostic-names");
         values.addAll(request.effectiveOptions);
@@ -435,6 +554,10 @@ public final class CompilerModelWire {
             dependencies.add(resolve(request.classpathRoot, "artifact-" + i + ".jar"));
         // An explicitly empty owned directory is not an empty-string/current-directory lookup.
         values.add(dependencies.isEmpty() ? request.classpathRoot.path() : String.join(File.pathSeparator, dependencies));
+        if (request.producedExecution != null) {
+            for (ProducedDependency producer : request.producedExecution.producers) if (producer.friend)
+                values.add("-Xfriend-paths=" + resolve(request.classpathRoot, "artifact-" + producer.classpathIndex + ".jar"));
+        }
         for (String path : request.compilationPaths) {
             String physical = resolve(request.sourceRoot, path); ApplicationWire.absolutePath(physical); values.add(physical);
         }
@@ -454,7 +577,7 @@ public final class CompilerModelWire {
     public static void matchGeneration(ApplicationWire.Launch launch, Generation generation) {
         nonnull(launch); nonnull(generation);
         ApplicationWire.Identity identity = launch.identity();
-        require(identity.adapterVersion().equals(API) && identity.profile().equals(PROFILE)
+        require(identity.adapterVersion().equals(generation.apiVersion) && identity.profile().equals(generation.profile)
                 && identity.bridgeDigest().equals(generation.bridge.digest)
                 && identity.compilerClosureDigest().equals(compilerClosureDigest(generation))
                 && identity.toolchainDigest().equals(toolchainDigest(generation))
@@ -481,12 +604,14 @@ public final class CompilerModelWire {
     public static void matchRequest(ApplicationWire.Launch launch, Generation generation,
                                     ApplicationWire.Job job, Request request) {
         matchGeneration(launch, generation); nonnull(job); nonnull(request);
-        require(job.generation().equals(launch.identity().generation()) && job.sequence() <= launch.limits().maxJobs()
+        require(request.profile.equals(generation.profile) && job.generation().equals(launch.identity().generation()) && job.sequence() <= launch.limits().maxJobs()
                 && job.originalKey().equals(request.original.analysisKey)
                 && job.effectiveKey().equals(request.effective.analysisKey)
                 && job.deadlineIdentity().equals(request.deadlineIdentity)
                 && Arrays.equals(job.payload(), encodeRequest(request))
                 && profileDigest(generation).equals(request.profileDigest), ErrorCode.IDENTITY);
+        if (request.producedExecution != null) for (ProducedDependency producer : request.producedExecution.producers)
+            require(producer.generation.equals(job.generation()) && producer.producerSequence < job.sequence(), ErrorCode.IDENTITY);
         String relativeJob = "jobs/" + job.sequence();
         require(request.jobRoot.path().equals(resolve(launch.generationRoot(), relativeJob))
                 && request.sourceRoot.path().equals(resolve(launch.generationRoot(), relativeJob + "/sources"))
@@ -527,8 +652,7 @@ public final class CompilerModelWire {
                 && Arrays.equals(result.payload(), encodeObservation(observation)), ErrorCode.IDENTITY);
         require(observation.jobRoot.equals(request.jobRoot) && observation.sourceRoot.equals(request.sourceRoot)
                 && observation.outputRoot.equals(request.outputRoot)
-                && observation.memberDigest.equals(workDigest(request.files, request.compilationPaths,
-                        request.dependencies, request.originalOptions))
+                && observation.memberDigest.equals(workDigest(request))
                 && observation.argvDigest.equals(argvDigest(arguments(launch, generation, request))), ErrorCode.IDENTITY);
         for (Diagnostic diagnostic : observation.diagnostics) {
             if (diagnostic.path.isEmpty()) continue; // Global ERROR/unknown ID is retained as raw failure evidence.
@@ -803,6 +927,24 @@ public final class CompilerModelWire {
 
     private static Dependency readDependency(ApplicationWire.Reader in) {
         return new Dependency(in.string(MAX_ID_BYTES), in.string(71), in.i64(), in.string(MAX_KEY_BYTES));
+    }
+
+    private static void writeProducedExecution(ApplicationWire.Writer out, ProducedExecution value) {
+        out.string(value.planDigest, 71); out.string(value.compilationId, MAX_ID_BYTES);
+        out.string(value.rawContextDigest, 71); out.string(value.resolutionDigest, 71); out.i32(value.producers.size());
+        for (ProducedDependency producer : value.producers) {
+            out.i32(producer.classpathIndex); out.string(producer.producerCompilationId, MAX_ID_BYTES);
+            out.string(producer.referenceDigest, 71); out.string(producer.generation, 32); out.i32(producer.producerSequence);
+            out.string(producer.producerBindingDigest, 71); out.string(producer.requestDigest, 71);
+            out.string(producer.resultDigest, 71); out.string(producer.outputDigest, 71); out.bool(producer.friend);
+        }
+    }
+    private static ProducedExecution readProducedExecution(ApplicationWire.Reader in) {
+        String plan = in.string(71), compilation = in.string(MAX_ID_BYTES), raw = in.string(71), resolution = in.string(71);
+        int count = in.count(1); List<ProducedDependency> producers = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) producers.add(new ProducedDependency(in.i32(), in.string(MAX_ID_BYTES), in.string(71),
+            in.string(32), in.i32(), in.string(71), in.string(71), in.string(71), in.string(71), in.bool()));
+        return new ProducedExecution(plan, compilation, raw, resolution, producers);
     }
 
     private static void writeOptions(ApplicationWire.Writer out, List<String> values) {

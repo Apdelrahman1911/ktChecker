@@ -21,18 +21,21 @@ import kotlinx.serialization.json.*
 class KotlinJvmModelLiveCompilerProvider(
     private val installation: KotlinJvmToolchain,
     private val authority: KotlinJvmModelApplicationAuthority = KotlinJvmModelApplicationAuthority.DENY,
+    private val producedPreview: KotlinJvmProducedOutputPreview? = null,
 ) : AnalysisProvider {
     override val id: String = PROVIDER_ID
     override val version: String = VERSION
     override val supportedRuleIds: Set<String> = MODEL_REGISTRY.jvmRuleIds
 
     internal fun usesInstallation(selected: KotlinJvmToolchain): Boolean = installation === selected
+    internal fun usesBinding(binding: KotlinJvmModelBinding): Boolean = binding.producedResolution?.preview === producedPreview &&
+        (producedPreview == null || producedPreview.installation === installation)
 
     override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
         val started = System.nanoTime() // Observation only; never a replacement request budget.
         val request = try {
             ModelCompilerAttemptRequest(input).also {
-                requireModelLiveStructure(it.input)
+                requireModelLiveStructure(it.input, producedPreview != null)
                 liveCheck(it.input.outputRoot != null, "compiler_model_live_archive_attempt_required")
             }
         } catch (failure: CompilerApplicationProblem) {
@@ -117,6 +120,7 @@ internal fun renderModelObservation(
     val raw = ArrayList<RawDiagnostic>()
     val reasons = linkedSetOf("compiler_model_live_preview_not_qualified", "compiler_model_live_semantic_extraction_not_authorized",
         "compiler_model_live_elapsed_measured_to_armed_render_not_call_completion", "compiler_model_live_cpu_rss_unavailable")
+    if (binding?.producedResolution != null) reasons += "compiler_model_live_produced_output_preview_not_qualified"
     if (observation.compilerCode() == 1) reasons += "compiler_model_live_api_diagnostic_failure"
     if (sourceTexts.values.any { MODEL_SUPPRESSION.containsMatchIn(it) }) reasons += "compiler_model_live_suppression_scope_not_certified"
     if ("-nowarn" in input.context.compilerArguments) reasons += "compiler_model_live_warnings_disabled_under_selected_configuration"

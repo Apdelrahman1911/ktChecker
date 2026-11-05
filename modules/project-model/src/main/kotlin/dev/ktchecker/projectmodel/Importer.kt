@@ -41,12 +41,21 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
         val issues = validateExport(frozenRequest, graph)
         val roleCompilations = graph.compilations.filter { it.jvmArgumentRoles != null }
         val roleOrigins = roleCompilations.associate { it.id to permit.verifyJvmArgumentOrigin(it) }
+        val producedCompilations = graph.compilations.filter { it.deferredJvmOutputs.isNotEmpty() }
+        val producedOrigins = producedCompilations.associate { it.id to permit.verifyJvmProducedOutputOrigin(it) }
+        producedCompilations.forEach { compilation -> producedOrigins[compilation.id]?.let { origin ->
+            verifyDeferredJvmOrigin(frozenRequest, graph, compilation, origin, roleOrigins)
+        } }
+        // verifyDeferredJvmOrigin has checked the ENTIRE graph and rejected every occurrence
+        // outside the one consumer classpath/friend role, including same-path digested artifacts.
+        val deferredArtifactPaths = producedCompilations.filter { producedOrigins[it.id] != null }
+            .flatMap { it.deferredJvmOutputs }.map { it.outputPath }.toSet()
         val roleLayouts = linkedMapOf<String, VerifiedJvmArgumentLayout>()
         val roleRejections = linkedMapOf<String, String>()
         roleCompilations.forEach { compilation ->
             val origin = roleOrigins[compilation.id]
             if (origin == null) roleRejections[compilation.id] = "model_jvm_argument_origin_unavailable"
-            else try { roleLayouts[compilation.id] = classifyJvmArgumentLayout(frozenRequest, compilation, origin, graph.generatedInputs) }
+            else try { roleLayouts[compilation.id] = classifyJvmArgumentLayout(frozenRequest, compilation, origin, graph.generatedInputs, producedOrigins[compilation.id]) }
             catch (error: ProjectModelException) {
                 if (error.code != "model_jvm_arguments_unsupported") throw error
                 // Retain every raw fact and every preexisting global issue. An unselected empty
@@ -61,7 +70,10 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
             }.orEmpty()
         }
         artifacts.distinctBy { it.path to it.digest }.forEach { artifact ->
-            if (artifact.digest == null) {
+            if (artifact.digest == null && artifact.path in deferredArtifactPaths) {
+                // No byte claim is made. The exact typed pending obligation remains in issues.
+                // Old artifact_unavailable/exporter gaps are never filtered or reinterpreted.
+            } else if (artifact.digest == null) {
                 issues += ModelIssue(if (artifact in graph.buildscriptArtifacts || artifact in graph.externalConfigurationArtifacts) "buildscript_artifact_unavailable" else "artifact_unavailable",
                     artifactScope(graph, artifact), "No immutable bytes for ${artifact.coordinate}.")
             } else {
@@ -81,6 +93,11 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
                 throw ProjectModelException("model_jvm_argument_origin_changed", "Original argument-role owner authority changed during ingress.")
             }
         }
+        producedCompilations.forEach { compilation ->
+            if (permit.verifyJvmProducedOutputOrigin(compilation) !== producedOrigins[compilation.id]) {
+                throw ProjectModelException("model_jvm_produced_output_origin_changed", "Deferred owner-edge authority changed during ingress.")
+            }
+        }
         artifacts.filter { it.digest != null }.distinctBy { it.path to it.digest }.forEach(permit.verifyArtifact)
         val sourceDigest = canonicalDigest(ContractJson.encodeToJsonElement(frozenRequest.snapshot))
         val modelDigest = canonicalDigest(ContractJson.encodeToJsonElement(graph))
@@ -94,7 +111,8 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
             sourceDigest, modelDigest, dependencyDigest, toolchainDigest)))
         return VerifiedProjectModel(frozenRequest.namespace, frozenRequest.snapshot, graph, identity,
             immutable(issues.distinct().sortedWith(compareBy<ModelIssue> { it.scopeId.orEmpty() }.thenBy { it.kind }.thenBy { it.detail })), certificate,
-            roleLayouts, roleRejections)
+            roleLayouts, roleRejections, verifiedJvmProducedGraph(frozenRequest, graph, modelDigest,
+                issues, roleLayouts, producedOrigins.mapNotNull { (id, origin) -> origin?.let { id to it } }.toMap()))
     }
 
     private fun validateRequest(request: ModelImportRequest) {
@@ -248,10 +266,22 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
                 compilation.toolchain.runtimeArtifacts.isEmpty()) issues += ModelIssue("toolchain_unavailable", compilation.id, "Complete compiler/runtime identity is unavailable.")
             requireBound(compilation.compilerArguments.size <= 16_384, "compiler argument count")
             compilation.compilerArguments.forEach { requireBound(it.length <= 8192 && '\u0000' !in it, "compiler argument") }
+            requireBound(compilation.deferredJvmOutputs.size <= 1, "bounded preview producer roles")
+            compilation.deferredJvmOutputs.forEach { ref ->
+                identifier(ref.producerCompilationId); identifier(ref.producerCompileTaskPath); identifier(ref.outputPath)
+                requireBound(ref.producerCompilationId in compilations && ref.producerCompilationId != compilation.id &&
+                    ref.classpathIndex in compilation.classpath.indices && Path.of(ref.outputPath).isAbsolute &&
+                    Path.of(ref.outputPath).normalize().toString() == ref.outputPath &&
+                    (!ref.originalFriendPresent || ref.friend) &&
+                    ref.originalFriendPresent == ref.declaredFriendPresent, "deferred output role")
+                issues += deferredJvmIssue(compilation.id, ref)
+            }
             compilation.jvmArgumentRoles?.let { roles ->
                 requireBound(roles.schemaVersion == 1 && roles.adapterId == JVM_ARGUMENT_ROLES_ADAPTER, "original JVM role schema")
                 requireBound(roles.sourcePaths.size <= 50_000, "original JVM source role count")
                 roles.sourcePaths.forEach { logicalPath(it) }
+                requireBound(roles.friendPathOperands.size <= 1, "bounded original friend operands")
+                roles.friendPathOperands.forEach(::identifier)
                 listOf(roles.compileTaskPath, roles.destinationPath, roles.selectedJdkHome, roles.pluginDataState).forEach(::identifier)
                 listOfNotNull(roles.classpathOperand, roles.jdkHomeOperand).forEach {
                     requireBound(it.length <= 8192 && '\u0000' !in it, "original nullable JVM path operand")
@@ -349,7 +379,8 @@ internal fun freezeExport(graph: GradleProjectExport): GradleProjectExport = gra
         compilerArguments = immutable(compilation.compilerArguments), friendArtifacts = immutable(compilation.friendArtifacts), producedVariants = immutable(compilation.producedVariants),
         associatedCompilationIds = immutable(compilation.associatedCompilationIds), auxiliaryInputFiles = immutable(compilation.auxiliaryInputFiles),
         auxiliaryArtifacts = immutable(compilation.auxiliaryArtifacts),
-        jvmArgumentRoles = compilation.jvmArgumentRoles?.let { it.copy(sourcePaths = immutable(it.sourcePaths)) }) }),
+        jvmArgumentRoles = compilation.jvmArgumentRoles?.let { it.copy(sourcePaths = immutable(it.sourcePaths),
+            friendPathOperands = immutable(it.friendPathOperands)) }, deferredJvmOutputs = immutable(compilation.deferredJvmOutputs)) }),
     configurationInputs = immutable(graph.configurationInputs),
     generatedInputs = immutable(graph.generatedInputs.map { it.copy(sourceSetIds = immutable(it.sourceSetIds), inputFiles = immutable(it.inputFiles),
         outputFiles = immutable(it.outputFiles), outputRoots = immutable(it.outputRoots), inputProperties = immutableMap(it.inputProperties)) }),

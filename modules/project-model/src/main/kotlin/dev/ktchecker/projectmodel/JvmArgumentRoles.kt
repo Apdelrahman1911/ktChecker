@@ -24,6 +24,8 @@ data class ModelJvmArgumentRoles(
     val jdkHomeOperand: String?,
     /** Only emitted after independent plugin/options/input/output/script observations are empty. */
     val pluginDataState: String,
+    /** Original KGP friend operand array; never filled with future produced paths. */
+    val friendPathOperands: List<String> = emptyList(),
 )
 
 const val JVM_ARGUMENT_ROLES_ADAPTER = "ktchecker/kgp-2.4.21-original-jvm-roles/1"
@@ -69,7 +71,7 @@ class ModelJvmArgumentOrigin(
 
 /** Each ORIGINAL token has exactly one index and role. Pairs retain both flag and operand. */
 enum class JvmArgumentTokenRole { SCALAR_FLAG, SCALAR_VALUE, FIXED_PROFILE_FLAG, NONEMPTY_SOURCE_GATE,
-    CLASSPATH_FLAG, CLASSPATH_VALUE, DESTINATION_FLAG, DESTINATION_VALUE, JDK_FLAG, JDK_VALUE, SOURCE }
+    CLASSPATH_FLAG, CLASSPATH_VALUE, DESTINATION_FLAG, DESTINATION_VALUE, JDK_FLAG, JDK_VALUE, SOURCE, PRODUCED_FRIEND_OPTION }
 
 data class JvmArgumentToken internal constructor(val index: Int, val original: String, val role: JvmArgumentTokenRole,
     val sourceOrdinal: Int? = null)
@@ -109,7 +111,8 @@ class VerifiedJvmArgumentLayout internal constructor(
 
 /** Pure bounded validation: no file reads, normalization/stripping fallback or capability lookup. */
 internal fun classifyJvmArgumentLayout(request: ModelImportRequest, compilation: ModelCompilation,
-    origin: ModelJvmArgumentOrigin, generatedInputs: List<GeneratedSourceInput>): VerifiedJvmArgumentLayout {
+    origin: ModelJvmArgumentOrigin, generatedInputs: List<GeneratedSourceInput>,
+    producedOrigin: ModelJvmProducedOutputOrigin? = null): VerifiedJvmArgumentLayout {
     val roles = compilation.jvmArgumentRoles ?: jvmRoleFailure("Missing original role declaration")
     val chain = compilation.toolchain ?: jvmRoleFailure("Missing original JVM toolchain")
     jvmRoleCheck(roles.schemaVersion == 1 && roles.adapterId == JVM_ARGUMENT_ROLES_ADAPTER, "role adapter version")
@@ -122,7 +125,12 @@ internal fun classifyJvmArgumentLayout(request: ModelImportRequest, compilation:
     jvmRoleCheck(chain.compilerArtifacts.singleOrNull {
         it.coordinate == "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21"
     }?.digest == VerifiedJvmArgumentLayout.COMPILER_DIGEST, "unique exact compiler pin for normalization")
-    jvmRoleCheck(compilation.friendArtifacts.isEmpty() && compilation.associatedCompilationIds.isEmpty() &&
+    val deferred = compilation.deferredJvmOutputs.singleOrNull()
+    jvmRoleCheck((deferred == null && producedOrigin == null && roles.friendPathOperands.isEmpty() &&
+        compilation.friendArtifacts.isEmpty() && compilation.associatedCompilationIds.isEmpty()) ||
+        (deferred != null && producedOrigin != null && producedOrigin.consumer === origin &&
+            producedOrigin.reference() == deferred), "independently attested original/deferred friend roles")
+    jvmRoleCheck(
         compilation.auxiliaryArtifacts.isEmpty() && compilation.auxiliaryInputFiles.isEmpty() &&
         chain.compilerPlugins.isEmpty() && compilation.projectDependencies.isEmpty() &&
         generatedInputs.none { generated -> generated.sourceSetIds.any { it in compilation.sourceSetIds } },
@@ -152,15 +160,22 @@ internal fun classifyJvmArgumentLayout(request: ModelImportRequest, compilation:
     val classpath = compilation.classpath
     jvmRoleCheck(classpath.size in 1..16 && classpath.map { it.path }.distinct().size == classpath.size,
         "nonempty ordered regular JAR classpath domain")
-    classpath.forEach { artifact ->
+    classpath.forEachIndexed { ordinal, artifact ->
         jvmRoleAbsolute(artifact.path)
-        jvmRoleCheck(artifact.path.endsWith(".jar") && artifact.digest?.let(Digests::valid) == true &&
-            artifact.size != null && artifact.size > 0, "exact regular JAR classpath identity")
-        val path = Path.of(artifact.path)
-        jvmRoleCheck(!path.startsWith(origin.sourceRoot) && !path.startsWith(origin.ownerExporterOutput) &&
-            !path.startsWith(origin.selectedJdkHome), "classpath role overlap")
+        if (deferred != null && ordinal == deferred.classpathIndex) {
+            jvmRoleCheck(artifact.path == deferred.outputPath && artifact.digest == null && artifact.size == null &&
+                artifact.path == producedOrigin?.producer?.destinationPath.toString(), "exact deferred producer destination")
+        } else {
+            jvmRoleCheck(artifact.path.endsWith(".jar") && artifact.digest?.let(Digests::valid) == true &&
+                artifact.size != null && artifact.size > 0, "exact regular JAR classpath identity")
+            val path = Path.of(artifact.path)
+            jvmRoleCheck(!path.startsWith(origin.sourceRoot) && !path.startsWith(origin.ownerExporterOutput) &&
+                !path.startsWith(origin.selectedJdkHome), "classpath role overlap")
+        }
     }
-    val expectedClasspath = classpath.joinToString(":") { it.path }
+    val expectedClasspath = classpath.filterIndexed { ordinal, _ -> deferred == null ||
+        ordinal != deferred.classpathIndex || deferred.originalClasspathPresent }.joinToString(":") { it.path }
+    jvmRoleCheck(expectedClasspath.isNotEmpty(), "nonempty actual external classpath")
     jvmRoleCheck(roles.classpathOperand != null && roles.classpathOperand == expectedClasspath, "entire ordered classpath operand")
 
     val original = compilation.compilerArguments
@@ -213,13 +228,20 @@ internal fun classifyJvmArgumentLayout(request: ModelImportRequest, compilation:
                 options += argument; options += value
                 add(JvmArgumentTokenRole.SCALAR_FLAG); add(JvmArgumentTokenRole.SCALAR_VALUE)
             }
-            else -> jvmRoleFailure("Unknown/response/plugin/friend/JVM/Java/refinement argument")
+            else -> {
+                jvmRoleCheck(deferred?.originalFriendPresent == true && deferred.friend &&
+                    argument == "-Xfriend-paths=${deferred.outputPath}" && roles.friendPathOperands == listOf(deferred.outputPath),
+                    "exact single original produced-friend operand")
+                add(JvmArgumentTokenRole.PRODUCED_FRIEND_OPTION)
+            }
         }
     }
     jvmRoleCheck(sourceOrdinal == sourceFiles.size && tokens.size == original.size &&
         tokens.map { it.index } == original.indices.toList() && tokens.map { it.original } == original, "total original-vector reconstruction")
     jvmRoleCheck(seen.containsAll(setOf("-classpath", "-d", "-no-stdlib", "-no-reflect", "-jvm-target")) &&
         (("-jdk-home" in seen) == (roles.jdkHomeOperand != null)), "required exact fixed/path operands")
+    jvmRoleCheck(tokens.count { it.role == JvmArgumentTokenRole.PRODUCED_FRIEND_OPTION } ==
+        if (deferred?.originalFriendPresent == true) 1 else 0, "complete original friend occurrences")
     jvmRoleCheck(options.size <= 16 && (compilation.languageVersion == null || scalarValues["-language-version"] == compilation.languageVersion) &&
         (compilation.apiVersion == null || scalarValues["-api-version"] == compilation.apiVersion), "scalar/domain agreement")
     val relation = buildJsonObject {
@@ -234,6 +256,10 @@ internal fun classifyJvmArgumentLayout(request: ModelImportRequest, compilation:
         put("modelMemberOrder", ContractJson.encodeToJsonElement(memberFiles))
         put("executableSourceOrder", ContractJson.encodeToJsonElement(sourceFiles))
         put("orderedClasspath", ContractJson.encodeToJsonElement(classpath))
+        if (deferred != null) {
+            put("deferredProducedOutput", ContractJson.encodeToJsonElement(deferred))
+            put("preview", JVM_PRODUCED_OUTPUT_PREVIEW)
+        }
         put("normalizedCompilerOptions", ContractJson.encodeToJsonElement(options))
         putJsonArray("tokens") { tokens.forEach { token -> add(buildJsonObject {
             put("index", token.index); put("original", token.original); put("role", token.role.name)

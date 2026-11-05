@@ -127,8 +127,7 @@ public final class CompilerModelApplicationMain {
                     Sealed sealed = state.seal(execution);
                     CompilerModelWire.Observation observation = new CompilerModelWire.Observation(
                             adapter.compilerVersion(), CompilerModelWire.argvDigest(argv),
-                            CompilerModelWire.workDigest(request.files(), request.compilationPaths(),
-                                    request.dependencies(), request.originalOptions()),
+                            CompilerModelWire.workDigest(request),
                             request.jobRoot(), request.sourceRoot(), request.outputRoot(),
                             true, execution.compilerCode(), sealed.disposalCount(), true, false,
                             execution.beforeReset(), execution.afterReset(), true, true, true,
@@ -143,6 +142,10 @@ public final class CompilerModelApplicationMain {
                     io.requireUnchanged();
                     fence.requireHealthy();
                     writer.write(result);
+                    // This is worker observation only. Host Accepted+finishAccepted is separately
+                    // mandatory before its nonserialized capability can submit a dependent job.
+                    if (request.producedExecution() != null && execution.compilerCode() == 0 &&
+                        request.producedExecution().producers().isEmpty()) files.rememberSuccessful(job, request, result, observation);
                 } catch (Throwable failure) {
                     state.invalidate();
                     throw failure;
@@ -714,6 +717,7 @@ public final class CompilerModelApplicationMain {
         private final FileReceipt javaExecutable;
         private final List<FileReceipt> compilerArtifacts;
         private final ArrayList<JobRegistration> jobs = new ArrayList<>();
+        private final Map<Integer, ProducedCompletion> successfulProducers = new LinkedHashMap<>();
         private long admittedSnapshotBytes;
         private long admittedDependencyBytes;
 
@@ -777,9 +781,33 @@ public final class CompilerModelApplicationMain {
                 outputBytes += size.bytes(); outputFiles += size.files();
                 fsRequire(outputBytes <= MAX_GENERATION_OUTPUT_BYTES && outputFiles <= MAX_GENERATION_OUTPUT_FILES);
             }
+            for (ProducedCompletion producer : successfulProducers.values()) producer.output.verify();
             // tempRoot was reserved against output aliases, but the temp scan must add its own root.
             Set<String> tempKeys = new HashSet<>(outputKeys); tempKeys.remove(tempRoot.fileKey());
             scanTree(Path.of(tempRoot.path()), MAX_TEMP_FILES, MAX_TEMP_BYTES, tempKeys);
+        }
+
+        void rememberSuccessful(ApplicationWire.Job job, CompilerModelWire.Request request, ApplicationWire.Result result,
+                                CompilerModelWire.Observation observation) throws IOException {
+            CompilerModelWire.matchObservation(launch, generation, job, request, result, observation);
+            fsRequire(request.producedExecution() != null && request.producedExecution().producers().isEmpty() &&
+                observation.compilerCode() == 0 && job.sequence() == jobs.size() && !successfulProducers.containsKey(job.sequence()));
+            ProducedTree output = ProducedTree.capture(request.outputRoot());
+            successfulProducers.put(job.sequence(), new ProducedCompletion(request, result, output));
+        }
+
+        void verifyProducedDependencies(ApplicationWire.Job job, CompilerModelWire.Request request) throws IOException {
+            if (request.producedExecution() == null) return;
+            for (CompilerModelWire.ProducedDependency dependency : request.producedExecution().producers()) {
+                ProducedCompletion completed = successfulProducers.get(dependency.producerSequence());
+                fsRequire(completed != null);
+                requireProducedLineage(job, request, dependency, completed.request, completed.result, completed.output.digest);
+                completed.output.verify();
+                String file = "artifact-" + dependency.classpathIndex() + ".jar";
+                inspectProducedArchive(Path.of(request.classpathRoot().path()).resolve(file), completed.output.members);
+                inspectProducedArchive(Path.of(request.originalClasspathRoot().path()).resolve(file), completed.output.members);
+                completed.output.verify();
+            }
         }
 
         JobFiles admit(ApplicationWire.Job job, CompilerModelWire.Request request) throws IOException {
@@ -802,6 +830,7 @@ public final class CompilerModelApplicationMain {
             SnapshotReceipt effective = SnapshotReceipt.capture(request.sourceRoot(), request.files(), true);
             ClasspathReceipt originalClasspath = ClasspathReceipt.capture(request.originalClasspathRoot(), request.dependencies(), false);
             ClasspathReceipt effectiveClasspath = ClasspathReceipt.capture(request.classpathRoot(), request.dependencies(), true);
+            verifyProducedDependencies(job, request);
             JobRegistration registration = new JobRegistration(request.jobRoot(), request.outputRoot(), request.originalOutputRoot(),
                     original, effective, originalClasspath, effectiveClasspath, request.compilationPaths(), snapshotBytes, dependencyBytes);
             Map<String, Path> keys = baseIdentities();
@@ -812,6 +841,115 @@ public final class CompilerModelApplicationMain {
             verifyInstallation();
             return new JobFiles(this, registration);
         }
+    }
+
+    private record ProducedCompletion(CompilerModelWire.Request request, ApplicationWire.Result result, ProducedTree output) {}
+
+    /** Pure corroboration of an ALREADY retained worker completion; this function cannot enroll one. */
+    static void requireProducedLineage(ApplicationWire.Job job, CompilerModelWire.Request request,
+                                      CompilerModelWire.ProducedDependency dependency, CompilerModelWire.Request before,
+                                      ApplicationWire.Result result, String outputDigest) {
+        CompilerModelWire.InputIdentity a = before.original(), b = request.original();
+        fsRequire(request.producedExecution() != null && before.producedExecution() != null &&
+            before.producedExecution().producers().isEmpty() &&
+            dependency.generation().equals(job.generation()) && result.generation().equals(job.generation()) &&
+            result.sequence() == dependency.producerSequence() && dependency.producerSequence() < job.sequence() &&
+            result.state() == ApplicationWire.ResultState.APPLICATION_SEALED &&
+            result.originalKey().equals(before.original().analysisKey()) && result.effectiveKey().equals(before.effective().analysisKey()) &&
+            before.producedExecution().compilationId().equals(dependency.producerCompilationId()) &&
+            before.producedExecution().planDigest().equals(request.producedExecution().planDigest()) &&
+            before.modelBindingDigest().equals(dependency.producerBindingDigest()) &&
+            result.requestDigest().equals(dependency.requestDigest()) &&
+            ApplicationWire.sha256(ApplicationWire.encode(result)).equals(dependency.resultDigest()) &&
+            outputDigest.equals(dependency.outputDigest()) && before.deadlineIdentity().equals(request.deadlineIdentity()) &&
+            a.snapshotDigest().equals(b.snapshotDigest()) && a.memberDigest().equals(b.memberDigest()) &&
+            a.modelDigest().equals(b.modelDigest()) && a.configurationDigest().equals(b.configurationDigest()) &&
+            a.toolchainDigest().equals(b.toolchainDigest()));
+        CompilerModelWire.Observation observation = CompilerModelWire.decodeObservation(result.payload());
+        CompilerModelWire.requireSealed(observation);
+        fsRequire(observation.compilerCode() == 0);
+    }
+
+    /** Complete sealed bytes + directory/file identities, not merely output existence or an ABI subset. */
+    static final class ProducedTree {
+        final List<CompilerModelWire.ProducedMember> members;
+        final String digest;
+        private final List<DirectoryReceipt> directories;
+        private final List<FileReceipt> files;
+        private ProducedTree(List<CompilerModelWire.ProducedMember> members, List<DirectoryReceipt> directories, List<FileReceipt> files) {
+            this.members = List.copyOf(members); this.digest = CompilerModelWire.producedOutputDigest(this.members);
+            this.directories = List.copyOf(directories); this.files = List.copyOf(files);
+        }
+        static ProducedTree capture(ApplicationWire.Root root) throws IOException {
+            Path base = checkRoot(root);
+            ArrayList<CompilerModelWire.ProducedMember> members = new ArrayList<>();
+            ArrayList<DirectoryReceipt> directories = new ArrayList<>(); ArrayList<FileReceipt> files = new ArrayList<>();
+            Map<String, Path> keys = new LinkedHashMap<>(); long total = 0;
+            try (var walk = Files.walk(base, MAX_TREE_DEPTH + 1)) {
+                var iterator = walk.iterator();
+                while (iterator.hasNext()) {
+                    Path path = iterator.next(); BasicFileAttributes observed = attributes(path);
+                    String relative = base.relativize(path).toString().replace(java.io.File.separatorChar, '/');
+                    fsRequire(relative.isEmpty() || relative.split("/").length <= MAX_TREE_DEPTH);
+                    if (!relative.isEmpty()) fsRequire(members.size() < MAX_JOB_OUTPUT_FILES);
+                    pinKey(keys, key(observed), path);
+                    if (observed.isDirectory()) {
+                        Set<String> names = new HashSet<>();
+                        try (DirectoryStream<Path> children = Files.newDirectoryStream(path)) {
+                            for (Path child : children) {
+                                fsRequire(names.size() < MAX_JOB_OUTPUT_FILES && names.add(child.getFileName().toString())); attributes(child);
+                            }
+                        }
+                        directories.add(DirectoryReceipt.capture(new ApplicationWire.Root(path.toString(), key(observed)), names));
+                        if (!relative.isEmpty()) members.add(new CompilerModelWire.ProducedMember(relative, true, 0, null));
+                    } else {
+                        fsRequire(observed.isRegularFile() && observed.size() <= MAX_JOB_OUTPUT_BYTES - total);
+                        total += observed.size();
+                        FileReceipt file = FileReceipt.capture(path, observed.size(), hashFile(path, observed.size()), key(observed));
+                        files.add(file); members.add(new CompilerModelWire.ProducedMember(relative, false, file.size(), file.digest()));
+                    }
+                }
+            }
+            members.sort(java.util.Comparator.comparing(CompilerModelWire.ProducedMember::path));
+            ProducedTree tree = new ProducedTree(members, directories, files); tree.verify(); return tree;
+        }
+        void verify() throws IOException {
+            for (DirectoryReceipt directory : directories) directory.verify();
+            for (FileReceipt file : files) file.verify();
+            for (DirectoryReceipt directory : directories) directory.verify();
+        }
+    }
+
+    /** No missing/extra/class-only filtering: compare every original directory and output byte. */
+    static void inspectProducedArchive(Path jar, List<CompilerModelWire.ProducedMember> expected) throws IOException {
+        inspectDependencyArchive(jar);
+        ArrayList<CompilerModelWire.ProducedMember> actual = new ArrayList<>(); long total = 0;
+        try (ZipFile zip = new ZipFile(jar.toFile())) {
+            var entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                fsRequire(actual.size() < MAX_JOB_OUTPUT_FILES && entry.getMethod() == ZipEntry.STORED &&
+                    entry.getSize() >= 0 && entry.getSize() <= MAX_JOB_OUTPUT_BYTES - total);
+                total += entry.getSize();
+                String name = entry.isDirectory() ? entry.getName().substring(0, entry.getName().length() - 1) : entry.getName();
+                MessageDigest digest;
+                try { digest = MessageDigest.getInstance("SHA-256"); }
+                catch (java.security.NoSuchAlgorithmException impossible) { throw new AssertionError(impossible); }
+                CRC32 crc = new CRC32(); long seen = 0;
+                try (InputStream input = zip.getInputStream(entry)) {
+                    byte[] buffer = new byte[8_192];
+                    while (true) { int count = input.read(buffer); if (count < 0) break;
+                        fsRequire(count > 0 && count <= entry.getSize() - seen); seen += count;
+                        digest.update(buffer, 0, count); crc.update(buffer, 0, count);
+                    }
+                }
+                fsRequire(seen == entry.getSize() && crc.getValue() == entry.getCrc());
+                actual.add(new CompilerModelWire.ProducedMember(name, entry.isDirectory(), seen,
+                    entry.isDirectory() ? null : "sha256:" + HexFormat.of().formatHex(digest.digest())));
+            }
+        }
+        actual.sort(java.util.Comparator.comparing(CompilerModelWire.ProducedMember::path));
+        fsRequire(actual.equals(expected) && CompilerModelWire.producedOutputDigest(actual).equals(CompilerModelWire.producedOutputDigest(expected)));
     }
 
     private static final class JobRegistration {

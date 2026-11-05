@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { CodexAppServer } from '../src/codex-app-server.js';
 import { CodexHostPort } from '../src/codex-host.js';
 import { CodexStore } from '../src/codex-store.js';
@@ -58,18 +58,38 @@ test('Codex evidence boundary rejects malformed UTF-8 instead of replacing publi
   t.after(()=>server.close());await assert.rejects(server.connect(),/codex_protocol_error/);
 });
 
-async function fixture(t: { after(fn: () => Promise<unknown> | void): void }, overrides: Record<string, unknown> = {}) {
-  const dir = await mkdtemp(join(tmpdir(), 'ktchecker-codex-unit-'));
+async function fixture(t: { after(fn: () => Promise<unknown> | void): void }, overrides: Record<string, unknown> = {}, parent = tmpdir()) {
+  const created = await mkdtemp(join(parent, 'ktchecker-codex-unit-'));
+  t.after(() => rm(created, { recursive: true, force: true }));
+  // CodexHostPort persists realpath(cwd). Direct test-only store reopens must
+  // use that same identity, including macOS /var -> /private/var temp aliases.
+  const dir = await realpath(created);
   const script = join(dir, 'synthetic-server.mjs'), statePath = join(dir, 'synthetic-state.json');
   await writeFile(script, fakeCodex);
   await writeFile(statePath, JSON.stringify({ methods: [], items: [], turns: [], ...overrides }));
-  t.after(() => rm(dir, { recursive: true, force: true }));
   const r = registration(); const kernel = new FixtureKernel(r);
   const options = { directory: join(dir, 'session'), client: r.binding, cwd: dir,
     server: { executable: process.execPath, args: [script, statePath] } };
   return { dir, r, kernel, options, read: async () => JSON.parse(await readFile(statePath, 'utf8')) as {
     methods: string[]; turns: unknown[]; items: unknown[]; requests: { method: string; params: Record<string, unknown> }[] } };
 }
+
+test('synthetic fixture binds canonical cwd through a temporary parent alias without starting a server', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'ktchecker-codex-cwd-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const target = join(root, 'real-parent'), alias = join(root, 'parent-alias');
+  await mkdir(target);
+  // A directory junction needs no symlink privilege on Windows; elsewhere the
+  // type is ignored and this is an ordinary directory symlink, all newly owned.
+  await symlink(target, alias, 'junction');
+  const f = await fixture(t, {}, alias);
+  assert.equal(f.dir, await realpath(f.dir));
+  assert.equal(dirname(f.dir), await realpath(target));
+  assert.equal(f.options.cwd, f.dir);
+  assert.equal(f.options.directory, join(f.dir, 'session'));
+  assert.deepEqual((await f.read()).methods, []);
+  assert.deepEqual((await f.read()).turns, []);
+});
 
 test('synthetic Codex fixture proves only strict public-content binding and filters reasoning/unowned events', async t => {
   const f = await fixture(t); const port = await CodexHostPort.open(f.options); t.after(() => port.close());
