@@ -256,23 +256,46 @@ class IntegratedCompletionBarrier(
 
     private fun boundHistory(c: Connection, members: List<String>, routes: List<String>) {
         var reviews = 0L; var parents = 0L; var events = 0L; var bytes = 0L
+        fun charge(value: Long) {
+            if (value < 0 || value > limits.maxHistoryBytes - bytes) limit()
+            bytes += value
+        }
         members.forEach { client ->
             reviews += c.count("SELECT COUNT(*) FROM reviews WHERE client_id=?", client)
             parents += c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=?", client)
             events += c.count("SELECT COUNT(*) FROM events WHERE client_id=?", client)
             if (reviews > limits.maxReviews || parents > limits.maxParents || events > limits.maxEvents) limit()
-            bytes += c.count("""SELECT COALESCE(SUM(length(CAST(r.input_json AS BLOB))+length(CAST(r.request_json AS BLOB))+
-                length(CAST(w.input_json AS BLOB))+COALESCE(length(CAST(w.result_json AS BLOB)),0)+
-                COALESCE(length(CAST(r.effective_result_json AS BLOB)),0)+length(CAST(w.validation_json AS BLOB))+
-                length(CAST(r.policy_validation_json AS BLOB))+COALESCE(length(CAST(r.policy_certificate AS BLOB)),0)),0)
-                FROM reviews r JOIN work w ON w.work_key=r.work_key WHERE r.client_id=?""", client)
-            bytes += c.count("SELECT COALESCE(SUM(length(CAST(definition_json AS BLOB))),0) FROM parent_plans WHERE client_id=?", client)
-            bytes += c.count("SELECT COALESCE(SUM(length(CAST(payload AS BLOB))),0) FROM events WHERE client_id=?", client)
-            if (bytes > limits.maxHistoryBytes) limit()
+            // D remains chargeable before a P/work row exists. EACH nullable operand is zeroed:
+            // COALESCE(SUM(a+b),0) alone silently drops an entire declaration when b is NULL.
+            charge(c.count("""SELECT COALESCE(SUM(COALESCE(length(CAST(r.input_json AS BLOB)),0)+
+                COALESCE(length(CAST(r.request_json AS BLOB)),0)+COALESCE(length(CAST(r.execution_input_json AS BLOB)),0)+
+                COALESCE(length(CAST(w.frozen_json AS BLOB)),0)+COALESCE(length(CAST(w.result_json AS BLOB)),0)+
+                COALESCE(length(CAST(r.effective_result_json AS BLOB)),0)+COALESCE(length(CAST(w.validation_json AS BLOB)),0)+
+                COALESCE(length(CAST(w.progress_faults_json AS BLOB)),0)+COALESCE(length(CAST(r.policy_validation_json AS BLOB)),0)+
+                COALESCE(length(CAST(r.policy_certificate AS BLOB)),0)+COALESCE(length(CAST(r.execution_certificate AS BLOB)),0)+
+                COALESCE(length(CAST(r.resolution_reasons_json AS BLOB)),0)),0)
+                FROM review_executions r LEFT JOIN work w ON w.work_key=r.work_key WHERE r.client_id=?""", client))
+            charge(c.count("SELECT COALESCE(SUM(length(CAST(definition_json AS BLOB))),0) FROM parent_plans WHERE client_id=?", client))
+            // Complete retained D archives, one-use claims (including failed/unknown resolution),
+            // append-only relations and operational publications cannot evade the history bound.
+            charge(c.count("""SELECT COALESCE(SUM(length(CAST(a.archives_json AS BLOB))+length(CAST(a.admission_digest AS BLOB))+
+                length(CAST(a.origin_instance AS BLOB))+length(CAST(a.authority_identity AS BLOB))+length(CAST(a.provider_key AS BLOB))+
+                length(CAST(a.producer_slot_id AS BLOB))+length(CAST(a.consumer_slot_id AS BLOB))+length(CAST(a.fair_key AS BLOB))),0)
+                FROM produced_plan_admissions a JOIN parent_plans p ON p.plan_id=a.plan_id WHERE p.client_id=?""", client))
+            charge(c.count("""SELECT COALESCE(SUM(length(CAST(x.claim_nonce AS BLOB))+length(CAST(x.origin_instance AS BLOB))+
+                length(CAST(x.slot_id AS BLOB))+length(CAST(x.reserved_archive_bytes AS BLOB))),0)
+                FROM plan_slot_resolution_claims x JOIN parent_plans p ON p.plan_id=x.plan_id WHERE p.client_id=?""", client))
+            charge(c.count("""SELECT COALESCE(SUM(length(CAST(x.record_json AS BLOB))+length(CAST(x.record_digest AS BLOB))+
+                COALESCE(length(CAST(x.resolved_input_json AS BLOB)),0)+COALESCE(length(CAST(x.certificate_id AS BLOB)),0)+
+                COALESCE(length(CAST(x.work_key AS BLOB)),0)+length(CAST(x.reasons_json AS BLOB))),0)
+                FROM plan_slot_resolutions x JOIN parent_plans p ON p.plan_id=x.plan_id WHERE p.client_id=?""", client))
+            charge(c.count("""SELECT COALESCE(SUM(length(CAST(p.record_json AS BLOB))+length(CAST(p.certificate_id AS BLOB))+
+                length(CAST(p.origin_instance AS BLOB))),0) FROM work_publications p
+                JOIN review_executions r ON r.work_key=p.work_key WHERE r.client_id=?""", client))
+            charge(c.count("SELECT COALESCE(SUM(length(CAST(payload AS BLOB))),0) FROM events WHERE client_id=?", client))
         }
         routes.forEach { route ->
-            bytes += c.count("SELECT COALESCE(length(CAST(definition_json AS BLOB)),0) FROM routing_batches WHERE routing_id=?", route)
-            if (bytes > limits.maxHistoryBytes) limit()
+            charge(c.count("SELECT COALESCE(length(CAST(definition_json AS BLOB)),0) FROM routing_batches WHERE routing_id=?", route))
         }
     }
 
@@ -356,20 +379,31 @@ class IntegratedCompletionBarrier(
         val obligations = mutableListOf<IntegratedPatchObligation>()
         val history = mutableListOf<String>()
         var requiredPairs = 0L
-        c.query("""SELECT r.review_id,r.patch_id,r.request_hash,r.input_json,r.sequence,r.work_key,r.cancelled,
-            r.effective_result_json,r.policy_certificate,r.policy_validation_json,w.state,w.result_json,w.validation_json
-            FROM reviews r JOIN work w ON w.work_key=r.work_key WHERE r.client_id=? ORDER BY r.sequence""", client) { row ->
+        c.query("""SELECT r.review_id,r.patch_id,r.request_hash,r.input_json,r.sequence,r.work_key,r.cancelled,r.kind,
+            r.execution_input_json,r.execution_certificate,r.resolution_state,r.resolution_reasons_json,
+            r.effective_result_json,r.policy_certificate,r.policy_validation_json,w.state,w.result_json,w.validation_json,w.progress_faults_json
+            FROM review_executions r LEFT JOIN work w ON w.work_key=r.work_key WHERE r.client_id=? ORDER BY r.sequence""", client) { row ->
+            service.producedPlans.requireReviewRelation(c, row.getString("review_id"))
+            if (row.getString("kind") == "produced") reasons += "joint_produced_profile_unavailable:$client"
+            if (row.getString("resolution_state") == "deferred") reasons += "joint_slot_deferred:$client:${row.getString("review_id")}"
+            if (row.getString("state") == null) reasons += "joint_execution_work_unavailable:$client:${row.getString("review_id")}"
+            if (row.getLong("sequence") != obligations.size + 1L) reasons += "joint_review_history_incomplete:$client"
+            // Historical obligations and captured policy ALWAYS identify D, never substituted P/K.
             val input = ContractJson.decodeFromString<AnalysisInput>(row.getString("input_json"))
             requiredPairs += input.requiredRuleIds.size
             if (requiredPairs > limits.maxCoveragePairs) limit()
             val obligation = IntegratedPatchObligation(client, "review", row.getString("review_id"), row.getString("patch_id"),
                 row.getString("request_hash"), input.analysisKey(), input.snapshot.snapshotId, row.getLong("sequence"))
             obligations += obligation
-            history += Digests.sha256(canonical(listOf(integratedObligationDigest(obligation), row.getString("work_key"),
-                row.getInt("cancelled").toString(), row.getString("state"),
+            history += Digests.sha256(canonical(listOf(integratedObligationDigest(obligation), row.getString("work_key").orEmpty(),
+                row.getString("kind"), row.getString("resolution_state"), row.getString("resolution_reasons_json"),
+                row.getString("execution_certificate").orEmpty(), Digests.sha256(row.getString("execution_input_json")),
+                row.getInt("cancelled").toString(), row.getString("state").orEmpty(),
                 Digests.sha256(row.getString("effective_result_json").orEmpty()), Digests.sha256(row.getString("result_json").orEmpty()),
-                row.getString("policy_certificate").orEmpty(), row.getString("policy_validation_json"), row.getString("validation_json"))))
+                row.getString("policy_certificate").orEmpty(), row.getString("policy_validation_json"),
+                row.getString("validation_json").orEmpty(), row.getString("progress_faults_json").orEmpty())))
         }
+        if (obligations.size.toLong() != reviewFrontier) reasons += "joint_review_history_incomplete:$client"
         c.query("SELECT plan_id,patch_id,request_hash,plan_digest,definition_json,review_frontier,cancelled FROM parent_plans WHERE client_id=? ORDER BY rowid", client) { row ->
             val id = row.getString("plan_id")
             val status = service.plans.status(c, client, id) // Validates every durable route; no owner callback.
@@ -410,8 +444,12 @@ class IntegratedCompletionBarrier(
                 f.reviewFrontier + 1, f.eventFrontier + 1) != 1L) add("joint_member_frontier_changed_or_claimed:${f.clientId}")
             // Required even after full certificate verification: no in-flight publisher/restorer
             // may have work that can mutate this client's frozen result frontier after the claim.
-            if (c.count("""SELECT COUNT(*) FROM reviews r JOIN work w ON w.work_key=r.work_key WHERE r.client_id=?
-                AND (r.cancelled<>0 OR w.state<>'complete' OR w.result_json IS NULL OR r.effective_result_json IS NULL)""", f.clientId) != 0L) {
+            if (c.count("SELECT COUNT(*) FROM reviews WHERE client_id=? AND kind='produced'", f.clientId) != 0L) {
+                add("joint_produced_profile_unavailable:${f.clientId}")
+            }
+            if (c.count("""SELECT COUNT(*) FROM review_executions r LEFT JOIN work w ON w.work_key=r.work_key WHERE r.client_id=?
+                AND (r.cancelled<>0 OR r.resolution_state IN ('deferred','unavailable') OR w.work_key IS NULL OR
+                    w.state<>'complete' OR w.result_json IS NULL OR r.effective_result_json IS NULL)""", f.clientId) != 0L) {
                 add("joint_publication_not_quiescent:${f.clientId}")
             }
         }

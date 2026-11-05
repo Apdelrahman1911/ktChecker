@@ -44,13 +44,15 @@ class KernelService private constructor(
     internal val authorizedFindingProviders = findingProviders.mapValues { it.value.toSet() }.toMap()
     // A new raw-publication contract cannot reuse a pre-fence execution certificate. Old rows
     // remain audited under their old key; upgrading never invents historical deadline evidence.
-    private val rawPublicationValidationProfile = "ktchecker/kernel/raw-publication-validation/2"
+    private val rawPublicationValidationProfile = "ktchecker/kernel/raw-publication-validation/3"
     internal val providerKey = Digests.sha256(canonical(listOf(rawPublicationValidationProfile, providerId, providerVersion,
         canonical(supportedRules.toList()), canonical(authorizedFindingProviders.mapValues { it.value.sorted() }))))
     private val stopped = AtomicBoolean(false)
     internal val ingestion = Semaphore(maxOf(1, config.workerCount))
     private val cursorSecret: ByteArray
     private val scheduler: WorkScheduler
+    internal val instanceId: String = UUID.randomUUID().toString()
+    internal val producedPlans = ProducedPlans(this, planAuthority)
     internal val plans = ParentPlans(this, planAuthority, routingAuthority)
 
     init {
@@ -164,10 +166,10 @@ class KernelService private constructor(
                     val workExists = c.count("SELECT COUNT(*) FROM work WHERE work_key=?", key) != 0L
                     if (!workExists) {
                         val ready = staged ?: fail("archive_missing", "Prepared input is unavailable")
-                        if (c.count("SELECT COUNT(*) FROM work WHERE state='queued'") >= config.maxQueuedWork) {
+                        if (queuedCapacityUsed(c) >= config.maxQueuedWork) {
                             fail("queue_full", "Durable work queue is full; request was not accepted")
                         }
-                        val stored = c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM work")
+                        val stored = archiveBytesUsed(c)
                         if (ready.bytes > config.maxArchiveBytes - stored) fail("archive_full", "Durable archive quota is full; request was not accepted")
                         val fairKey = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
                         ready.install()
@@ -483,9 +485,22 @@ class KernelService private constructor(
         if (pendingReviews(c, clientId) >= config.maxPendingPerClient) fail("client_queue_full", "Client's pending obligation limit is reached")
     }
 
-    internal fun pendingReviews(c: Connection, clientId: String): Long = c.count("""SELECT COUNT(*) FROM reviews r
-        JOIN work w ON w.work_key=r.work_key WHERE r.client_id=?
-        AND (w.state IN ('queued','running') OR r.effective_result_json IS NULL)""", clientId)
+    internal fun archiveBytesUsed(c: Connection): Long {
+        val work = c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM work")
+        val declarations = c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM produced_plan_admissions")
+        val reservations = c.count("SELECT COALESCE(SUM(reserved_archive_bytes),0) FROM plan_slot_resolution_claims")
+        if (work < 0 || declarations < 0 || reservations < 0 || declarations > Long.MAX_VALUE - work ||
+            reservations > Long.MAX_VALUE - work - declarations) fail("archive_accounting_corrupt", "Retained archive totals overflowed")
+        return work + declarations + reservations // Conservative cap remains charged, including actual ready K.
+    }
+
+    internal fun queuedCapacityUsed(c: Connection): Long = c.count("SELECT COUNT(*) FROM work WHERE state='queued'") +
+        c.count("""SELECT COUNT(*) FROM produced_plan_admissions a WHERE NOT EXISTS(
+            SELECT 1 FROM plan_slot_resolutions r WHERE r.plan_id=a.plan_id AND r.slot_id=a.consumer_slot_id)""")
+
+    internal fun pendingReviews(c: Connection, clientId: String): Long = c.count("""SELECT COUNT(*) FROM review_executions r
+        LEFT JOIN work w ON w.work_key=r.work_key WHERE r.client_id=? AND r.resolution_state<>'unavailable'
+        AND (w.work_key IS NULL OR w.state IN ('queued','running') OR r.effective_result_json IS NULL)""", clientId)
 
     private fun idempotent(c: Connection, clientId: String, key: String, hash: String): ReviewStatus? {
         if (c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=? AND idempotency_key=?", clientId, key) != 0L) {
@@ -498,17 +513,22 @@ class KernelService private constructor(
         return readStatus(c, prior.first, clientId)
     }
 
-    internal fun readStatus(c: Connection, reviewId: String, clientId: String): ReviewStatus =
-        c.one("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM reviews r JOIN work w
+    internal fun readStatus(c: Connection, reviewId: String, clientId: String): ReviewStatus {
+        producedPlans.requireReviewRelation(c, reviewId)
+        return c.one("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM review_executions r LEFT JOIN work w
             ON w.work_key=r.work_key WHERE r.review_id=? AND r.client_id=?""", reviewId, clientId, map = ::statusRow)
             ?: fail("review_not_found", "Review is not available to this client")
+    }
 
     private fun statusRow(row: ResultSet): ReviewStatus {
         val input = ContractJson.decodeFromString<AnalysisInput>(row.getString("input_json"))
         val rawJson = row.getString("result_json")
         val effectiveJson = row.getString("effective_result_json")
         val result = (effectiveJson ?: rawJson)?.let { ContractJson.decodeFromString<ProviderResult>(it) }
-        val validation = ContractJson.decodeFromString<List<String>>(row.getString("validation_json")) +
+        val validation = ContractJson.decodeFromString<List<String>>(row.getString("validation_json") ?: "[]") +
+            ContractJson.decodeFromString<List<String>>(row.getString("resolution_reasons_json")) +
+            (if (row.getString("kind") == "produced") listOf("produced_plan_preview_unqualified") else emptyList()) +
+            (if (row.getString("resolution_state") == "deferred") listOf("produced_slot_deferred") else emptyList()) +
             ContractJson.decodeFromString<List<String>>(row.getString("policy_validation_json")) +
             evaluatorReasons(row.getString("policy_certificate")) +
             (if (rawJson != null && effectiveJson == null) listOf("policy_evaluation_missing") else emptyList()) +
@@ -517,6 +537,9 @@ class KernelService private constructor(
         val cancelled = row.getInt("cancelled") != 0
         val state = when {
             cancelled -> "cancelled"
+            row.getString("resolution_state") == "deferred" -> "deferred"
+            row.getString("resolution_state") == "unavailable" -> "incomplete"
+            row.getString("work_state") == null -> "incomplete"
             row.getString("work_state") != "complete" -> row.getString("work_state")
             validation.isNotEmpty() -> "incomplete"
             else -> "complete"
@@ -630,7 +653,7 @@ class KernelService private constructor(
         for (id in pending) {
             if (isStopped()) break
             // The read closes before any adapter restoration I/O or config/source locks begin.
-            val captured = ledger.read { c -> c.one("""SELECT r.work_key,r.input_json,client.binding_json FROM reviews r
+            val captured = ledger.read { c -> c.one("""SELECT r.work_key,r.input_json,client.binding_json FROM review_executions r
                 JOIN work w ON w.work_key=r.work_key JOIN clients client ON client.client_id=r.client_id
                 WHERE r.review_id=? AND w.provider_key=? AND w.state='complete' AND w.result_json IS NOT NULL
                     AND r.effective_result_json IS NULL AND r.policy_certificate=?""", id, providerKey, admittedPolicyCertificate) {
@@ -654,7 +677,7 @@ class KernelService private constructor(
                 if (isStopped()) return@transaction
                 // Re-read and detach after restoration. The adapter cannot mutate an input or bind
                 // a different consumer, evaluator, provider or raw work between the two phases.
-                val raw = c.one("""SELECT w.result_json FROM reviews r JOIN work w ON w.work_key=r.work_key
+                val raw = c.one("""SELECT w.result_json FROM review_executions r JOIN work w ON w.work_key=r.work_key
                     JOIN clients client ON client.client_id=r.client_id WHERE r.review_id=? AND r.work_key=?
                         AND r.input_json=? AND client.binding_json=? AND w.provider_key=? AND w.state='complete'
                         AND w.result_json IS NOT NULL AND r.effective_result_json IS NULL AND r.policy_certificate=?""",
@@ -678,7 +701,7 @@ class KernelService private constructor(
         if (isStopped()) return emptyList()
         val key = "policy_recovery_cursor:" + Digests.sha256(canonical(listOf(providerKey, policyEvaluatorIdentity)))
         val cursor = c.one("SELECT value FROM metadata WHERE key=?", key) { it.getString(1).toLongOrNull() } ?: 0L
-        fun select(after: Boolean, limit: Int): List<Pair<Long, String>> = c.query("""SELECT r.rowid,r.review_id FROM reviews r
+        fun select(after: Boolean, limit: Int): List<Pair<Long, String>> = c.query("""SELECT r.rowid,r.review_id FROM review_executions r
             JOIN work w ON w.work_key=r.work_key WHERE r.rowid ${if (after) ">" else "<="} ?
                 AND w.provider_key=? AND w.state='complete' AND w.result_json IS NOT NULL
                 AND r.effective_result_json IS NULL AND r.policy_certificate=? ORDER BY r.rowid LIMIT ?""",
@@ -813,9 +836,11 @@ class KernelService private constructor(
 
     private data class ReviewRecord(val status: ReviewStatus, val input: AnalysisInput, val certificateValid: Boolean)
     internal fun lineageReasons(c: Connection, binding: ClientBinding, latest: AnalysisInput?, plan: ParentPlans.Stored?): List<String> {
-        val records = c.query("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM reviews r JOIN work w
+        val records = c.query("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM review_executions r LEFT JOIN work w
             ON w.work_key=r.work_key WHERE r.client_id=? ORDER BY r.sequence""", binding.clientId) {
+            producedPlans.requireReviewRelation(c, it.getString("review_id"))
             val input = ContractJson.decodeFromString<AnalysisInput>(it.getString("input_json"))
+            val executionInput = ContractJson.decodeFromString<AnalysisInput>(it.getString("execution_input_json"))
             val rawJson = it.getString("result_json")
             val effectiveJson = it.getString("effective_result_json")
             val raw = rawJson?.let { text -> ContractJson.decodeFromString<ProviderResult>(text) }
@@ -826,11 +851,12 @@ class KernelService private constructor(
             val workCertificate = c.one("SELECT * FROM work_certificates WHERE work_key=?", it.getString("work_key")) { cert ->
                 val expected = Digests.sha256(canonical(listOf(cert.getString("input_key"), cert.getString("effective_key"),
                     cert.getString("result_digest"), cert.getString("provider_key"))))
-                cert.getString("certificate_id") == expected && cert.getString("input_key") == input.analysisKey() &&
+                cert.getString("certificate_id") == expected && cert.getString("input_key") == executionInput.analysisKey() &&
                     rawJson != null && cert.getString("result_digest") == Digests.sha256(rawJson) &&
                     cert.getString("provider_key") == providerKey
             } ?: false
-            ReviewRecord(statusRow(it), input, workCertificate && certificate?.evaluatorIdentity == policyEvaluatorIdentity &&
+            val relationValid = it.getString("kind") != "produced" || producedPlans.executionCertificateValid(c, it.getString("review_id"), executionInput)
+            ReviewRecord(statusRow(it), input, workCertificate && relationValid && certificate?.evaluatorIdentity == policyEvaluatorIdentity &&
                 policyDigest != null && policyDigest == certificate?.digest)
         }
         val reasons = mutableListOf<String>()
@@ -839,7 +865,7 @@ class KernelService private constructor(
             record.status.reasons.filter { it in setOf("policy_evaluator_identity_unknown", "policy_evaluator_mismatch") }
                 .forEach { reasons += "$it:${record.status.reviewId}" }
             when (record.status.state) {
-                "queued", "running" -> reasons += "review_pending:${record.status.reviewId}"
+                "queued", "running", "deferred" -> reasons += "review_pending:${record.status.reviewId}"
                 "cancelled" -> reasons += "review_cancelled:${record.status.reviewId}"
                 "complete" -> if (!record.certificateValid) reasons += "review_certificate_invalid:${record.status.reviewId}"
                 else -> reasons += "review_incomplete:${record.status.reviewId}"

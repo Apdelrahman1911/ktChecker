@@ -84,7 +84,7 @@ class KernelSchema2Test {
                 assertEquals(if (mode == "wal-checkpointed") 2L else 1L, old.count("SELECT COUNT(*) FROM retained_obligations"))
                 assertEquals("1", old.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
                 // Version rejection cannot stop an already-open old process. This write is the
-                // fixture's old owner, NOT a schema2 write or permission for mixed binaries.
+                // fixture's old owner, NOT a schema3 write or permission for mixed binaries.
                 // No raw byte snapshots occur while this connection is open.
                 rejected { Ledger(root, config) }
                 old.execute("INSERT INTO retained_obligations VALUES('old-owner-still-running','shutdown-required')")
@@ -93,7 +93,7 @@ class KernelSchema2Test {
         }
     }
 
-    @Test fun newSchema2StateDoesNotCopyResetOrDischargeAnOldStore() {
+    @Test fun newSchema3StateDoesNotCopyResetOrDischargeAnOldStore() {
         val oldRoot = temp.resolve("old")
         database(oldRoot).use { c ->
             c.execute("CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
@@ -105,12 +105,16 @@ class KernelSchema2Test {
         rejected { Ledger(oldRoot, config) }
         val fresh = Ledger(temp.resolve("separately-owner-selected-new-state"), config)
         fresh.read { c ->
-            assertEquals("2", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+            assertEquals("3", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
             assertEquals(0L, c.count("SELECT COUNT(*) FROM reviews"))
             assertTrue("routing_id" in c.query("PRAGMA table_info(parent_plans)") { it.getString("name") })
             assertTrue("routed_obligations" in c.query("PRAGMA table_info(clients)") { it.getString("name") })
             assertEquals(0L, c.count("SELECT COUNT(*) FROM routing_batches"))
             assertEquals(0L, c.count("SELECT COUNT(*) FROM routing_members"))
+            listOf("produced_plan_admissions", "plan_slot_resolution_claims", "plan_slot_resolutions", "work_publications").forEach { table ->
+                assertEquals(1L, c.count("SELECT COUNT(*) FROM sqlite_schema WHERE type='table' AND name=?", table))
+            }
+            assertEquals(1L, c.count("SELECT COUNT(*) FROM sqlite_schema WHERE type='view' AND name='review_executions'"))
         }
         unchanged(oldRoot, original)
         database(oldRoot).use { c -> assertEquals(1L, c.count("SELECT COUNT(*) FROM retained_obligations")) }
@@ -126,7 +130,7 @@ class KernelSchema2Test {
             owner.execute("INSERT INTO metadata VALUES('old-required-obligation','retained-in-wal')")
         }
         val before = files(root)
-        assertContentEquals(originalMain, before.getValue("ledger.sqlite"), "Main file must still contain the previous schema2 image")
+        assertContentEquals(originalMain, before.getValue("ledger.sqlite"), "Main file must still contain the previous schema3 image")
         assertTrue("ledger.sqlite-wal" in before)
         rejected { Ledger(root, config) }
         unchanged(root, before)
@@ -143,7 +147,7 @@ class KernelSchema2Test {
         database(root, readOnly = true).use { reader ->
             reader.execute("BEGIN")
             try {
-                assertEquals("2", reader.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+                assertEquals("3", reader.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
                 val denied = assertFailsWith<SQLException> {
                     reader.execute("INSERT INTO metadata VALUES('must-not-write','forbidden')")
                 }
@@ -206,7 +210,7 @@ class KernelSchema2Test {
                 repeat(16) {
                     rounds.await(10, TimeUnit.SECONDS)
                     Ledger(root, config).read { c ->
-                        assertEquals("2", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+                        assertEquals("3", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
                         assertEquals("unchanged", c.one("SELECT value FROM metadata WHERE key='retained-test'") { it.getString(1) })
                     }
                 }
@@ -228,7 +232,7 @@ class KernelSchema2Test {
         val beforeEmpty = files(empty)
         rejected { Ledger(empty, config) }
         unchanged(empty, beforeEmpty)
-        listOf<String?>(null, "0", "3").forEachIndexed { index, version ->
+        listOf<String?>(null, "0", "2", "4").forEachIndexed { index, version ->
             val root = temp.resolve("unrecognized-$index")
             database(root).use { c ->
                 c.execute("CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
@@ -246,7 +250,7 @@ class KernelSchema2Test {
         val root = temp.resolve("ledger")
         val ledger = Ledger(root, config)
         ledger.transaction { it.execute("INSERT INTO metadata VALUES('retained-test','unchanged')") }
-        listOf<String?>("1", "3", null).forEach { version ->
+        listOf<String?>("1", "2", "4", null).forEach { version ->
             database(root).use { c ->
                 c.execute("DELETE FROM metadata WHERE key='schema_version'")
                 if (version != null) c.execute("INSERT INTO metadata VALUES('schema_version',?)", version)
@@ -258,9 +262,27 @@ class KernelSchema2Test {
             database(root).use { c ->
                 assertEquals("unchanged", c.one("SELECT value FROM metadata WHERE key='retained-test'") { it.getString(1) })
                 c.execute("DELETE FROM metadata WHERE key='schema_version'")
-                c.execute("INSERT INTO metadata VALUES('schema_version','2')")
+                c.execute("INSERT INTO metadata VALUES('schema_version','3')")
             }
-            assertEquals("2", ledger.read { c -> c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) } })
+            assertEquals("3", ledger.read { c -> c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) } })
+        }
+    }
+
+    @Test fun missingLedgerInNonemptySelectedNamespaceRequiresReconciliationWithoutCreatingOrReplacingAnything() {
+        // New isolated fixtures only. No real old broker/output attempt is inspected or touched.
+        listOf("inputs/retained/input.json", "produced-output/retained/complete-output.jar", "ledger.sqlite-wal").forEachIndexed { index, name ->
+            val root = temp.resolve("missing-ledger-$index")
+            val retained = root.resolve(name)
+            Files.createDirectories(retained.parent)
+            val bytes = "synthetic-retained-obligation-$index".toByteArray()
+            Files.write(retained, bytes)
+            repeat(2) {
+                val failure = assertFailsWith<KernelException> { Ledger(root, config) }
+                assertEquals("missing_ledger_requires_reconciliation", failure.code)
+                assertTrue(failure.message.orEmpty().contains("reconciliation"))
+                assertFalse(Files.exists(root.resolve("ledger.sqlite")))
+                assertContentEquals(bytes, Files.readAllBytes(retained))
+            }
         }
     }
 }

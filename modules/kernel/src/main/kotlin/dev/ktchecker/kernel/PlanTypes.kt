@@ -49,6 +49,8 @@ import kotlinx.serialization.Serializable
     val slots: List<RequiredPlanSlot>,
     /** Full required delivery-recipient set from the controller, not caller-selected narrowing. */
     val requiredRecipientClientIds: List<String>,
+    /** Explicit unresolved-obligation lane; ordinary pending/fullProject rules are unchanged. */
+    val jvmProduced: JvmProducedPlanDeclaration? = null,
 )
 
 /**
@@ -57,6 +59,7 @@ import kotlinx.serialization.Serializable
  */
 fun interface ReviewPlanAuthority {
     fun resolve(binding: ClientBinding, request: SubmitPlanRequest): RequiredReviewPlan?
+    fun authorizeProduced(request: ProducedPlanAdmissionRequest): AuthorizedProducedPlan? = null
     companion object { val DENY = ReviewPlanAuthority { _, _ -> null } }
 }
 

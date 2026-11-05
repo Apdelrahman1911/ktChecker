@@ -409,7 +409,7 @@ class KernelIntegrationTest {
         }
     }
 
-    @Test fun reopeningDamagedSchema2RefusesMissingFairnessTableWithoutRepairingOrLosingAcceptedObligations() {
+    @Test fun reopeningDamagedSchema3RefusesMissingFairnessTableWithoutRepairingOrLosingAcceptedObligations() {
         val input = fixtureInput("damaged-fairness")
         val provider = Provider { i, _ -> passed(i) }
         val database = temp.resolve("damaged-fairness-ledger")
@@ -421,7 +421,7 @@ class KernelIntegrationTest {
             review = service.submit(client.client, request("retained", input))
             acceptedEvents = allEvents(service, client)
         }
-        // Test-only offline corruption of schema2, NOT a supported older-schema upgrade.
+        // Test-only offline corruption of schema3, NOT a supported older-schema upgrade.
         DriverManager.getConnection("jdbc:sqlite:${database.resolve("ledger.sqlite").toUri()}?mode=rw").use { c ->
             c.execute("DROP TABLE fair_clients")
             fun retained(connection: Connection) = listOf("metadata", "clients", "instances", "fair_queues", "work", "reviews", "events")
@@ -445,7 +445,7 @@ class KernelIntegrationTest {
         assertEquals(0, provider.calls.get())
     }
 
-    @Test fun concurrentSchema2ReopensKeepSidecarsPrivateAndRetainAcceptedWork() {
+    @Test fun concurrentSchema3ReopensKeepSidecarsPrivateAndRetainAcceptedWork() {
         val provider = Provider { i, _ -> passed(i) }
         val database = temp.resolve("reopen-sidecars-ledger")
         val config = testConfig.copy(workerCount = 0)
@@ -469,7 +469,7 @@ class KernelIntegrationTest {
                         assertEquals(review, reopened.status(client.client, review.reviewId))
                         assertEquals(acceptedEvents, allEvents(reopened, client))
                         reopened.ledger.read { c ->
-                            assertEquals("2", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+                            assertEquals("3", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
                             // This read connection keeps SQLite's sidecars present during inspection.
                             listOf("ledger.sqlite", "ledger.sqlite-wal", "ledger.sqlite-shm").forEach { name ->
                                 val path = database.resolve(name)
