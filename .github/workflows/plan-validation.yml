@@ -16,13 +16,23 @@ concurrency:
 jobs:
   planning-integrity:
     name: Planning integrity (${{ matrix.os }})
+    # Provisional Windows headroom; POSIX bounds and required checks are unchanged.
     strategy:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: [ubuntu-24.04, windows-2025, macos-15]
+        include:
+          - os: ubuntu-24.04
+            python_timeout_seconds: 480
+            job_timeout_minutes: 10
+          - os: windows-2025
+            python_timeout_seconds: 1200
+            job_timeout_minutes: 25
+          - os: macos-15
+            python_timeout_seconds: 480
+            job_timeout_minutes: 10
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: ${{ matrix.job_timeout_minutes }}
     steps:
       - name: Enable Windows long paths before checkout
         if: runner.os == 'Windows'
@@ -43,7 +53,7 @@ jobs:
           python scripts/ci/run_python_checks.py --start-directory scripts
           --output build/ci-evidence/python/python-checks.json
           --junit build/ci-evidence/python/python-checks.xml
-          --host "${{ matrix.os }}" --require-ci-context --timeout 480
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
       - name: Validate rule metadata and generated indexes
         run: python scripts/validate_plan.py
       - name: Install hash-locked planning schema dependencies

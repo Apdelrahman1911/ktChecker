@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-expansion-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+  "upstream_id": "comments:OutdatedDocumentation",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "catalog_record_sha256": "478d43cc9f86f107e22d985356d305a2b80c9fc37df0823f73bc0809bc73286e",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-comments/src/main/kotlin/dev/detekt/rules/comments/OutdatedDocumentation.kt",
+    "source_file_sha256": "816f1890a3463e74334e94f96ac61cf308d7a0e508ddb8843a32542974a8af40",
+    "predicate_line_numbers": [
+      69,
+      72,
+      78,
+      106,
+      124,
+      156,
+      170,
+      207,
+      223,
+      228,
+      232,
+      262,
+      265
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/comments/OutdatedDocumentation",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:2f57bd2573e1e5674ec6554a51e0d4f821df5891a98158769d066ae831179918"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "Match parsed @param/@property subjects against syntactic declaration type/value/property names; defaults require type parameters, declaration order and exhaustive tagged coverage. No relevant tags means no finding.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.docs\n\n/**\n * Repeat the supplied element.\n * @param T element type\n * @param oldValue former parameter name\n * @param count number of elements\n */\nfun <T> repeatEntry(value: T, count: Int): List<T> = List(count) { value }\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 9,
+        "column": 8,
+        "end_line": 9,
+        "end_column": 19,
+        "span": "repeatEntry",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A type-parameter-aware KDoc still names a removed value parameter after a rename; report the actual function name."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.docs\n\n/**\n * Repeat the supplied element.\n * @param T element type\n * @param value element to repeat\n * @param count number of elements\n */\nfun <T> repeatEntry(value: T, count: Int): List<T> = List(count) { value }\n"
+    },
+    "expected": [],
+    "intent": "The corrected KDoc lists the type and value parameters in actual declaration order. The implementation need not change."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.docs\n\n/**\n * Repeat the supplied element.\n * @param T element type\n * @param oldValue former parameter name\n * @param count number of elements\n */\nfun <T> repeatEntry(value: T, count: Int): List<T> = List(count) { value }\n",
+      "SuppressedCase.kt": "@file:Suppress(\"OutdatedDocumentation\")\n\npackage suppressed.corpus.docs\n\n/**\n * Repeat the supplied element.\n * @param T element type\n * @param oldValue former parameter name\n * @param count number of elements\n */\nfun <T> repeatEntry(value: T, count: Int): List<T> = List(count) { value }\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 9,
+        "column": 8,
+        "end_line": 9,
+        "end_column": 19,
+        "span": "repeatEntry",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.docs\n\n/**\n * Render the value with a width limit.\n * @param count maximum width\n * @param value input text\n */\nfun render(value: String, count: Int): String = value.take(count)\n\n/**\n * This tag still names a removed argument.\n * @param removed former parameter\n */\nfun invalidTag(actual: String): String = actual\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 4,
+          "end_line": 8,
+          "end_column": 10,
+          "span": "render",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 14,
+          "column": 4,
+          "end_line": 14,
+          "end_column": 14,
+          "span": "invalidTag",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The owner may document width before value for narrative reasons; strict order still reports. A separate genuinely unknown tag is retained as the fixed contrast.",
+      "id": "reordered-docs-and-invalid-name-defaults",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.docs\n\n/**\n * Render the value with a width limit.\n * @param count maximum width\n * @param value input text\n */\nfun render(value: String, count: Int): String = value.take(count)\n\n/**\n * This tag still names a removed argument.\n * @param removed former parameter\n */\nfun invalidTag(actual: String): String = actual\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 14,
+          "column": 4,
+          "end_line": 14,
+          "end_column": 14,
+          "span": "invalidTag",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Disable only matchDeclarationsOrder: the reordered but valid subjects stop reporting while the removed parameter remains a finding. This is a selective real configuration control, not a blank pass.",
+      "id": "order-option-does-not-waive-invalid-tags",
+      "case_kind": "configuration",
+      "assessment": "owner_configured_legal_alternative",
+      "options": {
+        "matchDeclarationsOrder": false
+      }
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.docs\n\n/** Returns a numeric count, despite the implementation returning input text. */\nfun echo(value: String): String = value\n"
+      },
+      "expected": [],
+      "intent": "Incorrect prose has no @param/@property subject list, so this rule deliberately abstains. Empty output is not proof that the API documentation is true.",
+      "id": "prose-truth-is-not-checked-without-tags",
+      "case_kind": "regression",
+      "assessment": "shallow_predicate_limitation"
+    }
+  ],
+  "limitations": [
+    "Opt-in documentation/signature convention, not general API semantics or documentation truth. No relevant parsed tags means no finding.",
+    "This batch covers function type/value parameters, order and invalid subjects, not all class/constructor visibility, property tags, fenced-code/lexer recovery or exhaustive option combinations.",
+    "Disabling order matching must not hide invalid parameter names; the configuration contrast explicitly retains the unrelated finding.",
+    "No Kotlin compilation, API binary compatibility, documentation completeness or parser-compatibility qualification."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, performance, parser, semantic, model or release qualification."
+}

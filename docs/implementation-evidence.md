@@ -7,7 +7,523 @@ catalog mapping, mocked diagnostic, or successful prerequisite probe does not
 establish the next category. Release gates in [validation-ci.md](validation-ci.md)
 and [PLAN.md](PLAN.md) remain unchanged.
 
-## Current checkpoint (2026-11-04)
+## Parallel implementation checkpoint — 2026-11-05
+
+The [machine-readable checkpoint](evidence/parallel-checkpoint-20261105.json)
+binds these **separate scoped executions**, their source identities, receipt
+hashes and prior-commit GitHub Actions URLs. They are not a combined release
+test pass or a new runnable distribution.
+
+| Executed lane | Verified result | Boundary |
+| --- | --- | --- |
+| Affected Kotlin compilation | Exit 0, **77.104 s** | Corrected two retained compilation failures; no tests or real owner/model run in this lane. |
+| Kernel and selected owner/model/corpus controls | **380/380**, zero failures/errors/skips, **377.945 s** | Kernel 189, project-model 10, compiler 6, CLI 121, corpus 54. Real SQLite/files/threads; synthetic providers and authorities, not the full test graph. |
+| Host bridge build and selected controls | Both TypeScript builds passed; **56/56** controls | Fourteen parent/projection and 42 delivery regressions. **Zero actual model requests**. |
+| Expanded Detekt corpus controls | **67/67**, zero failures/errors/skips, **61.086 s** | Includes the previous 54 plus 13 observability controls; no provider execution in this control lane. |
+| Real protocol/catch cohort | **27 analyses, 37 calls, 28 native confirmations, 31 callbacks, 113 events**, **103.947 s** | Three rules, nine authored cases each, 1/1 JUnit; 585 evidence references rehashed. |
+| Real exception-observability cohort | **27 analyses, 37 calls, 28 native confirmations, 31 callbacks, 113 events**, **104.144 s** | Three rules, nine authored cases each, 1/1 JUnit; 585 evidence references rehashed. |
+| Windows distribution-observation correction, private Linux controls | **80 methods / 199 synthetic subtests**, zero failures/errors/skips | Independently reviewed source; Windows API/buffer/handle seams mocked. Actual Windows execution remains pending. |
+
+The two real cohorts use unchanged source
+`6869fa11e5e5fb43c25daa058c28b69ff3730a3031a52933ec6ac2c507ad09a9`.
+They exercise actual Detekt 2.0.0-alpha.6 on **Linux/JVM LIGHT synthetic fixtures**,
+including configured negatives, suppressions and explicitly documented heuristic
+false positives/misses. Matching those expected predicates is **not** measured
+real-world precision. The declared/compiler 2.4.21 versus embedded 2.4.10 parser
+boundary remains unqualified. Each lane preserves all 22 authored rule routes and
+199 analyses while marking its 19 unexecuted rule rows `not_run`; it does not claim
+to execute that entire inventory. The initial protocol evidence-reader failure
+is retained; only its path interpretation was corrected, without rerunning the
+provider.
+
+The Windows correction retains full native file identity and no-follow/failure
+guards instead of assuming identical POSIX-style path/descriptor metadata
+encodings. Its first private runner stopped at a Linux standard-library import
+guard before any test method; that zero-method failure is retained. A separately
+reviewed runner correction passed the 80 controls without real Windows/native-ABI
+execution. This supports adoption, not a proven hosted Windows failure cause.
+
+The current source adds a nominal observed-export path, produced-output/owner
+composition and parent-event/projection controls. Observed exports retain the
+permanent `configuration_input_closure_unproven` gap and cannot grant complete
+project coverage. The adopted owner command is still an interim one-parent path;
+fresh explicit compiler-policy configuration and same-lineage patch→fix host
+acceptance remain unfinished. No review silently enables or disables rules.
+
+All four inspected Actions runs for prior head `663113117bb3784c1a7638ac8282e64beabe59d0`
+(actual tested merge `295b716498200f27415bc02cac7218bd8c7e2143`) ended in failure.
+Linux/macOS planning and Linux bridges passed their individual jobs; those do
+not qualify Windows, macOS implementation or iOS target checks. Step metadata
+alone does not establish their failure causes. An explicit consent/exact-commit
+Darwin component profile is now authored in the indexed platform workflow;
+**dispatch and native success are not claimed by this checkpoint**.
+
+The full **1,663-rule release scope remains unchanged**. The last strict global
+ledger still records 13,304 rule/context cells, two implemented, zero tested and
+zero qualified; this checkpoint does not regenerate or promote it. Fresh host
+delivery, platform qualification, general full/incremental equivalence, broad
+per-rule reliability, fresh packaging/license approval and the warm 1–3-second
+useful-result target remain open.
+
+## Later focused receipts and retained failures — 2026-11-05
+
+**These are separate source-bound observations, not an aggregate pass, a full
+current-source graph, or a new runnable distribution.** Paths below are under
+`build/ci-evidence/` in the isolated integration checkout. SHA-256 source digests
+identify dirty-tree bytes, not just the common base commit `97810cc732edc6b2d24d5dd8038f9085aca237d1`.
+
+| Receipt | Actual scoped result |
+| --- | --- |
+| `focused68-20261105-r3/root-verification.json` | **68/68 methods passed**, zero failures/skips, exit 0; includes three config baseline regressions. CLI helpers compiled; synthetic authorities, not genuine provider/host-model execution or the full graph. |
+| `bridges-integration-20261105-r2/summary.json` | MCP **17/17** and reference host **165/165**, zero failures/skips, both exit 0. No actual model request or host-model observation. |
+| `connected51-focused-20261105-r2/root-verification.json` — retained predecessor | **28 passed, two failed, 21 unexecuted**, zero skipped; 30/51 executed, exit 1. Production compilation failed for a missing `liveCheck` import; CLI helpers were not reached. The two wire-test failures are not erased by R3. |
+| `detekt-iteration-cohort-20261105-r1/root-verification.json` | **28 detector analyses, 29 native confirmations, 38 calls, 116 events; 1/1 JUnit**, zero failures/skips, exit 0. Root rehashed 515 references. Actual synthetic Linux/JVM LIGHT cohort only; seven approved-not-run rules, heuristic gaps and the declared/embedded parser boundary remain unqualified. |
+| `native5-adoption-20261105-asw8nsvo/linux22-root-readback.json` | CI author's original **22 Linux controls passed** (four builder metadata, 18 owned-child runtime), zero failures/skips. Root verified five-file adopted source matching, not a new whole-tree run or macOS qualification; root did not rerun them. |
+
+R3 and both TS runs share unchanged source
+`128590862b3cbcaf9ccac2a7f6f17a2a31717a635eb9c9ab9645ff3d5f121b4f`;
+retained R2 used `5c9f7fc07d4bf4070f3978a9ccac4214e3ab28fbd17ee7417fa0b6a6bcaa1a15`.
+Detekt used unchanged source `379600c0becf37dfd1dfad26befd9f0797520711f817a53acc9ad797bee10a57`;
+that is also the native adoption postimage, **not** a blanket Linux22 execution binding.
+Receipt SHA-256 pins in table order:
+`4bb90b489da491e617b82029dca29e14e80ad9bad1f78bd6d2c7f6c3a99dbaf8`,
+`2a3678b92ec75af5364514c141a40acc3d7d680e78f89dee633d3a2792936e97`,
+`e7501229b9df83ebde1caa95677795f83dd55827eb57bdbdbc9f1d4c3d36b8ae`,
+`99beed21e2bdb1f56549dabac1053f86fbf4ddaa550fd903c7b7b5b5993c91bf`,
+`c886c64f62125a3861876a793d710cdf392a21516578bd31abc0ecbd933b326f`.
+
+The retained hosted PR1 observation remains **12 jobs: two success, ten failure**
+at actual reported merge checkout `87d9f0ac2e3a0b4a65fa634899de289dc181491c`,
+not its API head or later local fixes. Windows timeout/final-source gaps remain.
+Sanitized `hosted-ci-evidence-summary-r1.json` SHA-256:
+`bcf2b09b344789e381d0070dff2ef43cf01f3862c534a1cdcb4cc05f743a7cbf`.
+
+The later metadata-only `current-coverage-97810cc-20261105-independent-r2-kWi8t6Oq/summary.json`
+(SHA-256 `61a37df9838e51c12dfaa3e78dd809902315f49a52726e1e302ef683190ce24e`)
+retains **1,663 × eight = 13,304 rows; two implemented, zero tested, zero qualified**
+at source `6bf2db663bdf26c5b59221320a92597c6d1d354c6f1ddc189af1a771c02aa206`.
+All runtime defaults and qualification aggregates remain false. No coverage credit
+transfers across these tuples; no production runtime/model, platform/ABI, full
+native-supervision or release qualification is claimed. The older installation
+and all earlier failed, incomplete, unavailable and unexecuted evidence remain.
+
+## Current-source addendum — 2026-11-05
+
+**These later receipts do not establish a complete current-source graph or a new
+packaged preview.** The separate runs below used **4,286 files**, source SHA-256
+`b1eccb76d7e7f60f1c451feb2ae68d50ba1ecd80adeea0948b618d66721cf589`,
+unchanged before/after. Paths beginning `build/` are relative to the isolated
+integration checkout; earlier entries retain their original source identities.
+
+| Later local receipt under `build/ci-evidence/` | Actual result and boundary |
+| --- | --- |
+| `preview-current-graph-low-resource-20261105-r1/summary.json` | **Failed, exit 1, 15.423 s**: init-script compatibility failure before tests; zero cases and **0/24** successful required-task terminals. |
+| `preview-current-graph-low-resource-20261105-r2/summary.json` | **Failed, exit 1, 267.520 s**: compilation progressed, but the kernel confirmed Gradle daemon **3668** was OOM-killed at **09:31:04 UTC**. Only **58 fresh audit cases** passed (six reports; zero failures/errors/skips) and **2/24** required-task terminals succeeded. This is not a 22-test-task-plus-two-auxiliary-task graph pass. |
+| `ci-python-current-20261105-r1/verification-summary.json` | One complete local Python discovery: **933 methods discovered, started and completed; 932 passed, one skipped, zero failures/errors**. Reporter child exit 0 in **189.406 s**; launcher observation **191.991 s**, with actual settled outer exit 0 separately observed. No successful-subtest denominator is available. |
+
+Both failed JVM directories retain `outer-exit-observation.json`: root observed
+and drained their actual exit 1, not merely a failed summary. The two R2 successful
+terminals are `:audit:test` and `:cli:compileTestKotlin`; a started CLI-test marker
+does not supply missing terminal/JUnit evidence. Original-install inventories
+match and integration-default absence is retained; descendant settlement is not
+established. Python's one Linux-host skip remains visible; its settled launcher
+observer is `ktchecker-current-ci-discovery-run-20261105-wd1kUsgC/settled-launcher-observer.json`,
+SHA-256 `5f9fab531bd30eaecc79f3b02ee2553d172e300db98dc5162dc3dcb17d37c147`.
+These are local controls, not hosted/model/provider or rule qualification.
+
+The subsequent sole-file `RealModelFixture.kt` expected-label correction was
+adopted at **4,286 files**, source SHA-256
+`6710b926cdafe3b9b52525beeceb7899e1fed74e838e4bce9fc64c6c62442ee4`:
+**uncompiled and unexecuted at adoption**. That snapshot, later CI changes and this
+addendum inherit no older graph, TS163, package or doctor pass.
+
+Metadata-only `current-portable-coverage-b1ecc-20261105-r1/summary.json` still
+records **1,663 IDs × eight contexts = 13,304 cells: two implemented, zero tested,
+zero qualified**. It grants zero new stage credit; the large report was not reread
+for this addendum. Default activation is unchanged; broad Unicode remains
+unverified. The older doctor-runnable installation and all earlier failures below
+remain retained, not silently rebuilt or promoted.
+
+Summary SHA-256 pins, in table order:
+`079411fa6c42b7b761ab28b50848080e6e20167335794b5dfa25e3b5cba66e5c`,
+`ae64eaf8b4cd8aa2e3935b6ca1879500d07760df630f6d71d955d06dbb6d6faf`,
+`bb3129e8c64ccc228127e5446c13953efd91c50a5eed8f54562471d8e0e0c27c`.
+
+<a id="latest-preview-handoff-2026-11-05"></a>
+
+## Latest local handoff — 2026-11-05, unqualified preview
+
+**Current rule/context accounting: 13,304 cells; two implemented, zero tested and
+zero qualified.** The [later valid gap inventory](#current-rule-coverage-2026-11-05)
+is not rule qualification. Local JVM, packaging and API controls below do not
+replace per-rule evidence.
+
+The ordinary JVM graph and fresh packaging command below used base
+`5e00407ca5a2a31c371d471de3d4216a18fdd760` plus **4,237 captured files in a dirty checkout**,
+SHA-256 `9dc3d42cdd10579727d7e72f79a6637272afc94bf7036a162d05ec6aaf99f722`.
+The graph's before/after sources match. These receipts do not cover later source
+packets or this documentation successor; the existing distribution embeds the
+earlier contract, not this new status text. Counts describe separate runs and
+must not be added together.
+
+Paths beginning `build/` in this checkpoint are relative to the isolated
+`build/checkpoints/integration-5e00407-20261104` checkout. Commands/logs and owner
+state stay private; the [usage guide](implementation-usage.md) selects the new
+installation explicitly rather than overwriting or using the preserved old one.
+
+| Retained receipt | Observed result | Boundary |
+| --- | --- | --- |
+| `build/ci-evidence/preview-current-graph-20261105-r2/summary.json` | **22/22 required test tasks EXECUTED; 127 JUnit reports; 1,774 occurrences: 1,768 passed, six skipped, zero failures/errors**. Command exit 0, **276.751 s**. | Ordinary local Linux/JVM graph, including the model wire/worker and 83 B1 controls; not a new full-rule, live-model, platform or release qualification. The separately recorded 83-method run below is not additional coverage. |
+| `build/preview-handoffs/ktchecker-20261105-f909k8w0/evidence/preview-package-command.json` | **11/11 required packaging tasks EXECUTED**, exit 0, **83.576 s**; new staged install and ZIP/TAR produced. | Actual compilation/packaging, not tests or analysis. The original packaging harness has no completion summary; later postvalidation is a separate observation, not a retroactive pass for that harness. |
+| B1 CI correction R2 `receipts/verification-summary.json` | **19/19 synthetic methods and 166/166 subtests passed**, zero failures/errors/skips, seven external-operation guards zero; one **0.717275 s** run. | Privately tested CI-wiring successor, subsequently adopted; it requires B1's executed task and four exact reports. No hosted workflow, real reviewed-project wrapper, model or compiler execution by these controls. |
+
+Receipt SHA-256 pins, in table order:
+`6c1fbc408ccaef6892f22839bb2311a6849009108351c287e37429e4ec25b55a`,
+`b05ca7734ad07fa55d5878947071ddfa3825a1e88528ea30665251e7ead55a3b`,
+`5f6675a02aebfbf91f8563124d1e962384cd36fa188eded88d03463a73c26289`.
+The B1 packet is `ktchecker-b1-ci-correction-r2-20261105-__iehsru`.
+
+The six ordinary-graph skips are **one Windows junction control, two real Detekt
+opt-ins, two real Ktlint opt-ins and one live-duplex integration opt-in**. Existing
+runtime tests include actual v1 child execution; the graph is not all mocked, but
+it does not renew the separate genuine v2/model/host observations or Apple target
+qualification. Whole-command times are not warm compiler latency or the 1–3-second
+feedback target.
+
+### Fresh distribution postvalidation
+
+The fresh `postvalidation-20261105-r2/summary.json` under that handoff passed
+**all 11 steps**, exit 0. Its actual spaces/Unicode-path launcher `doctor` smoke
+passed on **Linux amd64 / Java 21.0.12**, **0.402 s** for `doctor` only—not analysis
+or latency/SLO evidence. The source, new installation and original shared install
+remained unchanged; the integration default install remained absent.
+
+The narrowly authorized difference is only the generated public `third_party`
+root's **0700 → 0755** mode. Descendant names, types, file bytes and modes must
+match exactly; no private-state permission exception or blanket mode masking was
+introduced. Archive comparison verified **37 regular files** in each ZIP/TAR
+against the staged installation without extraction. The inventory has **26 unique
+coordinate/digest components** (28 resolved/configuration records), zero inventory
+errors and **13 legal blockers**: owner license, 11 required NOTICE reviews and
+compiler-embeddable's shaded third-party inventory. `release_qualified=false`;
+no signing or publication occurred.
+
+| Local archive under `archives/` | Bytes | SHA-256 |
+| --- | --- | --- |
+| `ktchecker-updated-preview.zip` | 78,430,285 | `bba71d298ca5dfda81adaea7d36727db82bdcb9d42e4d57ef33a7d08eccedb81` |
+| `ktchecker-updated-preview.tar` | 84,700,672 | `11a26dbffc4400fa817d456ab86a5535bb854505a3469528c0ee0b4aea34cf6d` |
+
+Postvalidation receipt pins under `postvalidation-20261105-r2/`:
+
+- `summary.json`: `d037b45f44cbdbcb750b25a8bb402a208a5185deb71ca6192ab05de8ba33a682`.
+- `distribution-smoke.json`: `7903c904837e9fcbb508b4391118236bb550d036f0f1529fca08dbdc15a99866`.
+- `package-report.json`: `e13253280fde6b5018e3da1086fa347d7c679aaf044562145abccee1ed808dfc`.
+- `archive-integrity.json`: `d5291bbb297d165ced7cd5faa36bd0599352af39f5fa8e52264805f4e14c2d45`.
+
+Separate read-only audit `ktc-astra-distribution-audit-20261105/postvalidation-EtEdwX9i/receipt.json`
+passed **343/343 checks**, SHA-256
+`6a0e363b85a19ea00e424a9662283e1e683ebb2d42db922c7f8aa7de58bdb977`.
+It did not rerun the build, launcher or provider. The resulting claim is a
+**local doctor-runnable preview**, not genuine new model/compiler/host acceptance,
+default provider activation or release qualification. The installed distribution
+contains the two wire identities, not an installed isolated model-worker owner
+runtime. Later source fixes are not silently included in these archive identities.
+
+### Later focused source controls — not in the packaged handoff
+
+The adopted joint-completion R2 source separately passed **26/26 methods**
+(kernel 22, controller four), zero failures/errors/skips; both required tasks
+**EXECUTED**, command exit 0, **59.873 s**. Receipt
+`build/ci-evidence/joint-barrier-r2-focused-20261105/summary.json` SHA-256
+`e929cc6a00dda3ea99cdb76e4aa9d2ef5ad328478fca5427ee7276344b3e7998` binds
+**4,244 files** to unchanged before/after source SHA-256
+`906f6560c1dd9bc6fd76daafc51fbb8b994eed77c3a347f34928c8d15d6e9227`.
+These are local JVM completion/registry controls, not a new ordinary full graph,
+real multi-model observation or release-scale qualification. The 65,536
+history-pair / 4 MiB audit limits remain an explicit scale gap; no required member,
+finding or coverage row may be trimmed to pass.
+
+The later original-argv R2 **attempt 2** separately passed **28/28 methods**
+(exporter API nine, importer six, typed roles 13), zero failures/errors/skips;
+`:project-model:test` **EXECUTED**, command exit 0, **53.869 s**. Receipt
+`build/ci-evidence/original-argv-r2-focused-20261105-attempt2/summary.json`
+SHA-256 `fb07d2d2eb68a4cacb2bf0e0da456570ac8c72600f0c71354efc9cc7c3398ccf`
+binds **4,248 files** to unchanged before/after source SHA-256
+`5fb863e6e0bab58078d98585cef901d0bcb5dc534f83f318c14eafca42864c9e`.
+These exporter/import/path-role controls are not a genuine project-model export,
+compiler/model-host acceptance or a full current-source suite.
+
+The predecessor `original-argv-r2-focused-20261105/summary.json` remains **failed,
+exit 1, zero tests**, SHA-256
+`231ed1bb3962f4d05484cb38ce91190c78cc29e2c6be6944df4f3d999fe8f627`.
+An incorrect B1-seal versus source-list pin prevented adoption; the non-fail-fast
+shell nevertheless ran the task with absent test filters. No argv candidate had
+been adopted and no 28-case suite executed. The corrected fail-fast launcher and
+adoption belong to the separate passing attempt, not a rewrite of that failure.
+
+The subsequent joint/argv/map-dependent regression passed **1,036 occurrences:
+1,035 passed, one Windows junction control skipped, zero failures/errors** across
+**81 reports**. All **seven required tasks EXECUTED**: kernel, review-controller,
+project-model, provider-compiler's ordinary/worker/model-worker tests, and CLI.
+Command exit 0, **208.257 s**. Receipt
+`build/ci-evidence/joint-argv-dependent-regression-20261105/summary.json` SHA-256
+`2c5ed7b330b0ce31bc89ae78c72d6a0df0c566b6416aeceee97a2007dbc519ec`;
+`command.json` SHA-256
+`7d98c1d874dd760348bae7f81b090b7e362177adb9f4c623bc06fc4b6b960de4`.
+The **4,248-file** before/after source matches SHA-256
+`1c774d547033bcd5d8c42f8ef382553b02b6776827e0cfb84cfe8c6b6ba3dba4`;
+the original installation stayed unchanged and the integration default stayed
+absent. This is a seven-task dependent regression, **not all 22 tasks on current
+source**, a new package, genuine model/host acceptance or per-rule qualification.
+
+These runs have different source identities and are not a combined 54-case or
+updated 1,774-case suite; the 1,036 occurrences are not added to earlier runs.
+None of these later source identities is **in the 9dc3… installation or archives**
+or inherits its smoke receipt. B1 CI wiring was separately adopted at its reviewed
+workflow/test postimages; its synthetic pass still grants no new hosted execution
+or updated graph/package receipt.
+
+The separate prospective barrier CI gate passed **23/23 synthetic methods and
+202/202 subtests**, zero failures/errors/skips, seven external guards zero, in one
+**0.816766 s** run. It adds the two exact barrier class reports without replacing
+the already-required kernel/controller tasks; root adoption was pending at this
+receipt. `ktchecker-completion-barrier-ci-r1-20261105-4b7242er/receipts/verification-summary.json`
+SHA-256 `48f54f7f2ad605c33aea4a85451f6c5c288af2fe5d94b4b055ea48ad8f6800d8`.
+These are CI-wiring controls, not another 26-case JVM run or a hosted result.
+
+### Pinned wrapper checksum consumer — API-only observation
+
+Separate authorization first ran **21/21 synthetic guards**, then **one actual
+runner with eight `Install.verifyDownloadChecksum` API invocations: eight passed,
+zero failed**. These are separate from the ordinary B1 suite's 83 controls, not
+29 combined rule tests or additional rule/context coverage. One `javac` command
+(**0.941824 s**) and one `java` command (**0.126484 s**) both settled with exit 0;
+the actual runner took **1.976515 s**, with no bound failure. These are fixture
+command intervals, not compiler-analysis latency or the feedback SLO.
+
+Retained outer receipt `ktc-wrapper-consumer-guarded-execution-20261105-ajImV5Rm/summary.json`
+SHA-256 `0dc144bf5513050e75e1f321469298a53bb24da1f6445b7e525edc15af3cca16`
+binds the actual `ktchecker-wrapper-consumer-run-xox7idjl/summary.json`, SHA-256
+`49cc3417132b07bbfa2a7366207549e472cd3a6322c513f1b1f878386df2b1ea`.
+Reviewed manifest SHA-256
+`5c61a7179ef0434911fc0a5234469d99ef975943afcc6c26689e25146a283d2d`;
+consumer JAR SHA-256
+`7a9ce74cff467ca1bf60a4fcd9f05185acceda4d0f382434d393e17864262c5d`.
+
+The result corroborates **only that pinned static checksum API**. It does not
+establish wrapper-version provenance, reviewed-project/Gradle/network execution,
+owner-route/default activation, compiler/model/host acceptance or release
+qualification. **Rule/context stage credit is zero**.
+
+<a id="current-rule-coverage-2026-11-05"></a>
+
+### Actual current rule/context accounting — not qualification
+
+One actual reporter invocation settled with exit 0 and produced a valid gap
+inventory on **4,248 files**, source SHA-256
+`1c774d547033bcd5d8c42f8ef382553b02b6776827e0cfb84cfe8c6b6ba3dba4`,
+unchanged before/after. It read existing evidence: **no Gradle, network or provider
+execution and zero new stage credit**. This is later than the packaged 9dc3…
+source; neither that archive nor the older full graph is updated by this report.
+
+**All 1,663 IDs × eight contexts = 13,304 cells remain visible.** Report stage
+counts are **11,448 mapped, two implemented, zero tested, zero qualified**; these
+are cells, not qualified-rule counts. The mutually exclusive states are:
+
+| Current state | Cells |
+| --- | ---: |
+| Excluded, still visible | 368 |
+| Implemented but untested | 2 |
+| Unimplemented | 12,934 |
+
+Each context retains 46 excluded and 1,617 nonexcluded rows. Missing implementation
+is 1,617 cells per context except the isolated Lint context (1,615); **all 1,617
+nonexcluded cells in every context lack six-kind test completion and qualification**.
+The catalog still contains **232 unmapped IDs and 28 nonexact-only IDs**. Declared
+Android **1,584**, iOS **877** and Desktop **969** ID inventories overlap; they are
+not summed, reduced or an approved release matrix. All platform scope remains
+unqualified.
+
+The report preserves **450 archival withdrawal cells: 443 compiler, three Detekt
+syntax and four Ktlint syntax**. Historical artifacts remain; no stage credit was
+transferred or rule/context row removed. The earlier routing analysis separately
+reported **478 reference errors (443 compiler pins plus 35 syntax references)**;
+those are source/data-analysis errors, not 478 withdrawn cells or an actual
+reporter execution receipt. Earlier invalid refreshes remain failures rather than
+being retroactively passed by this valid accounting result.
+That source-analysis record is
+`ktchecker-platform-rules-current-model-routing-e2ax722p/current-diagnostics.json`,
+SHA-256 `31a0bc90330c6a3b50826f1e2f4e23c8bfc5a1aee0ff6081414051aa3931bba4`.
+
+Retained packet `ktchecker-current-coverage-d69-run-20261105-HTuYtFzt`:
+
+- `summary.json`: SHA-256
+  `0bfdda6de6b22671ea6b7d6a0361c4c508cdd177e9777a5fcdaf5912fac66423`.
+- `command.actual.json` (the settled reporter command): SHA-256
+  `bbf6c88475224f39f3fd209ab457a6d80160e13a98dc5d634339db4561f07c4c`.
+- `current-coverage.json`: SHA-256
+  `5a962e37b7a1467e6c25e6c8fed8f85f3decf5fae12094af8fe994b7dbbe8e95`.
+- `reconciliation/missing-coverage-summary.json` (exact gaps): SHA-256
+  `ed050ae7972ec0550b5b20b30d305b0b666c8d6aefd0157a0059acbbe09e28ff`.
+- `reconciliation/coverage-reconciliation.json`: SHA-256
+  `991c19f4e6884dd4d1507aaabdcd2d79fbbd34d5bc39d8bede3484688bab3919`.
+
+Reconciliation inspects that actual output; it is not another reporter run.
+**A valid inventory with zero tested/qualified cells is a gap result, not
+"all checks pass" or full-rule precision/recall evidence.**
+
+### Latest-source harness checks — no live acceptance
+
+The corrected runs below share **4,266 files**, unchanged before/after source
+SHA-256 `97e45b69ee6728862db0d3a6055f91b58e734228f2bf79503b73c735d68ad83a`:
+
+- Kotlin `build/ci-evidence/host-r3-config-focused-20261105/summary.json` passed
+  **34/34 methods: 29 model controls and five config controls**, zero failures,
+  errors or skips. All **five required tasks EXECUTED**, including CLI test
+  compilation and the model-worker JAR. The real custody helper **compiled; its
+  owner/main/live-model route did not execute**. Summary SHA-256
+  `6ff74d48ffb86af7388e2a67c9b4f013339b852e7580612ec7899230d8dc0a2a`.
+- TypeScript `build/ci-evidence/live-model-harness-ts-synthetic-20261105-r3/summary.json`
+  passed **163/163 synthetic methods**, zero failures, skips or cancellations,
+  joined to the original JUnit report. The **34 new controls are included**, not
+  additional tests. Locked offline dependency installs succeeded using two
+  distinct empty owned npm configuration files. Summary SHA-256
+  `ac455d53e2ab63db634fcf81bb014cc418de6fccb43755505ca3fef46d2382ef`.
+
+Retained predecessors are not rewritten by these passes:
+
+- `build/ci-evidence/live-model-harness-kotlin-focused-20261105/summary.json`
+  failed, exit 1: `:cli:compileTestKotlin` could not resolve `Member.path` at
+  `RealModelCustody.kt:137,142`. The required provider test task did not execute;
+  **436 retained stale XML occurrences provide no new test credit**. Summary
+  SHA-256 `a5346a089bc1c31a5951bcf113c7743472b5a3f88405195e4d0c33dc8e9b7ccc`;
+  command SHA-256 `9b8064294470cec883c98c6085b37d2660da71a8e5662faaea6928302f32e511`.
+- Earlier TypeScript setup failed before tests: the initial selected-Node-path
+  assertion failed before any dependency command; R2's dependency setup exited 1
+  because npm loaded the same null-device configuration as both user and global
+  configuration. **Neither failed setup attempt completed dependency installation
+  or reached tests.**
+  Retained `build/ci-evidence/live-model-harness-ts-synthetic-20261105/preparation-failure.json`
+  SHA-256 `bcf0404e3ae19991a45720bfaef7543143aaf3e5a0a6f2488ce78ba6a7121235`;
+  `live-model-harness-ts-synthetic-20261105-r2/summary.json` SHA-256
+  `3f60fae88500d698197f218d79012c4578b2b4883ce4a423ecf0087466694805`.
+
+These are separate local control runs, **not genuine model/compiler/host
+acceptance, a full current-source graph or a latest-source package**. This
+intermediate source is not final runtime admission; later source changes require
+fresh evidence rather than inherited XML, graph or doctor credit.
+
+### Failures retained and work still open
+
+- Graph R1 `preview-current-graph-20261105-r1/preparation-result.json` failed
+  **before Gradle**: its old-install guard selected the integration checkout,
+  where no old installation existed. R2 instead guarded the original shared
+  install and the absence of an integration default install. R1 is not a test run.
+- Separate packaging `postvalidation-20261105-r1/summary.json` failed its strict
+  public-notice-root mode check **before smoke**: source `third_party` was `0700`,
+  the generated distribution root `0755`; all descendants matched. It remains a
+  failed check, distinct from the incomplete original harness and any successor.
+  The independent strict audit also remains **817/818 checks passed, one failed**
+  on that same root mode; its later 343-check successor is a separate audit.
+  R1 summary SHA-256 `a986245d3ecb2e8b927abaccb212135d2ce73a3d5953772e4f71d152f1e589a3`;
+  strict `run-hvbTfXyL/receipt.json` SHA-256
+  `36b0a7d1e3238b0d6e0a2afe1be045aef30888cedcf5663c1da6e97f5bd59f73`.
+- Original B1 CI mock packet `ktchecker-b1-ci-guarded-validation-20261105-_ftwxpas`
+  remains **18/19 methods and 165/166 subtests passed, one failed**, seven guards
+  zero. The correction changes the ineffective lowercase-`:test` mutation to
+  `task + 'NotRequired'` with an inequality assertion; it does not erase R1.
+- Retained hosted metadata for exact `5e00407`, observed through
+  **2026-11-04T21:15:33.977688Z**, records **four completed failed workflows,
+  12 jobs: five successful/seven failed**. These are status metadata, not new
+  test counts, causal diagnostics or a pass for the current dirty source:
+  [Implementation 41912057147](https://github.com/Apdelrahman1911/ktChecker/actions/runs/41912057147)
+  (1/3 jobs successful),
+  [Planning 41912057201](https://github.com/Apdelrahman1911/ktChecker/actions/runs/41912057201)
+  (1/3), [Bridges 41912057102](https://github.com/Apdelrahman1911/ktChecker/actions/runs/41912057102)
+  (2/3), [Platform 41912056958](https://github.com/Apdelrahman1911/ktChecker/actions/runs/41912056958)
+  (1/3). Retained `ktchecker-checkpoint-new-ci-metadata-20261104-nvljywco/sanitized-summary.json`
+  SHA-256 `c3696324de157d6c7ee3eba3c9a7509798d40523aa9f80f80bf3db3b60e8d56b`.
+  A separate readiness audit's three authenticated metadata GETs succeeded with
+  Actions enabled; that audit is not run evidence, write authorization or runner
+  capacity. No new dispatch, hosted success or platform-failure repair is claimed.
+- The later current-coverage inventory is valid **gap accounting**, with zero
+  tested/qualified cells; it neither transfers archival credit nor erases earlier
+  invalid refreshes. **All 1,663 IDs and Android, iOS and Desktop/JVM obligations remain**.
+  Unmapped/nonexact coverage, real project-model/compiler/host acceptance,
+  full-rule precision/recall, exact release toolchains, platform/runtime evidence,
+  Windows native containment/report access, notices/shading and owner licensing
+  remain release gaps. No new default activation or binary publication is granted.
+- The separate Unicode-validation task remains **unverified**. No new validation
+  result is claimed by this documentation update.
+
+Earlier command, corpus, harness, privacy, hosted and target failures below remain
+retained; no successful local subset changes their recorded outcomes.
+
+<a id="current-checkpoint-2026-11-05"></a>
+
+## Earlier focused checkpoint — 2026-11-05 compiler-model continuation
+
+These are separate local Linux observations of base
+`5e00407ca5a2a31c371d471de3d4216a18fdd760` plus **run-specific dirty tested
+bytes**, not one complete final-source suite. Retained receipt identifiers below
+refer to metadata; original commands/logs stay private. Counts are per run, never
+summed; subtests are not additional methods or rule/context qualification.
+
+| Retained metadata receipt | Observed result | Boundary / retained failure |
+| --- | --- | --- |
+| `model-backend-r3-20261105/partial-summary.json` | **138 passed: 44 model-wire + 94 model-worker**; no test failures/errors/skips | The **whole command failed, exit 1**: the Gradle daemon disappeared and the host test task did not execute; cause unestablished. These are synthetic wire/worker controls, not a complete passing backend invocation. |
+| `model-host-bounded-tests-20261105/summary.json` | **436 methods: 435 passed, one Windows junction control skipped on Linux**, zero failures/errors | Later bounded provider-compiler test task actually executed; includes 60 synthetic live-model controls. No new genuine model export/application observation. |
+| `cli-route-model-types-r2-20261105/summary.json` | **167 passed: CLI 121 + controller 46**, zero failures/errors/skips | Both test tasks executed. The 23 live-model CLI, 12 owner-route and six routing-integration methods are included subsets, not extra counts. Synthetic callbacks/imports and throwing start permits do not demonstrate a real model/compiler session or host-model delivery. |
+| Independent packaging R4 `result.json` | **16 exact methods and 68 subtests passed once**, exit 0 | Fixed-source/mutation and fabricated JAR-envelope controls only; eight-byte pseudo-class headers are not compiled bridge artifacts. The separate actual gate below has its own completed graph/artifact/raw-input/cache receipt; its credit is not inferred from these Python controls. |
+| Actual model build-isolation `evidence/receipt.json` | **19/19 audited build stages passed**: 13 zero-exit commands and six exact-diagnostic negative commands, each exit 1; four actual model-JAR `FROM-CACHE` outcomes | **231.119 s** outer gate interval. Isolated model/M0 JDK build, archive and raw-input controls only; private test-only cache override on the model application JAR, never M0. Original archive bytes restored and M0 inventory unchanged. No tests, installed CLI, model/provider/Native execution, production-cache enablement or rule qualification. |
+| `build-contracts-b1-first-20261105/summary.json` | **83 methods passed**, zero failures/errors/skips | `:provider-build-contracts:test` actually **EXECUTED**, command exit 0, **31.631 s**. Synthetic selected-wrapper/parser, owner/configuration/suppression/cancellation and complete activation-plan controls only; no reviewed-project wrapper download/execution, default CLI owner installation or source-chain/rule qualification. |
+
+Receipt SHA-256 pins, in table order:
+`976d720a8969a5d25e18f9464cba711f41bd5d97f188ee4fa7de6903b74d4463`,
+`4af71ed43bf4259a0ed8fabe585ac8f113f41fa5488031ec094db613290d5369`,
+`282af13858a9371964c689e419f9a04aff6ae89ed8428c2f7219a588c16de897`,
+`e0607a83d4df05b0ecadb4e86ffc926908e85181ae6860366871010d5d632c1f`,
+`9e17671b94f3e3082397840d1d09a537b3a08b1c582a47538816e0de4743eee5`,
+`4ace1b7275a5d4ebf83c66c4131a9592552131bbbf8d352d7680dbf671125e3a`.
+
+The model gate metadata is retained in local run
+`ktc-compiler-model-build-isolation-run-20261105-obqsbw64`:
+`preparation/gate-command.json` SHA-256
+`c99afbecfc1adc1658fbe76e20ca542568e5cd7cfa67b1c7e92f52ee0b0e0b9b`,
+`preparation/execution-audit.json` SHA-256
+`2583695069b47d3571a92be96e3564f428b23e762554c10ac588b9bc5328f20a`, and
+sealed `checksums.sha256` SHA-256
+`5e8d2c26b1981ab0c3c890dbc5526c90625ebb3e32656951e96250dfc25f3c7c`.
+The gate's captured 4,222-file source stayed unchanged at SHA-256
+`7b777c83c81e15bd6e655ba5f93149f3ddbeb9b5a6ef3cc752124e97f709a6b5`;
+the wrapper suite's separate 4,237-file source stayed unchanged at SHA-256
+`9dc3d42cdd10579727d7e72f79a6637272afc94bf7036a162d05ec6aaf99f722`.
+These are distinct snapshots, not a later integrated-suite or fresh installed
+distribution receipt. Expected-negative commands remain nonzero failures with
+their exact failed task/diagnostic; neither gate success nor a cache hit grants
+worker readiness, genuine wrapper/provider/model execution or default activation.
+
+The original zero-task Kotlin DSL failure, the daemon-failed backend command and
+the earlier CLI type-inference compilation failure remain retained as failures.
+The packaging R3 attempt also remains **14 passed / two failed methods**, with
+two of 68 subtests failed: prefix/no-parentheses matching missed two mutations.
+R4 corrected only those source checkers; its passing run does not rewrite R3.
+Provider-host and CLI/controller receipts each retain exact before/after source
+matches, but their tested fingerprints differ. Whole command intervals are not
+compiler latency, warm-result distributions or 1–3-second target evidence.
+
+Strict coverage is **not renewed by this checkpoint**: the retained refresh is
+unavailable/invalid, and historical/stale evidence cannot supply current counts.
+Reporting-only diagnostics do not restore coverage credit. All 1,663 catalog
+obligations and release gates remain intact. These runs establish no new real
+Kotlin/Native/Apple target compilation, linking or simulator success. No new hosted
+CI execution is claimed by these local receipts. Genuine imported-model execution,
+authenticated model-context delivery and full-rule/context qualification for
+**this new model-backed route** remain unfinished; release completion is not granted.
+
+<a id="current-checkpoint-2026-11-04"></a>
+
+## Earlier local checkpoint (2026-11-04)
 
 These are separate local Linux runs of source base
 `21fc8c7725b176d093ddf40e5d5c335b2e7c16aa` **plus dirty exact tested bytes**,

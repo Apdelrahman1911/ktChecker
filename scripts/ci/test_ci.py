@@ -785,23 +785,52 @@ class FixtureDslSourceTests(unittest.TestCase):
 
 
 class SimulatorTests(unittest.TestCase):
-    def inventory(self, version="26.4", available=True):
-        identifier = "com.apple.CoreSimulator.SimRuntime.iOS-" + version.replace(".", "-")
-        runtime = {"identifier": identifier, "version": version, "isAvailable": available, "buildversion": "fixture-build"}
+    def inventory(self, version="26.4.1", available=True, *,
+                  identifier="com.apple.CoreSimulator.SimRuntime.iOS-26-4", build="23E254a"):
+        # Synthetic observed fields, not an assertion about Apple's installed
+        # identifier/version pairing. Never manufacture an identifier from version.
+        runtime = {"identifier": identifier, "version": version, "isAvailable": available, "buildversion": build}
         device = {"name": "iPhone 17", "isAvailable": True, "udid": "12345678-1234-1234-1234-123456789abc", "state": "Shutdown"}
         return {"runtimes": [runtime]}, {"devices": {identifier: [device]}}
 
     def test_selects_uuid_from_exact_runtime_not_ambiguous_name(self):
         value = run_platform_checks.select_simulator(*self.inventory())
-        self.assertEqual("26.4", value["runtime_version"])
+        self.assertEqual("26.4.1", value["runtime_version"])
+        self.assertEqual("23E254a", value["runtime_build"])
         self.assertEqual("12345678-1234-1234-1234-123456789abc", value["udid"])
 
     def test_wrong_runtime_unavailable_device_and_untrusted_id_fail(self):
-        for version, available in (("26.5", True), ("26.4", False)):
+        for version, available in (("26.5", True), ("26.4.1", False)):
             with self.assertRaises(ValueError):
                 run_platform_checks.select_simulator(*self.inventory(version, available))
         runtimes, devices = self.inventory()
         devices["devices"][runtimes["runtimes"][0]["identifier"]][0]["udid"] = "$(untrusted-command)"
+        with self.assertRaises(ValueError):
+            run_platform_checks.select_simulator(runtimes, devices)
+
+    def test_runtime_version_and_build_are_exact_no_patch_fallback(self):
+        for version in ("26.4", "26.4.0", "26.4.2", "26.4.10", "26.5", "26.4.1.0"):
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                run_platform_checks.select_simulator(*self.inventory(version=version))
+        for build in (None, "fixture-build", "23E254", "23E254A", "23E254b", "17E202"):
+            with self.subTest(build=build), self.assertRaises(ValueError):
+                run_platform_checks.select_simulator(*self.inventory(build=build))
+
+    def test_synthetic_observed_identifier_is_joined_without_suffix_inference(self):
+        for identifier in ("com.apple.CoreSimulator.SimRuntime.iOS-26-4",
+                           "com.apple.CoreSimulator.SimRuntime.iOS-26-4-1"):
+            with self.subTest(identifier=identifier):
+                runtimes, devices = self.inventory(identifier=identifier)
+                value = run_platform_checks.select_simulator(runtimes, devices)
+                self.assertEqual(identifier, value["runtime_identifier"])
+                devices["devices"] = {identifier + "-0": next(iter(devices["devices"].values()))}
+                with self.assertRaises(ValueError):
+                    run_platform_checks.select_simulator(runtimes, devices)
+
+    def test_runtime_version_build_and_identifier_must_match_on_one_row(self):
+        runtimes, devices = self.inventory()
+        runtimes["runtimes"] = [dict(runtimes["runtimes"][0], version="26.4"),
+                                dict(runtimes["runtimes"][0], buildversion="23E254b")]
         with self.assertRaises(ValueError):
             run_platform_checks.select_simulator(runtimes, devices)
 
@@ -890,7 +919,7 @@ class SimulatorTests(unittest.TestCase):
         result, _ = self.ios_preflight([(metadata, runtimes), (metadata, devices)])
         self.assertEqual("unavailable", result["state"])
         self.assertNotIn("simulator", result)
-        self.assertEqual(["No available iPhone 17 in the pinned iOS 26.4 simulator runtime"], result["errors"])
+        self.assertEqual(["No available iPhone 17 in the pinned iOS 26.4.1 simulator runtime, build 23E254a"], result["errors"])
 
     def test_malformed_or_injected_runtime_identity_cannot_be_selected(self):
         with self.assertRaisesRegex(ValueError, "Invalid simctl inventory schema"):

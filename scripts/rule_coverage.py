@@ -14,7 +14,7 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import sys
 import tempfile
 from typing import Any
@@ -482,7 +482,8 @@ def catalog_visibility(root: Path, evidence_paths: list[Path] | None = None,
         "rule_id": rule["rule_id"], "catalog_record_sha256": rule["catalog_record_sha256"],
         "context_sha256": digest(key.encode()),
         "state": "excluded" if rule["catalog_state"] == "excluded" else "current_evidence_unavailable",
-        "evidence_status": "unavailable", "mapped": None,
+        "evidence_status": "unavailable", "evaluation_state": "incomplete",
+        "mapping_reference_error_indexes": [], "mapped": None,
         "implemented": False, "tested": False, "qualified": False, "runtime_default_enabled": False,
     } for key in sorted(chosen) for rule in rules]
     visibility.update({
@@ -496,9 +497,10 @@ def catalog_visibility(root: Path, evidence_paths: list[Path] | None = None,
     return visibility
 
 
-def unavailable_inventory(status: str, visibility: dict | None = None) -> dict:
+def unavailable_inventory(status: str, visibility: dict | None = None, *,
+                          failure_diagnostics: dict | None = None) -> dict:
     """Evidence counts stay unknown; optional declared metadata cannot restore credit."""
-    return {
+    output = {
         "schema_version": 1, "kind": "ktchecker_evidence_inventory",
         "inventory_status": status, "inventory_valid": False,
         "all_requested_cells_qualified": False, "release_qualified": False,
@@ -508,6 +510,171 @@ def unavailable_inventory(status: str, visibility: dict | None = None) -> dict:
         "catalog_visibility": visibility,
         "gaps": ["coverage_inventory_generation_pending" if status == "pending"
                  else "coverage_inputs_invalid_or_unreadable"],
+    }
+    if failure_diagnostics is not None:
+        output["failure_diagnostics"] = failure_diagnostics
+    return output
+
+
+def _diagnostic_relative_path(value: Any) -> str | None:
+    """A literal repository-relative label, never an exception or outside path."""
+    if not isinstance(value, str) or not value or "\\" in value or "\x00" in value:
+        return None
+    relative = PurePosixPath(value)
+    if PureWindowsPath(value).drive or relative.is_absolute() or any(part in (".", "..") for part in value.split("/")):
+        return None
+    return relative.as_posix()
+
+
+def mapping_reference_diagnostics(root: Path, mapping_paths: list[Path] | None = None,
+                                  visibility: dict | None = None) -> dict:
+    """Reporting-only observations after rejection; never salvage coverage credit.
+
+    Visit every safely readable mapping and reference, independent of the strict
+    loader's first error. Labels are literal repository-relative metadata; raw
+    exceptions, invalid values and outside paths are not serialized. Source reads
+    are serial and cached by literal path for this diagnostic pass only. A complete
+    mapping scan does not validate sidecars or reverse the original rejection.
+    """
+    visible = visibility if isinstance(visibility, dict) else {}
+    declared_rules = visible.get("catalog_rules")
+    catalog = {rule["rule_id"]: rule for rule in declared_rules} if isinstance(declared_rules, list) else None
+    scan_complete = catalog is not None
+    errors = []
+    reference_count = 0
+    manifest_count = None
+    source_digests = {}
+    seen = set()
+
+    def add(code, manifest=None, input_index=None, mapping_index=None, rule_id=None,
+            reference_index=None, reference_field=None, reference_path=None, *, incomplete=False):
+        nonlocal scan_complete
+        if incomplete:
+            scan_complete = False
+        errors.append({
+            "error_index": len(errors), "code": code, "mapping_manifest": manifest,
+            "mapping_input_index": input_index, "mapping_index": mapping_index,
+            "rule_id": rule_id, "reference_index": reference_index,
+            "reference_field": reference_field, "reference_path": reference_path,
+        })
+
+    if catalog is None:
+        add("declared_catalog_scope_unavailable", incomplete=True)
+    try:
+        root = root.resolve()
+        paths = mapping_paths if mapping_paths is not None else sorted(root.glob("modules/provider-*/src/main/resources/*rule-map.json"))
+        manifest_count = len(paths)
+    except (OSError, RuntimeError, TypeError, UnicodeError):
+        paths = []
+        add("mapping_input_scan_unavailable", incomplete=True)
+    for input_index, input_path in enumerate(paths):
+        manifest_label = None
+        if not isinstance(input_path, Path):
+            add("mapping_input_invalid", input_index=input_index, incomplete=True)
+            continue
+        try:
+            label = input_path.relative_to(root).as_posix() if input_path.is_absolute() else input_path.as_posix()
+            manifest_label = _diagnostic_relative_path(label)
+        except ValueError:
+            pass
+        try:
+            path = repository_input(root, input_path)
+            manifest_label = path.relative_to(root).as_posix()
+            manifest = read_json(path)
+        except (CoverageError, OSError, RuntimeError, TypeError, UnicodeError):
+            add("mapping_manifest_unavailable", manifest_label, input_index, incomplete=True)
+            continue
+        if not isinstance(manifest, dict):
+            add("mapping_manifest_invalid", manifest_label, input_index, incomplete=True)
+            continue
+        provider, version = manifest.get("provider_id"), manifest.get("provider_version")
+        envelope_valid = (manifest.get("schema_version") == 1 and isinstance(provider, str) and bool(provider)
+                          and isinstance(version, str) and bool(version))
+        if not envelope_valid:
+            add("mapping_manifest_invalid", manifest_label, input_index, incomplete=True)
+        mappings = manifest.get("mappings")
+        if not isinstance(mappings, list):
+            add("mapping_records_invalid", manifest_label, input_index, incomplete=True)
+            continue
+        for mapping_index, mapping in enumerate(mappings):
+            if not isinstance(mapping, dict):
+                add("mapping_record_invalid", manifest_label, input_index, mapping_index, incomplete=True)
+                continue
+            declared_id = mapping.get("rule_id")
+            rule_id = declared_id if isinstance(declared_id, str) and catalog is not None and declared_id in catalog else None
+            if catalog is not None and rule_id is None:
+                add("mapping_rule_invalid", manifest_label, input_index, mapping_index, incomplete=True)
+            if envelope_valid and rule_id is not None:
+                identity = (provider, version, rule_id)
+                if identity in seen:
+                    add("mapping_duplicate_tuple", manifest_label, input_index, mapping_index, rule_id, incomplete=True)
+                seen.add(identity)
+            relation = mapping.get("relation")
+            if not isinstance(relation, str) or relation not in RELATIONS:
+                add("mapping_relation_invalid", manifest_label, input_index, mapping_index, rule_id, incomplete=True)
+            frozen = mapping.get("catalog_record_sha256")
+            if frozen is not None:
+                if not isinstance(frozen, str):
+                    add("catalog_reference_digest_invalid", manifest_label, input_index, mapping_index, rule_id,
+                        reference_field="catalog_record_sha256", incomplete=True)
+                elif rule_id is not None and frozen.removeprefix("sha256:") != catalog[rule_id]["catalog_record_sha256"]:
+                    add("catalog_reference_digest_mismatch", manifest_label, input_index, mapping_index, rule_id,
+                        reference_field="catalog_record_sha256",
+                        reference_path=_diagnostic_relative_path(catalog[rule_id]["catalog_path"]))
+            gaps = mapping.get("gaps", [])
+            if not isinstance(gaps, list) or any(not isinstance(gap, str) for gap in gaps):
+                add("mapping_gap_metadata_invalid", manifest_label, input_index, mapping_index, rule_id, incomplete=True)
+            references = mapping.get("implementation_evidence", [])
+            if not isinstance(references, list):
+                add("reference_array_invalid", manifest_label, input_index, mapping_index, rule_id,
+                    reference_field="implementation_evidence", incomplete=True)
+                continue
+            for reference_index, reference in enumerate(references):
+                reference_count += 1
+                location = (manifest_label, input_index, mapping_index, rule_id, reference_index, "implementation_evidence")
+                if not isinstance(reference, dict):
+                    add("reference_object_invalid", *location, incomplete=True)
+                    continue
+                reference_label = _diagnostic_relative_path(reference.get("path"))
+                reference_file = None
+                if reference_label is None:
+                    add("reference_path_invalid", *location, incomplete=True)
+                else:
+                    try:
+                        reference_file = repository_file(root, reference_label)
+                    except (CoverageError, OSError, RuntimeError, TypeError, UnicodeError):
+                        add("reference_path_unavailable", *location, reference_path=reference_label, incomplete=True)
+                expected = reference.get("sha256")
+                if isinstance(expected, str):
+                    expected = expected.removeprefix("sha256:")
+                if not isinstance(expected, str) or len(expected) != 64 or any(character not in "0123456789abcdef" for character in expected):
+                    add("reference_digest_invalid", *location, reference_path=reference_label, incomplete=True)
+                    continue
+                if reference_file is not None:
+                    if reference_label not in source_digests:
+                        try:
+                            source_digests[reference_label] = digest(reference_file.read_bytes())
+                        except (OSError, TypeError, UnicodeError):
+                            source_digests[reference_label] = None
+                    actual = source_digests[reference_label]
+                    if actual is None:
+                        add("reference_read_unavailable", *location, reference_path=reference_label, incomplete=True)
+                    elif actual != expected:
+                        add("reference_digest_mismatch", *location, reference_path=reference_label)
+    by_rule = {}
+    for index, error in enumerate(errors):
+        if error["rule_id"] is not None:
+            by_rule.setdefault(error["rule_id"], []).append(index)
+    for row in visible.get("rows") or []:
+        row["mapping_reference_error_indexes"] = list(by_rule.get(row["rule_id"], []))
+    return {
+        "schema_version": 1, "kind": "ktchecker_mapping_reference_diagnostics", "status": "incomplete",
+        "current_coverage_known": False, "mapping_reference_scan_complete": scan_complete,
+        "mapping_manifest_count": manifest_count, "mapping_reference_count": reference_count,
+        "mapping_reference_error_count": len(errors), "mapping_reference_errors": errors,
+        "declared_catalog_records": visible.get("catalog_records"),
+        "declared_context_count": visible.get("context_count"), "declared_row_count": visible.get("row_count"),
+        "scope": "Mapping-input observations only; no accepted evidence, current-stage counts, hash rewrites or execution authority.",
     }
 
 
@@ -545,12 +712,13 @@ def main(argv: list[str] | None = None) -> int:
     except (CoverageError, OSError, TypeError, UnicodeError) as error:
         if args.output:
             try:
-                # Keep failure diagnostics generic; never parse or serialize error text.
-                # The separate projection contains declared catalog/context metadata,
-                # not failed artifact paths or evidence.
+                # Declared rows and typed mapping-input diagnostics never restore
+                # evidence credit or serialize arbitrary exception/outside-path text.
                 visibility = catalog_visibility(args.root, args.evidence, contexts,
                                                 context_inputs_available=context_inputs_available)
-                publish_inventory(args.output, unavailable_inventory("unavailable", visibility))
+                diagnostics = mapping_reference_diagnostics(args.root, args.mapping, visibility)
+                publish_inventory(args.output, unavailable_inventory("unavailable", visibility,
+                                                                     failure_diagnostics=diagnostics))
             except (OSError, TypeError, UnicodeError):
                 print("rule coverage error: report publication failed; do not use an existing output as current evidence", file=sys.stderr)
         print(f"rule coverage error: {error}", file=sys.stderr)

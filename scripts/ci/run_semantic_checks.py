@@ -47,12 +47,40 @@ ASSERTIONS = {"positive": POSITIVE_ASSERTIONS, "malformed": NEGATIVE_ASSERTIONS,
               "unresolved": NEGATIVE_ASSERTIONS | {"explicit_unknown_or_unvisited_scope"},
               "missing-dependency": NEGATIVE_ASSERTIONS | {"missing_binary_not_a_fabricated_resolved_target"}}
 LABELS = {"dependency", *ASSERTIONS}
+# Closed public failure vocabulary emitted by the selected one-shot runtime.
+# Preserve causal diagnostics without accepting arbitrary exception text or
+# treating a child exit (including zero) as a successful semantic execution.
+RUNTIME_FAILURE_REASONS = {
+    "analysis_descriptor_changed", "cancelled_before_execution", "executable_changed",
+    "executable_digest_mismatch", "executable_unavailable", "execution_arguments_invalid",
+    "execution_cancelled", "execution_limits_invalid", "execution_not_authorized", "execution_timeout",
+    "output_identity_unavailable", "output_root_required", "output_source_overlap",
+    "owned_process_group_shutdown_unverified", "process_group_containment_unavailable",
+    "process_output_invalid_utf8", "process_output_limit", "process_output_unreliable",
+    "process_start_failed", "process_start_unconfirmed", "process_supervisor_arguments_invalid",
+    "process_supervisor_binary_digest_mismatch", "process_supervisor_binary_invalid",
+    "process_supervisor_bundle_changed", "process_supervisor_bundle_limit",
+    "process_supervisor_bundle_origin_ambiguous", "process_supervisor_bundle_origin_unavailable",
+    "process_supervisor_bundle_unavailable", "process_supervisor_cancellation_failed",
+    "process_supervisor_capacity_unavailable", "process_supervisor_control_failed",
+    "process_supervisor_diagnostics_limit", "process_supervisor_diagnostics_unexpected",
+    "process_supervisor_diagnostics_unreliable", "process_supervisor_environment_unavailable",
+    "process_supervisor_exit_failed", "process_supervisor_image_changed", "process_supervisor_image_cleanup_failed",
+    "process_supervisor_manifest_invalid", "process_supervisor_ownership_lost",
+    "process_supervisor_parent_disconnected", "process_supervisor_private_io_unavailable",
+    "process_supervisor_protocol_error", "process_supervisor_start_failed", "process_supervisor_transport_timeout",
+    "relative_path_invalid", "report_limit", "report_missing_or_unsafe", "report_not_regular_or_oversized",
+    "report_root_invalid", "report_root_replaced", "report_unavailable", "secure_report_io_unavailable",
+    "snapshot_binding_mismatch", "snapshot_changed_during_execution", "snapshot_content_mismatch",
+    "snapshot_duplicate_path", "snapshot_materialization_changed", "snapshot_provenance_unavailable",
+    "snapshot_root_invalid", "snapshot_verification_failed",
+}
 REASONS = {"semantic_compilation_failed", "semantic_facts_unknown", "semantic_sources_not_visited",
            "semantic_fixture_driver_failed", "semantic_native_home_required", "semantic_native_distribution_incomplete",
            "semantic_selected_artifact_changed", "semantic_compiler_version_mismatch", "semantic_fixture_assertion_failed",
            "apple_native_execution_host_missing", "native_target_host_unavailable", "execution_not_authorized",
            "process_group_containment_unavailable", "execution_artifact_changed", "process_start_failed",
-           "process_timeout", "process_cancelled", "output_limit_exceeded", "unstructured_detail_omitted"}
+           "process_timeout", "process_cancelled", "output_limit_exceeded", "unstructured_detail_omitted"} | RUNTIME_FAILURE_REASONS
 UNKNOWN_REASONS = {"unresolved_or_error_reference", "compiler_error_type", "unsupported_semantic_type",
                    "unresolved_annotation", "unstructured_detail_omitted"}
 LIMITATIONS = [

@@ -329,6 +329,31 @@ class DistributionArchiveTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), row["sha256"])
             self.assertEqual(result["installation"]["inventory_sha256"], row["matched_staged_inventory_sha256"])
 
+    def test_explicit_expected_prefix_binds_both_archives_without_inferring_filenames(self):
+        prefix = "reviewed distribution-caf\u00e9"
+        archives = [self.zip(self.entries(prefix=prefix)), self.tar(self.entries(prefix=prefix))]
+        result = self.check_valid(*archives, expected_prefix=prefix)
+        self.assertEqual(prefix, result["expected_prefix"])
+        self.assertEqual([prefix, prefix], [row["prefix"] for row in result["archives"]])
+        self.assertTrue(all(path.stem != prefix for path in archives))
+
+    def test_expected_prefix_rejects_wrong_or_differing_archive_roots(self):
+        for index in (0, 1):
+            with self.subTest(wrong_archive=index + 1):
+                rows = [self.entries(), self.entries()]
+                rows[index] = self.entries(prefix=PREFIX + "-other")
+                result = self.verify(self.zip(rows[0]), self.tar(rows[1]), expected_prefix=PREFIX)
+                self.assertEqual("failed", result["state"])
+                self.assertEqual([{"code": "archive_prefix_mismatch", "phase": "archives",
+                                   "archive_index": index + 1}], result["errors"])
+                self.assertTrue(all(row["state"] != "verified" for row in result["archives"]))
+                self.assertEqual("not_completed", result["input_recheck"])
+
+    def test_omitted_expected_prefix_preserves_explicit_local_comparison_scope(self):
+        result = self.check_valid(self.zip(), self.tar(self.entries(prefix="another-safe-prefix")))
+        self.assertIsNone(result["expected_prefix"])
+        self.assertEqual([PREFIX, "another-safe-prefix"], [row["prefix"] for row in result["archives"]])
+
     def test_valid_raw_deflate_zip_including_empty_stream(self):
         self.check_valid(self.zip(self.entries(method=8)))
 
@@ -1656,6 +1681,28 @@ class DistributionArchiveTests(unittest.TestCase):
 
 
 class DistributionArchiveStaticAndAvailabilityTests(unittest.TestCase):
+    def test_invalid_expected_prefix_fails_closed_before_io_without_echoing_it(self):
+        prefixes = ("", ".", "..", "a/b", "../private", "C:\\private", "CON", "bad\nprefix",
+                    "\ud800", "non-nfc-e\u0301", "x" * 256, b"bytes", 1, True, [], {})
+        for prefix in prefixes:
+            with self.subTest(prefix_type=type(prefix).__name__), \
+                    patch.object(verifier.os, "open") as opened:
+                result = verifier.verify(Path("not-opened"), [Path("not-opened.zip")], expected_prefix=prefix)
+            opened.assert_not_called()
+            self.assertEqual("failed", result["state"])
+            self.assertIsNone(result["expected_prefix"])
+            self.assertEqual([{"code": "invalid_expected_archive_prefix", "phase": "arguments"}], result["errors"])
+            self.assertIsNone(result["installation"])
+            self.assertEqual([], result["archives"])
+
+    def test_expected_prefix_does_not_bypass_platform_unavailability(self):
+        with patch.object(verifier, "platform_available", return_value=False), patch.object(verifier.os, "open") as opened:
+            result = verifier.verify(Path("not-opened"), [Path("not-opened.zip")], expected_prefix=PREFIX)
+        opened.assert_not_called()
+        self.assertEqual("unavailable", result["state"])
+        self.assertEqual(PREFIX, result["expected_prefix"])
+        self.assertEqual([{"code": "platform_no_follow_unavailable", "phase": "arguments"}], result["errors"])
+
     def test_platform_unavailable_is_non_success_without_opening_inputs(self):
         with patch.object(verifier, "platform_available", return_value=False), patch.object(verifier.os, "open") as opened:
             result = verifier.verify(Path("unopened-installation"), [Path("unopened.zip")])

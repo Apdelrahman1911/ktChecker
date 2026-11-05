@@ -1,4 +1,5 @@
 dependencies {
+    implementation(project(":worker-protocol"))
     implementation(project(":contracts"))
     implementation(project(":snapshot"))
 }

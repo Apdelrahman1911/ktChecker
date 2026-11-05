@@ -4,6 +4,7 @@ import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.ClientBinding
 import dev.ktchecker.kernel.SubmitPlanRequest
 import dev.ktchecker.projectmodel.VerifiedProjectModel
+import dev.ktchecker.projectmodel.ObservedProjectModel
 import java.nio.file.Path
 import kotlinx.serialization.Serializable
 
@@ -38,27 +39,41 @@ class MaterializationVerification(snapshot: SnapshotManifest, val materializedRo
  * must verify this exact registered coherent capture/root and return its immutable registry/ABA
  * identity, or null. Echoing request values or scanning a mutable tree does not establish it.
  */
-class OwnerPlanMaterialization(
-    val model: VerifiedProjectModel,
+class OwnerPlanMaterialization internal constructor(
+    internal val origin: OwnerPlanModelOrigin,
     val materializedRoot: Path,
     private val verifier: () -> MaterializationVerification?,
 ) {
+    constructor(model: VerifiedProjectModel, materializedRoot: Path, verifier: () -> MaterializationVerification?) :
+        this(OwnerPlanModelOrigin.Verified(model), materializedRoot, verifier)
+    val model: VerifiedProjectModel get() = origin.verified
+    val observedModel: ObservedProjectModel? get() = origin.observed
     init {
         if (!materializedRoot.isAbsolute || materializedRoot.normalize() != materializedRoot) {
             problem("materialization_path_invalid", "Use an exact normalized absolute registered materialization.")
         }
     }
 
-    internal fun verify(expectedModel: VerifiedProjectModel): MaterializationVerification {
-        if (model !== expectedModel) problem("materialization_model_mismatch", "Materialization belongs to another live model capability.")
+    internal fun verify(expectedModel: OwnerPlanModelOrigin): MaterializationVerification {
+        if (!origin.sameModel(expectedModel)) problem("materialization_model_mismatch", "Materialization belongs to another live model capability.")
+        origin.observed?.invocation?.verifyLive()
         val checked = verifier() ?: problem("materialization_unavailable", "Registered immutable source authority is unavailable.")
         requireDigest(checked.authorityDigest, "materialization authority")
-        if (checked.snapshot != model.snapshot || checked.materializedRoot != materializedRoot.toString() ||
-            digest(checked.snapshot) != model.identity.sourceDigest) {
+        if (checked.snapshot != origin.snapshot || checked.materializedRoot != materializedRoot.toString() ||
+            digest(checked.snapshot) != origin.identity.sourceDigest) {
             problem("materialization_binding_mismatch", "Materialization verification differs from the exact whole verified model snapshot/root.")
         }
+        origin.observed?.invocation?.verifyLive()
         return checked
     }
+}
+
+/** Nominal observed materialization entry; never accepted by ordinary assemble(). */
+class OwnerObservedPlanMaterialization(model: ObservedProjectModel, materializedRoot: Path,
+    verifier: () -> MaterializationVerification?) {
+    internal val retained = OwnerPlanMaterialization(OwnerPlanModelOrigin.Observed(model), materializedRoot, verifier)
+    val model: ObservedProjectModel = model
+    val materializedRoot: Path = materializedRoot
 }
 
 /** Wire-compatible activation evidence, not permission to execute or a qualification certificate. */
@@ -70,10 +85,12 @@ class PolicyPreparationRequest internal constructor(
     val binding: ClientBinding,
     val parentRequest: SubmitPlanRequest,
     val compilationId: String?,
-    val model: VerifiedProjectModel,
+    internal val origin: OwnerPlanModelOrigin,
     val inventory: OwnerCatalogInventory,
     val input: AnalysisInput,
 ) {
+    val model: VerifiedProjectModel get() = origin.verified
+    val observedModel: ObservedProjectModel? get() = origin.observed
     fun withActivation(activation: PlanActivation): AnalysisInput = freezeInput(input.copy(context = input.context.copy(
         policies = input.context.policies + (PLAN_ACTIVATION_POLICY_KEY to canonical(activation)),
     )))
@@ -110,6 +127,7 @@ class ExecutionPreparationRequest internal constructor(
     val parentRequest: SubmitPlanRequest get() = policyRequest.parentRequest
     val compilationId: String? get() = policyRequest.compilationId
     val model: VerifiedProjectModel get() = policyRequest.model
+    val observedModel: ObservedProjectModel? get() = policyRequest.observedModel
 
     fun withProfiles(profiles: Map<String, TrustedExecution>): AnalysisInput = freezeInput(input.copy(context = input.context.copy(
         policies = input.context.policies + (PLAN_EXECUTION_POLICY_KEY to executionProfilesDigest(profiles)),

@@ -1,10 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { CodexAppServer } from '../src/codex-app-server.js';
 import { CodexHostPort } from '../src/codex-host.js';
+import { CodexStore } from '../src/codex-store.js';
+import { captureApplicationEvidence } from './application-evidence.js';
 import { expectedPublicResponse, verifyPublicResponse } from '../src/codex-observation.js';
 import { canonical, digest, InboxJournal } from '../src/journal.js';
 import { KernelBroker } from '../src/broker.js';
@@ -24,8 +26,9 @@ const save=()=>writeFileSync(path,JSON.stringify(state));
 const send=x=>process.stdout.write(JSON.stringify(x)+'\\n');
 createInterface({input:process.stdin}).on('line',line=>{
  const r=JSON.parse(line);if(r.id===undefined)return;
- state.methods.push(r.method);save();let result={};
- if(r.method==='thread/start'||r.method==='thread/resume')result={thread:{id:'synthetic-owned-thread'},model:state.wrongModel?'another-model':'gpt-6-astra'};
+ state.methods.push(r.method);(state.requests??=[]).push({method:r.method,params:r.params});save();let result={};
+ if(r.method==='thread/start'||r.method==='thread/resume')result={thread:{id:'synthetic-owned-thread'},model:state.wrongModel?'another-model':'gpt-6-astra',
+   ...(state.omitEffort?{}:{reasoningEffort:state.wrongEffort?'low':r.params.config?.model_reasoning_effort??'low'})};
  else if(r.method==='account/read')result={account:null,requiresOpenaiAuth:false};
  else if(r.method==='thread/inject_items'){state.items.push(...r.params.items);save();}
  else if(r.method==='thread/turns/list')result={data:state.turns.map(x=>({id:x.id,status:'completed'})),nextCursor:null};
@@ -55,17 +58,38 @@ test('Codex evidence boundary rejects malformed UTF-8 instead of replacing publi
   t.after(()=>server.close());await assert.rejects(server.connect(),/codex_protocol_error/);
 });
 
-async function fixture(t: { after(fn: () => Promise<unknown> | void): void }, overrides: Record<string, unknown> = {}) {
-  const dir = await mkdtemp(join(tmpdir(), 'ktchecker-codex-unit-'));
+async function fixture(t: { after(fn: () => Promise<unknown> | void): void }, overrides: Record<string, unknown> = {}, parent = tmpdir()) {
+  const created = await mkdtemp(join(parent, 'ktchecker-codex-unit-'));
+  t.after(() => rm(created, { recursive: true, force: true }));
+  // CodexHostPort persists realpath(cwd). Direct test-only store reopens must
+  // use that same identity, including macOS /var -> /private/var temp aliases.
+  const dir = await realpath(created);
   const script = join(dir, 'synthetic-server.mjs'), statePath = join(dir, 'synthetic-state.json');
   await writeFile(script, fakeCodex);
   await writeFile(statePath, JSON.stringify({ methods: [], items: [], turns: [], ...overrides }));
-  t.after(() => rm(dir, { recursive: true, force: true }));
   const r = registration(); const kernel = new FixtureKernel(r);
   const options = { directory: join(dir, 'session'), client: r.binding, cwd: dir,
     server: { executable: process.execPath, args: [script, statePath] } };
-  return { dir, r, kernel, options, read: async () => JSON.parse(await readFile(statePath, 'utf8')) as { methods: string[]; turns: unknown[]; items: unknown[] } };
+  return { dir, r, kernel, options, read: async () => JSON.parse(await readFile(statePath, 'utf8')) as {
+    methods: string[]; turns: unknown[]; items: unknown[]; requests: { method: string; params: Record<string, unknown> }[] } };
 }
+
+test('synthetic fixture binds canonical cwd through a temporary parent alias without starting a server', async t => {
+  const root = await mkdtemp(join(tmpdir(), 'ktchecker-codex-cwd-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const target = join(root, 'real-parent'), alias = join(root, 'parent-alias');
+  await mkdir(target);
+  // A directory junction needs no symlink privilege on Windows; elsewhere the
+  // type is ignored and this is an ordinary directory symlink, all newly owned.
+  await symlink(target, alias, 'junction');
+  const f = await fixture(t, {}, alias);
+  assert.equal(f.dir, await realpath(f.dir));
+  assert.equal(dirname(f.dir), await realpath(target));
+  assert.equal(f.options.cwd, f.dir);
+  assert.equal(f.options.directory, join(f.dir, 'session'));
+  assert.deepEqual((await f.read()).methods, []);
+  assert.deepEqual((await f.read()).turns, []);
+});
 
 test('synthetic Codex fixture proves only strict public-content binding and filters reasoning/unowned events', async t => {
   const f = await fixture(t); const port = await CodexHostPort.open(f.options); t.after(() => port.close());
@@ -130,4 +154,69 @@ test('Codex client refuses unowned thread turns and has a content-addressed seri
   assert.deepEqual(recorded, result.evidence);
   assert.equal(result.evidence.serializedRequestDigest, digest(JSON.stringify({ id: result.evidence.applicationRequestId, method: 'account/read', params: { refreshToken: false } })));
   assert.equal((result.result as { requiresOpenaiAuth: boolean }).requiresOpenaiAuth, false);
+});
+
+test('synthetic exact Astra/max selection is persisted and binds exact turn/start bytes and public witness', async t => {
+  const f = await fixture(t); const options = { ...f.options, effort: 'max' };
+  let port = await CodexHostPort.open(options); t.after(() => port.close());
+  const journal = new InboxJournal(join(f.dir, 'max-inbox'), port.binding); t.after(() => journal.close());
+  const adapter = new ReferenceHost(journal, new KernelBroker(f.kernel, f.r), port);
+  f.kernel.eventsByClient.set(f.r.binding.clientId, [event(f.r)]); await adapter.pollOnce();
+  assert.equal((await adapter.requestModelObservation()).observed, true);
+  const proof = await captureApplicationEvidence(port, journal);
+  assert.equal(proof.model, 'gpt-6-astra'); assert.equal(proof.effort, 'max');
+  assert.equal(JSON.parse(proof.serializedApplicationRequest as string).params.effort, 'max');
+  const requests = (await f.read()).requests;
+  const started = requests.find(value => value.method === 'thread/start')!;
+  assert.equal(started.params.model, 'gpt-6-astra'); assert.equal(started.params.allowProviderModelFallback, false);
+  assert.deepEqual(started.params.config, { model_reasoning_effort: 'max' });
+  assert.equal(requests.filter(value => value.method === 'turn/start').length, 1);
+  assert.equal(requests.find(value => value.method === 'turn/start')!.params.effort, 'max');
+  await port.close();
+  await assert.rejects(CodexHostPort.open(f.options), /codex_session_binding_mismatch/);
+  port = await CodexHostPort.open(options); assert.equal(port.resumed, true);
+  assert.equal(port.evidence()[0]!.effort, 'max'); assert.equal((await f.read()).turns.length, 1);
+});
+
+test('synthetic mismatched explicit effort is unavailable before any model turn, with no fallback', async t => {
+  const f = await fixture(t, { wrongEffort: true });
+  await assert.rejects(CodexHostPort.open({ ...f.options, effort: 'max' }), /codex_requested_effort_not_confirmed/);
+  const state = await f.read(); assert.equal(state.turns.length, 0); assert.equal(state.methods.filter(value => value === 'thread/start').length, 1);
+});
+
+test('synthetic missing explicit effort confirmation is unavailable, but legacy default remains low', async t => {
+  const f = await fixture(t, { omitEffort: true });
+  await assert.rejects(CodexHostPort.open({ ...f.options, effort: 'max' }), /codex_requested_effort_not_confirmed/);
+  const g = await fixture(t, { omitEffort: true }); const port = await CodexHostPort.open(g.options); t.after(() => port.close());
+  const journal = new InboxJournal(join(g.dir, 'legacy-inbox'), port.binding); t.after(() => journal.close());
+  const adapter = new ReferenceHost(journal, new KernelBroker(g.kernel, g.r), port);
+  g.kernel.eventsByClient.set(g.r.binding.clientId, [event(g.r)]); await adapter.pollOnce();
+  assert.equal((await adapter.requestModelObservation()).observed, true); assert.equal(port.evidence()[0]!.effort, 'low');
+});
+
+test('historical missing effort fields can reopen only as the historical low selection', async t => {
+  const f = await fixture(t), directory = join(f.dir, 'legacy-store');
+  const first = new CodexStore(directory, f.r.binding, f.dir, 'gpt-6-astra');
+  first.edit(state => { delete state.effort; }); first.close();
+  const second = new CodexStore(directory, f.r.binding, f.dir, 'gpt-6-astra'); second.close();
+  assert.throws(() => new CodexStore(directory, f.r.binding, f.dir, 'gpt-6-astra', 'max'), /codex_session_binding_mismatch/);
+});
+
+test('invalid explicit effort rejects before launching a synthetic server or creating a store', async t => {
+  const f = await fixture(t);
+  for (const effort of ['', 'max\n', 'max effort', 'x'.repeat(33)]) await assert.rejects(CodexHostPort.open({ ...f.options, effort }), /invalid_codex_effort/);
+  assert.equal((await f.read()).methods.length, 0);
+});
+
+test('mismatched persisted invocation effort rejects owner selection even when session selection matches', async t => {
+  const f = await fixture(t); const options = { ...f.options, effort: 'max' };
+  const port = await CodexHostPort.open(options); t.after(() => port.close());
+  const journal = new InboxJournal(join(f.dir, 'mismatch-inbox'), port.binding); t.after(() => journal.close());
+  const adapter = new ReferenceHost(journal, new KernelBroker(f.kernel, f.r), port);
+  f.kernel.eventsByClient.set(f.r.binding.clientId, [event(f.r)]); await adapter.pollOnce();
+  assert.equal((await adapter.requestModelObservation()).observed, true); await port.close();
+  const store = new CodexStore(options.directory, f.r.binding, f.dir, 'gpt-6-astra', 'max');
+  store.edit(state => { Object.values(state.invocations)[0]!.effort = 'low'; }); store.close();
+  await assert.rejects(CodexHostPort.open(options), /codex_session_binding_mismatch/);
+  assert.equal((await f.read()).turns.length, 1);
 });

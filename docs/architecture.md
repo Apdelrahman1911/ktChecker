@@ -82,6 +82,15 @@ external editor/agent -> completed-patch adapter / CLI / MCP bridge
 - Run one broker per OS user/security domain with authenticated owner-only local IPC. Multiple worktrees of the same Git repository have separate live state; a developer's checkout is not another developer's analysis session. Sharing dependency blobs is optional within an authorized namespace; no cross-user source/findings cache by default.
 - Child/Gradle/Kotlin daemons, native tools, and detached descendants count toward resource budgets. Own their process groups or equivalent job containment; never kill unrelated user Gradle daemons to enforce a ktChecker timeout.
 
+The additive JVM-model preview must keep detached DTO/JDK-only worker profiles
+separate from the original M0 bridge. A model-required route retains typed
+owner/review/imported-compilation and generation authority; missing, poisoned or
+unsupported selections fail closed rather than invoke a cold/finite fallback.
+The current synthetic host/route and source/fabricated-archive controls are not
+genuine imported-model/compiler execution, authenticated context delivery, Native
+qualification or warm useful-result latency evidence. See the separate run and
+failure boundaries in [implementation-evidence.md](implementation-evidence.md).
+
 ## 3. Immutable snapshots and identity
 
 ### 3.1 Identities are layered, not just a Git SHA
@@ -388,6 +397,16 @@ onCrashOrRestart():
 ```
 
 A heartbeat updates liveness, not correctness. Retries are at-least-once execution with idempotent/fenced commit; do not promise exactly-once compiler execution. A repeated request joins existing work if its immutable key matches. A late duplicate may be a cache candidate after full validation, but cannot overwrite current lifecycle state or emit duplicate delivery under an expired lease. Cancellation/deadline changes invalidate the attempt's authority before killing it.
+
+Retain original monotonic generation/request deadlines, not reconstructed remaining
+durations. Admission, owner callbacks and result validation consume these budgets.
+Runtime acceptance may stage a detached result, but the host's actual publication
+gate must recheck the retained deadlines and present caller interrupt **after the
+last callback**, under the same lock as revocation and terminal detachment. The
+readiness gate does the equivalent generation check. No callback or I/O runs under
+these locks. A callback that overruns is refused when it returns; this is not a
+claim that trusted in-process callbacks can be preempted. Late work from attempt A
+must not invalidate B, consume B's delivery, or clear an independent interrupt.
 
 Failed jobs retain actionable reasons and retry/owner-decision paths. Automatic retry is bounded; compiler OOM loops must not starve other workspaces. Broker shutdown drains or durably leaves pending work; an accepted patch is not silently forgotten because the MCP connection or editor closes.
 

@@ -1,0 +1,1375 @@
+{
+  "schema": "ktchecker/detekt-syntax-expansion-case-matrix/1",
+  "cohort_id": "public-contract-policy-v1",
+  "state": "AUTHORED_NOT_RUN",
+  "candidate_only": true,
+  "baseline_scope_reference": "../scope.json#/preserved_baseline",
+  "analyses": [
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 9,
+          "column": 8,
+          "end_line": 9,
+          "end_column": 19,
+          "span": "repeatEntry",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "775e2e537735797c97262bcd3ad7dcbcab385bdd323fc465b029003acdfbe6ca",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "27fd29c4670171e3ebb8df86936e795b3feec97a1d792891b465665317a99632",
+          "bytes": 237
+        }
+      ],
+      "expected_override": null,
+      "intent": "A type-parameter-aware KDoc still names a removed value parameter after a rename; report the actual function name.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "dd2fb36905aa4a44eafd9546d977caf68bc329445f6deb3cd1daa18fb33de009",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4c8fb2b698a5c86b2a21c65483c5cde0b80452b33fcbf23e9b6f437d8e21dde8",
+          "bytes": 230
+        }
+      ],
+      "expected_override": null,
+      "intent": "The corrected KDoc lists the type and value parameters in actual declaration order. The implementation need not change.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "775e2e537735797c97262bcd3ad7dcbcab385bdd323fc465b029003acdfbe6ca",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "27fd29c4670171e3ebb8df86936e795b3feec97a1d792891b465665317a99632",
+          "bytes": 237
+        }
+      ],
+      "expected_override": [],
+      "intent": "A type-parameter-aware KDoc still names a removed value parameter after a rename; report the actual function name.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 9,
+          "column": 8,
+          "end_line": 9,
+          "end_column": 19,
+          "span": "repeatEntry",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "775e2e537735797c97262bcd3ad7dcbcab385bdd323fc465b029003acdfbe6ca",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "27fd29c4670171e3ebb8df86936e795b3feec97a1d792891b465665317a99632",
+          "bytes": 237
+        }
+      ],
+      "expected_override": null,
+      "intent": "A type-parameter-aware KDoc still names a removed value parameter after a rename; report the actual function name.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 9,
+          "column": 8,
+          "end_line": 9,
+          "end_column": 19,
+          "span": "repeatEntry",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "62989bf3d05e7bc3a189963c63e0e9539ad99398cd8078e06a7d57eca4ce6d1c",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "27fd29c4670171e3ebb8df86936e795b3feec97a1d792891b465665317a99632",
+          "bytes": 237
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "7655744668aa3943990876ed6b8d5b8fdb72a2125b2f5ac3b76fd33564bf3d01",
+          "bytes": 289
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "dd2fb36905aa4a44eafd9546d977caf68bc329445f6deb3cd1daa18fb33de009",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4c8fb2b698a5c86b2a21c65483c5cde0b80452b33fcbf23e9b6f437d8e21dde8",
+          "bytes": 230
+        }
+      ],
+      "expected_override": null,
+      "intent": "The corrected KDoc lists the type and value parameters in actual declaration order. The implementation need not change.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "reordered-docs-and-invalid-name-defaults",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 4,
+          "end_line": 8,
+          "end_column": 10,
+          "span": "render",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 14,
+          "column": 4,
+          "end_line": 14,
+          "end_column": 14,
+          "span": "invalidTag",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "opt_in_policy_limit",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fd8a094e7e975ff006384de03edc20824de7dd80cb5e1b2563158e5db0443995",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b06bde0a859ac81bbf64103563a141ef20120361859938501c933f60567e54b7",
+          "bytes": 328
+        }
+      ],
+      "expected_override": null,
+      "intent": "The owner may document width before value for narrative reasons; strict order still reports. A separate genuinely unknown tag is retained as the fixed contrast.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "order-option-does-not-waive-invalid-tags",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 14,
+          "column": 4,
+          "end_line": 14,
+          "end_column": 14,
+          "span": "invalidTag",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "owner_configured_legal_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "matchDeclarationsOrder": false
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fd8a094e7e975ff006384de03edc20824de7dd80cb5e1b2563158e5db0443995",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b06bde0a859ac81bbf64103563a141ef20120361859938501c933f60567e54b7",
+          "bytes": 328
+        }
+      ],
+      "expected_override": null,
+      "intent": "Disable only matchDeclarationsOrder: the reordered but valid subjects stop reporting while the removed parameter remains a finding. This is a selective real configuration control, not a blank pass.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "prose-truth-is-not-checked-without-tags",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "shallow_predicate_limitation",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3c256b2e79dba6e65892812fadf3cb58cbf69cac19ae7759c5ccc23b43891185",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "7eae5c14d208c63ac045d89cbc4ec9f5d4985782bd5f19671ad7d37343dba64c",
+          "bytes": 142
+        }
+      ],
+      "expected_override": null,
+      "intent": "Incorrect prose has no @param/@property subject list, so this rule deliberately abstains. Empty output is not proof that the API documentation is true.",
+      "selected_sarif_rule_id": "detekt.comments.OutdatedDocumentation",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 8,
+          "end_line": 4,
+          "end_column": 55,
+          "span": "available && authenticated && (local || cached)",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3597abdb70dc8fd187156d4b09bc5ceaebc5cb72a4fe44d730c56e22b5c010fc",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "52ff109410275cdf33bb0d664c29f284cec0a5aae9bec96b7078d0b8e2ee5cf6",
+          "bytes": 220
+        }
+      ],
+      "expected_override": null,
+      "intent": "Four Boolean terms exceed the explicitly selected default three-condition policy; this is not an invalid program.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "564a7b28f1c2f74dbfd0d5e0ff4e5fda574993763b642730cd0e30b839784557",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "248607679a6c12598bd302cc2a434d291d7a6a989ea98e6fa4593adcc32467aa",
+          "bytes": 179
+        }
+      ],
+      "expected_override": null,
+      "intent": "Exactly three terms satisfy the same threshold with the rule still active; equality is the policy boundary.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3597abdb70dc8fd187156d4b09bc5ceaebc5cb72a4fe44d730c56e22b5c010fc",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "52ff109410275cdf33bb0d664c29f284cec0a5aae9bec96b7078d0b8e2ee5cf6",
+          "bytes": 220
+        }
+      ],
+      "expected_override": [],
+      "intent": "Four Boolean terms exceed the explicitly selected default three-condition policy; this is not an invalid program.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 8,
+          "end_line": 4,
+          "end_column": 55,
+          "span": "available && authenticated && (local || cached)",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3597abdb70dc8fd187156d4b09bc5ceaebc5cb72a4fe44d730c56e22b5c010fc",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "52ff109410275cdf33bb0d664c29f284cec0a5aae9bec96b7078d0b8e2ee5cf6",
+          "bytes": 220
+        }
+      ],
+      "expected_override": null,
+      "intent": "Four Boolean terms exceed the explicitly selected default three-condition policy; this is not an invalid program.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 8,
+          "end_line": 4,
+          "end_column": 55,
+          "span": "available && authenticated && (local || cached)",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "5d3d6f047e6aa7f92484387ffc697ce6f631e596107f01f6b8cddc9dab3858a2",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "52ff109410275cdf33bb0d664c29f284cec0a5aae9bec96b7078d0b8e2ee5cf6",
+          "bytes": 220
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "3e137945f8c7163eecf20485b22b353746243329bee5fdc3e0ef0d125c86b362",
+          "bytes": 267
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "564a7b28f1c2f74dbfd0d5e0ff4e5fda574993763b642730cd0e30b839784557",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "248607679a6c12598bd302cc2a434d291d7a6a989ea98e6fa4593adcc32467aa",
+          "bytes": 179
+        }
+      ],
+      "expected_override": null,
+      "intent": "Exactly three terms satisfy the same threshold with the rule still active; equality is the policy boundary.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "owner-four-condition-threshold",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "owner_configured_legal_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "allowedConditions": 4
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3597abdb70dc8fd187156d4b09bc5ceaebc5cb72a4fe44d730c56e22b5c010fc",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "52ff109410275cdf33bb0d664c29f284cec0a5aae9bec96b7078d0b8e2ee5cf6",
+          "bytes": 220
+        }
+      ],
+      "expected_override": null,
+      "intent": "Raise only the real allowedConditions option to four for the same four-term expression. The enabled rule must remain advertised; no rule disable or global scope change.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "literal-operator-text-is-not-four-decisions",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 8,
+          "end_line": 4,
+          "end_column": 32,
+          "span": "value == \"&&||\" && ready",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "efbbac89cc56155dafaaafd519d084409e19ba4b2891a8e9d3b9b0ce03823445",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "a740df833eea0eff6c9196822ee1a5e23493a945d0f66c2472358fdbbc4dfb86",
+          "bytes": 153
+        }
+      ],
+      "expected_override": null,
+      "intent": "There are only two actual tests. && and || inside a String contribute to the textual count, producing a retained metric false positive.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "non-condition-boolean-body-is-outside-predicate",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "shallow_predicate_limitation",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "813d14d4c6c538407345463bc70e2c43c9c28a5e83a427d884961e6dc3d5c7cf",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "d64cb9c28c22b97429de5aa6333ec27b4777f66765dd10966ac638e974366149",
+          "bytes": 123
+        }
+      ],
+      "expected_override": null,
+      "intent": "An expression-bodied Boolean helper has four terms but no if/while/do-while condition node. Absence is a declared metric boundary, not proof that all Boolean expressions are simple.",
+      "selected_sarif_rule_id": "detekt.complexity.ComplexCondition",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 11,
+          "end_line": 3,
+          "end_column": 25,
+          "span": "ExportedRecord",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 25,
+          "end_line": 6,
+          "end_column": 40,
+          "span": "ProtectedRecord",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "6d8f71803ad57c1d803362126e0df72d4832118ecfaf42da2d63b1b63e449a9b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b2f81b5af91ffcb3db67d673e897c79d67a99d3e854a23deb0cad06f61fd96fe",
+          "bytes": 157
+        }
+      ],
+      "expected_override": null,
+      "intent": "An implicit public data class and a protected data class in a public envelope are both part of the opted-in library API policy.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "acf7f673a7f388ac2904efee14f978afb5598c152e97600b8034ef07bfc065b4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "74bad01ef9be76d75a9dc84107419055c74af10b6560f7c2d825e42721ac7b09",
+          "bytes": 243
+        }
+      ],
+      "expected_override": null,
+      "intent": "Internal/private data types and public ordinary classes are legal alternatives; a nested default-public data class cannot make its internal enclosing class externally visible.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "6d8f71803ad57c1d803362126e0df72d4832118ecfaf42da2d63b1b63e449a9b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b2f81b5af91ffcb3db67d673e897c79d67a99d3e854a23deb0cad06f61fd96fe",
+          "bytes": 157
+        }
+      ],
+      "expected_override": [],
+      "intent": "An implicit public data class and a protected data class in a public envelope are both part of the opted-in library API policy.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 11,
+          "end_line": 3,
+          "end_column": 25,
+          "span": "ExportedRecord",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 25,
+          "end_line": 6,
+          "end_column": 40,
+          "span": "ProtectedRecord",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "6d8f71803ad57c1d803362126e0df72d4832118ecfaf42da2d63b1b63e449a9b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b2f81b5af91ffcb3db67d673e897c79d67a99d3e854a23deb0cad06f61fd96fe",
+          "bytes": 157
+        }
+      ],
+      "expected_override": null,
+      "intent": "An implicit public data class and a protected data class in a public envelope are both part of the opted-in library API policy.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 11,
+          "end_line": 3,
+          "end_column": 25,
+          "span": "ExportedRecord",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 25,
+          "end_line": 6,
+          "end_column": 40,
+          "span": "ProtectedRecord",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "91fe5d01fde4c6cfd779e34cb9cecefa07c1a1c28d65878bc7a93d6e69328f2b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b2f81b5af91ffcb3db67d673e897c79d67a99d3e854a23deb0cad06f61fd96fe",
+          "bytes": 157
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "37ba5e2d61e9b410b6f0240b8c77733e72523de819452f3963e0a3dfb4f5290b",
+          "bytes": 212
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "acf7f673a7f388ac2904efee14f978afb5598c152e97600b8034ef07bfc065b4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "74bad01ef9be76d75a9dc84107419055c74af10b6560f7c2d825e42721ac7b09",
+          "bytes": 243
+        }
+      ],
+      "expected_override": null,
+      "intent": "Internal/private data types and public ordinary classes are legal alternatives; a nested default-public data class cannot make its internal enclosing class externally visible.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "internal-package-name-is-not-visibility",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "opt_in_policy_limit",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e239bc52dafa31d82851211147af4f6fab51a43392cc8171780f386e0b3077f9",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6bdf725fd84c1b1f49f097f695bd80afa57df3dbbfb20d1fff09e9be72933fa9",
+          "bytes": 85
+        }
+      ],
+      "expected_override": null,
+      "intent": "The default internal-package glob skips a class which is still publicly declared. Preserve this deliberate policy exception without claiming language-level internal visibility.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "empty-ignore-list-reports-public-internal-package",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 11,
+          "end_line": 3,
+          "end_column": 34,
+          "span": "InternalNamespaceRecord",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "owner_configured_policy_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "ignorePackages": []
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e239bc52dafa31d82851211147af4f6fab51a43392cc8171780f386e0b3077f9",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6bdf725fd84c1b1f49f097f695bd80afa57df3dbbfb20d1fff09e9be72933fa9",
+          "bytes": 85
+        }
+      ],
+      "expected_override": null,
+      "intent": "Set the genuine ignorePackages option to an empty list: the same public class now reports. An empty configured list must not be replaced with the default exemptions.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "application-state-has-no-library-abi-promise",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 11,
+          "end_line": 4,
+          "end_column": 22,
+          "span": "ScreenState",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "opt_in_policy_limit",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "76ca512307f9bb58e711e540486371bed97af895e1059de9fde68bbcf092a01f",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "ce993b304a6868fc7d30e5882dcc7b4511b12826b68d506726a113a853fb9639",
+          "bytes": 191
+        }
+      ],
+      "expected_override": null,
+      "intent": "A final application may intentionally use public data state. The explicitly selected library convention still reports, but this is not a universal Kotlin correctness or ABI-break finding.",
+      "selected_sarif_rule_id": "detekt.libraries.ForbiddenPublicDataClass",
+      "selected_sarif_descriptor_enabled_required": true
+    }
+  ],
+  "invocation_schedule": [
+    {
+      "ordinal": 1,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "positive",
+      "matrix_index": 0,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 2,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 3,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "negative",
+      "matrix_index": 1,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 4,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "configuration",
+      "matrix_index": 2,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 5,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "version",
+      "matrix_index": 3,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 6,
+      "kind": "cli_probe",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "cli-version-probe",
+      "native_launch_required": true,
+      "expected_version": "2.0.0-alpha.6",
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 7,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 8,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 9,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "suppression",
+      "matrix_index": 4,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 10,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "regression",
+      "matrix_index": 5,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 11,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "reordered-docs-and-invalid-name-defaults",
+      "matrix_index": 6,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 12,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "order-option-does-not-waive-invalid-tags",
+      "matrix_index": 7,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 13,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+      "case_id": "prose-truth-is-not-checked-without-tags",
+      "matrix_index": 8,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 14,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "positive",
+      "matrix_index": 9,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 15,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 16,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "negative",
+      "matrix_index": 10,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 17,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "configuration",
+      "matrix_index": 11,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 18,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "version",
+      "matrix_index": 12,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 19,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 20,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 21,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "suppression",
+      "matrix_index": 13,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 22,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "regression",
+      "matrix_index": 14,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 23,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "owner-four-condition-threshold",
+      "matrix_index": 15,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 24,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "literal-operator-text-is-not-four-decisions",
+      "matrix_index": 16,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 25,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+      "case_id": "non-condition-boolean-body-is-outside-predicate",
+      "matrix_index": 17,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 26,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "positive",
+      "matrix_index": 18,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 27,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 28,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "negative",
+      "matrix_index": 19,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 29,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "configuration",
+      "matrix_index": 20,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 30,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "version",
+      "matrix_index": 21,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 31,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 32,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 33,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "suppression",
+      "matrix_index": 22,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 34,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "regression",
+      "matrix_index": 23,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 35,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "internal-package-name-is-not-visibility",
+      "matrix_index": 24,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 36,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "empty-ignore-list-reports-public-internal-package",
+      "matrix_index": 25,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 37,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "case_id": "application-state-has-no-library-abi-promise",
+      "matrix_index": 26,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    }
+  ],
+  "counts": {
+    "authored_analyses": 27,
+    "all_calls": 37,
+    "native_launch_ceiling": 28,
+    "expected_runtime_callbacks": 31,
+    "planned_progress_events": 113,
+    "independent_controls": 9,
+    "authored_alert_bearing_analyses": 14,
+    "authored_zero_finding_analyses": 13,
+    "authored_expected_finding_observations": 18,
+    "unique_rule_source_sets": 15,
+    "unique_rule_source_configuration_sets": 21,
+    "independent_control_assessments": {
+      "opt_in_policy_limit": 3,
+      "owner_configured_legal_alternative": 2,
+      "shallow_predicate_limitation": 2,
+      "anticipated_upstream_false_positive": 1,
+      "owner_configured_policy_boundary": 1
+    },
+    "actual_executions": 0,
+    "actual_findings": null,
+    "natural_project_observations": 0,
+    "precision_reviewed_natural_observations": 0
+  }
+}

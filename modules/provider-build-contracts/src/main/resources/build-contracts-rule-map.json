@@ -1,0 +1,44 @@
+{
+  "mappings": [
+    {
+      "catalog_record_sha256": "09a82333da1bbad71813b9fdf6be7c6abab8eaf573cfbbbb634668f5a62b70f9",
+      "gaps": [
+        "Only the exact inspected consumer with independently owner-attested actual selection/version/platform/verification-path/policy is observed; unknown facts abstain.",
+        "Authored parser/provider controls have not yet been executed; no real controlled selected-wrapper consumer fixture or qualification is claimed.",
+        "All provider observations are partial/noncertifying; no implemented/tested/qualified/default activation sidecar is supplied."
+      ],
+      "implementation_evidence": [
+        {
+          "path": "modules/provider-build-contracts/src/main/kotlin/dev/ktchecker/providers/buildcontracts/GradleWrapperChecksumProvider.kt",
+          "sha256": "6ff54e8ac9e72d4fc8b6e512edbbb5b3a321bf0c914b9d3cb70796dc0969dc52"
+        },
+        {
+          "path": "modules/provider-build-contracts/src/main/kotlin/dev/ktchecker/providers/buildcontracts/InstalledWrapperContext.kt",
+          "sha256": "3a2a62e4637d210c832b2945af38cdcdc693f17ba988fa356105b22da5d4c7ea"
+        },
+        {
+          "path": "modules/provider-build-contracts/src/main/kotlin/dev/ktchecker/providers/buildcontracts/WrapperConsumerProfile.kt",
+          "sha256": "09fd786555d6d2daca96468fabd481e6d2b49c8785ee2d0690399091993a2681"
+        },
+        {
+          "path": "modules/provider-build-contracts/src/main/kotlin/dev/ktchecker/providers/buildcontracts/WrapperContracts.kt",
+          "sha256": "f14c366a2f041195af72e60ae439beeeed0046e10e9644e7b68997247cff2d74"
+        },
+        {
+          "path": "modules/provider-build-contracts/src/main/resources/dev/ktchecker/providers/buildcontracts/wrapper-consumer-profile.json",
+          "sha256": "a582d9f0d9a0b9a4063065abfa55e25723772e950d18d0fc503d8257ec43f5e2"
+        },
+        {
+          "path": "gradle/wrapper/gradle-wrapper.jar",
+          "sha256": "7a9ce74cff467ca1bf60a4fcd9f05185acceda4d0f382434d393e17864262c5d"
+        }
+      ],
+      "relation": "exact",
+      "rule_id": "ktc.gradle.wrapper_declared_checksum_format",
+      "upstream_id": "distributionSha256Sum"
+    }
+  ],
+  "provider_id": "gradle-build-contracts",
+  "provider_version": "wrapper-checksum-format/1",
+  "schema_version": 1
+}

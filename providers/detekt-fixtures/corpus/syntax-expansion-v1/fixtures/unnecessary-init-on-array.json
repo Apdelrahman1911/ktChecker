@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-expansion-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+  "upstream_id": "performance:UnnecessaryInitOnArray",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "dcb83f0b57e34e865292f57a8f4ddc74b9a02ee7cd6a3851f4c3f9ec87b1c01c",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-performance/src/main/kotlin/dev/detekt/rules/performance/UnnecessaryInitOnArray.kt",
+    "source_file_sha256": "2309a62e317ddc83ec322b92d19adab7d6db138a639f557c4ec9f1328954942c",
+    "predicate_line_numbers": [
+      49,
+      52,
+      54,
+      60,
+      64,
+      69,
+      76,
+      85
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/performance/UnnecessaryInitOnArray",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:af84175bdefec68152179992e7954e14ae774d966801968fa217bcf471152942"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "A constructor/call name in the fixed primitive-array table, first literal lambda argument, at most one body statement, and final expression text exactly a listed default value; report the whole call.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.arrayinit\n\nfun zeroValues(): IntArray = IntArray(4) { 0 }\nfun clearFlags(): BooleanArray = BooleanArray(2) { false }\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 29,
+        "end_line": 3,
+        "end_column": 46,
+        "span": "IntArray(4) { 0 }",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 33,
+        "end_line": 4,
+        "end_column": 58,
+        "span": "BooleanArray(2) { false }",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Numeric zero and Boolean false initialization exercise two default-value families without claiming a measured speedup."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.arrayinit\n\nfun zeroValues(): IntArray = IntArray(4)\nfun clearFlags(): BooleanArray = BooleanArray(2)\nfun indexedValues(): IntArray = IntArray(4) { index -> index }\n"
+    },
+    "expected": [],
+    "intent": "Default constructors retain default initialization; index-dependent initialization is genuinely useful and not a listed constant."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.arrayinit\n\nfun zeroValues(): IntArray = IntArray(4) { 0 }\nfun clearFlags(): BooleanArray = BooleanArray(2) { false }\n",
+      "SuppressedCase.kt": "@file:Suppress(\"UnnecessaryInitOnArray\")\n\npackage suppressed.corpus.arrayinit\n\nfun zeroValues(): IntArray = IntArray(4) { 0 }\nfun clearFlags(): BooleanArray = BooleanArray(2) { false }\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 29,
+        "end_line": 3,
+        "end_column": 46,
+        "span": "IntArray(4) { 0 }",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 33,
+        "end_line": 4,
+        "end_column": 58,
+        "span": "BooleanArray(2) { false }",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.arrayinit\n\nfun zerosWithAudit(): Pair<IntArray, Int> {\n    var visited = 0\n    val result = IntArray(4) { index ->\n        visited += index\n        0\n    }\n    return result to visited\n}\n"
+      },
+      "expected": [],
+      "intent": "A mutable audit update before returning zero must survive. The real upstream multi-statement guard declines to recommend removing it.",
+      "id": "multi-statement-default-initializer-retains-audit",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.arrayinit\n\nfun computedZeros(): IntArray = IntArray(4) { 1 - 1 }\n"
+      },
+      "expected": [],
+      "intent": "A constant-valued arithmetic expression is not one of the exact default strings. Preserve the optimization-shape miss; no constant evaluator is supplied by the host.",
+      "id": "computed-default-expression-not-evaluated",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.arrayinit\n\nclass IntArray(private val length: Int, private val read: (Int) -> Int) {\n    operator fun get(index: Int): Int {\n        require(index in 0 until length)\n        return read(index)\n    }\n}\n\nfun lazyZeros(): IntArray = IntArray(4) { 0 }\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 10,
+          "column": 28,
+          "end_line": 10,
+          "end_column": 45,
+          "span": "IntArray(4) { 0 }",
+          "occurrence": 0
+        }
+      ],
+      "intent": "This user class stores a deferred reader and has no one-argument constructor. Removing the lambda would change the API and fail; callee text alone cannot identify the Kotlin primitive array constructor.",
+      "id": "shadowed-array-constructor-requires-lambda",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    }
+  ],
+  "limitations": [
+    "The side-effect check is only body statement count, not effect analysis. Default-value checks are exact strings rather than constant evaluation.",
+    "Calls named IntArray can be user declarations. The shadowed constructor false positive remains an asserted upstream output, not suppressed or relabeled correct.",
+    "Two primitive families are authored here; this is not exhaustive testing of every signed/unsigned, floating-point or Char spelling in the upstream table.",
+    "No allocation/performance measurement, Kotlin type-checking, compiler-compatibility or optimization-equivalence qualification is claimed."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, performance, parser, semantic, model or release qualification."
+}

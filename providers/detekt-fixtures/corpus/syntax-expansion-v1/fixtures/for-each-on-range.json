@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-expansion-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+  "upstream_id": "performance:ForEachOnRange",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "6a9a60dea1184ed6b915fac2e04b7b7c8f8dcaed825bddaba0e4961a78d5351f",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-performance/src/main/kotlin/dev/detekt/rules/performance/ForEachOnRange.kt",
+    "source_file_sha256": "3e985c59b69c85b913ec6f95608781a8e87398a1092f1df24af2090438c6ebec",
+    "predicate_line_numbers": [
+      50,
+      52,
+      59,
+      61,
+      66,
+      71,
+      76,
+      88,
+      103
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/performance/ForEachOnRange",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:7e75958d06e2da75716ae54ab011c69c0e06d85cb51c5b4b64dcbbdfb0638e47"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "A call spelled forEach whose syntactic receiver or recursively followed left/receiver chain contains .., ..<, rangeTo, downTo or until; report the deparenthesized whole receiver.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.rangeeach\n\nfun sumByCallbacks(limit: Int): Int {\n    var total = 0\n    (0..<limit).forEach { total += it }\n    (limit downTo 1 step 2).forEach { total += it }\n    return total\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 5,
+        "end_line": 5,
+        "end_column": 14,
+        "span": "0..<limit",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 6,
+        "column": 5,
+        "end_line": 6,
+        "end_column": 26,
+        "span": "limit downTo 1 step 2",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Exclusive Int range and stepped descending progression are different syntactic operator-chain shapes; no benchmark or optimizer claim."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.rangeeach\n\nfun sumByLoops(limit: Int): Int {\n    var total = 0\n    for (value in 0..<limit) total += value\n    for (value in limit downTo 1 step 2) total += value\n    return total\n}\n"
+    },
+    "expected": [],
+    "intent": "Equivalent counting work uses for loops over the same exclusive and descending progressions; the selected rule stays active."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.rangeeach\n\nfun sumByCallbacks(limit: Int): Int {\n    var total = 0\n    (0..<limit).forEach { total += it }\n    (limit downTo 1 step 2).forEach { total += it }\n    return total\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"ForEachOnRange\")\n\npackage suppressed.corpus.rangeeach\n\nfun sumByCallbacks(limit: Int): Int {\n    var total = 0\n    (0..<limit).forEach { total += it }\n    (limit downTo 1 step 2).forEach { total += it }\n    return total\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 5,
+        "end_line": 5,
+        "end_column": 14,
+        "span": "0..<limit",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 6,
+        "column": 5,
+        "end_line": 6,
+        "end_column": 26,
+        "span": "limit downTo 1 step 2",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.rangeeach\n\nfun sumStoredRange(limit: Int): Int {\n    val range = 0..<limit\n    var total = 0\n    range.forEach { total += it }\n    return total\n}\n"
+      },
+      "expected": [],
+      "intent": "A local variable still denotes an IntRange, but this predicate does not follow its initializer. Preserve the unreported same-category shape rather than claim every range loop is covered.",
+      "id": "stored-range-origin-not-followed",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.rangeeach\n\nfun sumMaterializedList(limit: Int): Int {\n    var total = 0\n    (0..<limit).toList().forEach { total += it }\n    return total\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 4,
+          "end_line": 5,
+          "end_column": 24,
+          "span": "(0..<limit).toList()",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The actual forEach receiver is a List. Recursing through toList retains a range-shaped origin and reports anyway; retain this receiver-classification false positive without asserting measured cost.",
+      "id": "materialized-list-is-not-a-range-receiver",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.rangeeach\n\nfun sumMethodRange(limit: Int): Int {\n    var total = 0\n    ((0.rangeTo(limit))).forEach { total += it }\n    return total\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 6,
+          "end_line": 5,
+          "end_column": 22,
+          "span": "0.rangeTo(limit)",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Nested parentheses and explicit rangeTo call spelling remain within the advertised chain predicate, independent of operator token form.",
+      "id": "parenthesized-explicit-range-to-method",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    }
+  ],
+  "limitations": [
+    "Syntactic receiver-origin heuristic only: no symbol/type resolution, data-flow, allocation measurement, benchmark, JIT or Kotlin 2.4.21 performance qualification.",
+    "A stored range is missed while a materialized List descended from a range is still reported. Neither observation is silently filtered or transferred to correctness coverage.",
+    "The upstream documentation links historical benchmarks; those are not measurements of these fixtures or the current compiler/runtime."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, performance, parser, semantic, model or release qualification."
+}

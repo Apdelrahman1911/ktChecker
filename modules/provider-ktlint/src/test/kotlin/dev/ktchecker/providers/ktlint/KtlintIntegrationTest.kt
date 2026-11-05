@@ -6,26 +6,24 @@ import dev.ktchecker.snapshot.*
 import java.nio.file.Files
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
-import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.RegisterExtension
-import org.junit.jupiter.api.extension.TestWatcher
-import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.api.extension.Extension
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
 import kotlin.test.*
 
 /** Genuine pinned lint-only processes. Neither these tests nor upstream tests qualify a release. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Execution(ExecutionMode.SAME_THREAD)
 class KtlintIntegrationTest {
-    @TempDir lateinit var temporary: Path
+    private val retained = RetainedFixtureSuite("ktlint")
+    private val evidence = RetainedFixtureEvidence(retained)
     private val root: Path get() = Path.of(System.getProperty("ktchecker.repositoryRoot")).toAbsolutePath().normalize()
     private val fixtures: Path get() = root.resolve("providers/ktlint-fixtures")
     private val evidenceRoot: Path get() {
@@ -45,43 +43,15 @@ class KtlintIntegrationTest {
     private val installation get() = Path.of(System.getProperty("java.home")).let {
         KtlintInstallation(it.resolve("bin/java"), root.resolve(".plan-deps/ktlint"), it)
     }
-    private var activeRun: Path? = null
-    private val successfulEvidenceMethods = AtomicInteger()
-    @RegisterExtension @JvmField val evidenceGate: TestWatcher = object : TestWatcher {
-        override fun testSuccessful(context: ExtensionContext) { successfulEvidenceMethods.incrementAndGet() }
-        override fun testFailed(context: ExtensionContext, cause: Throwable) {
-            activeRun?.let { run -> Files.writeString(run.resolve("completion.json"), buildJsonObject {
-                put("state", "failed_or_incomplete"); put("failure_type", cause.javaClass.name); put("qualified", false)
-                put("note", "Actual START and partial execution artifacts retained; no passing native-suite attribution.")
-            }.toString()) }
-        }
-    }
+    @RegisterExtension @JvmField val evidenceGate: Extension = evidence
 
-    @AfterAll fun withdrawIncompleteSuiteEvidence() {
-        if (System.getProperty("ktchecker.ktlint.integration") == "true" && successfulEvidenceMethods.get() != 2) {
-            Files.deleteIfExists(evidenceRoot.resolve("evidence/verified-jvm-syntax-native-preview1.json"))
-        }
-    }
-
-    @AfterEach fun restoreOwnedFixturePermissions() {
-        if (Files.exists(temporary)) Files.walkFileTree(temporary, object : java.nio.file.SimpleFileVisitor<Path>() {
-            override fun preVisitDirectory(dir: Path, attrs: java.nio.file.attribute.BasicFileAttributes): java.nio.file.FileVisitResult {
-                dir.toFile().setWritable(true, true)
-                return java.nio.file.FileVisitResult.CONTINUE
-            }
-            override fun visitFile(file: Path, attrs: java.nio.file.attribute.BasicFileAttributes): java.nio.file.FileVisitResult {
-                if (!attrs.isSymbolicLink) file.toFile().setWritable(true, true)
-                return java.nio.file.FileVisitResult.CONTINUE
-            }
-        })
-    }
+    @AfterAll fun retainSuiteEvidence() = evidence.close()
 
     @Test fun `four selected syntax rules execute positive negative config version scoped suppression and immutable regression`() {
         assumeTrue(System.getProperty("ktchecker.ktlint.integration") == "true", "Real Ktlint integration disabled; use -PktlintIntegration=true")
-        startRun("syntax")
-        val witness = beginWitness("syntax")
-        val sidecarPath = evidenceRoot.resolve("evidence/verified-jvm-syntax-native-preview1.json")
-        Files.deleteIfExists(sidecarPath)
+        val run = startRun("syntax")
+        val temporary = run.scratchDirectory
+        val witness = beginWitness(run, "syntax")
         val identity = SnapshotIdentity("fixture-owner", "ktlint-fixture", "six-cases")
         val store = SnapshotStore(temporary.resolve("store"), identity.ownerId)
         store.registerWorktree(identity)
@@ -114,12 +84,17 @@ class KtlintIntegrationTest {
             val verify = { check(store.verifyMaterialization(materialized).valid); Unit }
             val authority = ExactExecutionAuthority(ExecutionPermit(plan.execution, commit.snapshotId, materialized.root, input.analysisKey(), verify))
             var outcome: ProcessOutcome? = null
-            val result = KtlintProvider(installation, authority, settings, IsolatedProcessRunner { outcome = it }).analyze(input, CancellationToken.NONE)
-            val resultRef = artifact("syntax-$kind-provider-result.json", ContractJson.encodeToString(result).replace(temporary.toString(), "{fixture-temporary}").toByteArray())
-            val configRef = artifact("syntax-$kind-editorconfig", plan.configuration.toByteArray())
-            val processRef = outcome?.let { artifact("syntax-$kind-process.json", fixtureProcessJson(it, temporary).toString().toByteArray()) }
+            var processRef: JsonObject? = null
+            val result = run.native(witness.native.identity, { actual ->
+                outcome = actual
+                processRef = run.artifact("syntax-$kind-process.json", fixtureProcessJson(actual, temporary).toString().toByteArray())
+            }) { runner ->
+                KtlintProvider(installation, authority, settings, runner).analyze(input, CancellationToken.NONE)
+            }
+            val resultRef = run.artifact("syntax-$kind-provider-result.json", ContractJson.encodeToString(result).replace(temporary.toString(), "{fixture-temporary}").toByteArray())
+            val configRef = run.artifact("syntax-$kind-editorconfig", plan.configuration.toByteArray())
             val reportRef = outcome?.let { actual -> runCatching { actual.report("ktlint.json") }.getOrNull()
-                ?.let { artifact("syntax-$kind-report.json", it) } }
+                ?.let { run.artifact("syntax-$kind-report.json", it) } }
             val actual = assertNotNull(outcome, "$kind did not reach the isolated runner: ${result.reasons}")
             val outputRef = assertNotNull(processRef)
             witness.native.assertExecuted(actual)
@@ -160,13 +135,17 @@ class KtlintIntegrationTest {
                 val changed = KtlintSettings(disabledRuleIds = selected.toSet())
                 assertNotEquals(plan.execution, KtlintProvider(installation, settings = changed).executionProfile(input))
                 var replayOutcome: ProcessOutcome? = null
-                val replay = KtlintProvider(installation, authority, changed, IsolatedProcessRunner { replayOutcome = it })
-                    .analyze(input, CancellationToken.NONE)
-                val replayRef = artifact("syntax-configuration-permit-replay.json", ContractJson.encodeToString(replay)
+                var denialRef: JsonObject? = null
+                val replay = run.denied({ actual ->
+                    replayOutcome = actual
+                    denialRef = run.artifact("syntax-configuration-permit-replay-denial-process.json",
+                        fixtureProcessJson(actual, temporary).toString().toByteArray())
+                }) { runner ->
+                    KtlintProvider(installation, authority, changed, runner).analyze(input, CancellationToken.NONE)
+                }
+                val replayRef = run.artifact("syntax-configuration-permit-replay.json", ContractJson.encodeToString(replay)
                     .replace(temporary.toString(), "{fixture-temporary}").toByteArray())
                 additional += replayRef
-                val denialRef = replayOutcome?.let { artifact("syntax-configuration-permit-replay-denial-process.json",
-                    fixtureProcessJson(it, temporary).toString().toByteArray()) }
                 val denied = assertNotNull(replayOutcome, "Runtime completion callback must retain the authorization denial")
                 assertFixtureAuthorizationDenied(denied)
                 assertEquals(listOf("execution_not_authorized"), replay.reasons)
@@ -174,7 +153,7 @@ class KtlintIntegrationTest {
                 assertTrue(replay.coverage.all { it.provenance == "not_executed" && !it.implemented && !it.tested && !it.qualified && !it.successful() })
                 val denialProcess = assertNotNull(denialRef)
                 additional += denialProcess
-                additional += artifact("syntax-configuration-permit-replay-denial-receipt.json", buildJsonObject {
+                additional += run.artifact("syntax-configuration-permit-replay-denial-receipt.json", buildJsonObject {
                     put("case_kind", "changed_configuration_permit_replay"); put("passed", true); put("qualified", false)
                     put("execution_confirmed", denied.executionConfirmed); put("supervisor_identity", supervisorIdentityJson(denied.supervisorIdentity))
                     put("actual_denial", fixtureProcessJson(denied, temporary)); put("process", denialProcess); put("provider_result", replayRef)
@@ -188,20 +167,24 @@ class KtlintIntegrationTest {
                 val execution = plan.execution.copy(arguments = listOf("-Xmx128m", "-jar", cli, "--version"))
                 val versionInput = input.copy(execution = execution)
                 val versionAuthority = ExactExecutionAuthority(ExecutionPermit(execution, commit.snapshotId, materialized.root, versionInput.analysisKey(), verify))
-                val version = IsolatedProcessRunner().run(versionInput, versionAuthority)
-                val versionProcess = artifact("syntax-version-cli-process.json", fixtureProcessJson(version, temporary).toString().toByteArray())
+                var versionProcessRef: JsonObject? = null
+                val version = run.native(witness.native.identity, { actual ->
+                    versionProcessRef = run.artifact("syntax-version-cli-process.json", fixtureProcessJson(actual, temporary).toString().toByteArray())
+                }) { runner -> runner.run(versionInput, versionAuthority) }
+                val versionProcess = assertNotNull(versionProcessRef)
                 witness.native.assertExecuted(version)
                 assertEquals(0, version.exitCode)
                 assertEquals("ktlint version $KTLINT_VERSION", version.stdout.trim())
                 val newer = input.copy(context = context.copy(compilerVersion = "2.4.21"))
                 val newerAuthority = ExactExecutionAuthority(ExecutionPermit(plan.execution, commit.snapshotId, materialized.root, newer.analysisKey(), verify))
                 var mismatchOutcome: ProcessOutcome? = null
-                val mismatch = KtlintProvider(installation, newerAuthority, runner = IsolatedProcessRunner { mismatchOutcome = it })
-                    .analyze(newer, CancellationToken.NONE)
+                val mismatch = run.abstained(newer, { mismatchOutcome = it }) { runner ->
+                    KtlintProvider(installation, newerAuthority, runner = runner).analyze(newer, CancellationToken.NONE)
+                }
                 assertNull(mismatchOutcome, "Newer parser tuple must abstain before the isolated runner")
                 assertEquals("unsupported", mismatch.coverage.single { it.ruleId == selected[0] }.state)
                 assertTrue(mismatch.coverage.all { it.provenance == "not_executed" && !it.successful() })
-                versionRef = artifact("syntax-version-cli.json", buildJsonObject {
+                versionRef = run.artifact("syntax-version-cli.json", buildJsonObject {
                     put("actual_exit_code", version.exitCode); put("stdout", version.stdout); put("stderr", version.stderr)
                     put("execution_confirmed", version.executionConfirmed); put("supervisor_identity", supervisorIdentityJson(version.supervisorIdentity))
                     put("process", versionProcess)
@@ -214,9 +197,10 @@ class KtlintIntegrationTest {
                     val permit = ExactExecutionAuthority(ExecutionPermit(plan.execution, commit.snapshotId, materialized.root,
                         request.analysisKey(), verify))
                     var unsupportedOutcome: ProcessOutcome? = null
-                    val abstained = KtlintProvider(installation, permit, settings, IsolatedProcessRunner { unsupportedOutcome = it })
-                        .analyze(request, CancellationToken.NONE)
-                    additional += artifact("syntax-$target-abstention.json", ContractJson.encodeToString(abstained)
+                    val abstained = run.abstained(request, { unsupportedOutcome = it }) { runner ->
+                        KtlintProvider(installation, permit, settings, runner).analyze(request, CancellationToken.NONE)
+                    }
+                    additional += run.artifact("syntax-$target-abstention.json", ContractJson.encodeToString(abstained)
                         .replace(temporary.toString(), "{fixture-temporary}").toByteArray())
                     assertNull(unsupportedOutcome, "$target must not start a JVM syntax process")
                     assertTrue(abstained.findings.isEmpty())
@@ -224,10 +208,10 @@ class KtlintIntegrationTest {
                 }
             }
             val refs = listOf(resultRef, configRef, assertNotNull(reportRef), outputRef) + listOfNotNull(versionRef) + additional
-            val receipt = artifact("syntax-$kind-receipt.json", buildJsonObject {
+            val receipt = run.artifact("syntax-$kind-receipt.json", buildJsonObject {
                 put("schema_version", 1); put("case_kind", kind); put("passed", true)
                 put("provider_id", "ktlint"); put("provider_version", KTLINT_VERSION); put("actual_exit_code", actual.exitCode)
-                put("run_id", assertNotNull(activeRun).fileName.toString()); put("execution_confirmed", actual.executionConfirmed)
+                put("run_id", run.runDirectory.fileName.toString()); put("execution_confirmed", actual.executionConfirmed)
                 put("supervisor_identity", supervisorIdentityJson(actual.supervisorIdentity))
                 put("snapshot_id", commit.snapshotId); put("analysis_key", input.analysisKey()); put("registered_materialization_verified", true)
                 put("configuration_sha256", plan.configurationDigest); put("qualified", false); put("source_rewrites", false)
@@ -254,21 +238,20 @@ class KtlintIntegrationTest {
                 put("scope_note", "Synthetic Kotlin2.2.21 syntax profile only; not an actual project KGP/Compose semantic qualification.")
             })
             put("rules", JsonArray(selected.map { id -> buildJsonObject {
-                put("rule_id", id); put("implemented", true); put("tested", true); put("qualified", false); put("provider_status", "executed_unqualified")
+                put("rule_id", id); put("implemented", true); put("tested", false); put("qualified", false); put("method_cases_checked", true); put("provider_status", "executed_unqualified")
                 put("implementation_evidence", JsonArray(witness.references)); put("cases", JsonArray(cases)); put("qualification_evidence", JsonArray(emptyList()))
                 put("gaps", JsonArray(listOf("Only selected synthetic syntax cases executed. Suppression evidence is file-scoped only; Compose ParameterOrder declaration suppression remains unsupported by the upstream file visitor. No KGP2.4.21/common/Native/Android or actual Compose compiler/API, precision/performance/release qualification; ktChecker-ID suppression aliases remain unimplemented.").map(::JsonPrimitive)))
             } }))
         }
-        Files.createDirectories(sidecarPath.parent)
-        artifact("syntax-native-sidecar.json", sidecar.toString().toByteArray())
-        Files.writeString(sidecarPath, sidecar.toString())
-        finishRun()
+        run.sidecarCandidate("syntax-native", sidecar)
+        run.finishMethod()
     }
 
     @Test fun `real editorconfig inheritance exemptions and parse errors never produce clean semantic coverage`() {
         assumeTrue(System.getProperty("ktchecker.ktlint.integration") == "true", "Real configuration integration disabled; use -PktlintIntegration=true")
-        startRun("configuration")
-        val witness = beginWitness("configuration")
+        val run = startRun("configuration")
+        val temporary = run.scratchDirectory
+        val witness = beginWitness(run, "configuration")
         val ruleId = selected.first()
         val rootConfig = "root = true\n\n[*.{kt,kts}]\nij_kotlin_packages_to_use_import_on_demand = java.util.*\n"
         val wildcard = "package fixture\n\nimport java.io.*\n\nfun example() = Unit\n"
@@ -295,12 +278,17 @@ class KtlintIntegrationTest {
             val authority = ExactExecutionAuthority(ExecutionPermit(plan.execution, commit.snapshotId, materialized.root, input.analysisKey(),
                 { check(store.verifyMaterialization(materialized).valid) }))
             var outcome: ProcessOutcome? = null
-            val result = KtlintProvider(installation, authority, runner = IsolatedProcessRunner { outcome = it }).analyze(input, CancellationToken.NONE)
-            val resultRef = artifact("configuration-$kind-provider-result.json", ContractJson.encodeToString(result).replace(temporary.toString(), "{fixture-temporary}").toByteArray())
-            val processRef = outcome?.let { artifact("configuration-$kind-process.json", fixtureProcessJson(it, temporary).toString().toByteArray()) }
+            var processRef: JsonObject? = null
+            val result = run.native(witness.native.identity, { actual ->
+                outcome = actual
+                processRef = run.artifact("configuration-$kind-process.json", fixtureProcessJson(actual, temporary).toString().toByteArray())
+            }) { runner ->
+                KtlintProvider(installation, authority, runner = runner).analyze(input, CancellationToken.NONE)
+            }
+            val resultRef = run.artifact("configuration-$kind-provider-result.json", ContractJson.encodeToString(result).replace(temporary.toString(), "{fixture-temporary}").toByteArray())
             val reportRef = outcome?.let { actual -> runCatching { actual.report("ktlint.json") }.getOrNull()
-                ?.let { artifact("configuration-$kind-report.json", it) } }
-            val configurationRef = artifact("configuration-$kind-editorconfig", plan.configuration.toByteArray())
+                ?.let { run.artifact("configuration-$kind-report.json", it) } }
+            val configurationRef = run.artifact("configuration-$kind-editorconfig", plan.configuration.toByteArray())
             val actual = assertNotNull(outcome, "$kind did not reach the isolated runner: ${result.reasons}")
             witness.native.assertExecuted(actual)
             assertEquals("partial", result.status)
@@ -322,10 +310,10 @@ class KtlintIntegrationTest {
                 }
                 else -> { assertTrue(result.findings.isEmpty()); assertEquals(listOf("ktlint_parse_or_rule_failure"), result.reasons); assertEquals("unknown", result.coverage.single().state) }
             }
-            artifact("configuration-$kind-receipt.json", buildJsonObject {
+            run.artifact("configuration-$kind-receipt.json", buildJsonObject {
                 put("schema_version", 1); put("case_kind", kind); put("passed", true); put("qualified", false)
                 put("provider_id", "ktlint"); put("provider_version", KTLINT_VERSION)
-                put("run_id", assertNotNull(activeRun).fileName.toString()); put("actual_exit_code", actual.exitCode)
+                put("run_id", run.runDirectory.fileName.toString()); put("actual_exit_code", actual.exitCode)
                 put("execution_confirmed", actual.executionConfirmed); put("supervisor_identity", supervisorIdentityJson(actual.supervisorIdentity))
                 put("snapshot_id", commit.snapshotId); put("analysis_key", input.analysisKey())
                 put("registered_materialization_verified", true); put("source_rewrites", false)
@@ -337,33 +325,13 @@ class KtlintIntegrationTest {
             witness.verify()
         }
         witness.verify()
-        finishRun()
+        run.finishMethod()
     }
 
     private fun sourceFixture(directory: String): Map<String, String> = Json.parseToJsonElement(Files.readString(fixtures.resolve("cases/$directory/sources.json")))
         .jsonObject.mapValues { it.value.jsonPrimitive.content }
 
-    private fun artifact(name: String, bytes: ByteArray): JsonObject {
-        val path = assertNotNull(activeRun, "A new native run archive must exist before artifact capture")
-            .resolve("evidence-artifacts").resolve(safeRelativePath(name))
-        Files.createDirectories(path.parent)
-        Files.write(path, bytes)
-        return buildJsonObject { put("path", root.relativize(path).toString().replace('\\', '/')); put("sha256", Digests.sha256(bytes).removePrefix("sha256:")) }
-    }
-
-    private fun startRun(prefix: String) {
-        val run = evidenceRoot.resolve("runs/${Instant.now().toString().replace(':', '-')}-${UUID.randomUUID().toString().take(8)}-$prefix-native-preview1")
-        Files.createDirectories(run.resolve("evidence-artifacts"))
-        activeRun = run
-        Files.writeString(run.resolve("completion.json"), "{\"state\":\"started_unfinished\",\"qualified\":false}")
-    }
-
-    private fun finishRun() {
-        Files.writeString(assertNotNull(activeRun).resolve("completion.json"), buildJsonObject {
-            put("state", "all_method_assertions_passed_unqualified"); put("qualified", false)
-            put("note", "Fresh native-supervised method only; actual JUnit/suite completion must be retained separately. Historical pack is not renewed.")
-        }.toString())
-    }
+    private fun startRun(prefix: String): RetainedFixtureEvidence.Run = evidence.startRun(root, evidenceRoot, prefix)
 
     private data class Witness(val references: List<JsonObject>, val native: NativeFixtureWitness,
         val runtimeSourceDigest: String, val runtimeImageDigest: String, val verify: () -> Unit)
@@ -379,8 +347,8 @@ class KtlintIntegrationTest {
         put("native_qualification", false)
     }
 
-    private fun beginWitness(prefix: String): Witness {
-        val native = captureNativeFixtureWitness(root, prefix, ::artifact)
+    private fun beginWitness(run: RetainedFixtureEvidence.Run, prefix: String): Witness {
+        val native = captureNativeFixtureWitness(root, prefix, run::artifact)
         val sourceRoots = listOf("modules/provider-ktlint/src/main", "modules/provider-ktlint/src/test",
             "modules/provider-runtime/src/main", "modules/contracts/src/main", "modules/snapshot/src/main", "providers/ktlint-fixtures/cases")
             .map(root::resolve)
@@ -393,27 +361,27 @@ class KtlintIntegrationTest {
         val start = sourceFiles().associateWith { Files.readAllBytes(it) }
         val sourceRefs = start.flatMap { (path, bytes) -> listOf(buildJsonObject {
             put("path", root.relativize(path).toString().replace('\\', '/')); put("sha256", Digests.sha256(bytes).removePrefix("sha256:"))
-        }, artifact("$prefix-at-start/${root.relativize(path).toString().replace('\\', '/')}", bytes)) }
-        val types = listOf(KtlintProvider::class.java, KtlintCatalog::class.java, KtlintReportParser::class.java, KtlintIntegrationTest::class.java,
+        }, run.artifact("$prefix-at-start/${root.relativize(path).toString().replace('\\', '/')}", bytes)) }
+        val types = listOf(KtlintProvider::class.java, KtlintCatalog::class.java, KtlintReportParser::class.java, KtlintIntegrationTest::class.java, RetainedFixtureSuite::class.java, RetainedFixtureEvidence::class.java,
             IsolatedProcessRunner::class.java, ExecutionPermit::class.java, ExactExecutionAuthority::class.java,
             NativeFixtureWitness::class.java, native.anchor, SnapshotStore::class.java, ArtifactIdentity::class.java)
         fun bytes(type: Class<*>): ByteArray = type.getResourceAsStream("/" + type.name.replace('.', '/') + ".class")!!.use { it.readBytes() }
         val binaries = types.associateWith { bytes(it) }
-        val binaryRefs = binaries.map { (type, content) -> artifact("$prefix-${type.simpleName}.class", content) }
+        val binaryRefs = binaries.map { (type, content) -> run.artifact("$prefix-${type.simpleName}.class", content) }
         val images = types.map { Path.of(it.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize() }.distinct()
             .associateWith { fixtureProjectCodeImage(root, it) }
-        val imageRefs = images.entries.mapIndexed { index, (path, data) -> artifact("$prefix-project-image-$index-${path.fileName}.zip", data) }
+        val imageRefs = images.entries.mapIndexed { index, (path, data) -> run.artifact("$prefix-project-image-$index-${path.fileName}.zip", data) }
         val selectedInstallation = installation
         val toolPins = KtlintCatalog.verifyArtifacts(selectedInstallation.artifactDirectory)
         val javaDigest = fileDigest(selectedInstallation.javaExecutable)
-        val toolRef = artifact("$prefix-tool-start-witness.json", buildJsonObject {
+        val toolRef = run.artifact("$prefix-tool-start-witness.json", buildJsonObject {
             put("phase", "START_before_processes"); put("qualified", false)
             put("artifact_pins", JsonArray(toolPins.map { ContractJson.encodeToJsonElement(it.copy(path = "{pinned-installation}/${Path.of(it.path).fileName}")) }))
             put("java_executable_digest", javaDigest)
             put("note", "Actual installed tool/launcher digests; upstream engine and full JDK not redistributed or reproducibly attested.")
         }.toString().toByteArray())
         val references = sourceRefs + binaryRefs + imageRefs + native.references + toolRef
-        val manifest = artifact("$prefix-start-witness.json", buildJsonObject {
+        val manifest = run.artifact("$prefix-start-witness.json", buildJsonObject {
             put("phase", "START_before_processes"); put("passed", false); put("qualified", false)
             put("implementation_witnesses", JsonArray(references))
             put("note", "Current bytes and original START archives only; no retrospective source renewal or source-to-loaded-bytecode proof.")

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "nodeVersion": "24.20.0",
+  "publisherMetadata": {
+    "url": "https://nodejs.org/dist/v24.20.0/SHASUMS256.txt",
+    "sha256": "c614a913a302d35d1c3a1348d07d84c52e28dceb0b97fd91e4ade05906ca2bd7",
+    "retrievedAt": "2026-11-05T11:24:33Z",
+    "authentication": "official HTTPS metadata; not an independent OpenPGP verification"
+  },
+  "archives": {
+    "arm64": { "file": "node-v24.20.0-darwin-arm64.tar.gz", "sha256": "40e5607e5ecb3db9192723776da2d75d966260fc74a7a9e731c1bd67dda96bc8" },
+    "x64": { "file": "node-v24.20.0-darwin-x64.tar.gz", "sha256": "9e5b2644cf107befb6aefca676b96d3296bc10138096f022ed378d6233ed81f4" }
+  },
+  "nodeCommit": "71b8b174857e25106d39b61a9e6f30d927da8b01",
+  "sqliteVersion": "3.53.4",
+  "sqliteSourceId": "2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e09459bcc",
+  "sqliteSourceSha256": "b1dd5d74ec7f29055a6684fa06fb3c2f6821c87dd38f9a458dfd2e8a1db28189"
+}

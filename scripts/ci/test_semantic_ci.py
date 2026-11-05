@@ -36,6 +36,33 @@ RUN = {"id": "123456", "attempt": "1", "job": "ios-native"}
 # Host-native absolute SYNTHETIC selection only; this is no Apple installation
 # observation. Mocking platform.system() must not change Windows Path semantics.
 DEVELOPER = str(checks.REPO_ROOT / "synthetic-Xcode_26.4.1.app/Contents/Developer")
+# Frozen diagnostic contract, not a claim that any one cause was observed on
+# the retained Mac. The actual retained dependency reason remains redacted.
+RUNTIME_CAUSAL_CODES = {
+    "analysis_descriptor_changed", "cancelled_before_execution", "executable_changed",
+    "executable_digest_mismatch", "executable_unavailable", "execution_arguments_invalid",
+    "execution_cancelled", "execution_limits_invalid", "execution_not_authorized", "execution_timeout",
+    "output_identity_unavailable", "output_root_required", "output_source_overlap",
+    "owned_process_group_shutdown_unverified", "process_group_containment_unavailable",
+    "process_output_invalid_utf8", "process_output_limit", "process_output_unreliable",
+    "process_start_failed", "process_start_unconfirmed", "process_supervisor_arguments_invalid",
+    "process_supervisor_binary_digest_mismatch", "process_supervisor_binary_invalid",
+    "process_supervisor_bundle_changed", "process_supervisor_bundle_limit",
+    "process_supervisor_bundle_origin_ambiguous", "process_supervisor_bundle_origin_unavailable",
+    "process_supervisor_bundle_unavailable", "process_supervisor_cancellation_failed",
+    "process_supervisor_capacity_unavailable", "process_supervisor_control_failed",
+    "process_supervisor_diagnostics_limit", "process_supervisor_diagnostics_unexpected",
+    "process_supervisor_diagnostics_unreliable", "process_supervisor_environment_unavailable",
+    "process_supervisor_exit_failed", "process_supervisor_image_changed", "process_supervisor_image_cleanup_failed",
+    "process_supervisor_manifest_invalid", "process_supervisor_ownership_lost",
+    "process_supervisor_parent_disconnected", "process_supervisor_private_io_unavailable",
+    "process_supervisor_protocol_error", "process_supervisor_start_failed", "process_supervisor_transport_timeout",
+    "relative_path_invalid", "report_limit", "report_missing_or_unsafe", "report_not_regular_or_oversized",
+    "report_root_invalid", "report_root_replaced", "report_unavailable", "secure_report_io_unavailable",
+    "snapshot_binding_mismatch", "snapshot_changed_during_execution", "snapshot_content_mismatch",
+    "snapshot_duplicate_path", "snapshot_materialization_changed", "snapshot_provenance_unavailable",
+    "snapshot_root_invalid", "snapshot_verification_failed",
+}
 
 
 def fixture_symlink(test_case, link, target, *, target_is_directory=False):
@@ -181,6 +208,36 @@ class SemanticMetadataTests(unittest.TestCase):
 
     def test_synthetic_native_metadata_shape_is_valid_but_is_not_execution(self):
         self.assertEqual([], self.validate(native_summary()))
+
+    def test_fixed_runtime_causal_codes_preserve_full_enum_but_not_raw_details(self):
+        self.assertEqual(RUNTIME_CAUSAL_CODES, checks.RUNTIME_FAILURE_REASONS)
+        for code in sorted(RUNTIME_CAUSAL_CODES):
+            value = native_summary()
+            value.update(state="failed", cases=[], reasons=["semantic_fixture_driver_failed"])
+            value["executions"] = [dict(value["executions"][0], status="failed", exitCode=0, reasons=[code])]
+            with self.subTest(code=code):
+                projection = checks.metadata_projection(value, "native", "iosSimulatorArm64")
+                self.assertEqual([code], projection["executions"][0]["reasons"])
+                self.assertEqual(["semantic_fixture_assertions_did_not_pass"], self.validate(value))
+        for detail in ("PRIVATE raw exception and source", "/private/owner/source.kt", "private_alphanumeric_secret",
+                       "process_supervisor_unknown_failure", "process_start_unconfirmed:PRIVATE_SECRET"):
+            with self.subTest(detail=detail):
+                self.assertEqual(["unrecognized_reason_omitted"], checks.safe_reasons([detail]))
+
+    def test_failed_zero_exit_execution_cannot_satisfy_actual_semantic_gate(self):
+        value = native_summary()
+        # A synthetic replay of the retained shape, not newly executed Native
+        # evidence and not an inference about its redacted underlying cause.
+        value.update(state="failed", cases=[], reasons=["semantic_fixture_driver_failed"])
+        value["executions"] = [dict(value["executions"][0], status="failed", exitCode=0,
+                                    reasons=["unrecognized_reason_omitted"])]
+        self.assertEqual(["semantic_fixture_assertions_did_not_pass"], self.validate(value))
+        value.update(state="passed", reasons=[])
+        self.assertIn("semantic_summary_missing_exact_fixture_cases", self.validate(value))
+        self.assertIn("semantic_summary_actual_execution_invalid", self.validate(value))
+        value = native_summary()
+        value["executions"][0].update(status="failed", exitCode=0, reasons=["process_start_unconfirmed"])
+        self.assertIn("semantic_summary_actual_execution_invalid", self.validate(value))
 
     def test_empty_passing_summary_missing_dependency_and_duplicate_labels_fail(self):
         for alteration in ("empty", "dependency", "duplicate_case", "duplicate_execution", "compiler_artifact"):
@@ -377,6 +434,37 @@ class SemanticWrapperTests(unittest.TestCase):
             self.assertEqual(1, result["driver_summary"]["executions"][0]["exitCode"])
             self.assertFalse(result["tuple_qualified"])
             self.assertNotIn("PRIVATE", json.dumps(result))
+
+    def test_failed_zero_exit_dependency_retains_cause_without_fabricating_cases(self):
+        # These fixed categories exercise projection only. None names the
+        # retained real failure, whose single causal reason was omitted.
+        for cause in ("owned_process_group_shutdown_unverified", "process_start_unconfirmed",
+                      "unrecognized_reason_omitted"):
+            with self.subTest(cause=cause), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve(strict=True)
+                argument, java_home, data_dir, summary = setup_attempt(root)
+                summary.update(state="failed", cases=[], reasons=["semantic_fixture_driver_failed"])
+                summary["executions"] = [dict(summary["executions"][0], status="failed", exitCode=0, reasons=[cause],
+                                               metrics={"elapsedMillis": 4741, "cpuMillis": None,
+                                                        "peakRssBytes": None, "outputBytes": 0})]
+                result, gradle = self.run_attempt(root, argument, java_home, data_dir, summary, "failed")
+                gradle.assert_called_once()
+                self.assertEqual("failed", result["state"])
+                self.assertEqual("FAILED", result["actual_task_outcome"])
+                self.assertEqual(["native_semantic_gradle_gate_failed", "semantic_fixture_assertions_did_not_pass"],
+                                 result["errors"])
+                self.assertEqual([], result["driver_summary"]["cases"])
+                row = result["driver_summary"]["executions"][0]
+                self.assertEqual("failed", row["status"])
+                self.assertEqual(0, row["exitCode"])
+                self.assertEqual([cause], row["reasons"])
+                self.assertTrue(result["driver_summary_metadata_valid"])
+                self.assertTrue(result["private_evidence_digest_verified"])
+                self.assertFalse(result["tuple_qualified"])
+                self.assertFalse(result["custom_rules_qualified"])
+                self.assertFalse(result["release_qualified"])
+                self.assertNotIn("PRIVATE", json.dumps(result))
+                self.assertNotIn(str(root), json.dumps(result))
 
     def test_genuine_unavailable_driver_shape_remains_unavailable_with_no_compiler_claim(self):
         with tempfile.TemporaryDirectory() as temporary:

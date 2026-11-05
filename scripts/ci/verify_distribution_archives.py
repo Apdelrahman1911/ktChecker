@@ -19,6 +19,8 @@ unrecognized ZIP metadata are explicitly unsupported, never silently normalized.
 Directory entries may omit implied nonempty parents; every staged directory with
 no regular-file descendant must be explicit. No extra directories are accepted.
 Paths are literal portable UTF-8/NFC names; depth includes an archive's prefix.
+An optional expected prefix binds every archive's single top-level directory;
+it does not infer archive filenames, a version, or historical build provenance.
 UID/GID, timestamps and non-executable permission differences are not certified.
 Report delivery is confirmed only by the CLI exit status and stdout, not by a
 file certifying its own creation. A failed write may leave a NEW partial or
@@ -910,14 +912,16 @@ def verify_archive(archive: HeldPath, snapshot: Snapshot, budget: Budget) -> dic
             "input_recheck": "unchanged", "state": "checked_against_initial_staged_inventory"}
 
 
-def verify(installation_path: Path, archive_paths: list[Path], *, limits: Limits | None = None) -> dict:
+def verify(installation_path: Path, archive_paths: list[Path], *, limits: Limits | None = None,
+           expected_prefix: str | None = None) -> dict:
     limits = limits if limits is not None else Limits()
     result = {"schema_version": 1, "evidence_kind": "local_distribution_archive_integrity", "scope": SCOPE,
               "recorded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "state": "failed",
               "platform_scope": "POSIX descriptor-relative no-follow reads; no Windows qualification",
               "limits": asdict(limits) if type(limits) is Limits else None,
               "chunk_bytes": CHUNK_BYTES, "max_report_bytes": MAX_REPORT_BYTES,
-              "installation": None, "archives": [], "errors": [], "input_recheck": "not_completed",
+              "installation": None, "archives": [], "expected_prefix": None,
+              "errors": [], "input_recheck": "not_completed",
               "atomic_snapshot_or_hostile_writer_containment": False, "hard_deadline_enforced": False,
               "checksum_alone_is_trust": False, "compiled_code_or_runtime_proof": False,
               "historical_build_source_binding": False, "license_review": "not_assessed", "release_qualified": False,
@@ -930,6 +934,14 @@ def verify(installation_path: Path, archive_paths: list[Path], *, limits: Limits
         if type(limits) is not Limits:
             raise VerificationError("invalid_limits")
         budget = Budget(limits)
+        if expected_prefix is not None:
+            if type(expected_prefix) is not str or "/" in expected_prefix:
+                raise VerificationError("invalid_expected_archive_prefix")
+            try:
+                safe_relative(expected_prefix, limits)
+            except VerificationError:
+                raise VerificationError("invalid_expected_archive_prefix") from None
+            result["expected_prefix"] = expected_prefix
         if not platform_available():
             raise VerificationError("platform_no_follow_unavailable", state="unavailable")
         if not isinstance(archive_paths, (list, tuple)) or not 0 < len(archive_paths) <= limits.max_archives:
@@ -967,6 +979,8 @@ def verify(installation_path: Path, archive_paths: list[Path], *, limits: Limits
                 row = {"archive_index": archive_index, "name": archive.path.name, "state": "not_completed"}
                 result["archives"].append(row)
                 row.update(verify_archive(archive, initial, budget))
+                if expected_prefix is not None and row["prefix"] != expected_prefix:
+                    raise VerificationError("archive_prefix_mismatch")
             phase, archive_index = "final_input_recheck", None
             final = inventory(installation, budget)
             if final != initial:
@@ -1067,10 +1081,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = _Parser(description=__doc__)
     parser.add_argument("--installation", type=Path, required=True, help="Explicit staged expected tree, read-only")
     parser.add_argument("--archive", type=Path, action="append", required=True, help="Explicit local .zip or uncompressed .tar (repeat up to four)")
+    parser.add_argument("--expected-prefix", help="Require this exact safe single top-level directory in every archive")
     parser.add_argument("--output", type=Path, required=True, help="NEW report in an existing no-follow parent, never an input")
     args = parser.parse_args(argv)
     deadline = time.monotonic() + Limits().max_seconds
-    result = verify(args.installation, args.archive)
+    result = verify(args.installation, args.archive, expected_prefix=args.expected_prefix)
     result["report_delivery_scope"] = ("Input verification only; CLI exit status and stdout output_written confirm "
                                        "delivery. Failures may leave a NEW partial or unconfirmed report; "
                                        "durable storage is not certified.")

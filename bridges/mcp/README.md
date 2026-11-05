@@ -12,9 +12,15 @@ node bridges/mcp/dist/src/main.js --config /owner/private/mcp.json
 Use Node **24.20.0**. The MCP profile is **2026-07-28**; legacy negotiation is
 explicitly rejected. A host supporting only the legacy profile cannot use this
 bridge yet. Launch it as a stdio MCP server; stdout belongs exclusively to MCP.
-Private configuration startup currently fails closed on Windows: POSIX mode
-checks do not validate Windows ACLs. Native ACL support and hosted verification
-remain an open release blocker, not a waived privacy check.
+Private configuration startup fails closed on Windows and by default on Darwin:
+POSIX mode checks do not prove either platform's ACL authority. A narrow,
+[explicitly built Darwin N-API experiment](native/PRIMARY-SOURCES.md) is opt-in
+only, restricted to the pinned macOS26/Node24.20.0/APFS route, and is **not yet
+natively qualified**. There is no runtime build/download or unsafe fallback.
+The interim experiment is **source-checkout-only**: native inputs and artifacts
+are not in the npm archive, whose opt-in startup remains fail-closed. The existing
+archive whitelist and license/publication gates are unchanged. Reviewed native
+packaging and qualification remain open release blockers, not waived requirements.
 
 Owner-private configuration (copy, fill in, then `chmod 600`):
 

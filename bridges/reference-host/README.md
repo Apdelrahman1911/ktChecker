@@ -13,9 +13,16 @@ npm --prefix bridges/reference-host run probe:codex
 ```
 
 Node **24.20.0** is required (`node:sqlite`). `npm test` makes no inference calls.
-Linux is the currently verified host. Windows private-state startup fails closed
-until native ACL validation is implemented and qualified; this is an open release
-blocker, not a skipped security guarantee.
+Linux is the currently verified host. Windows private-state startup and default
+Darwin startup fail closed. The [Darwin N-API private-state experiment](../mcp/native/PRIMARY-SOURCES.md)
+requires an explicit target-native build and opt-in; it is **not yet natively
+qualified**. It preserves FULL/WAL and binding checks, uses bounded same-descriptor
+configuration reads, and keeps native authority until confirmed SQLite close.
+Use separate Inbox/Codex directories; same-directory live native controllers
+cannot displace each other. Native verification is an open blocker, not a skip.
+This interim backend is source-checkout-only, not a Darwin distributable: required
+native inputs/artifacts are absent from the unchanged MCP npm archive. Separate
+reviewed packaging and native qualification remain required for release support.
 The controlled Codex runtime was verified with **codex-cli 0.160.0** and explicit
 **gpt-6-astra**, without provider model fallback.
 

@@ -1,4 +1,5 @@
 import { realpathSync } from 'node:fs';
+import { assertPrivateStatePlatform } from '@ktchecker/mcp-preview/private-state';
 import { canonical, digest, HostError } from './journal.js';
 import { CodexAppServer, type CodexOptions, type PublicTurn } from './codex-app-server.js';
 import { CodexStore, type CodexInvocation } from './codex-store.js';
@@ -12,6 +13,8 @@ export interface CodexHostOptions {
   client: ClientBinding;
   /** Owner-selected synthetic workspace. This reference controller does not browse other sessions. */
   cwd: string;
+  /** Owner-only selection. Not a model tool argument, and never automatically substituted. */
+  effort?: string;
   server?: CodexOptions;
   dynamicTools?: ObjectValue[];
   onModelRequestAccepted?: (turnId: string) => void;
@@ -34,20 +37,23 @@ export class CodexHostPort implements HostPort {
     this.resumed = resumed;
   }
   static async open(options: CodexHostOptions): Promise<CodexHostPort> {
+    assertPrivateStatePlatform();
     const model = 'gpt-6-astra';
+    const effort = options.effort ?? 'low';
     const cwd = realpathSync(options.cwd);
-    const store = new CodexStore(options.directory, options.client, cwd, model);
+    const store = new CodexStore(options.directory, options.client, cwd, model, effort);
     const server = new CodexAppServer(options.server);
     try {
       await server.connect();
       const state = store.read();
-      let response: { thread: { id: string }; model: string };
+      let response: { thread: { id: string }; model: string; reasoningEffort?: string | null };
       const resumed = state.threadId !== null;
       if (state.threadId) {
         // Only our own durable ID. No thread/list, guessed ID, rollout path, or imported history.
         response = await server.request('thread/resume', {
           threadId: state.threadId, model, cwd, sandbox: 'read-only', approvalPolicy: 'never', excludeTurns: true,
           developerInstructions: CODEX_DIAGNOSTIC_INSTRUCTIONS,
+          ...(options.effort !== undefined ? { config: { model_reasoning_effort: effort } } : {}),
         });
         if (response.thread?.id !== state.threadId) throw new HostError('codex_resume_binding_mismatch');
       } else {
@@ -57,6 +63,7 @@ export class CodexHostPort implements HostPort {
           model, allowProviderModelFallback: false, ephemeral: false, historyMode: 'paginated',
           cwd, sandbox: 'read-only', approvalPolicy: 'never',
           developerInstructions: CODEX_DIAGNOSTIC_INSTRUCTIONS,
+          ...(options.effort !== undefined ? { config: { model_reasoning_effort: effort } } : {}),
           ...(options.dynamicTools ? { dynamicTools: options.dynamicTools } : {}),
         });
         if (!response.thread?.id) throw new HostError('codex_thread_unconfirmed');
@@ -64,6 +71,9 @@ export class CodexHostPort implements HostPort {
       }
       // A changed or silently substituted model cannot receive a single diagnostic invocation.
       if (response.model !== model) throw new HostError('codex_requested_model_not_confirmed');
+      // Explicit selections require actual thread-response confirmation before any model turn.
+      // A provider that rejects/normalizes max cannot silently become a low-effort experiment.
+      if (options.effort !== undefined && response.reasoningEffort !== effort) throw new HostError('codex_requested_effort_not_confirmed');
       server.ownThread(response.thread.id);
       return new CodexHostPort(server, store, resumed, options.onModelRequestAccepted);
     } catch (error) { await server.close(); store.close(); throw error; }
@@ -118,6 +128,7 @@ export class CodexHostPort implements HostPort {
     if (item.hostThreadId !== this.binding.hostThreadId || item.generation !== this.binding.client.generation || digest(item.text) !== item.digest) throw new HostError('codex_context_binding_mismatch');
   }
   async invokeModel(request: ModelRequest): Promise<ModelWitness> {
+    this.server.assertNoModelReroute();
     if (request.hostThreadId !== this.binding.hostThreadId || request.generation !== this.binding.client.generation ||
         request.requestDigest !== digest(canonical({ hostThreadId: request.hostThreadId, generation: request.generation, contexts: request.contexts }))) throw new HostError('codex_model_request_binding_mismatch');
     if (!/^[a-zA-Z0-9-]{1,128}$/.test(request.invocationId)) throw new HostError('invalid_invocation_id');
@@ -129,7 +140,9 @@ export class CodexHostPort implements HostPort {
     // Validate diagnostic shape before spending any inference or sending arbitrary framing.
     expectedPublicResponse(request);
     const previous = this.store.read().invocations[request.invocationId];
+    const effort = this.store.read().effort ?? 'low';
     if (previous) {
+      if ((previous.effort ?? 'low') !== effort) throw new HostError('codex_invocation_effort_revision');
       if (canonical(previous.request) !== canonical(request)) throw new HostError('codex_invocation_revision');
       if (previous.status === 'verified') return this.witness(previous);
       if (previous.status === 'rejected') return { kind: 'unavailable', reason: 'public_response_did_not_bind_diagnostic_content' };
@@ -143,10 +156,10 @@ export class CodexHostPort implements HostPort {
       contexts: request.contexts.map(context => ({ contextDigest: context.digest, text: context.text })),
     });
     const completed = await this.server.runTurn({
-      threadId: request.hostThreadId, input: [], toolOutput: { name: 'ktchecker', output }, effort: 'low',
+      threadId: request.hostThreadId, input: [], toolOutput: { name: 'ktchecker', output }, effort,
     }, 120_000, evidence => {
       this.store.edit(state => { state.invocations[request.invocationId] = {
-        request, applicationRequest: evidence, turnId: null, status: 'uncertain', publicResponseDigest: null, publicItemId: null,
+        request, effort, applicationRequest: evidence, turnId: null, status: 'uncertain', publicResponseDigest: null, publicItemId: null,
       }; });
     }, turnId => {
       this.store.edit(state => { state.invocations[request.invocationId]!.turnId = turnId; });
@@ -155,6 +168,7 @@ export class CodexHostPort implements HostPort {
     return this.confirm(request, completed);
   }
   private confirm(request: ModelRequest, turn: PublicTurn): ModelWitness {
+    this.server.assertNoModelReroute();
     const response = turn.messages.find(message => verifyPublicResponse(message.text, request));
     this.store.edit(state => {
       const invocation = state.invocations[request.invocationId]!;
@@ -214,6 +228,7 @@ export class CodexHostPort implements HostPort {
     return Object.values(this.store.read().invocations).map(saved => ({
       evidenceLevel: 'application_request_and_content_bound_public_response',
       internalInferenceRequestTrace: false, model: 'gpt-6-astra',
+      effort: saved.effort ?? 'low',
       invocationId: saved.request.invocationId, requestDigest: saved.request.requestDigest,
       contextDigests: saved.request.contexts.map(item => item.digest),
       applicationRequest: saved.applicationRequest, turnId: saved.turnId,

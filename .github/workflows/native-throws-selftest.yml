@@ -1,0 +1,83 @@
+name: Repository Native throws self-test (first Mac eight)
+
+# Explicit repository testing only. This is not consumer-project consent,
+# binary-publication approval, default Native authority, or qualification.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_policy:
+        description: Authorize native-throws-first-mac-v1 repository tests; retries require a new dispatch
+        required: true
+        default: false
+        type: boolean
+      expected_commit:
+        description: Full 40-character SHA of the reviewed workflow and source commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-throws-selftest-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native-throws-first-mac:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_policy == true }}
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.1.app/Contents/Developer
+    steps:
+      - name: Require exact dispatch and workflow commit
+        env:
+          CONFIRM_POLICY: ${{ inputs.confirm_policy }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          EVENT_COMMIT: ${{ github.sha }}
+          WORKFLOW_COMMIT: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRM_POLICY" == 'true' ]]
+          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_COMMIT" == "$EVENT_COMMIT" ]]
+          [[ "$EXPECTED_COMMIT" == "$WORKFLOW_COMMIT" ]]
+          [[ "$GITHUB_RUN_ATTEMPT" == '1' ]]
+      - name: Check out the exact approved workflow commit
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Set up the declared Python runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Select broker and narrow component build JVM 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Select separate Native fixture project JVM 25
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Execute only the prior authorized fixed repository recipe
+        timeout-minutes: 75
+        env:
+          NATIVE_THROWS_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+        run: >-
+          python scripts/ci/run_native_throws_selftest.py
+          --policy native-throws-first-mac-v1
+          --expected-commit "$NATIVE_THROWS_EXPECTED_COMMIT"
+      - name: Retain only the two sanitized self-test summaries
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-throws-selftest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-native-throws-selftest/policy-build.json
+            build/ci-native-throws-selftest/native-throws-controls.json
+          if-no-files-found: error
+          retention-days: 7

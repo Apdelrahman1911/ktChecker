@@ -1,7 +1,7 @@
 import { lstat, readFile } from 'node:fs/promises';
 import * as z from 'zod/v4';
 import { PREVIEW_CONTRACT } from '@ktchecker/mcp-preview/rpc';
-import { assertPrivateStatePlatform } from '@ktchecker/mcp-preview/private-state';
+import { darwinPrivateStateBackend, nativePrivateStatePath } from '@ktchecker/mcp-preview/private-state';
 import { HostError } from './journal.js';
 
 const id = z.string().min(1).max(256);
@@ -19,7 +19,8 @@ export type HostConfig = z.infer<typeof hostConfigSchema>;
 
 /** Owner configuration, never a model tool parameter. POSIX mode is not same-UID isolation. */
 export async function readHostConfig(path: string): Promise<HostConfig> {
-  assertPrivateStatePlatform();
+  const backend = darwinPrivateStateBackend();
+  if (backend) return hostConfigSchema.parse(JSON.parse(backend.readConfig(nativePrivateStatePath(path)).toString('utf8')));
   const stat = await lstat(path);
   if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 1_048_576) throw new HostError('unsafe_host_configuration');
   if ((stat.mode & 0o077) !== 0 || (process.getuid && stat.uid !== process.getuid())) throw new HostError('host_configuration_permissions');

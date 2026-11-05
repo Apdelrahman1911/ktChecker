@@ -155,6 +155,7 @@ internal class ConfigPersistence(stateRoot: Path, private val observer: ConfigWr
 
     private companion object {
         const val MAX_DOCUMENT_BYTES = 16L * 1024 * 1024
+        const val DIRECTORY_SYNC_FAILURE = "Configuration directory synchronization failed; durability is unconfirmed."
         val ABSENT_DIGEST = Digests.sha256("ktchecker/config/absent/1")
         val JVM_LOCKS = ConcurrentHashMap<String, ReentrantLock>()
 
@@ -178,7 +179,15 @@ internal class ConfigPersistence(stateRoot: Path, private val observer: ConfigWr
         }
 
         fun forceDirectory(path: Path) {
-            FileChannel.open(path, READ).use { it.force(true) }
+            // Required on every host. Diagnostic normalization is not a fallback;
+            // replace() still marks a post-move failure as possiblyApplied.
+            try {
+                FileChannel.open(path, READ).use { it.force(true) }
+            } catch (error: IOException) {
+                throw ConfigReadException(DIRECTORY_SYNC_FAILURE, error)
+            } catch (error: UnsupportedOperationException) {
+                throw ConfigReadException(DIRECTORY_SYNC_FAILURE, error)
+            }
         }
     }
 }

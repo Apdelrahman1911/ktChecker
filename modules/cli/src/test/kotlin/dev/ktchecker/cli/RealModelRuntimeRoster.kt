@@ -1,0 +1,24 @@
+package dev.ktchecker.cli
+
+/** Independent fixed owner-manifest selection DATA. No new model report may enroll artifacts. */
+internal object RealModelRuntimeRoster {
+    const val OWNER_MANIFEST_SHA256 = "aac7ac1481e913646232b79b46fdf99ad847341d5d960e2be5b7021581733de7"
+    const val OWNER_MANIFEST_BYTES = 3315974
+    data class Entry(val ordinal: Int, val coordinate: String, val relativePath: String, val digest: String, val bytes: Long)
+    val compilerArtifacts: List<Entry> = listOf(
+        Entry(0, "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-compat/2.4.21/cb4697b622ca0fbc5bfd5ac5521d8603e21dc219/kotlin-build-tools-compat-2.4.21.jar", "sha256:9e71ba89b6d26e46a087d4f8b64bc2f0a774282ea779fc08b26527d0a80d4fe8", 135980L),
+        Entry(1, "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-impl/2.4.21/898086a64b68b1e9131900909e0fc056a782f37f/kotlin-build-tools-impl-2.4.21.jar", "sha256:3152b3e1fbaa4d48f3681734a2c0efc438359a48c8a3c5cac00d874670de1377", 3456633L),
+        Entry(2, "org.jetbrains.kotlin:kotlin-tooling-core:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-tooling-core/2.4.21/a92e365882e147d1054b6245d2aa822cbaa77ad6/kotlin-tooling-core-2.4.21.jar", "sha256:5fc5db083803232857408ed5c25bcc307c703b04bdef6cb2c34ebf4db611a622", 89152L),
+        Entry(3, "org.jetbrains.kotlin:kotlin-build-tools-cri-impl:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-cri-impl/2.4.21/f4d2161fc6a0a6f727bc673b8c90ebb0cad4c479/kotlin-build-tools-cri-impl-2.4.21.jar", "sha256:d1849f9b98033f5333905409074ca90e6a0e17258cd0eb8befa47d795e695841", 568963L),
+        Entry(4, "org.jetbrains.kotlin:kotlin-compiler-runner:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-runner/2.4.21/74c995efdbc8e7347b42d33af076920daee81064/kotlin-compiler-runner-2.4.21.jar", "sha256:75cd5956405697559e6925ebc5808449a2e12002d4f017275281ad3d4c0c7985", 20367L),
+        Entry(5, "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-compiler-embeddable/2.4.21/3cd9c37c505fb9879e03ebeaf91d9c9500ab6eca/kotlin-compiler-embeddable-2.4.21.jar", "sha256:ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02", 58593291L),
+        Entry(6, "org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-build-tools-api/2.4.21/f5fd68c20ba38519b91ab2411b004a1730453d6f/kotlin-build-tools-api-2.4.21.jar", "sha256:c5cd6a49bd072b529ae10809111c16a7aa0f92147e95d288354017fd65799461", 468126L),
+        Entry(7, "org.jetbrains.kotlin:kotlin-daemon-client:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-client/2.4.21/6fc0b01cd07b02b22ec967a50f6aa7677ea9c0c9/kotlin-daemon-client-2.4.21.jar", "sha256:095903c4c4713bf91a562d226d7ba0464cf5424e76342d487deec494451ab29b", 265893L),
+        Entry(8, "org.jetbrains.kotlin:kotlin-stdlib:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.4.21/c343e135bd1e7dd94b7ed76b4159068d888d09db/kotlin-stdlib-2.4.21.jar", "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3", 1853315L),
+        Entry(9, "org.jetbrains:annotations:13.0", "caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar", "sha256:ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478", 17536L),
+        Entry(10, "org.jetbrains.kotlin:kotlin-script-runtime:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-script-runtime/2.4.21/abc7ff9f7e229cb6bdfadad81e93c871e6cdde41/kotlin-script-runtime-2.4.21.jar", "sha256:a658cf5902a1525a06c264a5e42b437e97a6679ddeef8ca641246f270cf6a013", 46533L),
+        Entry(11, "org.jetbrains.kotlin:kotlin-reflect:1.6.10", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-reflect/1.6.10/1cbe9c92c12a94eea200d23c2bbaedaf3daf5132/kotlin-reflect-1.6.10.jar", "sha256:3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203", 3038560L),
+        Entry(12, "org.jetbrains.kotlin:kotlin-daemon-embeddable:2.4.21", "caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-daemon-embeddable/2.4.21/5d9b0394b3ff65cd3dd33c6c31a2956b1d59885a/kotlin-daemon-embeddable-2.4.21.jar", "sha256:7b3ef24674e5bcffcadfc4e43202ea314194939ecbcdd90a4770b2f1b04e0d07", 393410L),
+        Entry(13, "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0", "caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm/1.8.0/ac1dc37a30a93150b704022f8d895ee1bd3a36b3/kotlinx-coroutines-core-jvm-1.8.0.jar", "sha256:9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5", 1548360L)
+    )
+}

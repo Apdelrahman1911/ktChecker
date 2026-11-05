@@ -1,0 +1,23 @@
+{
+  "compilation": "main",
+  "embedded_parser_version": "2.2.21",
+  "execution_backend": "owned_child_native_supervisor_preview1",
+  "host_compiler_version": "2.4.21",
+  "id": "ktlint-syntax-fixtures-native-preview1",
+  "jdk_version": "21.0.12",
+  "kotlin_version": "2.2.21",
+  "library_versions": {
+    "compose-rules": "0.6.8"
+  },
+  "module": ":ktlint-fixture",
+  "native_qualification": false,
+  "runtime_code_image_digest": "sha256:f0de15bd471311772028bbe08425588a2fb76702daa764b4a0f440ac8f868b31",
+  "runtime_execution_source_digest": "sha256:38b51316e03eb622099fede43ff678e6417aed3c347e0a9acfa1e63f6e7eebfd",
+  "scope_note": "Synthetic Kotlin2.2.21 syntax profile only; not an actual project KGP/Compose semantic qualification.",
+  "source_set": "main",
+  "supervisor_binary_digest": "sha256:c6f16891a34b53847c780d1af7972d78f613e631341e621404ca121c6332fb63",
+  "supervisor_protocol_version": "ktchecker-owned-child-supervisor/preview-1",
+  "supervisor_source_digest": "sha256:453468d9b07489c79ac4a061e9ae9fc6d00d58d98c473670bb6885e3f23ea0fe",
+  "supervisor_target": "linux-x86_64",
+  "target": "jvm"
+}

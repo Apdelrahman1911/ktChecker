@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-expansion-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+  "upstream_id": "libraries:ForbiddenPublicDataClass",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "catalog_record_sha256": "b721b896dcb11b14a6f9f7f5192d82c049c934251313e84d1ca5157755baa352",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-libraries/src/main/kotlin/dev/detekt/rules/libraries/ForbiddenPublicDataClass.kt",
+    "source_file_sha256": "15a02808ce122253f78853d40b6fb5c1f6df845fbc226951b5c09b54b4880498",
+    "predicate_line_numbers": [
+      15,
+      34,
+      35,
+      39,
+      42,
+      46,
+      49,
+      50,
+      51,
+      53
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/libraries/ForbiddenPublicDataClass",
+      "artifact": "detekt-rules-libraries-2.0.0-alpha.6.jar",
+      "entry_sha256": "sha256:50dd65cd4556092a5389fe01eae69db4afb1552b0dc7f6aa253e9af870554d31"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "Outside configured ignorePackages (default *.internal and *.internal.*), visit public/protected class scopes and report data class names; internal/private classes stop this visitor descent.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.publicdata.api\n\ndata class ExportedRecord(val id: Long)\n\nopen class PublicEnvelope {\n    protected data class ProtectedRecord(val id: Long)\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 11,
+        "end_line": 3,
+        "end_column": 25,
+        "span": "ExportedRecord",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 6,
+        "column": 25,
+        "end_line": 6,
+        "end_column": 40,
+        "span": "ProtectedRecord",
+        "occurrence": 0
+      }
+    ],
+    "intent": "An implicit public data class and a protected data class in a public envelope are both part of the opted-in library API policy."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.publicdata.api\n\ninternal data class InternalRecord(val id: Long)\nprivate data class PrivateRecord(val id: Long)\n\ninternal class InternalContainer {\n    data class NestedRecord(val id: Long)\n}\n\nclass ExplicitRecord(val id: Long)\n"
+    },
+    "expected": [],
+    "intent": "Internal/private data types and public ordinary classes are legal alternatives; a nested default-public data class cannot make its internal enclosing class externally visible."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.publicdata.api\n\ndata class ExportedRecord(val id: Long)\n\nopen class PublicEnvelope {\n    protected data class ProtectedRecord(val id: Long)\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"ForbiddenPublicDataClass\")\n\npackage suppressed.corpus.publicdata.api\n\ndata class ExportedRecord(val id: Long)\n\nopen class PublicEnvelope {\n    protected data class ProtectedRecord(val id: Long)\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 11,
+        "end_line": 3,
+        "end_column": 25,
+        "span": "ExportedRecord",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 6,
+        "column": 25,
+        "end_line": 6,
+        "end_column": 40,
+        "span": "ProtectedRecord",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.publicdata.internal\n\ndata class InternalNamespaceRecord(val id: Long)\n"
+      },
+      "expected": [],
+      "intent": "The default internal-package glob skips a class which is still publicly declared. Preserve this deliberate policy exception without claiming language-level internal visibility.",
+      "id": "internal-package-name-is-not-visibility",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.publicdata.internal\n\ndata class InternalNamespaceRecord(val id: Long)\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 11,
+          "end_line": 3,
+          "end_column": 34,
+          "span": "InternalNamespaceRecord",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Set the genuine ignorePackages option to an empty list: the same public class now reports. An empty configured list must not be replaced with the default exemptions.",
+      "id": "empty-ignore-list-reports-public-internal-package",
+      "case_kind": "configuration",
+      "assessment": "owner_configured_policy_boundary",
+      "options": {
+        "ignorePackages": []
+      }
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.publicdata.application\n\n// End-user application state is intentionally a public data value, not a library ABI promise.\ndata class ScreenState(val page: Int, val title: String)\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 11,
+          "end_line": 4,
+          "end_column": 22,
+          "span": "ScreenState",
+          "occurrence": 0
+        }
+      ],
+      "intent": "A final application may intentionally use public data state. The explicitly selected library convention still reports, but this is not a universal Kotlin correctness or ABI-break finding.",
+      "id": "application-state-has-no-library-abi-promise",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit"
+    }
+  ],
+  "limitations": [
+    "Explicit opt-in library binary-compatibility convention only. No baseline ABI, consumer graph, released artifact or actual compatibility break is analyzed.",
+    "An ignored package is a name-based exemption, not Kotlin visibility. Internal/private enclosing scopes stop visitor recursion by the pinned source predicate.",
+    "The public application-state result is retained as a policy limit, never represented as a universal defect or silently filtered.",
+    "No real library compilation, ABI measurement, version equivalence or release qualification."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, performance, parser, semantic, model or release qualification."
+}

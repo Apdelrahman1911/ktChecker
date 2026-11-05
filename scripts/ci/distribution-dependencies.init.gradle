@@ -10,10 +10,13 @@ import org.gradle.maven.MavenPomArtifact
 gradle.projectsEvaluated {
     def cli = gradle.rootProject.findProject(':cli')
     if (cli == null) throw new GradleException('CLI project is required for distribution inventory')
+    def compiler = gradle.rootProject.findProject(':provider-compiler')
+    if (compiler == null) throw new GradleException('Compiler project is required for distribution inventory')
+    def modelWorker = compiler.tasks.named('compilerModelApplicationWorkerJar')
     cli.tasks.register('writeDistributionDependencyManifest') {
         group = 'distribution'
         description = 'Record actual resolved distribution artifacts and their exact Maven POMs.'
-        dependsOn(cli.tasks.named('installDist'))
+        dependsOn(cli.tasks.named('installDist'), modelWorker)
         def destination = gradle.rootProject.file(
             gradle.rootProject.providers.gradleProperty('distributionDependencyManifest')
                 .orElse('build/ci-evidence/raw/distribution-dependencies.json').get())
@@ -59,6 +62,12 @@ gradle.projectsEvaluated {
             def archive = cli.tasks.named('jar').get().archiveFile.get().asFile
             artifacts << [coordinate: "${cli.group}:${cli.name}:${cli.version}", origin: 'owner_project',
                 configuration: 'application', artifactIdentity: ':cli:jar', file: archive.absolutePath, pom: null]
+            // This packaging-only JAR is deliberately absent from runtimeClasspath.
+            // Bind the actual reviewed task output and producer identity, not a guessed filename coordinate.
+            def modelArchive = modelWorker.get().archiveFile.get().asFile
+            artifacts << [coordinate: "${compiler.group}:${compiler.name}:${compiler.version}", origin: 'owner_project',
+                configuration: 'bundledCompilerModel', artifactIdentity: modelWorker.get().path,
+                file: modelArchive.absolutePath, pom: null]
             if (artifacts.any { !new File(it.file).isFile() }) throw new GradleException('Resolved distribution artifact bytes are absent')
             def value = [schemaVersion: 1, producer: 'gradle-resolved-distribution-artifacts/1',
                 gradleVersion: gradle.gradleVersion, project: ':cli',

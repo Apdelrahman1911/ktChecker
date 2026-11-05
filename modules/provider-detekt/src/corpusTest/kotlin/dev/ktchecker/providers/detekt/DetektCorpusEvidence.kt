@@ -25,11 +25,11 @@ import kotlinx.serialization.json.*
  * Directory creation is checked before/after against stable keys; the selected owner
  * must keep ancestor directories stable. This is not hostile same-user/ABA attestation.
  */
-internal class DetektCorpusEvidence(repository: Path, selected: String?) : AutoCloseable {
+internal class DetektCorpusEvidence(repository: Path, selected: String?, val cohort: DetektCorpusCohort) : AutoCloseable {
     val repository: Path = repository.toAbsolutePath().normalize()
     val root: Path = selectedRoot(this.repository, selected)
     val runDirectory: Path
-    val liveRelative: Path = Path.of("evidence/verified-jvm-syntax-corpus-${DetektCorpusCohort.NAME}-native-preview1.json")
+    val liveRelative: Path = Path.of("evidence/verified-jvm-${cohort.evidenceStem}-${cohort.name}-native-preview1.json")
     private val directoryKeys = linkedMapOf<Path, String>()
     private val fileKeys = linkedMapOf<Path, String>()
     private var bytesWritten = 0L
@@ -48,7 +48,7 @@ internal class DetektCorpusEvidence(repository: Path, selected: String?) : AutoC
         handle.use {
             require(key(it.getFileAttributeView(BasicFileAttributeView::class.java).readAttributes()) == directoryKeys.getValue(root))
         }
-        val runName = "${Instant.now().toString().replace(':', '-')}-${UUID.randomUUID().toString().take(8)}-syntax-corpus-${DetektCorpusCohort.NAME}"
+        val runName = "${Instant.now().toString().replace(':', '-')}-${UUID.randomUUID().toString().take(8)}-${cohort.evidenceStem}-${cohort.name}"
         ensureDirectory(root.resolve("runs"))
         runDirectory = root.resolve("runs/$runName")
         // A pre-existing run, even a regular directory, must never be reused.
@@ -87,7 +87,7 @@ internal class DetektCorpusEvidence(repository: Path, selected: String?) : AutoC
 
     fun publish(sidecar: JsonObject, finalGate: () -> Unit = {}): JsonObject {
         require(sidecar["provider_id"]?.jsonPrimitive?.content == "detekt")
-        require(sidecar["context"]?.jsonObject?.get("corpus_cohort")?.jsonPrimitive?.content == DetektCorpusCohort.NAME)
+        require(sidecar["context"]?.jsonObject?.get("corpus_cohort")?.jsonPrimitive?.content == cohort.name)
         val committed = JsonObject(sidecar + mapOf(
             "candidate_only" to JsonPrimitive(false), "run_complete" to JsonPrimitive(true), "publication_committed" to JsonPrimitive(true)))
         val bytes = committed.toString().toByteArray(Charsets.UTF_8)
@@ -172,7 +172,7 @@ internal class DetektCorpusEvidence(repository: Path, selected: String?) : AutoC
             require(key(attributes(directory, liveRelative.fileName)) == expected)
             val item = Json.parseToJsonElement(bytes.toString(Charsets.UTF_8)).jsonObject
             require(item["schema_version"]?.jsonPrimitive?.int == 1 && item["provider_id"]?.jsonPrimitive?.content == "detekt")
-            require(item["context"]?.jsonObject?.get("corpus_cohort")?.jsonPrimitive?.content == DetektCorpusCohort.NAME) {
+            require(item["context"]?.jsonObject?.get("corpus_cohort")?.jsonPrimitive?.content == cohort.name) {
                 "Existing sidecar is not attributed to the explicitly selected cohort; refusing deletion"
             }
             verifyDirectories()

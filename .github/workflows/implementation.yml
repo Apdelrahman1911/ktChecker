@@ -10,18 +10,21 @@ permissions:
   contents: read
 
 concurrency:
-  group: implementation-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: implementation-${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   checker-host:
     name: JVM 21 checker build and installed launcher (${{ matrix.os }})
+    # Provisional Windows headroom; POSIX bounds and required checks are unchanged.
     strategy:
       fail-fast: false
       max-parallel: 3
       matrix:
         include:
           - os: ubuntu-24.04
+            python_timeout_seconds: 480
+            job_timeout_minutes: 30
             supervisor_python: python3
             supervisor_cc_argument: '--cc /usr/bin/cc'
             supervisor_cc_property: '-PnativeSupervisorCc=/usr/bin/cc'
@@ -29,6 +32,8 @@ jobs:
             library_opt_in: 'true'
             evidence_profile: checker-host-supported-library-controls
           - os: windows-2025
+            python_timeout_seconds: 1200
+            job_timeout_minutes: 60
             supervisor_python: python
             supervisor_cc_argument: ''
             supervisor_cc_property: ''
@@ -36,6 +41,8 @@ jobs:
             library_opt_in: 'false'
             evidence_profile: checker-host-windows-portability
           - os: macos-26
+            python_timeout_seconds: 480
+            job_timeout_minutes: 30
             supervisor_python: python3
             supervisor_cc_argument: '--cc /usr/bin/cc'
             supervisor_cc_property: '-PnativeSupervisorCc=/usr/bin/cc'
@@ -43,7 +50,7 @@ jobs:
             library_opt_in: 'true'
             evidence_profile: checker-host-supported-library-controls
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: ${{ matrix.job_timeout_minutes }}
     steps:
       - name: Enable Windows long paths before checkout
         if: runner.os == 'Windows'
@@ -70,7 +77,7 @@ jobs:
           python scripts/ci/run_python_checks.py --start-directory scripts/ci
           --output build/ci-evidence/python/python-checks.json
           --junit build/ci-evidence/python/python-checks.xml
-          --host "${{ matrix.os }}" --require-ci-context --timeout 480
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
       - name: Verify synthetic Lint receipt privacy without relying on Python assertions
         if: runner.os == 'Linux'
         run: |
@@ -142,11 +149,17 @@ jobs:
           --require-task :contracts:test --require-task :audit:test
           --require-task :kernel:test --require-task :project-model:test
           --require-task :provider-architecture:test --require-task :review-controller:test
+          --require-task :worker-protocol:test --require-task :provider-compiler:test
+          --require-task :provider-compiler:workerTest
+          --require-task :worker-protocol:modelWireTest --require-task :provider-compiler:modelWorkerTest
+          --require-task :provider-compiler:compilerModelApplicationWorkerJar
+          --require-task :provider-build-contracts:test
           --require-task :provider-runtime:buildOwnedProcessSupervisor --require-task :provider-runtime:test
           --require-task :provider-runtime:buildOwnedLiveProcessSupervisor
           --require-task :provider-detekt:test --require-task :provider-ktlint:test
           --require-task :cli:installDist --require-task :cli:distZip --require-task :cli:distTar
-          -- --rerun-tasks --no-build-cache test :cli:installDist :cli:distZip :cli:distTar
+          -- --rerun-tasks --no-build-cache test :worker-protocol:modelWireTest :provider-compiler:modelWorkerTest
+          :provider-build-contracts:test :cli:installDist :cli:distZip :cli:distTar
           -PdetektIntegration=${{ matrix.library_opt_in }} -PktlintIntegration=${{ matrix.library_opt_in }}
           -PlibraryFixtureEvidenceRoot=build/ci-evidence/raw/library-fixtures
           -PnativeSupervisorPython=${{ matrix.supervisor_python }} ${{ matrix.supervisor_cc_property }}
@@ -188,6 +201,26 @@ jobs:
           --output build/ci-evidence/package-report.json
           --sbom build/ci-evidence/distribution.cdx.json
           --notice build/ci-evidence/NOTICE.dependency-report.txt
+      - name: Compare actual ZIP and TAR manifests with staged installation
+        id: distribution_archive_integrity
+        if: success() && (runner.os == 'Linux' || runner.os == 'macOS')
+        timeout-minutes: 3
+        # Exact Gradle distributionBaseName/version, not a wildcard selection.
+        # Read-only decoded bytes/names/executable flags; no extraction/runtime,
+        # license approval, historical build binding or atomic upload snapshot.
+        run: >-
+          python scripts/ci/verify_distribution_archives.py
+          --installation modules/cli/build/install/ktchecker
+          --expected-prefix ktchecker-0.1.0-dev.1
+          --archive modules/cli/build/distributions/ktchecker-0.1.0-dev.1.zip
+          --archive modules/cli/build/distributions/ktchecker-0.1.0-dev.1.tar
+          --output build/ci-evidence/distribution-archives.json
+      - name: Declare Windows archive verification unavailable and upload blocked
+        if: always() && runner.os == 'Windows'
+        # Informational only: the verifier step stays skipped, not successful.
+        # Windows build/test/package scope is unchanged; no emulated POSIX pass.
+        run: >-
+          echo "Archive verification unavailable on Windows: POSIX no-follow required; preview archive upload remains blocked."
       - name: Require reviewed licenses before owner-approved preview distribution upload
         id: distribution_upload_license_review
         if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true'
@@ -213,16 +246,38 @@ jobs:
           --require-report "modules/contracts/build/test-results/test/*.xml"
           --require-report "tests/audit/build/test-results/test/*.xml"
           --require-report "modules/kernel/build/test-results/test/*.xml"
+          --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionBarrierTest.xml"
+          --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionAuditCodecTest.xml"
           --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelPlanIntegrationTest.xml"
           --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelStressTest.xml"
           --require-report "modules/project-model/build/test-results/test/*.xml"
           --require-report "modules/provider-architecture/build/test-results/test/*.xml"
           --require-report "modules/review-controller/build/test-results/test/*.xml"
+          --require-report "modules/review-controller/build/test-results/test/TEST-dev.ktchecker.reviewcontroller.OwnerIntegratedCompletionRegistryTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.GradleWrapperChecksumProviderTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.InstalledWrapperContextTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperActivationPolicyBoundsTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperPropertiesTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperChecksumConsumerIntegrationTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperRulePolicyIntegrationTest.xml"
           --require-report "modules/provider-runtime/build/test-results/test/*.xml"
+          --require-report "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.ApplicationWireTest.xml"
+          --require-report "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.CompilerJobWireTest.xml"
+          --require-report "modules/worker-protocol/build/test-results/modelWireTest/TEST-dev.ktchecker.workerprotocol.CompilerModelWireTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerApplicationLifecycleTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerLiveHostAuthorityTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerLiveRenderingTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/workerTest/TEST-dev.ktchecker.compilerworker.live.CompilerApplicationLifecycleTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/workerTest/TEST-dev.ktchecker.compilerworker.live.CompilerApplicationFilesystemTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationFilesystemTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationLifecycleTest.xml"
+          --require-report "modules/provider-runtime/build/test-results/test/TEST-dev.ktchecker.providers.runtime.OwnedApplicationSessionsTest.xml"
+          --require-report "modules/provider-runtime/build/test-results/test/TEST-dev.ktchecker.providers.runtime.OwnedApplicationTypesTest.xml"
           --require-tests
           --require-artifact "modules/kernel/build/reports/stress/kernel-100-patches.json"
           --require-artifact "modules/cli/build/distributions/*.zip"
           --require-artifact "modules/cli/build/distributions/*.tar"
+          --artifact build/ci-evidence/distribution-archives.json
           --command-result build/ci-evidence/gradle-version.json
           --command-result build/ci-evidence/supervisor-prerequisites.json
           --command-result build/ci-evidence/supervisor-controls.json
@@ -262,13 +317,14 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Retain the actual tested unsigned preview distribution
-        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true' && steps.distribution_upload_license_review.outcome == 'success'
+        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true' && steps.distribution_upload_license_review.outcome == 'success' && steps.distribution_archive_integrity.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: unsigned-preview-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            modules/cli/build/distributions/*.zip
-            modules/cli/build/distributions/*.tar
+            modules/cli/build/distributions/ktchecker-0.1.0-dev.1.zip
+            modules/cli/build/distributions/ktchecker-0.1.0-dev.1.tar
+            build/ci-evidence/distribution-archives.json
             build/ci-evidence/package-report.json
             build/ci-evidence/distribution.cdx.json
             build/ci-evidence/NOTICE.dependency-report.txt

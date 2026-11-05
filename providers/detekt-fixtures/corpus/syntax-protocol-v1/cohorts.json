@@ -1,0 +1,150 @@
+{
+  "schema": "ktchecker/detekt-syntax-protocol-cohort-proposal/1",
+  "state": "CONNECTED_SOURCE_CANDIDATE_UNCOMPILED_UNEXECUTED_NOT_ADMITTED",
+  "corpus_id": "detekt-syntax-protocol-v1",
+  "default_cohort": null,
+  "allowed_cohort_names": [
+    "protocol-and-catch-boundaries-v1"
+  ],
+  "multi_cohort_or_all_selector_allowed": false,
+  "scope_reference": "providers/detekt-fixtures/corpus/syntax-protocol-v1/scope.json",
+  "scope_sha256": "572f28d2a60acddc1624bd9cbacfee5bbaf5d397e12545a6a5121f3b2f4d45a6",
+  "cohorts": [
+    {
+      "cohort_id": "protocol-and-catch-boundaries-v1",
+      "selected_rules": [
+        {
+          "rule_id": "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception",
+          "upstream_id": "potential-bugs:IteratorNotThrowingNoSuchElementException",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/iterator-not-throwing-no-such-element-exception.json",
+          "fixture_sha256": "948e040ddb8dc8ee7b4b4a03f28b5f99c286488ac067cf2b8de0bd0f9d94a421",
+          "analyses": 9,
+          "default_activation": "advisory"
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter",
+          "upstream_id": "potential-bugs:WrongEqualsTypeParameter",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/wrong-equals-type-parameter.json",
+          "fixture_sha256": "7d61a3327c1711387d2afafe2632518930fe9e1e01ca3f6403776ca9273465e6",
+          "analyses": 9,
+          "default_activation": "advisory"
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.exceptions.too-generic-exception-caught",
+          "upstream_id": "exceptions:TooGenericExceptionCaught",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/too-generic-exception-caught.json",
+          "fixture_sha256": "e6ec648a998557360fc0f102021b174465174074ecb63f95f724cfc770e50ff9",
+          "analyses": 9,
+          "default_activation": "opt_in"
+        }
+      ],
+      "case_matrix_path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/cohorts/protocol-and-catch-boundaries-v1.json",
+      "case_matrix_sha256": "dd92538470b9221d71d471c9aadf632cb05084cdeba10e261c72200004e36701",
+      "plan_identity": {
+        "schema": "ktchecker/detekt-syntax-protocol-cohort-identity/1",
+        "cohort_id": "protocol-and-catch-boundaries-v1",
+        "selected_rules": [
+          {
+            "rule_id": "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception",
+            "upstream_id": "potential-bugs:IteratorNotThrowingNoSuchElementException",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/iterator-not-throwing-no-such-element-exception.json",
+            "fixture_sha256": "948e040ddb8dc8ee7b4b4a03f28b5f99c286488ac067cf2b8de0bd0f9d94a421",
+            "analyses": 9,
+            "default_activation": "advisory"
+          },
+          {
+            "rule_id": "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter",
+            "upstream_id": "potential-bugs:WrongEqualsTypeParameter",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/wrong-equals-type-parameter.json",
+            "fixture_sha256": "7d61a3327c1711387d2afafe2632518930fe9e1e01ca3f6403776ca9273465e6",
+            "analyses": 9,
+            "default_activation": "advisory"
+          },
+          {
+            "rule_id": "ktc.kotlin.detekt.exceptions.too-generic-exception-caught",
+            "upstream_id": "exceptions:TooGenericExceptionCaught",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/too-generic-exception-caught.json",
+            "fixture_sha256": "e6ec648a998557360fc0f102021b174465174074ecb63f95f724cfc770e50ff9",
+            "analyses": 9,
+            "default_activation": "opt_in"
+          }
+        ],
+        "case_matrix_sha256": "dd92538470b9221d71d471c9aadf632cb05084cdeba10e261c72200004e36701",
+        "scope_sha256": "572f28d2a60acddc1624bd9cbacfee5bbaf5d397e12545a6a5121f3b2f4d45a6",
+        "limits": {
+          "max_invocations": 40,
+          "aggregate_millis": 1200000,
+          "child_millis": 60000
+        },
+        "planned_invocations": {
+          "detector_analysis": 27,
+          "changed_configuration_authorization_denial": 3,
+          "cli_probe": 1,
+          "unsupported_target_abstention": 6
+        },
+        "previous_stages_accepted": false,
+        "aggregate_context_activation": false,
+        "integration_contract_sha256": "e99e21efc8673f4bb042fa19e9dd1b9fd0a3a7b4f8fcf9018d53cccbad46a775",
+        "requires_explicit_owner_opt_in": true,
+        "opt_in_rule_ids": [
+          "ktc.kotlin.detekt.exceptions.too-generic-exception-caught"
+        ]
+      },
+      "plan_identity_sha256": "c832b3938eb553dad22bf483db5780dde8571b86b83679f20064c95fdf2356ad",
+      "counts": {
+        "authored_analyses": 27,
+        "all_calls": 37,
+        "native_launch_ceiling": 28,
+        "expected_runtime_callbacks": 31,
+        "planned_progress_events": 113,
+        "independent_controls": 9,
+        "authored_alert_bearing_analyses": 15,
+        "authored_zero_finding_analyses": 12,
+        "authored_expected_finding_observations": 18,
+        "unique_rule_source_sets": 17,
+        "unique_rule_source_configuration_sets": 21,
+        "independent_control_assessments": {
+          "anticipated_upstream_false_positive": 4,
+          "anticipated_upstream_false_negative": 2,
+          "predicate_boundary": 1,
+          "opt_in_policy_limit": 1,
+          "owner_configured_policy_boundary": 1
+        },
+        "actual_executions": 0,
+        "actual_findings": null,
+        "natural_project_observations": 0,
+        "precision_reviewed_natural_observations": 0
+      },
+      "requires_explicit_owner_opt_in": true,
+      "opt_in_rule_ids": [
+        "ktc.kotlin.detekt.exceptions.too-generic-exception-caught"
+      ],
+      "runtime_registration_state": "connected_source_candidate_uncompiled_unexecuted",
+      "execution_admitted": false,
+      "proposed_sidecar": "evidence/verified-jvm-syntax-protocol-protocol-and-catch-boundaries-v1-native-preview1.json"
+    }
+  ],
+  "unchanged_hard_maxima": {
+    "max_invocations": 40,
+    "aggregate_millis": 1200000,
+    "child_millis": 60000,
+    "progress_events": 124
+  },
+  "required_admission": "Independent source review and adoption, fresh compile/control verification, exact one-cohort source/code/data-bound owner admission including the mixed opt-in policy, and an unchanged runtime budget. Registration alone is not consent or evidence.",
+  "full_scope_retained": {
+    "existing_fixtures": 16,
+    "existing_analyses": 145,
+    "new_fixtures": 3,
+    "new_analyses": 27,
+    "proposed_combined_fixtures": 19,
+    "proposed_combined_analyses": 172
+  },
+  "actual_tests_executed": 0,
+  "actual_provider_invocations": 0,
+  "historical_stage_transfer": 0,
+  "additive_registry_and_control_code_changes": true,
+  "old_data_registry_or_fixture_bytes_changed": false,
+  "old_fixture_expectations_or_plan_identities_changed": false,
+  "integration_contract_path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/integration-contract.json",
+  "integration_contract_sha256": "e99e21efc8673f4bb042fa19e9dd1b9fd0a3a7b4f8fcf9018d53cccbad46a775"
+}

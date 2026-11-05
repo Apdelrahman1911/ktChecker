@@ -30,8 +30,17 @@ qualification. Windows remains explicitly unavailable pending Job Objects.
    failure at the bounded deadline, not more signals using a recycled number.
 6. Darwin reaps the leader, then only **observes** `kill(-pgid, 0)` until ESRCH.
    A now-reused ID can prevent success but cannot trigger another real signal.
-   EPERM/unknown observation fails closed. Actual Darwin execution requires its
-   own native CI; Linux tests are not Darwin evidence.
+   EPERM/unknown observation is not an emptiness proof: it stays unverified and
+   may only be followed by another read-only observation within the same cleanup
+   budget. An inconclusive signal delivery or group observation is retained in
+   separate internal history, not confused with a loss of wait custody. Only a
+   valid leader reap plus the platform's independent empty-set/group proof can
+   resolve that uncertainty. Substantive ownership/wait failures remain sticky.
+   The first quiescence proof uses a fresh monotonic timestamp strictly before
+   the original cleanup deadline; expiry/clock failure cannot later recover.
+   A timely proof is not withdrawn merely because output is still draining.
+   Actual Darwin execution requires its own native CI; Linux models are not
+   Darwin evidence.
 
 The child reports setup/exec failure over the private readiness pipe. EOF alone
 does **not** prove exec: a child may have died between `G` and `execv`.
@@ -234,3 +243,14 @@ the lifetime ordering; it **does not manufacture actual PID reuse**, prove every
 scheduler interleaving, or substitute for the ownership invariant/source audit.
 Temporary binaries and raw traces are deleted. This suite is distinct from JVM
 in-memory parser tests and actual host/architecture/provider qualification.
+
+A separate `MockedShutdownStateTest` class compiles a deterministic no-child C
+state model with all wait, kill, and clock calls replaced. It selects the
+read-only group-observation algorithm after loading the real host headers; this
+is not a Darwin ABI build or evidence of any real syscall's errno. The seven
+`mocked_shutdown_state` methods retain provisional error history, require the
+independent modeled reap/empty-group proof, reject unresolved/reused groups and
+late proofs, preserve substantive failures, and guard post-reap signal authority.
+They are reported separately from the unchanged eighteen actual native methods;
+the two existing Linux-only controls remain explicit skips on macOS. Passing
+these models cannot substitute for actual macOS or Linux process controls.
