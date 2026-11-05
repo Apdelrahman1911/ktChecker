@@ -73,7 +73,14 @@ Windows equivalents use `gradlew.bat` and `bin\ktchecker.bat`. Add the installed
 `bin` directory to your own PATH, or unpack a tested CI preview archive and use its
 launcher. Keep **the whole distribution** together: `lib` contains the engine and
 `providers/compiler` contains the isolated compiler, not engine-classloader
-plugins. Java is not bundled. Archives are unsigned previews; check actual
+plugins. New source builds also package the exact
+`:provider-compiler:compilerModelApplicationWorkerJar` output at
+`providers/compiler-model/ktchecker-compiler-model-application-preview-1.jar`.
+This four-family JDK-only worker stays outside both `lib` and the ordinary
+`providers/compiler` scan; packaging it does **not** authorize or activate a model
+compiler job. The retained doctor-only handoff above predates this wiring and
+must not be credited with the new worker or a new runtime command.
+Java is not bundled. Archives are unsigned previews; check actual
 commit/SHA-256 evidence rather than treating the file name as provenance.
 
 CI continues building, testing and inventorying packages, but **archive uploads
@@ -103,6 +110,40 @@ detected drift, mismatch or unconfirmed report delivery cannot pass the verifier
 This is authored workflow wiring, not evidence of a hosted run. The comparison
 does not establish historical source/build provenance, an atomic snapshot through
 upload, licensing, signing or release qualification.
+
+### Read-only model-worker packaging acceptance
+
+The current dependency manifest includes one `bundledCompilerModel` owner-project
+record from the actual reviewed task. `report_distribution.py` now requires that
+record and checks the isolated installed worker against its built bytes, manifest,
+four class families and Java 21 headers. It rejects test/host/dependency resources
+and worker classes in ordinary engine/compiler JARs. Old manifests are historical
+evidence, not current packaging acceptance. Owner licensing and all existing
+dependency/NOTICE/publication gates remain separate and unchanged.
+
+After an explicitly authorized **fresh** build, select the `file` recorded for
+artifact identity `:provider-compiler:compilerModelApplicationWorkerJar` in the
+Gradle dependency manifest; do not infer task provenance from a JAR's filename.
+The same read-only check is independently available below. The report's existing
+parent must be link-free; the report itself must be new and outside the install:
+
+```sh
+python3 scripts/ci/verify_model_worker_distribution.py \
+  --installation /owner/staged/ktchecker \
+  --built-worker /owner/task-output/ktchecker-compiler-model-application-preview-1.jar \
+  --output /owner/reports/model-worker-packaging.json
+```
+
+Exit `0` requires matching observed independent files, supported bounded JAR
+inventories and confirmed new-report delivery. No files are extracted and no JVM,
+compiler, native helper or model is launched. The check inspects class **headers**,
+not JVM bytecode validity or historical source/build provenance. Before/after path
+and stat checks reject observed links/drift; they do not promise hostile-writer
+atomicity, runtime success, licensing approval or release qualification. Usable
+filesystem identities are required: same-file aliases cannot prove independent
+copies, and a report-parent alias into any observed image directory is rejected.
+
+### Whole-distribution archive comparison
 
 For an explicit staged installation and existing local archives, the read-only
 archive verifier compares decoded file bytes, names and executable flags without
@@ -378,10 +419,13 @@ rejected before accepting a patch.
 
 ## Providers, host delivery and honest limitations
 
-- Build-contracts B1 and the new model-backed/live compiler route: source and
-  bounded controls are not default activation. This documented CLI exposes no
-  owner-runtime/B1 installation switch; the examples above use the manual
-  one-compilation route, not a completed genuine model/compiler/host acceptance.
+- Build-contracts B1 and the model-backed/live compiler route remain separate
+  from default activation. This packaging update does not establish an exposed
+  owner-runtime command or B1 installation switch. Companion runtime/read-closure
+  integration and actual acceptance remain pending; no invocation is documented
+  ahead of that integration. Ordinary examples use the manual one-compilation
+  route, not a completed genuine model/compiler/host acceptance. Bundling the
+  isolated worker does not authorize or execute it.
 - Compiler: bundled exact Kotlin/JVM 2.4.21 subprocess; current compilation inputs
   and output locations are isolated. A persistent broker is not a persistent
   compiler daemon or proof of the warm latency target.

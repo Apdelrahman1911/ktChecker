@@ -1,4 +1,5 @@
 import { realpathSync } from 'node:fs';
+import { assertPrivateStatePlatform } from '@ktchecker/mcp-preview/private-state';
 import { canonical, digest, HostError } from './journal.js';
 import { CodexAppServer, type CodexOptions, type PublicTurn } from './codex-app-server.js';
 import { CodexStore, type CodexInvocation } from './codex-store.js';
@@ -36,6 +37,7 @@ export class CodexHostPort implements HostPort {
     this.resumed = resumed;
   }
   static async open(options: CodexHostOptions): Promise<CodexHostPort> {
+    assertPrivateStatePlatform();
     const model = 'gpt-6-astra';
     const effort = options.effort ?? 'low';
     const cwd = realpathSync(options.cwd);

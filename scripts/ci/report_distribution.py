@@ -11,8 +11,10 @@ import zipfile
 
 if __package__:
     from .ci_common import REPO_ROOT, digest_bytes, digest_file, source_identity, utc_now, write_json
+    from . import verify_model_worker_distribution as model_worker_distribution
 else:
     from ci_common import REPO_ROOT, digest_bytes, digest_file, source_identity, utc_now, write_json
+    import verify_model_worker_distribution as model_worker_distribution
 
 
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
@@ -130,7 +132,7 @@ def validate_manifest(manifest: object, distribution: Path, root: Path) -> list[
     for row in rows:
         if not isinstance(row, dict) or not text_value(row.get("coordinate"), 512) or not COORDINATE.fullmatch(row["coordinate"]) \
                 or row.get("origin") not in ("maven", "owner_project") \
-                or row.get("configuration") not in ("runtimeClasspath", "bundledCompiler", "application") \
+                or row.get("configuration") not in ("runtimeClasspath", "bundledCompiler", "bundledCompilerModel", "application") \
                 or not text_value(row.get("artifactIdentity"), 8192) or not text_value(row.get("file"), 8192):
             raise ValueError("Resolved artifact lacks a real component coordinate/origin/configuration/file mapping")
         file = Path(row["file"])
@@ -142,6 +144,16 @@ def validate_manifest(manifest: object, distribution: Path, root: Path) -> list[
             raise ValueError("Exact queried POM path must be an actual safe file or explicitly unavailable")
         if row["origin"] == "owner_project" and row["pom"] is not None:
             raise ValueError("Owner project code must not inherit an unrelated dependency POM license")
+    workers = [row for row in rows if row["configuration"] == "bundledCompilerModel"]
+    if len(workers) != 1:
+        raise ValueError("Current distribution requires exactly one isolated compiler-model worker task record")
+    worker = workers[0]
+    if worker["origin"] != "owner_project" or worker["artifactIdentity"] != model_worker_distribution.APPLICATION_TASK \
+            or Path(worker["file"]).name != model_worker_distribution.WORKER_FILENAME:
+        raise ValueError("Compiler-model worker must bind the exact reviewed owner-project task output")
+    if any(row is not worker and (row["artifactIdentity"] == model_worker_distribution.APPLICATION_TASK or
+                                 Path(row["file"]).resolve() == Path(worker["file"]).resolve()) for row in rows):
+        raise ValueError("Compiler-model worker task output must not be an ordinary runtime/compiler artifact")
     return rows
 
 
@@ -241,6 +253,12 @@ def generate(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
               "qualification": "Resolved coordinates/actual bytes/declared licenses only; not a complete legal or release qualification"}
     if not policy.get("owner_license"):
         result["license_review_blockers"].append("owner_license_unresolved: original ktChecker code has no selected distribution license")
+    worker = next(row for row in artifacts if row["configuration"] == "bundledCompilerModel")
+    try:
+        result["compiler_model_worker"] = model_worker_distribution.verify(distribution, Path(worker["file"]))
+    except model_worker_distribution.WorkerVerificationError as error:
+        result["compiler_model_worker"] = model_worker_distribution.failure(error.code)
+        result["errors"].append("Compiler-model worker packaging failed: " + error.code)
     identity_map = {}
     for row in artifacts:
         file = Path(row["file"])

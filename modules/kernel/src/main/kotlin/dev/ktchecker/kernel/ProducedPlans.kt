@@ -58,6 +58,8 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         preflightResult.first?.let { return it } // Exact concurrent acceptance is idempotent at EVERY preflight.
         val stageBudget = preflightResult.second
         val staged = linkedMapOf<String, InputArchive.Staged>()
+        var admissionLive: Live? = null
+        var installationStarted = false
         try {
             var bytes = 0L
             val archives = definition.slots.map { slot ->
@@ -82,9 +84,6 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             staged[producer.workKey] = ready
             bytes = charge(stageBudget, bytes, ready.bytes)
             requireLive(grant); proposed.verifyForAdmission(); archives.forEach { it.verify() }; grant.verifyForAdmission()
-            if (retained.size >= minOf(config.maxRetainedReviews, 4096L)) fail("produced_plan_capacity", "Live plan tombstones cannot be evicted")
-            if (retained.putIfAbsent(id, live) != null) fail("produced_plan_identity_conflict", "Live plan identity cannot be replaced")
-            retainExecution(live, producer)
             return ledger.transaction { c ->
                 service.ensureOpen()
                 if (service.authenticate(c, credential) != binding) fail("unauthorized", "Client enrollment changed")
@@ -92,6 +91,12 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                 preflight(c, admitted)
                 requireLive(grant) // Final concrete clock/atomic validity only: no owner callback.
                 if (bytes > config.maxArchiveBytes - service.archiveBytesUsed(c)) fail("archive_full", "Whole declaration and execution archives exceed quota")
+                // Serialize capacity registration with the final idempotency/preflight decision.
+                // A concurrent accepted duplicate never owns a second retained live grant.
+                if (retained.size >= minOf(config.maxRetainedReviews, 4096L)) fail("produced_plan_capacity", "Live plan tombstones cannot be evicted")
+                if (retained.putIfAbsent(id, live) != null) fail("produced_plan_identity_conflict", "Live plan identity cannot be replaced")
+                admissionLive = live
+                retainExecution(live, producer)
                 c.execute("""INSERT INTO parent_plans(plan_id,client_id,patch_id,idempotency_key,request_hash,definition_json,plan_digest,review_frontier)
                     VALUES(?,?,?,?,?,?,?,0)""", id, binding.clientId, request.patchId, request.idempotencyKey,
                     Digests.sha256(canonical(request)), canonical(definition), admitted.planDigest)
@@ -124,10 +129,23 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                 appendPlanEvent(c, binding, status, "plan_accepted")
                 if (service.pendingReviews(c, binding.clientId) > config.maxPendingPerClient) fail("client_queue_full", "Whole declared vector exceeds pending quota")
                 requireLive(grant)
+                // From this point, a failed install/fsync or uncertain COMMIT can leave owned
+                // final archives. Their existing quarantine is NOT a proven pre-install abort.
+                installationStarted = true
                 staged.values.forEach { it.install() }
                 status
             }
-        } finally { staged.values.forEach { it.close() } }
+        } finally {
+            staged.values.forEach { it.close() }
+            // A newly registered plan cannot reach COMMIT before install starts. Only after
+            // every temporary archive closes successfully may its unaccepted capability retire.
+            // Accepted/post-install/unknown outcomes and cleanup failures keep their quarantine;
+            // safe retirement/accounting for those residues remains an unresolved capacity limit.
+            if (!installationStarted) admissionLive?.let { live ->
+                live.executions.values.forEach { execution -> executions.remove(execution.workKey, live to execution) }
+                retained.remove(id, live)
+            }
+        }
     }
 
     private fun preflight(c: Connection, request: ProducedPlanAdmissionRequest) {

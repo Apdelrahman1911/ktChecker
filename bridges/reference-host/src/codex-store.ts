@@ -1,8 +1,7 @@
-import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync, openSync, closeSync } from 'node:fs';
-import { join } from 'node:path';
+import { assertPrivateStatePlatform } from '@ktchecker/mcp-preview/private-state';
 import { randomUUID } from 'node:crypto';
-import { canonical, HostError, privatePath } from './journal.js';
+import { canonical, HostError } from './journal.js';
+import { PrivateDatabase } from './private-database.js';
 import type { ClientBinding, ContextItem, InsertedContext, ModelRequest } from './types.js';
 import type { ApplicationRequestEvidence } from './codex-app-server.js';
 
@@ -31,23 +30,19 @@ export interface CodexState {
 
 /** Private, leased controller metadata. No model-facing endpoint can choose the thread or edit receipts. */
 export class CodexStore {
-  private readonly db: DatabaseSync;
+  private readonly db: PrivateDatabase;
   private readonly owner = randomUUID();
   private readonly heartbeat: NodeJS.Timeout;
   private closed = false;
   private problem = false;
   constructor(directory: string, client: ClientBinding, cwd: string, model: string, effort = 'low') {
+    assertPrivateStatePlatform();
     if (typeof effort !== 'string' || !/^[a-z][a-z0-9_-]{0,31}$/.test(effort)) throw new HostError('invalid_codex_effort');
-    mkdirSync(directory, { recursive: true, mode: 0o700 }); privatePath(directory, true);
-    const path = join(directory, 'codex.sqlite');
-    try { closeSync(openSync(path, 'wx', 0o600)); } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    }
-    privatePath(path, false);
-    this.db = new DatabaseSync(path);
+    this.db = new PrivateDatabase(directory, 'codex.sqlite');
     try {
-      this.db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA trusted_schema=OFF; PRAGMA busy_timeout=5000;');
-      this.db.exec('CREATE TABLE IF NOT EXISTS session (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL); CREATE TABLE IF NOT EXISTS controller (id INTEGER PRIMARY KEY CHECK(id=1), owner TEXT NOT NULL, expires INTEGER NOT NULL); BEGIN IMMEDIATE;');
+      this.db.exec('CREATE TABLE IF NOT EXISTS session (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL)');
+      this.db.exec('CREATE TABLE IF NOT EXISTS controller (id INTEGER PRIMARY KEY CHECK(id=1), owner TEXT NOT NULL, expires INTEGER NOT NULL)');
+      this.db.exec('BEGIN IMMEDIATE');
       const saved = this.db.prepare('SELECT state FROM session WHERE id=1').get() as { state: string } | undefined;
       if (saved) {
         const state = JSON.parse(saved.state) as CodexState;
