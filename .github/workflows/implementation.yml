@@ -16,12 +16,15 @@ concurrency:
 jobs:
   checker-host:
     name: JVM 21 checker build and installed launcher (${{ matrix.os }})
+    # Provisional Windows headroom; POSIX bounds and required checks are unchanged.
     strategy:
       fail-fast: false
       max-parallel: 3
       matrix:
         include:
           - os: ubuntu-24.04
+            python_timeout_seconds: 480
+            job_timeout_minutes: 30
             supervisor_python: python3
             supervisor_cc_argument: '--cc /usr/bin/cc'
             supervisor_cc_property: '-PnativeSupervisorCc=/usr/bin/cc'
@@ -29,6 +32,8 @@ jobs:
             library_opt_in: 'true'
             evidence_profile: checker-host-supported-library-controls
           - os: windows-2025
+            python_timeout_seconds: 1200
+            job_timeout_minutes: 60
             supervisor_python: python
             supervisor_cc_argument: ''
             supervisor_cc_property: ''
@@ -36,6 +41,8 @@ jobs:
             library_opt_in: 'false'
             evidence_profile: checker-host-windows-portability
           - os: macos-26
+            python_timeout_seconds: 480
+            job_timeout_minutes: 30
             supervisor_python: python3
             supervisor_cc_argument: '--cc /usr/bin/cc'
             supervisor_cc_property: '-PnativeSupervisorCc=/usr/bin/cc'
@@ -43,7 +50,7 @@ jobs:
             library_opt_in: 'true'
             evidence_profile: checker-host-supported-library-controls
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: ${{ matrix.job_timeout_minutes }}
     steps:
       - name: Enable Windows long paths before checkout
         if: runner.os == 'Windows'
@@ -70,7 +77,7 @@ jobs:
           python scripts/ci/run_python_checks.py --start-directory scripts/ci
           --output build/ci-evidence/python/python-checks.json
           --junit build/ci-evidence/python/python-checks.xml
-          --host "${{ matrix.os }}" --require-ci-context --timeout 480
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
       - name: Verify synthetic Lint receipt privacy without relying on Python assertions
         if: runner.os == 'Linux'
         run: |

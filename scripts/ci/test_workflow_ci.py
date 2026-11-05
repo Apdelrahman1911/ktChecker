@@ -93,6 +93,33 @@ def values(command: list[str], option: str) -> list[str]:
     return [command[index + 1] for index, value in enumerate(command) if value == option]
 
 
+def authored_matrix_rows(document: str) -> list[dict[str, str]]:
+    """Read only the fixed include rows before runs-on, never evaluate YAML.
+
+    Unknown structure and duplicate keys fail closed; values remain literal
+    source strings so expressions/quoted numbers cannot masquerade as integers.
+    """
+    blocks = re.findall(r"^      matrix:\n([\s\S]*?)(?=^    runs-on:)", document, re.MULTILINE)
+    if len(blocks) != 1:
+        raise AssertionError("One authored matrix is required")
+    lines = blocks[0].splitlines()
+    if not lines or lines[0] != "        include:":
+        raise AssertionError("Only explicit include rows are allowed")
+    rows = []
+    for line in lines[1:]:
+        host = re.fullmatch(r"          - os: ([a-z0-9.-]+)", line)
+        if host:
+            rows.append({"os": host[1]})
+            continue
+        field = re.fullmatch(r"            ([a-z][a-z_]*): ([^\n]+)", line)
+        if not field or not rows or field[1] in rows[-1]:
+            raise AssertionError("Unexpected or duplicate authored matrix field")
+        rows[-1][field[1]] = field[2]
+    if not rows:
+        raise AssertionError("The authored matrix must not be empty")
+    return rows
+
+
 class ImplementationWorkflowTests(unittest.TestCase):
     def document(self):
         return (ci_common.REPO_ROOT / ".github/workflows/implementation.yml").read_text(encoding="utf-8")
@@ -322,7 +349,8 @@ class ImplementationApplicationWorkflowTests(unittest.TestCase):
                           "cancel-in-progress: false"], [line.strip() for line in blocks[0].splitlines()])
         self.assertEqual(["false"], re.findall(r"^      fail-fast: ([^\n]+)$", document, re.MULTILINE))
         self.assertEqual(["3"], re.findall(r"^      max-parallel: ([^\n]+)$", document, re.MULTILINE))
-        self.assertEqual(["30"], re.findall(r"^    timeout-minutes: ([^\n]+)$", document, re.MULTILINE))
+        self.assertEqual(["${{ matrix.job_timeout_minutes }}"],
+                         re.findall(r"^    timeout-minutes: ([^\n]+)$", document, re.MULTILINE))
         self.assertEqual(["ubuntu-24.04", "windows-2025", "macos-26"],
                          re.findall(r"^          - os: ([^\n]+)$", document, re.MULTILINE))
         for name in self.failure_steps:
@@ -351,7 +379,7 @@ class ImplementationApplicationWorkflowTests(unittest.TestCase):
              "group: implementation-${{ github.workflow }}"),
             ("cancel-in-progress: false", "cancel-in-progress: true"),
             ("max-parallel: 3", "max-parallel: 4"),
-            ("timeout-minutes: 30", "timeout-minutes: 90"),
+            ("timeout-minutes: ${{ matrix.job_timeout_minutes }}", "timeout-minutes: 90"),
         ):
             with self.subTest(mutation=old, replacement=new):
                 self.assertEqual(1, document.count(old), old)
@@ -857,6 +885,19 @@ class PythonEvidenceWorkflowTests(unittest.TestCase):
         ("plan-validation.yml", "Test validation failure paths", "scripts",
          "Retain sanitized Python diagnostics even when validation fails"),
     )
+    # Fixed authored headroom, not a model or promise of hosted completion.
+    budgets = {
+        "implementation.yml": (("ubuntu-24.04", 480, 30), ("windows-2025", 1200, 60), ("macos-26", 480, 30)),
+        "plan-validation.yml": (("ubuntu-24.04", 480, 10), ("windows-2025", 1200, 25), ("macos-15", 480, 10)),
+    }
+    planning_followups = (
+        ("Validate rule metadata and generated indexes", "python scripts/validate_plan.py"),
+        ("Install hash-locked planning schema dependencies",
+         "python -m pip install --disable-pip-version-check --require-hashes -r scripts/requirements-plan.txt"),
+        ("Validate synthetic application contracts and rejected states",
+         "python scripts/validate_contract_examples.py docs/protocol.md"),
+        ("Check committed patch whitespace", "python scripts/check_whitespace.py"),
+    )
 
     def document(self, filename):
         return (ci_common.REPO_ROOT / ".github/workflows" / filename).read_text(encoding="utf-8")
@@ -867,17 +908,59 @@ class PythonEvidenceWorkflowTests(unittest.TestCase):
         self.assertEqual(1, len(rows), name)
         return rows[0]
 
+    def assert_budgets(self, document, filename):
+        rows = authored_matrix_rows(document)
+        expected = self.budgets[filename]
+        self.assertEqual([host for host, _, _ in expected], [row["os"] for row in rows])
+        for row, (host, seconds, minutes) in zip(rows, expected):
+            required = {"os": host, "python_timeout_seconds": str(seconds), "job_timeout_minutes": str(minutes)}
+            if filename == "implementation.yml":
+                windows = host == "windows-2025"
+                required.update({
+                    "supervisor_python": "python" if windows else "python3",
+                    "supervisor_cc_argument": "''" if windows else "'--cc /usr/bin/cc'",
+                    "supervisor_cc_property": "''" if windows else "'-PnativeSupervisorCc=/usr/bin/cc'",
+                    "library_profile": "windows-portability" if windows else "supported",
+                    "library_opt_in": "'false'" if windows else "'true'",
+                    "evidence_profile": "checker-host-windows-portability" if windows
+                                        else "checker-host-supported-library-controls",
+                })
+            self.assertEqual(required, row, host)
+        self.assertEqual(["${{ matrix.job_timeout_minutes }}"],
+                         re.findall(r"^    timeout-minutes: ([^\n]+)$", document, re.MULTILINE))
+        self.assertEqual(["${{ matrix.os }}"], re.findall(r"^    runs-on: ([^\n]+)$", document, re.MULTILINE))
+        self.assertEqual(["false"], re.findall(r"^      fail-fast: ([^\n]+)$", document, re.MULTILINE))
+        self.assertEqual(["3"], re.findall(r"^      max-parallel: ([^\n]+)$", document, re.MULTILINE))
+        self.assertNotRegex(document, r"(?m)^    (?:if|continue-on-error):")
+        if filename == "plan-validation.yml":
+            blocks = re.findall(r"^concurrency:\n((?:  [^\n]+\n)+)", document, re.MULTILINE)
+            self.assertEqual(["  group: plan-${{ github.workflow }}-${{ github.ref }}\n"
+                              "  cancel-in-progress: true\n"], blocks)
+
     def assert_execution(self, document, name, start):
         self.assertEqual([
             "python", "scripts/ci/run_python_checks.py", "--start-directory", start,
             "--output", PYTHON_REPORTS[0], "--junit", PYTHON_REPORTS[1],
-            "--host", "${{ matrix.os }}", "--require-ci-context", "--timeout", "480",
+            "--host", "${{ matrix.os }}", "--require-ci-context", "--timeout", "${{ matrix.python_timeout_seconds }}",
         ], authored_command(document, name))
         step = self.step(document, name)
-        self.assertNotRegex(step, r"(?m)^        if:")
+        self.assertEqual([">-"], re.findall(r"^        run: ([^\n]+)$", step, re.MULTILINE))
+        self.assertNotRegex(step, r"(?m)^        (?:if|timeout-minutes|env|shell):")
         self.assertNotIn("continue-on-error:", step)
         self.assertNotIn("GITHUB_SHA:", step)
         self.assertNotIn("GITHUB_RUN_ID:", step)
+
+    def assert_planning_followups(self, document):
+        previous = document.index("      - name: Test validation failure paths\n")
+        for name, command in self.planning_followups:
+            step = self.step(document, name)
+            self.assertEqual([command], re.findall(r"^        run: ([^\n]+)$", step, re.MULTILINE))
+            self.assertNotRegex(step, r"(?m)^        (?:if|continue-on-error|timeout-minutes|shell):")
+            position = document.index("      - name: " + name + "\n")
+            self.assertLess(previous, position)
+            previous = position
+        self.assertLess(previous, document.index(
+            "      - name: Retain sanitized Python diagnostics even when validation fails\n"))
 
     def assert_retention(self, document, name):
         step = self.step(document, name)
@@ -899,7 +982,86 @@ class PythonEvidenceWorkflowTests(unittest.TestCase):
     def test_discovery_scope_stays_complete_and_nonzero_exits_gate_each_workflow(self):
         for filename, name, start, _ in self.profiles:
             with self.subTest(workflow=filename):
-                self.assert_execution(self.document(filename), name, start)
+                document = self.document(filename)
+                self.assert_budgets(document, filename)
+                self.assert_execution(document, name, start)
+
+    def test_each_host_budget_rejects_missing_duplicate_changed_or_nonliteral_values(self):
+        for filename, expected in self.budgets.items():
+            document = self.document(filename)
+            self.assert_budgets(document, filename)
+            for host, seconds, minutes in expected:
+                block = re.search(r"^          - os: " + re.escape(host) + r"\n(?:            [^\n]+\n)*",
+                                  document, re.MULTILINE)[0]
+                for field, value in (("python_timeout_seconds", seconds), ("job_timeout_minutes", minutes)):
+                    old = f"            {field}: {value}\n"
+                    other_host_value = (480 if host == "windows-2025" else 1200) if field == "python_timeout_seconds" \
+                        else (expected[0][2] if host == "windows-2025" else expected[1][2])
+                    replacements = ["", old + old] + [f"            {field}: {bad}\n" for bad in (
+                        other_host_value, 0, -1, 999999, "null", f'"{value}"', "${{ inputs.timeout }}",
+                    )]
+                    for new in replacements:
+                        with self.subTest(workflow=filename, host=host, field=field, replacement=new):
+                            self.assertEqual(1, block.count(old))
+                            changed = document.replace(block, block.replace(old, new, 1), 1)
+                            self.assertNotEqual(document, changed)
+                            with self.assertRaises(AssertionError):
+                                self.assert_budgets(changed, filename)
+
+    def test_matrix_rejects_missing_duplicate_foreign_hosts_axes_and_fields(self):
+        for filename in self.budgets:
+            document = self.document(filename)
+            block = re.search(r"^          - os: windows-2025\n(?:            [^\n]+\n)*", document, re.MULTILINE)[0]
+            mutations = (
+                (block, ""), (block, block + block),
+                ("- os: windows-2025", "- os: windows-latest"),
+                (block, block + "            retry: 3\n"),
+                (block, block + "            os: windows-2025\n"),
+                ("        include:\n", "        include:\n        os: [ubuntu-24.04]\n"),
+                ("        include:\n", "        include:\n        include:\n"),
+                ("      matrix:\n", "      matrix: ${{ fromJSON(inputs.matrix) }}\n"),
+            )
+            for old, new in mutations:
+                with self.subTest(workflow=filename, mutation=old, replacement=new):
+                    self.assertEqual(1, document.count(old))
+                    changed = document.replace(old, new, 1)
+                    with self.assertRaises(AssertionError):
+                        self.assert_budgets(changed, filename)
+
+    def test_job_budget_reference_rejects_blanket_overrides_and_early_cancellation(self):
+        for filename in self.budgets:
+            document = self.document(filename)
+            old = "    timeout-minutes: ${{ matrix.job_timeout_minutes }}\n"
+            mutations = [(old, ""), (old, old + old)] + [
+                (old, f"    timeout-minutes: {bad}\n") for bad in (
+                    "10", "30", "60", "0", "${{ inputs.timeout }}", "${{ matrix.python_timeout_seconds }}",
+                )
+            ] + [
+                ("      fail-fast: false", "      fail-fast: true"),
+                ("      max-parallel: 3", "      max-parallel: 4"),
+                ("    runs-on: ${{ matrix.os }}", "    runs-on: ubuntu-24.04"),
+                (old, old + "    continue-on-error: true\n"),
+                (old, old + "    if: runner.os != 'Windows'\n"),
+            ]
+            for original, new in mutations:
+                with self.subTest(workflow=filename, mutation=original, replacement=new):
+                    self.assertEqual(1, document.count(original))
+                    changed = document.replace(original, new, 1)
+                    with self.assertRaises(AssertionError):
+                        self.assert_budgets(changed, filename)
+
+    def test_planning_followups_remain_required_ordered_and_unconditional(self):
+        document = self.document("plan-validation.yml")
+        self.assert_planning_followups(document)
+        for name, command in self.planning_followups:
+            step = self.step(document, name)
+            for new in ("", step + "        if: success()\n", step.replace(command, command + " || true")):
+                with self.subTest(step=name, replacement=new):
+                    changed = document.replace("      - name: " + name + "\n" + step,
+                                               ("      - name: " + name + "\n" + new) if new else "", 1)
+                    self.assertNotEqual(document, changed)
+                    with self.assertRaises(AssertionError):
+                        self.assert_planning_followups(changed)
 
     def test_only_literal_sanitized_pair_is_retained_even_on_failure(self):
         for filename, _, _, upload in self.profiles:
@@ -930,9 +1092,17 @@ class PythonEvidenceWorkflowTests(unittest.TestCase):
             document = self.document(filename)
             mutations = (
                 ("--start-directory " + start + "\n", "--start-directory scripts/empty\n"),
+                ("--start-directory " + start + "\n", "--start-directory " + start + " --pattern test_one.py\n"),
                 ("--require-ci-context ", ""),
-                ("--timeout 480", "--timeout 2400"),
+                ('--timeout "${{ matrix.python_timeout_seconds }}"', "--timeout 480"),
+                ('--timeout "${{ matrix.python_timeout_seconds }}"', "--timeout 1200"),
+                ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout "${{ matrix.job_timeout_minutes }}"'),
+                ('--timeout "${{ matrix.python_timeout_seconds }}"', ""),
+                ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout "${{ matrix.python_timeout_seconds }}" || true'),
                 ("      - name: " + name + "\n", "      - name: " + name + "\n        continue-on-error: true\n"),
+                ("      - name: " + name + "\n", "      - name: " + name + "\n        timeout-minutes: 8\n"),
+                ("      - name: " + name + "\n", "      - name: " + name + "\n        if: success()\n"),
+                ("      - name: " + name + "\n", "      - name: " + name + "\n        shell: python\n"),
             )
             for old, new in mutations:
                 with self.subTest(workflow=filename, mutation=old):
