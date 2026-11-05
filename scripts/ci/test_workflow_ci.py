@@ -37,6 +37,8 @@ LIVE_REPORTS = ("build/ci-evidence/live-supervisor/live-supervisor-checks.json",
 LIVE_PROBE_RECEIPT = "build/ci-evidence/live-probe/receipt.json"
 # These additive model profiles are pure controls, not live compiler/Native gates.
 MODEL_TASKS = (":worker-protocol:modelWireTest", ":provider-compiler:modelWorkerTest")
+# Packaging-only producer attribution, not a live model/compiler execution gate.
+MODEL_WORKER_PACKAGING_TASK = ":provider-compiler:compilerModelApplicationWorkerJar"
 MODEL_REPORTS = (
     "modules/worker-protocol/build/test-results/modelWireTest/TEST-dev.ktchecker.workerprotocol.CompilerModelWireTest.xml",
     "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationFilesystemTest.xml",
@@ -60,7 +62,7 @@ COMPLETION_BARRIER_REPORTS = (
     "modules/review-controller/build/test-results/test/TEST-dev.ktchecker.reviewcontroller.OwnerIntegratedCompletionRegistryTest.xml",
 )
 APPLICATION_TASKS = (":worker-protocol:test", ":provider-compiler:test",
-                     ":provider-compiler:workerTest", ":provider-runtime:test") + MODEL_TASKS + BUILD_CONTRACTS_TASKS + COMPLETION_BARRIER_TASKS
+                     ":provider-compiler:workerTest", ":provider-runtime:test") + MODEL_TASKS + BUILD_CONTRACTS_TASKS + COMPLETION_BARRIER_TASKS + (MODEL_WORKER_PACKAGING_TASK,)
 APPLICATION_REPORTS = (
     "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.ApplicationWireTest.xml",
     "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.CompilerJobWireTest.xml",
@@ -219,6 +221,22 @@ class ImplementationApplicationWorkflowTests(unittest.TestCase):
 
     def test_exact_wire_host_worker_and_runtime_tasks_are_required_before_gradle_arguments(self):
         self.assert_task_gate(self.document())
+
+    def test_packaging_worker_requires_exact_producer_without_changing_install_task_selection(self):
+        document = self.document()
+        required, arguments = self.assert_task_gate(document)
+        self.assertEqual(1, required.count(MODEL_WORKER_PACKAGING_TASK))
+        for task in (":cli:installDist", ":cli:distZip", ":cli:distTar"):
+            self.assertEqual(1, arguments.count(task), task)
+        old = "--require-task " + MODEL_WORKER_PACKAGING_TASK
+        for replacement in (
+            old + " " + old,
+            "--require-task :provider-compiler:modelWorkerTest",
+            old + "NotRequired",
+        ):
+            with self.subTest(replacement=replacement):
+                self.assert_step_mutation_rejected(document, self.build_name, old, replacement,
+                                                   self.assert_task_gate)
 
     def test_twenty_one_exact_class_reports_are_required_by_the_real_collector_stanza(self):
         self.assert_report_gate(self.document())

@@ -152,6 +152,7 @@ jobs:
           --require-task :worker-protocol:test --require-task :provider-compiler:test
           --require-task :provider-compiler:workerTest
           --require-task :worker-protocol:modelWireTest --require-task :provider-compiler:modelWorkerTest
+          --require-task :provider-compiler:compilerModelApplicationWorkerJar
           --require-task :provider-build-contracts:test
           --require-task :provider-runtime:buildOwnedProcessSupervisor --require-task :provider-runtime:test
           --require-task :provider-runtime:buildOwnedLiveProcessSupervisor
