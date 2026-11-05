@@ -39,6 +39,22 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
         val graph = freezeExport(parsed)
         permit.verifyModelInputs(graph)
         val issues = validateExport(frozenRequest, graph)
+        val roleCompilations = graph.compilations.filter { it.jvmArgumentRoles != null }
+        val roleOrigins = roleCompilations.associate { it.id to permit.verifyJvmArgumentOrigin(it) }
+        val roleLayouts = linkedMapOf<String, VerifiedJvmArgumentLayout>()
+        val roleRejections = linkedMapOf<String, String>()
+        roleCompilations.forEach { compilation ->
+            val origin = roleOrigins[compilation.id]
+            if (origin == null) roleRejections[compilation.id] = "model_jvm_argument_origin_unavailable"
+            else try { roleLayouts[compilation.id] = classifyJvmArgumentLayout(frozenRequest, compilation, origin, graph.generatedInputs) }
+            catch (error: ProjectModelException) {
+                if (error.code != "model_jvm_arguments_unsupported") throw error
+                // Retain every raw fact and every preexisting global issue. An unselected empty
+                // source/cp or unsupported executable layout is NOT erased or a new graph gap.
+                // The selected compiler binding separately requires its live checked layout.
+                roleRejections[compilation.id] = error.code
+            }
+        }
         val artifacts = graph.buildscriptArtifacts + graph.externalConfigurationArtifacts + graph.compilations.flatMap { compilation ->
             compilation.classpath + compilation.friendArtifacts + compilation.auxiliaryArtifacts + compilation.toolchain?.let {
                 it.compilerArtifacts + it.runtimeArtifacts + it.compilerPlugins
@@ -60,6 +76,11 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
         permit.verifySnapshot()
         permit.verifyExecutedExport()
         permit.verifyModelInputs(graph)
+        roleCompilations.forEach { compilation ->
+            if (permit.verifyJvmArgumentOrigin(compilation) !== roleOrigins[compilation.id]) {
+                throw ProjectModelException("model_jvm_argument_origin_changed", "Original argument-role owner authority changed during ingress.")
+            }
+        }
         artifacts.filter { it.digest != null }.distinctBy { it.path to it.digest }.forEach(permit.verifyArtifact)
         val sourceDigest = canonicalDigest(ContractJson.encodeToJsonElement(frozenRequest.snapshot))
         val modelDigest = canonicalDigest(ContractJson.encodeToJsonElement(graph))
@@ -72,7 +93,8 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
         val certificate = canonicalDigest(ContractJson.encodeToJsonElement(listOf(frozenRequest.digest(), permit.gradleRuntimeDigest,
             sourceDigest, modelDigest, dependencyDigest, toolchainDigest)))
         return VerifiedProjectModel(frozenRequest.namespace, frozenRequest.snapshot, graph, identity,
-            immutable(issues.distinct().sortedWith(compareBy<ModelIssue> { it.scopeId.orEmpty() }.thenBy { it.kind }.thenBy { it.detail })), certificate)
+            immutable(issues.distinct().sortedWith(compareBy<ModelIssue> { it.scopeId.orEmpty() }.thenBy { it.kind }.thenBy { it.detail })), certificate,
+            roleLayouts, roleRejections)
     }
 
     private fun validateRequest(request: ModelImportRequest) {
@@ -226,6 +248,15 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
                 compilation.toolchain.runtimeArtifacts.isEmpty()) issues += ModelIssue("toolchain_unavailable", compilation.id, "Complete compiler/runtime identity is unavailable.")
             requireBound(compilation.compilerArguments.size <= 16_384, "compiler argument count")
             compilation.compilerArguments.forEach { requireBound(it.length <= 8192 && '\u0000' !in it, "compiler argument") }
+            compilation.jvmArgumentRoles?.let { roles ->
+                requireBound(roles.schemaVersion == 1 && roles.adapterId == JVM_ARGUMENT_ROLES_ADAPTER, "original JVM role schema")
+                requireBound(roles.sourcePaths.size <= 50_000, "original JVM source role count")
+                roles.sourcePaths.forEach { logicalPath(it) }
+                listOf(roles.compileTaskPath, roles.destinationPath, roles.selectedJdkHome, roles.pluginDataState).forEach(::identifier)
+                listOfNotNull(roles.classpathOperand, roles.jdkHomeOperand).forEach {
+                    requireBound(it.length <= 8192 && '\u0000' !in it, "original nullable JVM path operand")
+                }
+            }
         }
         graph.generatedInputs.forEach { generated ->
             identifier(generated.taskPath); generated.sourceSetIds.forEach { if (it !in sets) throw ProjectModelException("model_reference_invalid", "Unknown generated-source membership.") }
@@ -317,7 +348,8 @@ internal fun freezeExport(graph: GradleProjectExport): GradleProjectExport = gra
         toolchain = compilation.toolchain?.let { it.copy(compilerArtifacts = immutable(it.compilerArtifacts), runtimeArtifacts = immutable(it.runtimeArtifacts), compilerPlugins = immutable(it.compilerPlugins)) },
         compilerArguments = immutable(compilation.compilerArguments), friendArtifacts = immutable(compilation.friendArtifacts), producedVariants = immutable(compilation.producedVariants),
         associatedCompilationIds = immutable(compilation.associatedCompilationIds), auxiliaryInputFiles = immutable(compilation.auxiliaryInputFiles),
-        auxiliaryArtifacts = immutable(compilation.auxiliaryArtifacts)) }),
+        auxiliaryArtifacts = immutable(compilation.auxiliaryArtifacts),
+        jvmArgumentRoles = compilation.jvmArgumentRoles?.let { it.copy(sourcePaths = immutable(it.sourcePaths)) }) }),
     configurationInputs = immutable(graph.configurationInputs),
     generatedInputs = immutable(graph.generatedInputs.map { it.copy(sourceSetIds = immutable(it.sourceSetIds), inputFiles = immutable(it.inputFiles),
         outputFiles = immutable(it.outputFiles), outputRoots = immutable(it.outputRoots), inputProperties = immutableMap(it.inputProperties)) }),

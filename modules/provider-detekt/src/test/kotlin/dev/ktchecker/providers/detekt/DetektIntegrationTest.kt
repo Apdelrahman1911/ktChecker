@@ -6,26 +6,24 @@ import dev.ktchecker.snapshot.*
 import java.nio.file.Files
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
-import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicInteger
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.RegisterExtension
-import org.junit.jupiter.api.extension.TestWatcher
-import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.api.extension.Extension
+import org.junit.jupiter.api.parallel.Execution
+import org.junit.jupiter.api.parallel.ExecutionMode
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import kotlin.test.*
 
 /** Real pinned child processes, intentionally opt-in; no network hidden in tests. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Execution(ExecutionMode.SAME_THREAD)
 class DetektIntegrationTest {
-    @TempDir lateinit var temporary: Path
+    private val retained = RetainedFixtureSuite("detekt")
+    private val evidence = RetainedFixtureEvidence(retained)
     private val root: Path get() = Path.of(System.getProperty("ktchecker.repositoryRoot")).toAbsolutePath().normalize()
     private val fixtureRoot: Path get() = root.resolve("providers/detekt-fixtures")
     private val evidenceRoot: Path get() {
@@ -45,46 +43,18 @@ class DetektIntegrationTest {
         "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
         "ktc.compose.pack.ComposableParamOrder",
     )
-    private var activeRun: Path? = null
-    private val successfulEvidenceMethods = AtomicInteger()
-    @RegisterExtension @JvmField val evidenceGate: TestWatcher = object : TestWatcher {
-        override fun testSuccessful(context: ExtensionContext) { successfulEvidenceMethods.incrementAndGet() }
-        override fun testFailed(context: ExtensionContext, cause: Throwable) {
-            activeRun?.let { run -> Files.writeString(run.resolve("completion.json"), buildJsonObject {
-                put("state", "failed_or_incomplete"); put("failure_type", cause.javaClass.name); put("qualified", false)
-                put("note", "Actual START and partial execution artifacts retained; no passing native-suite attribution.")
-            }.toString()) }
-        }
-    }
+    @RegisterExtension @JvmField val evidenceGate: Extension = evidence
 
-    @AfterAll fun withdrawIncompleteSuiteEvidence() {
-        if (System.getProperty("ktchecker.detekt.integration") == "true" && successfulEvidenceMethods.get() != 2) {
-            Files.deleteIfExists(evidenceRoot.resolve("evidence/verified-jvm-syntax-native-preview1.json"))
-            Files.deleteIfExists(evidenceRoot.resolve("evidence/verified-jvm-coroutine-upstream-native-preview1.json"))
-        }
-    }
-
-    @AfterEach fun restoreOwnedTestPermissions() {
-        if (Files.exists(temporary)) Files.walkFileTree(temporary, object : java.nio.file.SimpleFileVisitor<Path>() {
-            override fun preVisitDirectory(dir: Path, attrs: java.nio.file.attribute.BasicFileAttributes): java.nio.file.FileVisitResult {
-                dir.toFile().setWritable(true, true)
-                return java.nio.file.FileVisitResult.CONTINUE
-            }
-            override fun visitFile(file: Path, attrs: java.nio.file.attribute.BasicFileAttributes): java.nio.file.FileVisitResult {
-                if (!attrs.isSymbolicLink) file.toFile().setWritable(true, true)
-                return java.nio.file.FileVisitResult.CONTINUE
-            }
-        })
-    }
+    @AfterAll fun retainSuiteEvidence() = evidence.close()
 
     @Test fun `positive negative settings version suppression and immutable edit regression execute upstream`() {
         assumeTrue(System.getProperty("ktchecker.detekt.integration") == "true", "Real Detekt integration disabled; use -PdetektIntegration=true")
         val java = Path.of(System.getProperty("java.home")).resolve("bin/java")
         val installation = DetektInstallation(java, root.resolve(".plan-deps/detekt"), Path.of(System.getProperty("java.home")))
         DetektCatalog.verifyArtifacts(installation.artifactDirectory)
-        startRun("syntax")
-        val witness = beginWitness("syntax", installation)
-        Files.deleteIfExists(evidenceRoot.resolve("evidence/verified-jvm-syntax-native-preview1.json"))
+        val run = startRun("syntax")
+        val temporary = run.scratchDirectory
+        val witness = beginWitness(run, "syntax", installation)
         val identity = SnapshotIdentity("fixture-owner", "detekt-fixture", "syntax")
         val store = SnapshotStore(temporary.resolve("store"), identity.ownerId)
         store.registerWorktree(identity)
@@ -119,15 +89,19 @@ class DetektIntegrationTest {
             val authority = ExactExecutionAuthority(ExecutionPermit(plan.execution, commit.snapshotId, materialized.root,
                 input.analysisKey(), verifySnapshot))
             var observed: ProcessOutcome? = null
-            val result = DetektProvider(installation, authority, settings, IsolatedProcessRunner { observed = it })
-                .analyze(input, CancellationToken.NONE)
+            var processRef: JsonObject? = null
+            val result = run.native(witness.native.identity, { actual ->
+                observed = actual
+                processRef = run.artifact("syntax-$kind-process.json", fixtureProcessJson(actual, temporary).toString().toByteArray())
+            }) { runner ->
+                DetektProvider(installation, authority, settings, runner).analyze(input, CancellationToken.NONE)
+            }
             // Preserve failures too, without generating a passed sidecar for them.
-            writeArtifact("syntax-$kind-provider-result.json", ContractJson.encodeToString(result)
+            val resultReference = run.artifact("syntax-$kind-provider-result.json", ContractJson.encodeToString(result)
                 .replace(temporary.toString(), "{fixture-temporary}").toByteArray())
-            writeArtifact("syntax-$kind-config.yml", plan.configuration.toByteArray())
-            val processRef = observed?.let { writeArtifact("syntax-$kind-process.json", fixtureProcessJson(it, temporary).toString().toByteArray()) }
+            val configurationReference = run.artifact("syntax-$kind-config.yml", plan.configuration.toByteArray())
             val reportRef = observed?.let { actual -> runCatching { actual.report("detekt.sarif") }.getOrNull()
-                ?.let { writeArtifact("syntax-$kind.sarif", it) } }
+                ?.let { run.artifact("syntax-$kind.sarif", it) } }
             val actual = assertNotNull(observed, "$kind did not reach the isolated runner: ${result.reasons}")
             witness.native.assertExecuted(actual)
             assertEquals(0, actual.exitCode, "$kind: ${actual.stderr}")
@@ -157,13 +131,17 @@ class DetektIntegrationTest {
                 val changedSettings = DetektSettings(disabledRuleIds = selected.toSet())
                 assertNotEquals(plan.execution, DetektProvider(installation, settings = changedSettings).executionProfile(input))
                 var replayOutcome: ProcessOutcome? = null
-                val replay = DetektProvider(installation, authority, changedSettings, IsolatedProcessRunner { replayOutcome = it })
-                    .analyze(input, CancellationToken.NONE)
-                val replayRef = writeArtifact("syntax-configuration-permit-replay.json", ContractJson.encodeToString(replay)
+                var denialRef: JsonObject? = null
+                val replay = run.denied({ actual ->
+                    replayOutcome = actual
+                    denialRef = run.artifact("syntax-configuration-permit-replay-denial-process.json",
+                        fixtureProcessJson(actual, temporary).toString().toByteArray())
+                }) { runner ->
+                    DetektProvider(installation, authority, changedSettings, runner).analyze(input, CancellationToken.NONE)
+                }
+                val replayRef = run.artifact("syntax-configuration-permit-replay.json", ContractJson.encodeToString(replay)
                     .replace(temporary.toString(), "{fixture-temporary}").toByteArray())
                 additional += replayRef
-                val denialRef = replayOutcome?.let { writeArtifact("syntax-configuration-permit-replay-denial-process.json",
-                    fixtureProcessJson(it, temporary).toString().toByteArray()) }
                 val denied = assertNotNull(replayOutcome, "Runtime completion callback must retain the authorization denial")
                 assertFixtureAuthorizationDenied(denied)
                 assertEquals(listOf("execution_not_authorized"), replay.reasons)
@@ -171,7 +149,7 @@ class DetektIntegrationTest {
                 assertTrue(replay.coverage.all { it.provenance == "not_executed" && !it.implemented && !it.tested && !it.qualified && !it.successful() })
                 val denialProcess = assertNotNull(denialRef)
                 additional += denialProcess
-                additional += writeArtifact("syntax-configuration-permit-replay-denial-receipt.json", buildJsonObject {
+                additional += run.artifact("syntax-configuration-permit-replay-denial-receipt.json", buildJsonObject {
                     put("case_kind", "changed_configuration_permit_replay"); put("passed", true); put("qualified", false)
                     put("execution_confirmed", denied.executionConfirmed); put("supervisor_identity", supervisorIdentityJson(denied.supervisorIdentity))
                     put("actual_denial", fixtureProcessJson(denied, temporary)); put("process", denialProcess); put("provider_result", replayRef)
@@ -188,12 +166,15 @@ class DetektIntegrationTest {
                 val versionInput = input.copy(execution = execution)
                 val versionPermit = ExactExecutionAuthority(ExecutionPermit(execution, commit.snapshotId, materialized.root,
                     versionInput.analysisKey(), verifySnapshot))
-                val outcome = IsolatedProcessRunner().run(versionInput, versionPermit)
-                val versionProcess = writeArtifact("syntax-version-cli-process.json", fixtureProcessJson(outcome, temporary).toString().toByteArray())
+                var versionProcessRef: JsonObject? = null
+                val outcome = run.native(witness.native.identity, { actual ->
+                    versionProcessRef = run.artifact("syntax-version-cli-process.json", fixtureProcessJson(actual, temporary).toString().toByteArray())
+                }) { runner -> runner.run(versionInput, versionPermit) }
+                val versionProcess = assertNotNull(versionProcessRef)
                 witness.native.assertExecuted(outcome)
                 assertEquals(0, outcome.exitCode)
                 assertEquals(DETEKT_VERSION, outcome.stdout.trim())
-                versionEvidence = writeArtifact("syntax-version-cli.json", buildJsonObject {
+                versionEvidence = run.artifact("syntax-version-cli.json", buildJsonObject {
                     put("schema_version", 1); put("case_kind", "version"); put("actual_exit_code", outcome.exitCode)
                     put("execution_confirmed", outcome.executionConfirmed); put("supervisor_identity", supervisorIdentityJson(outcome.supervisorIdentity))
                     put("process", versionProcess)
@@ -206,9 +187,10 @@ class DetektIntegrationTest {
                     val permit = ExactExecutionAuthority(ExecutionPermit(plan.execution, commit.snapshotId, materialized.root,
                         request.analysisKey(), verifySnapshot))
                     var unsupportedOutcome: ProcessOutcome? = null
-                    val abstained = DetektProvider(installation, permit, settings, IsolatedProcessRunner { unsupportedOutcome = it })
-                        .analyze(request, CancellationToken.NONE)
-                    additional += writeArtifact("syntax-$target-abstention.json", ContractJson.encodeToString(abstained)
+                    val abstained = run.abstained(request, { unsupportedOutcome = it }) { runner ->
+                        DetektProvider(installation, permit, settings, runner).analyze(request, CancellationToken.NONE)
+                    }
+                    additional += run.artifact("syntax-$target-abstention.json", ContractJson.encodeToString(abstained)
                         .replace(temporary.toString(), "{fixture-temporary}").toByteArray())
                     assertNull(unsupportedOutcome, "$target must not start a JVM syntax process")
                     assertTrue(abstained.findings.isEmpty())
@@ -216,15 +198,12 @@ class DetektIntegrationTest {
                 }
             }
             val sarifReference = assertNotNull(reportRef, "Actual isolated SARIF must be retained")
-            val resultJson = ContractJson.encodeToString(result).replace(temporary.toString(), "{fixture-temporary}")
-            val resultReference = writeArtifact("syntax-$kind-provider-result.json", resultJson.toByteArray())
-            val configurationReference = writeArtifact("syntax-$kind-config.yml", plan.configuration.toByteArray())
             val refs = listOf(sarifReference, resultReference, configurationReference, assertNotNull(processRef)) + additional +
                 if (kind == "version") listOf(versionEvidence!!) else emptyList()
             val receipt = buildJsonObject {
                 put("schema_version", 1); put("case_kind", kind); put("passed", true)
                 put("provider_id", "detekt"); put("provider_version", DETEKT_VERSION)
-                put("run_id", assertNotNull(activeRun).fileName.toString())
+                put("run_id", run.runDirectory.fileName.toString())
                 put("actual_exit_code", actual.exitCode); put("execution_confirmed", actual.executionConfirmed)
                 put("supervisor_identity", supervisorIdentityJson(actual.supervisorIdentity))
                 put("analysis_key", input.analysisKey()); put("snapshot_id", commit.snapshotId)
@@ -237,7 +216,7 @@ class DetektIntegrationTest {
                 put("finding_counts", buildJsonObject { for (id in selected) put(id, result.findings.count { it.ruleId == id }) })
                 put("note", "Real pinned process via isolated runtime; output path prefixes normalized only in archived provider-result JSON. Syntax stubs do not qualify libraries.")
             }
-            val receiptReference = writeArtifact("syntax-$kind-receipt.json", receipt.toString().toByteArray())
+            val receiptReference = run.artifact("syntax-$kind-receipt.json", receipt.toString().toByteArray())
             cases += buildJsonObject {
                 put("kind", kind); put("passed", true)
                 put("evidence", JsonArray(refs + receiptReference))
@@ -258,17 +237,14 @@ class DetektIntegrationTest {
                 put("scope_note", "Synthetic syntax fixtures only; Compose/Entity stubs, not actual library/compiler qualification.")
             })
             put("rules", JsonArray(selected.map { ruleId -> buildJsonObject {
-                put("rule_id", ruleId); put("implemented", true); put("tested", true); put("qualified", false)
+                put("rule_id", ruleId); put("implemented", true); put("tested", false); put("qualified", false); put("method_cases_checked", true)
                 put("provider_status", "executed_unqualified"); put("implementation_evidence", JsonArray(sourceEvidence))
                 put("cases", JsonArray(cases)); put("qualification_evidence", JsonArray(emptyList()))
                 put("gaps", JsonArray(listOf("No qualified compatibility/precision/performance tuple; syntax fixtures are not library-semantic evidence.").map(::JsonPrimitive)))
             } }))
         }
-        writeArtifact("syntax-native-sidecar.json", sidecar.toString().toByteArray())
-        val sidecarPath = evidenceRoot.resolve("evidence/verified-jvm-syntax-native-preview1.json")
-        Files.createDirectories(sidecarPath.parent)
-        Files.writeString(sidecarPath, sidecar.toString())
-        finishRun()
+        run.sidecarCandidate("syntax-native", sidecar)
+        run.finishMethod()
     }
 
     @Test fun `full resolved coroutine upstream guidance never implements the narrower catalog contract`() {
@@ -280,9 +256,9 @@ class DetektIntegrationTest {
         val kotlinVersion = KotlinVersion.CURRENT.toString()
         assertEquals("2.4.21", kotlinVersion)
         val classpath = listOf(ArtifactIdentity("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion", fileDigest(stdlib), stdlib.toString()))
-        startRun("coroutine")
-        val witness = beginWitness("coroutine", installation, classpath)
-        Files.deleteIfExists(evidenceRoot.resolve("evidence/verified-jvm-coroutine-upstream-native-preview1.json"))
+        val run = startRun("coroutine")
+        val temporary = run.scratchDirectory
+        val witness = beginWitness(run, "coroutine", installation, classpath)
         val ruleId = "ktc.coroutines.sleep-in-coroutine"
         val identity = SnapshotIdentity("fixture-owner", "detekt-fixture", "coroutines")
         val store = SnapshotStore(temporary.resolve("store-full"), identity.ownerId)
@@ -313,14 +289,18 @@ class DetektIntegrationTest {
             val authority = ExactExecutionAuthority(ExecutionPermit(plan.execution, commit.snapshotId, materialized.root,
                 input.analysisKey(), verifySnapshot = { check(store.verifyMaterialization(materialized).valid) }))
             var observed: ProcessOutcome? = null
-            val result = DetektProvider(installation, authority, runner = IsolatedProcessRunner { observed = it })
-                .analyze(input, CancellationToken.NONE)
-            val resultReference = writeArtifact("coroutine-$kind-provider-result.json",
+            var processRef: JsonObject? = null
+            val result = run.native(witness.native.identity, { actual ->
+                observed = actual
+                processRef = run.artifact("coroutine-$kind-process.json", fixtureProcessJson(actual, temporary).toString().toByteArray())
+            }) { runner ->
+                DetektProvider(installation, authority, runner = runner).analyze(input, CancellationToken.NONE)
+            }
+            val resultReference = run.artifact("coroutine-$kind-provider-result.json",
                 ContractJson.encodeToString(result).replace(temporary.toString(), "{fixture-temporary}").toByteArray())
-            val processRef = observed?.let { writeArtifact("coroutine-$kind-process.json", fixtureProcessJson(it, temporary).toString().toByteArray()) }
             val reportRef = observed?.let { actual -> runCatching { actual.report("detekt.sarif") }.getOrNull()
-                ?.let { writeArtifact("coroutine-$kind.sarif", it) } }
-            val configurationRef = writeArtifact("coroutine-$kind-config.yml", plan.configuration.toByteArray())
+                ?.let { run.artifact("coroutine-$kind.sarif", it) } }
+            val configurationRef = run.artifact("coroutine-$kind-config.yml", plan.configuration.toByteArray())
             val actual = assertNotNull(observed, "$kind did not reach the isolated runner: ${result.reasons}")
             witness.native.assertExecuted(actual)
             assertEquals(0, actual.exitCode, actual.stderr)
@@ -333,10 +313,10 @@ class DetektIntegrationTest {
             assertEquals(if (kind == "positive") 1 else 0, raw.size, result.reasons.joinToString() + result.rawDiagnostics)
             val sarifReference = assertNotNull(reportRef, "Actual isolated full-mode SARIF must be retained")
             val refs = listOf(resultReference, sarifReference, configurationRef, assertNotNull(processRef))
-            val receiptReference = writeArtifact("coroutine-$kind-receipt.json", buildJsonObject {
+            val receiptReference = run.artifact("coroutine-$kind-receipt.json", buildJsonObject {
                 put("schema_version", 1); put("case_kind", kind); put("passed", true)
                 put("analysis_mode", "full"); put("provider_status", result.status); put("catalog_refinement_implemented", false)
-                put("run_id", assertNotNull(activeRun).fileName.toString())
+                put("run_id", run.runDirectory.fileName.toString())
                 put("actual_exit_code", actual.exitCode); put("execution_confirmed", actual.executionConfirmed)
                 put("supervisor_identity", supervisorIdentityJson(actual.supervisorIdentity))
                 put("snapshot_id", commit.snapshotId); put("registered_materialization_verified", true)
@@ -368,11 +348,8 @@ class DetektIntegrationTest {
                     "No configuration/version/suppression/regression refinement suite; embedded compiler mismatch remains unqualified.").map(::JsonPrimitive)))
             })))
         }
-        writeArtifact("coroutine-native-sidecar.json", sidecar.toString().toByteArray())
-        val path = evidenceRoot.resolve("evidence/verified-jvm-coroutine-upstream-native-preview1.json")
-        Files.createDirectories(path.parent)
-        Files.writeString(path, sidecar.toString())
-        finishRun()
+        run.sidecarCandidate("coroutine-native", sidecar)
+        run.finishMethod()
     }
 
     private fun fixtureSources(directory: String): Map<String, String> {
@@ -385,32 +362,12 @@ class DetektIntegrationTest {
         return files
     }
 
-    private fun writeArtifact(name: String, bytes: ByteArray): JsonObject {
-        val path = assertNotNull(activeRun, "A new native run archive must exist before artifact capture")
-            .resolve("evidence-artifacts").resolve(safeRelativePath(name))
-        Files.createDirectories(path.parent)
-        Files.write(path, bytes)
-        return reference(path)
-    }
-
     private fun reference(path: Path): JsonObject = buildJsonObject {
         put("path", root.relativize(path).toString().replace('\\', '/'))
         put("sha256", fileDigest(path).removePrefix("sha256:"))
     }
 
-    private fun startRun(prefix: String) {
-        val run = evidenceRoot.resolve("runs/${Instant.now().toString().replace(':', '-')}-${UUID.randomUUID().toString().take(8)}-$prefix-native-preview1")
-        Files.createDirectories(run.resolve("evidence-artifacts"))
-        activeRun = run
-        Files.writeString(run.resolve("completion.json"), "{\"state\":\"started_unfinished\",\"qualified\":false}")
-    }
-
-    private fun finishRun() {
-        Files.writeString(assertNotNull(activeRun).resolve("completion.json"), buildJsonObject {
-            put("state", "all_method_assertions_passed_unqualified"); put("qualified", false)
-            put("note", "Fresh native-supervised method only; actual JUnit/suite completion must be retained separately. Historical pack is not renewed.")
-        }.toString())
-    }
+    private fun startRun(prefix: String): RetainedFixtureEvidence.Run = evidence.startRun(root, evidenceRoot, prefix)
 
     private data class Witness(val references: List<JsonObject>, val native: NativeFixtureWitness,
         val runtimeSourceDigest: String, val runtimeImageDigest: String, val verify: () -> Unit)
@@ -427,9 +384,9 @@ class DetektIntegrationTest {
     }
 
     /** Attribute runs to START bytes, never silently refresh passing witnesses from END source. */
-    private fun beginWitness(prefix: String, installation: DetektInstallation,
+    private fun beginWitness(run: RetainedFixtureEvidence.Run, prefix: String, installation: DetektInstallation,
         classpath: List<ArtifactIdentity> = emptyList()): Witness {
-        val native = captureNativeFixtureWitness(root, prefix, ::writeArtifact)
+        val native = captureNativeFixtureWitness(root, prefix, run::artifact)
         val sourceRoots = listOf("modules/provider-detekt/src/main", "modules/provider-detekt/src/test",
             "modules/provider-runtime/src/main", "modules/contracts/src/main", "modules/snapshot/src/main", "providers/detekt-fixtures/cases")
             .map(root::resolve)
@@ -441,19 +398,19 @@ class DetektIntegrationTest {
         } } + buildFiles.filter { Files.isRegularFile(it, NOFOLLOW_LINKS) }).distinct()
         val start = sourceFiles().associateWith { Files.readAllBytes(it) }
         val sourceReferences = start.flatMap { (path, bytes) -> listOf(reference(path),
-            writeArtifact("$prefix-at-start/${root.relativize(path).toString().replace('\\', '/')}", bytes)) }
+            run.artifact("$prefix-at-start/${root.relativize(path).toString().replace('\\', '/')}", bytes)) }
         val types = listOf(DetektProvider::class.java, DetektCatalog::class.java, DetektReportParser::class.java,
-            DetektIntegrationTest::class.java, IsolatedProcessRunner::class.java, ExecutionPermit::class.java,
+            DetektIntegrationTest::class.java, RetainedFixtureSuite::class.java, RetainedFixtureEvidence::class.java, IsolatedProcessRunner::class.java, ExecutionPermit::class.java,
             ExactExecutionAuthority::class.java, NativeFixtureWitness::class.java, native.anchor, SnapshotStore::class.java, ArtifactIdentity::class.java)
         fun bytes(type: Class<*>): ByteArray = type.getResourceAsStream("/" + type.name.replace('.', '/') + ".class")!!.use { it.readBytes() }
         val binaries = types.associateWith { bytes(it) }
-        val binaryReferences = binaries.map { (type, data) -> writeArtifact("$prefix-${type.simpleName}.class", data) }
+        val binaryReferences = binaries.map { (type, data) -> run.artifact("$prefix-${type.simpleName}.class", data) }
         val images = types.map { Path.of(it.protectionDomain.codeSource.location.toURI()).toAbsolutePath().normalize() }.distinct()
             .associateWith { fixtureProjectCodeImage(root, it) }
-        val imageRefs = images.entries.mapIndexed { index, (path, data) -> writeArtifact("$prefix-project-image-$index-${path.fileName}.zip", data) }
+        val imageRefs = images.entries.mapIndexed { index, (path, data) -> run.artifact("$prefix-project-image-$index-${path.fileName}.zip", data) }
         val toolPins = DetektCatalog.verifyArtifacts(installation.artifactDirectory)
         val javaDigest = fileDigest(installation.javaExecutable)
-        val toolRef = writeArtifact("$prefix-tool-start-witness.json", buildJsonObject {
+        val toolRef = run.artifact("$prefix-tool-start-witness.json", buildJsonObject {
             put("phase", "START_before_processes"); put("qualified", false)
             put("artifact_pins", JsonArray(toolPins.map { ContractJson.encodeToJsonElement(it.copy(path = "{pinned-installation}/${Path.of(it.path).fileName}")) }))
             put("java_executable_digest", javaDigest)
@@ -461,7 +418,7 @@ class DetektIntegrationTest {
             put("note", "Actual installed tool/launcher/classpath digests; external upstream engine and full JDK not redistributed or reproducibly attested.")
         }.toString().toByteArray())
         val references = sourceReferences + binaryReferences + imageRefs + native.references + toolRef
-        val manifest = writeArtifact("$prefix-start-witness.json", buildJsonObject {
+        val manifest = run.artifact("$prefix-start-witness.json", buildJsonObject {
             put("phase", "START_before_processes"); put("qualified", false); put("implementation_witnesses", JsonArray(references))
             put("note", "Current bytes and original START archives only; no retrospective source renewal or source-to-loaded-bytecode proof.")
         }.toString().toByteArray())

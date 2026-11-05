@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: implementation-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: implementation-${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   checker-host:
@@ -142,11 +142,16 @@ jobs:
           --require-task :contracts:test --require-task :audit:test
           --require-task :kernel:test --require-task :project-model:test
           --require-task :provider-architecture:test --require-task :review-controller:test
+          --require-task :worker-protocol:test --require-task :provider-compiler:test
+          --require-task :provider-compiler:workerTest
+          --require-task :worker-protocol:modelWireTest --require-task :provider-compiler:modelWorkerTest
+          --require-task :provider-build-contracts:test
           --require-task :provider-runtime:buildOwnedProcessSupervisor --require-task :provider-runtime:test
           --require-task :provider-runtime:buildOwnedLiveProcessSupervisor
           --require-task :provider-detekt:test --require-task :provider-ktlint:test
           --require-task :cli:installDist --require-task :cli:distZip --require-task :cli:distTar
-          -- --rerun-tasks --no-build-cache test :cli:installDist :cli:distZip :cli:distTar
+          -- --rerun-tasks --no-build-cache test :worker-protocol:modelWireTest :provider-compiler:modelWorkerTest
+          :provider-build-contracts:test :cli:installDist :cli:distZip :cli:distTar
           -PdetektIntegration=${{ matrix.library_opt_in }} -PktlintIntegration=${{ matrix.library_opt_in }}
           -PlibraryFixtureEvidenceRoot=build/ci-evidence/raw/library-fixtures
           -PnativeSupervisorPython=${{ matrix.supervisor_python }} ${{ matrix.supervisor_cc_property }}
@@ -213,12 +218,33 @@ jobs:
           --require-report "modules/contracts/build/test-results/test/*.xml"
           --require-report "tests/audit/build/test-results/test/*.xml"
           --require-report "modules/kernel/build/test-results/test/*.xml"
+          --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionBarrierTest.xml"
+          --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionAuditCodecTest.xml"
           --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelPlanIntegrationTest.xml"
           --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelStressTest.xml"
           --require-report "modules/project-model/build/test-results/test/*.xml"
           --require-report "modules/provider-architecture/build/test-results/test/*.xml"
           --require-report "modules/review-controller/build/test-results/test/*.xml"
+          --require-report "modules/review-controller/build/test-results/test/TEST-dev.ktchecker.reviewcontroller.OwnerIntegratedCompletionRegistryTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.GradleWrapperChecksumProviderTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.InstalledWrapperContextTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperActivationPolicyBoundsTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperPropertiesTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperChecksumConsumerIntegrationTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperRulePolicyIntegrationTest.xml"
           --require-report "modules/provider-runtime/build/test-results/test/*.xml"
+          --require-report "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.ApplicationWireTest.xml"
+          --require-report "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.CompilerJobWireTest.xml"
+          --require-report "modules/worker-protocol/build/test-results/modelWireTest/TEST-dev.ktchecker.workerprotocol.CompilerModelWireTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerApplicationLifecycleTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerLiveHostAuthorityTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerLiveRenderingTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/workerTest/TEST-dev.ktchecker.compilerworker.live.CompilerApplicationLifecycleTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/workerTest/TEST-dev.ktchecker.compilerworker.live.CompilerApplicationFilesystemTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationFilesystemTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationLifecycleTest.xml"
+          --require-report "modules/provider-runtime/build/test-results/test/TEST-dev.ktchecker.providers.runtime.OwnedApplicationSessionsTest.xml"
+          --require-report "modules/provider-runtime/build/test-results/test/TEST-dev.ktchecker.providers.runtime.OwnedApplicationTypesTest.xml"
           --require-tests
           --require-artifact "modules/kernel/build/reports/stress/kernel-100-patches.json"
           --require-artifact "modules/cli/build/distributions/*.zip"

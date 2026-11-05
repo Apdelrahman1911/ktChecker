@@ -1,10 +1,12 @@
 # Independent Detekt syntax corpus, batch 1
 
-**Authoring only: corpus compilation, control-test execution and detector
-execution are not claimed yet.** Twelve lightweight Python checks validate
-manifest identities, spans, suppression neighbors and source-only bounded-driver
-guards; they do not compile Kotlin or run Detekt. The Kotlin sources additionally
-author 20 non-process control tests and one explicitly opted-in integration test.
+**This four-cohort revision is authored only: no new compilation, control-test
+execution or detector execution is claimed.** The earlier single-exceptions
+control pass belongs to its exact prior source and contributes zero stages to
+this revision. Python authoring checks cover manifest identities, spans,
+suppression neighbors and the closed cohort registry; they do not compile Kotlin
+or run Detekt. The Kotlin sources author 25 non-process control methods and one
+explicitly opted-in integration method. None of the new controls has run yet.
 
 This separate corpus contains **10 existing exact syntax routes**: eight advisory
 rules and two explicitly opted-in conventions. It does not change the 276-rule
@@ -42,37 +44,53 @@ its raw report and exact range. It must not filter it, relax counts, silently
 renew evidence, or convert a tested heuristic into qualified defect semantics.
 Unexpected behavior fails the corpus and preserves the partial run for review.
 
-## Explicit bounded cohort; full scope stays not_run
+## Four explicit bounded cohorts; full scope stays not_run
 
-The approved ten-rule corpus still plans **91 detector analyses plus one CLI
-probe**; the full corpus remains **not_run**, not a scope exclusion. There is no
-`all`/full-ten execution selector. Enabling integration alone fails before any
-provider call unless the owner explicitly selects **`exceptions-core-v1`**:
+The unchanged ten-rule fixtures still contain **91 detector analyses**. They are
+partitioned into four disjoint explicit plans; no fixture, expectation, false
+positive, miss or policy limit has been removed. The full corpus remains
+**not_run**, not a scope exclusion. There is no `all`/full-ten execution selector,
+default cohort, wildcard or multi-cohort invocation. Enabling integration alone
+fails before any provider call. Each granted run selects exactly one literal:
 
-| Selected existing catalog ID | Standard + independent controls | Detector analyses |
-|---|---|---|
-| `ktc.kotlin.detekt.exceptions.throwing-exception-from-finally` | 6 + 2 | 8 |
-| `ktc.kotlin.detekt.exceptions.swallowed-exception` | 6 + 5 | 11 |
-| `ktc.kotlin.detekt.exceptions.not-implemented-declaration` | 6 + 3 | 9 |
+| Cohort | Existing rules (standard + independent controls) | Analyses | All calls | Native JVM ceiling | Runtime callbacks | Progress events |
+|---|---|---:|---:|---:|---:|---:|
+| `exceptions-core-v1` | ThrowingExceptionFromFinally (6+2), SwallowedException (6+5), NotImplementedDeclaration (6+3) | 28 | 38 | 29 | 32 | 116 |
+| `iteration-core-v1` | InvalidRange (6+3), IteratorHasNextCallsNextMethod (6+3), UnconditionalJumpStatementInLoop (6+4) | 28 | 38 | 29 | 32 | 116 |
+| `value-core-v1` | EqualsAlwaysReturnsTrueOrFalse (6+3), UselessPostfixExpression (6+2) | 17 | 24 | 18 | 20 | 74 |
+| `opt-in-policy-v1` | DataClassShouldBeImmutable (6+3), LibraryEntitiesShouldNotBePublic (6+3) | 18 | 25 | 19 | 21 | 77 |
 
-That cohort has **28 analyses and one real CLI version probe**, at most **29
-native launches**. Six Common/Native requests and three changed-configuration
-replays are also reserved: **all 38 analyze/probe invocations count** against the
-configured ceiling. Replays must retain the exact runtime denial callback,
+The full catalog IDs and existing fixture counts are literal immutable maps in
+`DetektCorpusCohort`. Gradle admits the same four names and the authoring checks
+compare both registries. Settings, budget, driver and evidence all retain the
+same selected plan object; no mutable process-global cohort can change a run's
+identity. The exceptions plan identity stays byte-for-byte the same, but changed
+source and class images still require fresh evidence. The opt-in policy cohort
+explicitly selects the two conventions; no ordinary/default activation changes.
+
+Every cohort performs **one fresh CLI version probe**, two Common/Native
+abstentions per selected rule, and one changed-configuration denial per selected
+rule. Thus all calls are analyses + 1 + 3 × selected rules, and native-supervised
+JVM calls are analyses + 1. These are not counts of every Gradle/compiler/helper
+or OS process. There is no reuse of a probe or terminal result from another run.
+The entire selected schedule counts against the ceiling. Replays must retain the exact runtime denial callback,
 not a missing callback: unavailable/exact `execution_not_authorized`, confirmation
 false, absent identity/exit/output directory, empty command/stdout/stderr, zero
 output bytes, no cancellation/timeout/truncation or invented CPU/RSS.
 
 The driver has hard maxima of **40 total invocations**, **1,200,000 ms aggregate
 monotonic time** and **60,000 ms per child**. Ceilings above those values, unknown
-cohorts, and fewer than 38 available reservations fail before execution. A
+cohorts, or fewer available reservations than the selected plan (38, 38, 24 or
+25) fail before execution. A
 child's exact trusted profile is capped to the current remaining aggregate
 budget; the same aggregate-deadline cancellation token also covers provider
 preparation and native execution. START capture, drift checks and between-call
 preparation consume the aggregate budget. Native cleanup may need its runtime
 grace after cancellation; it is not bypassed to satisfy a deadline. No subsequent
 reservation, retry or passing sidecar is permitted after exhaustion/failure.
-The lead's separate outer watchdog must include compilation and cleanup time.
+The lead's separate outer watchdog must include compilation and cleanup time;
+neither a cooperative deadline nor a Gradle-phase watchdog is a hard total-wall
+or OS-wide descendant-quiescence claim.
 
 Progress uses bounded, immutable **CREATE_NEW** event files: reservation before a
 call, actual process/abstention outcome before assertions, then a checked result.
@@ -88,22 +106,17 @@ reservation and actual partial artifacts rather than become inferred successes.
 
 The sources live only in `modules/provider-detekt/src/corpusTest/kotlin/`; the
 `corpusTest` source set/task never joins ordinary `test`/`check` or changes the
-older two methods' scope. Gradle registration and Kotlin compilation still need
-verification. Example commands are plans, **not execution receipts**:
-
-```sh
-python3 -m unittest discover -s providers/detekt-fixtures -p test_syntax_corpus.py -q
-# Only after the lead grants the single heavy-process slot:
-./gradlew --no-daemon --max-workers=1 :provider-detekt:compileCorpusTestKotlin
-./gradlew --no-daemon --max-workers=1 :provider-detekt:corpusTest \
-  -PdetektCorpusIntegration=false
-# Only after compile/control acceptance and a separate real-run grant:
-./gradlew --no-daemon --max-workers=1 :provider-detekt:corpusTest \
-  -PdetektCorpusIntegration=true -PdetektCorpusCohort=exceptions-core-v1 \
-  -PdetektCorpusMaxInvocations=40 -PdetektCorpusAggregateMillis=1200000 \
-  -PdetektCorpusChildMillis=60000 \
-  -PlibraryFixtureEvidenceRoot=build/evidence/detekt-corpus/selected-run
-```
+older two methods' scope. This revision requires new source review and an
+explicitly granted compilation/control run before any granted real analysis.
+The exact integration method is
+`explicit bounded selected cohort retains actual native outcomes and heuristic gaps()`.
+It reads `detektCorpusIntegration=true`, one listed `detektCorpusCohort`, and the
+existing `detektCorpusMaxInvocations`, `detektCorpusAggregateMillis` and
+`detektCorpusChildMillis` bounds. A separately reviewed root-owned adapter must
+bind the fresh source/images, selected case matrix, one-shot evidence root and
+actual JUnit/native outcomes. The earlier single-exceptions adapter's frozen
+preimages and receipts do **not** admit this revision. Do not loop over the
+cohort names, copy caches or run a task without the root's explicit slot/grant.
 
 The accepted ordinary Linux native fixture run does not compile or execute this
 corpus. Windows remains unsupported, and matching native resources or Linux
@@ -125,7 +138,7 @@ there is no count relaxation or filtering of valid-alternative controls.
 
 ## Cohort-bound evidence and honest stages
 
-A fresh `runs/<run-id>-syntax-corpus-exceptions-core-v1/` retains immutable START
+A fresh `runs/<run-id>-syntax-corpus-<selected-cohort>/` retains immutable START
 originals, current-source guards, bounded class-resource/project code images,
 exact installed native manifest/binary/informational build receipt and tool/JDK
 file digests. Native resources come from the actual loader's CodeSource JAR or
@@ -146,16 +159,21 @@ single-link sidecar with this cohort's exact context; symlinks, wrong cohorts an
 replacement identities are refused. Prior cohort live bytes, if present, are
 archived exactly before withdrawal. No ordinary or historical sidecar is touched.
 
-Only all 38 checked results, exact counts, full drift/deadline checks and the
+Only all selected-plan results, exact per-kind/per-rule counts, full drift/deadline checks and the
 successful-test gate can publish
-`evidence/verified-jvm-syntax-corpus-exceptions-core-v1-native-preview1.json`.
+`evidence/verified-jvm-syntax-corpus-<selected-cohort>-native-preview1.json`.
 The context binds the cohort/plan, complete source tuple, corpus code image,
 fixture set, configured limits, native identity and runtime execution-source/JAR
-digests. Seven remaining authored rows retain `not_run`, all stage/attempt flags
-false and no passing cases; only these **three** rows could become locally
+digests. The seven or eight other authored rows retain `not_run`, all stage/attempt flags
+false and no passing cases; only the selected **three or two** rows could become locally
 implemented/tested, **qualified=false**. A changed context cannot borrow any
 ordinary, historical or prior corpus execution. Raw runtime results remain
 partial, tested=false, qualified=false, with no successful certificates.
+Every cohort retains all ten rows. No aggregate sidecar merges their stages,
+no CURRENT selector changes, and no ninth current context is activated. All
+1,663 IDs across the eight existing current contexts remain unchanged. Synthetic
+corpus cases are not natural-project or precision-reviewed-natural observations;
+both natural denominators remain zero.
 
 The integration runner has no framework TempDir or unconditional permission/
 recursive cleanup. Each run owns a one-shot private `0700` scratch leaf under
@@ -174,6 +192,7 @@ commit boundary. Failed/aborted/deadline-exhausted runs retain bounded progress,
 candidates and partial artifacts with no passing live cohort sidecar. The lead must independently retain
 and verify real JUnit/build completion; a START witness or checked local receipt
 is not a green task, complete ten-rule run or release certificate. The optional
-`libraryFixtureEvidenceRoot` above moves only new archive/sidecar output inside
+`libraryFixtureEvidenceRoot` moves only new archive/sidecar output inside
 repository `build/` without symlink descendants; source references remain original
-repository paths. No corpus compilation or execution has yet been attributed.
+repository paths. No compilation or execution of this four-cohort revision has
+yet been attributed.

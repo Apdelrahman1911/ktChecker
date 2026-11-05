@@ -35,10 +35,15 @@ def select_simulator(runtimes: dict, devices: dict) -> dict:
     validate_simctl_inventory(runtimes, "runtimes")
     validate_simctl_inventory(devices, "devices")
     for runtime in runtimes.get("runtimes", []):
-        if runtime.get("isAvailable") is not True or runtime.get("version") not in {"26.4", "26.4.0"}:
+        # Version and runtime build must match on this same observed row.
+        # Runtime build 23E254a is not the Xcode build 17E202.
+        if runtime.get("isAvailable") is not True or runtime.get("version") != "26.4.1" \
+                or runtime.get("buildversion") != "23E254a":
             continue
         identifier = runtime.get("identifier", "")
-        if not re.fullmatch(r"com\.apple\.CoreSimulator\.SimRuntime\.iOS-26-4(?:-0)?", identifier):
+        # Use the observed canonical iOS identifier, never derive its suffix
+        # from the version or substitute an Apple package/download identifier.
+        if not re.fullmatch(r"com\.apple\.CoreSimulator\.SimRuntime\.iOS-[1-9][0-9]?-(?:0|[1-9][0-9]?)(?:-(?:0|[1-9][0-9]?))?", identifier):
             continue
         for device in devices.get("devices", {}).get(identifier, []):
             if device.get("isAvailable") is not True or device.get("name") != "iPhone 17":
@@ -49,7 +54,7 @@ def select_simulator(runtimes: dict, devices: dict) -> dict:
             return {"name": device["name"], "udid": udid, "runtime_identifier": identifier,
                     "runtime_version": runtime["version"], "runtime_build": runtime.get("buildversion"),
                     "initial_state": device.get("state"), "execution_mode": "KGP simctl spawn --standalone"}
-    raise ValueError("No available iPhone 17 in the pinned iOS 26.4 simulator runtime")
+    raise ValueError("No available iPhone 17 in the pinned iOS 26.4.1 simulator runtime, build 23E254a")
 
 
 def preflight(profile: str) -> dict:

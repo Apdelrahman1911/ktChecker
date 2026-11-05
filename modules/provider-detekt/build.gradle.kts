@@ -22,9 +22,14 @@ configurations[corpusTestSources.implementationConfigurationName]
 configurations[corpusTestSources.runtimeOnlyConfigurationName]
     .extendsFrom(configurations.testRuntimeOnly.get())
 
+// Closed selector mirrored by the corpus registry; authoring tests check exact membership.
+val detektCorpusCohortNames = setOf(
+    "exceptions-core-v1", "iteration-core-v1", "value-core-v1", "opt-in-policy-v1",
+)
+
 tasks.register<Test>("corpusTest") {
     group = "verification"
-    description = "Validate separate corpus controls; execute only the explicitly selected bounded exceptions-core-v1 cohort."
+    description = "Validate separate corpus controls; execute only one explicitly selected bounded syntax cohort."
     testClassesDirs = corpusTestSources.output.classesDirs
     classpath = corpusTestSources.runtimeClasspath
     systemProperty("ktchecker.detekt.corpus.integration", providers.gradleProperty("detektCorpusIntegration").getOrElse("false"))
@@ -36,8 +41,8 @@ tasks.register<Test>("corpusTest") {
     ).forEach { (property, key) -> providers.gradleProperty(property).orNull?.let { systemProperty(key, it) } }
     doFirst {
         if (providers.gradleProperty("detektCorpusIntegration").getOrElse("false") == "true") {
-            require(providers.gradleProperty("detektCorpusCohort").orNull == "exceptions-core-v1") {
-                "Real corpus requires -PdetektCorpusCohort=exceptions-core-v1; integration alone never selects all ten rules"
+            require(providers.gradleProperty("detektCorpusCohort").orNull in detektCorpusCohortNames) {
+                "Real corpus requires one explicit -PdetektCorpusCohort from $detektCorpusCohortNames; integration alone never selects all ten rules"
             }
         }
     }

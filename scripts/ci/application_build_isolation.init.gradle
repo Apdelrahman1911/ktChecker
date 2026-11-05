@@ -1,0 +1,129 @@
+// Private build-data instrumentation. No provider/native fixture or application is launched.
+// The runner supplies all three properties and a fresh local build-cache directory.
+import groovy.json.JsonOutput
+import org.gradle.api.GradleException
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.tasks.compile.JavaCompile
+
+def gateProperties = gradle.startParameter.projectProperties
+def reportName = gateProperties['applicationBuildIsolationReport']
+def cacheName = gateProperties['applicationBuildIsolationLocalCache']
+def cacheOverride = gateProperties['applicationBuildIsolationEnableTestCache']
+if (!reportName || !cacheName || !(cacheOverride in ['true', 'false'])) {
+    throw new GradleException('Private application build gate properties are required')
+}
+def reportFile = new File(reportName)
+def localCache = new File(cacheName)
+if (!reportFile.isAbsolute() || !localCache.isAbsolute()) {
+    throw new GradleException('Private application build gate paths must be absolute')
+}
+def testCacheEnabled = cacheOverride == 'true'
+def reportTaskName = 'applicationBuildIsolationReport'
+def allowedTasks = [
+    ':worker-protocol:compileJava', ':worker-protocol:processResources',
+    ':worker-protocol:classes', ':worker-protocol:jar',
+    ':provider-compiler:checkKotlinGradlePluginConfigurationErrors',
+    ':provider-compiler:compileWorkerKotlin', ':provider-compiler:compileWorkerJava',
+    ':provider-compiler:processWorkerResources', ':provider-compiler:workerClasses',
+    ':provider-compiler:compilerApplicationWorkerJar',
+    ':provider-compiler:' + reportTaskName,
+] as Set
+
+gradle.settingsEvaluated { settings ->
+    settings.buildCache.local.enabled = true
+    settings.buildCache.local.directory = localCache
+    if (settings.buildCache.remote != null) {
+        settings.buildCache.remote.enabled = false
+    }
+}
+
+// Tooling needed to configure/compile Java is separate from the external provider
+// compilerToolchain. Resolving that provider configuration would escape this gate.
+gradle.beforeProject { project ->
+    if (project.path == ':provider-compiler') {
+        project.configurations.all { configuration ->
+            if (configuration.name == 'compilerToolchain') {
+                configuration.incoming.beforeResolve {
+                    throw new GradleException('Build isolation must not resolve compilerToolchain')
+                }
+            }
+        }
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def unexpected = graph.allTasks.collect { it.path }.findAll { !allowedTasks.contains(it) }
+    if (!unexpected.isEmpty()) {
+        throw new GradleException('Application build gate task graph escaped: ' + unexpected.sort())
+    }
+}
+
+gradle.projectsEvaluated {
+    def compiler = gradle.rootProject.project(':provider-compiler')
+    def protocol = gradle.rootProject.project(':worker-protocol')
+    def applicationJar = compiler.tasks.named('compilerApplicationWorkerJar')
+    def protocolJar = protocol.tasks.named('jar')
+    if (testCacheEnabled) {
+        // Exercise stale-cache controls even when the production Jar type does not
+        // enable caching. This override exists only in this private init script.
+        applicationJar.configure { task ->
+            task.outputs.cacheIf('Private application build gate cache exercise only') { true }
+        }
+    }
+    compiler.tasks.register(reportTaskName) { reportTask ->
+        reportTask.group = 'verification'
+        reportTask.description = 'Private actual classpath/archive build-data report; no provider execution.'
+        reportTask.dependsOn(applicationJar, protocolJar)
+        reportTask.outputs.file(reportFile)
+        reportTask.outputs.upToDateWhen { false }
+        reportTask.outputs.doNotCacheIf('Per-invocation private build-data report') { true }
+        reportTask.doLast {
+            def paths = { collection -> collection.files.collect { it.canonicalPath }.unique().sort() }
+            def sourceSetData = { sourceSet ->
+                [compile_classpath: paths(sourceSet.compileClasspath),
+                 runtime_classpath: paths(sourceSet.runtimeClasspath),
+                 output: paths(sourceSet.output),
+                 class_directories: paths(sourceSet.output.classesDirs),
+                 kotlin_sources: sourceSet.allSource.files.findAll { it.name.endsWith('.kt') }
+                     .collect { it.canonicalPath }.sort()]
+            }
+            def javaCompileData = { JavaCompile task ->
+                [classpath: paths(task.classpath),
+                 language_version: task.javaCompiler.get().metadata.languageVersion.asInt()]
+            }
+            def wire = compiler.configurations.getByName('applicationWireBridge')
+            def protocolMain = protocol.extensions.getByName('sourceSets').getByName('main')
+            def worker = compiler.extensions.getByName('sourceSets').getByName('worker')
+            def kotlinTask = compiler.tasks.findByName('compileWorkerKotlin')
+            if (kotlinTask == null || !kotlinTask.hasProperty('libraries')) {
+                throw new GradleException('Cannot inspect actual worker Kotlin task libraries')
+            }
+            def artifacts = wire.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
+                def component = artifact.id.componentIdentifier
+                [file: artifact.file.canonicalPath,
+                 project_path: component instanceof ProjectComponentIdentifier ? component.projectPath : null,
+                 component: component.displayName]
+            }.sort { it.file }
+            def document = [
+                schema: 'ktchecker.application-build-isolation-closure/v1',
+                scope: 'Actual Gradle build/classpath data only; no provider/native execution or qualification',
+                test_only_jar_cache_override: testCacheEnabled,
+                production_cache_enablement_assessed: false,
+                task_graph: gradle.taskGraph.allTasks.collect { it.path }.sort(),
+                protocol_has_kotlin_plugin: protocol.plugins.hasPlugin('org.jetbrains.kotlin.jvm'),
+                protocol_main: sourceSetData(protocolMain),
+                protocol_java_compile: javaCompileData(protocol.tasks.named('compileJava', JavaCompile).get()),
+                protocol_resolved_compile_files: paths(protocol.configurations.getByName('compileClasspath')),
+                protocol_resolved_runtime_files: paths(protocol.configurations.getByName('runtimeClasspath')),
+                worker: sourceSetData(worker),
+                worker_java_compile: javaCompileData(compiler.tasks.named('compileWorkerJava', JavaCompile).get()),
+                worker_kotlin_libraries: paths(kotlinTask.libraries),
+                wire_bridge: [transitive: wire.transitive, files: paths(wire), artifacts: artifacts],
+                protocol_jar: protocolJar.get().archiveFile.get().asFile.canonicalPath,
+                application_jar: applicationJar.get().archiveFile.get().asFile.canonicalPath,
+            ]
+            reportFile.parentFile.mkdirs()
+            reportFile.setText(JsonOutput.prettyPrint(JsonOutput.toJson(document)) + '\n', 'UTF-8')
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "compilation": "xml",
+  "evidence_state": "historical_xml_controls_unqualified_post_run_manual_association",
+  "fixture_scope": "Two XML detector controls only; no Android Gradle or Kotlin/Native execution.",
+  "id": "isolated-lint32.3.1-xml-main",
+  "jdk_version": "unknown",
+  "kotlin_version": "not_used_xml_only",
+  "library_versions": {
+    "android-lint": "32.3.1",
+    "lint-client": "9.3.1"
+  },
+  "module": ":fixture",
+  "run": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml",
+  "source_set": "main",
+  "target": "android"
+}

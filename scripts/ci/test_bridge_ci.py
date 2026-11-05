@@ -6,6 +6,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import tarfile
 import tempfile
 import unittest
@@ -225,6 +226,133 @@ class BridgeInfrastructureTests(unittest.TestCase):
                     result = run_bridge_checks.finalize(path)
                 self.assertEqual("incomplete", result["state"])
                 self.assertTrue(result["errors"])
+
+
+class BridgeUploadWorkflowTests(unittest.TestCase):
+    """Fixed authored stanzas only; no YAML evaluation, npm launch or publication."""
+
+    build_name = "Execute npm ci, actual SDK/synthetic-host tests/audits and validated unsigned npm packs"
+    finalize_name = "Bind sanitized bridge evidence to actual source and job outcome"
+    evidence_name = "Retain sanitized case counts, exact lock pins and audit outcomes"
+    upload_name = "Hold npm archive upload pending bridge-specific publication clearance"
+    runner = "python scripts/ci/run_bridge_checks.py"
+    evidence_path = "build/ci-evidence/bridges.json"
+    archive_paths = (
+        "build/ci-packages/ktchecker-mcp-preview-0.1.0-preview.1.tgz",
+        "build/ci-packages/ktchecker-reference-host-preview-0.1.0-preview.1.tgz",
+    )
+    upload_action = "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+
+    def document(self):
+        return (ci_common.REPO_ROOT / ".github/workflows/bridges-validation.yml").read_text(encoding="utf-8")
+
+    def step(self, document, name):
+        # This is deliberately not a general YAML parser.
+        rows = re.findall(r"^      - name: " + re.escape(name) + r"\n([\s\S]*?)(?=^      - |\Z)",
+                          document, re.MULTILINE)
+        self.assertEqual(1, len(rows), name)
+        return rows[0]
+
+    def conditions(self, step):
+        return re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE)
+
+    def artifact_paths(self, step):
+        fields = re.findall(r"^          path: ([^\n]+)$", step, re.MULTILINE)
+        self.assertEqual(1, len(fields))
+        if fields == ["|"]:
+            body = re.findall(r"^          path: \|\n((?:            [^\n]*\n)+)", step, re.MULTILINE)
+            self.assertEqual(1, len(body))
+            return [line.strip() for line in body[0].splitlines()]
+        return fields
+
+    def assert_upload_hold(self, document):
+        evidence = self.step(document, self.evidence_name)
+        archive = self.step(document, self.upload_name)
+        # No variable, unsigned/preview label, or unrelated JVM review can opt in.
+        self.assertEqual(["${{ false }}"], self.conditions(archive))
+        self.assertEqual(["always()"], self.conditions(evidence))
+        self.assertEqual([self.evidence_path], self.artifact_paths(evidence))
+        self.assertEqual(list(self.archive_paths), self.artifact_paths(archive))
+        # Pin every authored action so a second upload path cannot silently appear.
+        self.assertEqual([
+            "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+            "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+            "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
+            self.upload_action, self.upload_action,
+        ], re.findall(r"^\s*(?:-\s+)?uses:\s+([^\s]+)", document, re.MULTILINE))
+        for step in (evidence, archive):
+            self.assertNotIn("continue-on-error:", step)
+            self.assertEqual([self.upload_action], re.findall(r"^        uses: ([^\s]+)", step, re.MULTILINE))
+            self.assertEqual(["error"], re.findall(r"^          if-no-files-found: ([^\n]+)$", step, re.MULTILINE))
+            self.assertEqual(["14"], re.findall(r"^          retention-days: ([^\n]+)$", step, re.MULTILINE))
+
+    def assert_validation_scope(self, document):
+        jobs = document.split("\njobs:\n")
+        self.assertEqual(2, len(jobs))
+        self.assertEqual(["bridge-controls"], re.findall(r"^  ([a-z][a-z0-9-]*):$", jobs[1], re.MULTILINE))
+        self.assertNotRegex(jobs[1], r"(?m)^    if:")
+        self.assertNotIn("continue-on-error:", document)
+        self.assertEqual(1, document.count("        os: [ubuntu-24.04, windows-2025, macos-26]\n"))
+        build = self.step(document, self.build_name)
+        finalize = self.step(document, self.finalize_name)
+        self.assertEqual([], self.conditions(build))
+        self.assertEqual([self.runner + " --output " + self.evidence_path],
+                         re.findall(r"^        run: ([^\n]+)$", build, re.MULTILINE))
+        self.assertEqual(["always()"], self.conditions(finalize))
+        self.assertEqual([self.runner + " --finalize --output " + self.evidence_path],
+                         re.findall(r"^        run: ([^\n]+)$", finalize, re.MULTILINE))
+        self.assertIn("          KT_CI_JOB_STATUS: ${{ job.status }}\n", finalize)
+        self.assertEqual(["always()"], self.conditions(self.step(document, self.evidence_name)))
+
+    def test_bridge_package_upload_is_held_without_claiming_delivery(self):
+        self.assert_upload_hold(self.document())
+
+    def test_upload_hold_preserves_all_host_controls_and_failure_evidence(self):
+        self.assert_validation_scope(self.document())
+
+    def test_upload_guard_rejects_reenablement_and_alternate_archive_paths(self):
+        document = self.document()
+        hold = "        if: ${{ false }}\n"
+        evidence = "          path: " + self.evidence_path + "\n"
+        candidates = {
+            "success": document.replace(hold, "        if: success()\n", 1),
+            "true": document.replace(hold, "        if: ${{ true }}\n", 1),
+            "missing_hold": document.replace(hold, "", 1),
+            "unrelated_jvm_approval": document.replace(hold,
+                "        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true'"
+                " && steps.distribution_upload_license_review.outcome == 'success'\n", 1),
+            "broad_evidence_glob": document.replace(evidence, "          path: build/**\n", 1),
+            "archive_as_evidence": document.replace(evidence, "          path: " + self.archive_paths[0] + "\n", 1),
+            "archive_in_evidence_list": document.replace(evidence,
+                "          path: |\n            " + self.evidence_path + "\n            build/ci-packages/*.tgz\n", 1),
+            "extra_upload": document + "      - uses: " + self.upload_action
+                + "\n        with:\n          name: unapproved-packages\n          path: build/ci-packages/*.tgz\n",
+        }
+        for name, candidate in candidates.items():
+            with self.subTest(mutation=name):
+                self.assertNotEqual(document, candidate)
+                with self.assertRaises(AssertionError):
+                    self.assert_upload_hold(candidate)
+
+    def test_scope_guard_rejects_skipping_controls_or_failure_evidence(self):
+        document = self.document()
+        run = "        run: " + self.runner + " --output " + self.evidence_path + "\n"
+        mutations = (
+            ("  bridge-controls:\n", "  bridge-controls:\n    if: ${{ false }}\n"),
+            ("os: [ubuntu-24.04, windows-2025, macos-26]", "os: [ubuntu-24.04, macos-26]"),
+            (run, "        if: ${{ false }}\n" + run),
+            (run, "        continue-on-error: true\n" + run),
+            ("- name: " + self.finalize_name + "\n        if: always()",
+             "- name: " + self.finalize_name + "\n        if: success()"),
+            ("- name: " + self.evidence_name + "\n        if: always()",
+             "- name: " + self.evidence_name + "\n        if: success()"),
+        )
+        for old, new in mutations:
+            with self.subTest(mutation=old):
+                candidate = document.replace(old, new, 1)
+                self.assertNotEqual(document, candidate)
+                with self.assertRaises(AssertionError):
+                    self.assert_validation_scope(candidate)
 
 
 if __name__ == "__main__":

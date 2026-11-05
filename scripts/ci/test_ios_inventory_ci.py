@@ -50,8 +50,10 @@ def fixture_symlink(test_case, link, target, *, target_is_directory=False):
         raise
 
 
-def runtime(identifier=RUNTIME, version="26.4", available=True, **extra):
-    return {"identifier": identifier, "version": version, "isAvailable": available, **extra}
+def runtime(identifier=RUNTIME, version="26.4.1", available=True, buildversion="23E254a", **extra):
+    # Synthetic observed fields, not an Apple identifier/version assertion.
+    return {"identifier": identifier, "version": version, "isAvailable": available,
+            "buildversion": buildversion, **extra}
 
 
 def device(name="iPhone 17", available=True, udid=UDID, **extra):
@@ -312,7 +314,7 @@ class IOSInventoryTests(unittest.TestCase):
         self.assertEqual(result["device_inventory"]["unpublished_type_rows"], 1)
         self.assertEqual(result["device_inventory"]["states"]["other"], 1)
         self.assertEqual(result["simulator_selector"]["canonical_device_type"]["state"], "unobserved")
-        self.assertEqual(result["pinned_tuple"]["state"], "available")
+        self.assertEqual(result["pinned_tuple"], {"state": "unavailable", "fixed_mismatch_code": "pinned_runtime_build_mismatch"})
 
     def test_complete_empty_inventories_support_zero_counts_only(self):
         result, _, _ = self.observe_case(runtimes={"runtimes": []}, devices={"devices": {}})
@@ -374,7 +376,8 @@ class IOSInventoryTests(unittest.TestCase):
         self.check_mismatch({"runtimes": [runtime(version="26.3")]}, {"devices": {}}, "pinned_runtime_version_absent")
 
     def test_runtime_identifier_mismatch_is_distinct(self):
-        self.check_mismatch({"runtimes": [runtime(identifier=OTHER_RUNTIME)]}, {"devices": {}}, "pinned_runtime_identifier_mismatch")
+        self.check_mismatch({"runtimes": [runtime(identifier="com.apple.CoreSimulator.SimRuntime.tvOS-26-4")]},
+                            {"devices": {}}, "pinned_runtime_identifier_mismatch")
 
     def test_runtime_unavailability_is_distinct(self):
         self.check_mismatch({"runtimes": [runtime(available=False)]}, {"devices": {RUNTIME: [device()]}}, "pinned_runtime_unavailable")
@@ -397,7 +400,8 @@ class IOSInventoryTests(unittest.TestCase):
         self.check_mismatch({"runtimes": [runtime()]}, {"devices": {RUNTIME: [device(udid=PRIVATE)]}}, "pinned_device_uuid_invalid")
 
     def test_runtime_version_and_identifier_must_intersect_on_same_row(self):
-        runtimes = {"runtimes": [runtime(version="26.3"), runtime(identifier=OTHER_RUNTIME)]}
+        runtimes = {"runtimes": [runtime(version="26.3"),
+                                 runtime(identifier="com.apple.CoreSimulator.SimRuntime.tvOS-26-4")]}
         self.check_mismatch(runtimes, {"devices": {RUNTIME: [device()]}}, "pinned_runtime_identifier_mismatch")
 
     def test_canonical_type_missing_or_unknown_is_not_hardware_absence_or_selector_gate(self):
@@ -420,13 +424,31 @@ class IOSInventoryTests(unittest.TestCase):
             self.assertEqual(tuple(canonical[key] for key in ("pinned_type_rows", "other_type_rows", "missing_type_rows")), expected)
             self.assertEqual(result["pinned_tuple"]["state"], "available")
 
-    def test_runtime_build_and_device_state_do_not_change_selector(self):
-        for build, state in [(None, None), (PRIVATE, PRIVATE), ("23F77", "Booted"), ("23F77", "Shutdown")]:
-            result, _, _ = self.observe_case(runtimes={"runtimes": [runtime(buildversion=build)]},
-                                            devices={"devices": {RUNTIME: [device(state=state)]}})
-            self.assertEqual(result["pinned_tuple"]["state"], "available")
+    def test_runtime_build_is_exact_but_device_state_is_not_a_selector_predicate(self):
+        for build in (None, PRIVATE, "23F77", "23E254", "23E254A", "23E254b", "17E202"):
+            result, _, _ = self.observe_case(runtimes={"runtimes": [runtime(buildversion=build)]})
+            self.assertEqual(result["pinned_tuple"],
+                             {"state": "unavailable", "fixed_mismatch_code": "pinned_runtime_build_mismatch"})
             self.assertNotIn(PRIVATE, json.dumps(result))
             self.assertNotIn("23F77", json.dumps(result))
+        for state in (None, PRIVATE, "Booted", "Shutdown"):
+            result, _, _ = self.observe_case(devices={"devices": {RUNTIME: [device(state=state)]}})
+            self.assertEqual(result["pinned_tuple"]["state"], "available")
+            self.assertNotIn(PRIVATE, json.dumps(result))
+
+    def test_runtime_version_and_build_are_not_matched_across_rows(self):
+        runtimes = {"runtimes": [runtime(version="26.4"),
+                                 runtime(identifier=RUNTIME + "-1", buildversion="23E254b")]}
+        self.check_mismatch(runtimes, {"devices": {RUNTIME: [device()]}},
+                            "pinned_runtime_build_mismatch")
+
+    def test_synthetic_observed_iOS_identifier_suffix_is_not_inferred(self):
+        for identifier in (RUNTIME, RUNTIME + "-1"):
+            result, _, _ = self.observe_case(runtimes={"runtimes": [runtime(identifier=identifier)]},
+                                            devices={"devices": {identifier: [device()]}})
+            self.assertEqual(result["pinned_tuple"]["state"], "available")
+            self.assertEqual(result["runtime_inventory"]["rows"][0]["identifier"], identifier)
+            self.assertTrue(result["runtime_inventory"]["rows"][0]["pinned_build_match"])
 
     def test_runtime_version_identifier_consistency_is_bounded_and_separate(self):
         for version, identifier, consistent in [("26.4", RUNTIME, True), ("26.4.0", RUNTIME, True),
@@ -525,15 +547,17 @@ class IOSInventoryTests(unittest.TestCase):
         self.assertIsNone(selector["canonical_device_type"]["pinned_type_rows"])
         self.assertIsNone(inventory.availability_alternatives(None, None)["rows"])
 
-    def test_diagnostic_predicates_match_unchanged_selector_on_synthetic_product(self):
+    def test_diagnostic_predicates_match_exact_version_build_selector_on_synthetic_product(self):
         source = ast.parse((ROOT / "scripts/ci/run_platform_checks.py").read_text(encoding="utf-8"))
         selector = next(node for node in source.body if isinstance(node, ast.FunctionDef) and node.name == "select_simulator")
         namespace = {"re": re, "validate_simctl_inventory": environment.validate_simctl_inventory}
-        exec(compile(ast.Module(body=[selector], type_ignores=[]), "<unchanged-selector-synthetic-control>", "exec"), namespace)
-        for version, identifier, runtime_available, group, name, available, identity in itertools.product(
-                ("26.4", "26.4.0", "26.3"), (RUNTIME, RUNTIME + "-0", OTHER_RUNTIME), (True, False),
-                (RUNTIME, RUNTIME + "-0", OTHER_RUNTIME), ("iPhone 17", PRIVATE), (True, False), (UDID, PRIVATE)):
-            runtimes = {"runtimes": [runtime(identifier=identifier, version=version, available=runtime_available)]}
+        exec(compile(ast.Module(body=[selector], type_ignores=[]), "<exact-version-build-selector-synthetic-control>", "exec"), namespace)
+        for version, build, identifier, runtime_available, group, name, available, identity in itertools.product(
+                ("26.4.1", "26.4", "26.4.0", "26.4.2"), ("23E254a", "23E254b", None),
+                (RUNTIME, RUNTIME + "-1", "com.apple.CoreSimulator.SimRuntime.tvOS-26-4"), (True, False),
+                (RUNTIME, RUNTIME + "-1", OTHER_RUNTIME), ("iPhone 17", PRIVATE), (True, False), (UDID, PRIVATE)):
+            runtimes = {"runtimes": [runtime(identifier=identifier, version=version, available=runtime_available,
+                                            buildversion=build)]}
             devices = {"devices": {group: [device(name=name, available=available, udid=identity, state=PRIVATE,
                                                  deviceTypeIdentifier=PRIVATE)]}}
             try:

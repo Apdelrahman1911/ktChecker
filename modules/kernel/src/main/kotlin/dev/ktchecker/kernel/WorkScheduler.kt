@@ -240,6 +240,12 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
         if (!owns(c, claim)) return@transaction
         val errors = validation.toMutableList()
         if (c.count("SELECT progress_limited FROM work WHERE work_key=?", claim.key) != 0L) errors += "progress_delivery_limit_exceeded"
+        // The exact claim still owns this writer transaction. Teardown, detachment/validation
+        // and waiting for this writer do not renew its original execution budget. Keep raw
+        // provider evidence intact; a failed publication fence makes every retained review
+        // incomplete instead of certifying late/interrupted shared execution as successful.
+        if (deadlineExceeded(claim)) errors += "analysis_deadline_exceeded"
+        if (Thread.currentThread().isInterrupted) errors += "analysis_interrupted"
         c.execute("""UPDATE work SET state='complete',result_json=?,validation_json=?,owner_instance=NULL,lease_until=NULL,deadline=NULL
             WHERE work_key=? AND owner_instance=? AND attempt=? AND state='running'""",
             json, canonical(errors.distinct().sorted()), claim.key, instanceId, claim.attempt)

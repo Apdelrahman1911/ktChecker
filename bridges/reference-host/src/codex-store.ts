@@ -8,6 +8,8 @@ import type { ApplicationRequestEvidence } from './codex-app-server.js';
 
 export interface CodexInvocation {
   request: ModelRequest;
+  /** Missing only in legacy low-effort records; never infer a different owner selection. */
+  effort?: string;
   applicationRequest: ApplicationRequestEvidence;
   turnId: string | null;
   status: 'uncertain' | 'verified' | 'rejected';
@@ -19,6 +21,8 @@ export interface CodexState {
   client: ClientBinding;
   cwd: string;
   model: string;
+  /** Missing version-1 fields retain the historical exact low-effort interpretation. */
+  effort?: string;
   creationStarted: boolean;
   threadId: string | null;
   contexts: Record<string, { item: ContextItem; receiptId: string; attempts: number; inserted: InsertedContext | null }>;
@@ -32,7 +36,8 @@ export class CodexStore {
   private readonly heartbeat: NodeJS.Timeout;
   private closed = false;
   private problem = false;
-  constructor(directory: string, client: ClientBinding, cwd: string, model: string) {
+  constructor(directory: string, client: ClientBinding, cwd: string, model: string, effort = 'low') {
+    if (typeof effort !== 'string' || !/^[a-z][a-z0-9_-]{0,31}$/.test(effort)) throw new HostError('invalid_codex_effort');
     mkdirSync(directory, { recursive: true, mode: 0o700 }); privatePath(directory, true);
     const path = join(directory, 'codex.sqlite');
     try { closeSync(openSync(path, 'wx', 0o600)); } catch (error) {
@@ -46,9 +51,13 @@ export class CodexStore {
       const saved = this.db.prepare('SELECT state FROM session WHERE id=1').get() as { state: string } | undefined;
       if (saved) {
         const state = JSON.parse(saved.state) as CodexState;
-        if (state.version !== 1 || canonical(state.client) !== canonical(client) || state.cwd !== cwd || state.model !== model) throw new HostError('codex_session_binding_mismatch');
+        if (state.version !== 1 || canonical(state.client) !== canonical(client) || state.cwd !== cwd || state.model !== model ||
+            (state.effort === undefined ? 'low' : state.effort) !== effort ||
+            Object.values(state.invocations).some(value => (value.effort === undefined ? 'low' : value.effort) !== effort)) {
+          throw new HostError('codex_session_binding_mismatch');
+        }
       } else {
-        const state: CodexState = { version: 1, client, cwd, model, creationStarted: false, threadId: null, contexts: {}, invocations: {} };
+        const state: CodexState = { version: 1, client, cwd, model, effort, creationStarted: false, threadId: null, contexts: {}, invocations: {} };
         this.db.prepare('INSERT INTO session(id,state) VALUES(1,?)').run(JSON.stringify(state));
       }
       const lease = this.db.prepare('SELECT expires FROM controller WHERE id=1').get() as { expires: number } | undefined;

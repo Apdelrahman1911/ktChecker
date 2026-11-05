@@ -23,6 +23,26 @@ EXPECTED_IDS = {
     "ktc.kotlin.detekt.style.data-class-should-be-immutable",
     "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public",
 }
+EXPECTED_COHORTS = {
+    "exceptions-core-v1": {
+        "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally": 8,
+        "ktc.kotlin.detekt.exceptions.swallowed-exception": 11,
+        "ktc.kotlin.detekt.exceptions.not-implemented-declaration": 9,
+    },
+    "iteration-core-v1": {
+        "ktc.kotlin.detekt.potential-bugs.invalid-range": 9,
+        "ktc.kotlin.detekt.potential-bugs.iterator-has-next-calls-next-method": 9,
+        "ktc.kotlin.detekt.potential-bugs.unconditional-jump-statement-in-loop": 10,
+    },
+    "value-core-v1": {
+        "ktc.kotlin.detekt.potential-bugs.equals-always-returns-true-or-false": 9,
+        "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression": 8,
+    },
+    "opt-in-policy-v1": {
+        "ktc.kotlin.detekt.style.data-class-should-be-immutable": 9,
+        "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public": 9,
+    },
+}
 CASE_KINDS = {
     "positive", "negative", "configuration", "version", "suppression", "regression",
 }
@@ -182,11 +202,7 @@ class SyntaxCorpusAuthoringTest(unittest.TestCase):
             json.loads('{"sources":{},"sources":{}}', object_pairs_hook=unique_pairs)
 
     def test_selected_exception_cohort_is_exactly_38_calls_not_a_ten_rule_run(self):
-        selected = {
-            "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally": 8,
-            "ktc.kotlin.detekt.exceptions.swallowed-exception": 11,
-            "ktc.kotlin.detekt.exceptions.not-implemented-declaration": 9,
-        }
+        selected = EXPECTED_COHORTS["exceptions-core-v1"]
         self.assertEqual(28, sum(selected.values()))
         self.assertEqual(38, sum(selected.values()) + 1 + 6 + 3)
         self.assertEqual(91, sum(6 + len(manifest["controls"]) for manifest in self.manifests))
@@ -199,14 +215,63 @@ class SyntaxCorpusAuthoringTest(unittest.TestCase):
             self.assertFalse(CASE_KINDS.intersection(ids))
             self.assertEqual("unexecuted", manifest["authoring_state"])
 
+    def test_four_explicit_plans_retain_all_ten_fixtures_and_exact_per_cohort_bounds(self):
+        all_rules = []
+        actual = []
+        for name, selected in EXPECTED_COHORTS.items():
+            with self.subTest(cohort=name):
+                all_rules.extend(selected)
+                analyses = sum(selected.values())
+                calls = analyses + 1 + 3 * len(selected)
+                native = analyses + 1
+                callbacks = native + len(selected)
+                actual.append((analyses, calls, native, callbacks, 2 + 3 * calls))
+                self.assertLessEqual(calls, 40)
+                for rule, count in selected.items():
+                    self.assertEqual(count, 6 + len(self.by_id[rule]["controls"]))
+                    activation = "opt_in" if name == "opt-in-policy-v1" else "advisory"
+                    self.assertEqual(activation, self.by_id[rule]["default_activation"])
+                    self.assertEqual("unexecuted", self.by_id[rule]["authoring_state"])
+        self.assertEqual([(28, 38, 29, 32, 116), (28, 38, 29, 32, 116),
+                          (17, 24, 18, 20, 74), (18, 25, 19, 21, 77)], actual)
+        self.assertEqual(10, len(all_rules))
+        self.assertEqual(10, len(set(all_rules)))
+        self.assertEqual(EXPECTED_IDS, set(all_rules))
+        self.assertEqual(91, sum(sum(plan.values()) for plan in EXPECTED_COHORTS.values()))
+
+    def test_source_registry_and_gradle_gate_select_the_same_closed_plans(self):
+        base = ROOT / "modules/provider-detekt/src/corpusTest/kotlin/dev/ktchecker/providers/detekt"
+        controls = (base / "DetektCorpusControls.kt").read_text()
+        build = (ROOT / "modules/provider-detekt/build.gradle.kts").read_text()
+        entries = re.findall(r'val [A-Z_]+ = DetektCorpusCohort\("([^"]+)", linkedMapOf\((.*?)\)\)',
+                             controls, re.DOTALL)
+        self.assertEqual(4, len(entries))
+        actual = {}
+        for name, body in entries:
+            self.assertNotIn(name, actual)
+            pairs = re.findall(r'"(ktc\.[^"]+)" to ([0-9]+),', body)
+            self.assertEqual(len(pairs), len({rule for rule, _ in pairs}))
+            self.assertEqual("", re.sub(r'"ktc\.[^"]+" to [0-9]+,', "", body).strip())
+            actual[name] = {rule: int(count) for rule, count in pairs}
+        self.assertEqual(EXPECTED_COHORTS, actual)
+        match = re.search(r'val detektCorpusCohortNames = setOf\((.*?)\)', build, re.DOTALL)
+        self.assertIsNotNone(match)
+        self.assertEqual(list(EXPECTED_COHORTS), re.findall(r'"([^"]+)"', match.group(1)))
+        self.assertIn("internal class DetektCorpusCohort private constructor", controls)
+        self.assertIn("Collections.unmodifiableMap", controls)
+        self.assertIn("all.singleOrNull { it.name == name }", controls)
+        self.assertIn("no implicit/full-ten execution path", controls)
+
     def test_source_only_driver_requires_cohort_and_reserves_every_call(self):
         base = ROOT / "modules/provider-detekt/src/corpusTest/kotlin/dev/ktchecker/providers/detekt"
         driver = (base / "DetektSyntaxCorpusIntegrationTest.kt").read_text()
         controls = (base / "DetektCorpusControls.kt").read_text()
         build = (ROOT / "modules/provider-detekt/build.gradle.kts").read_text()
-        self.assertIn('const val NAME = "exceptions-core-v1"', controls)
-        self.assertIn("require(cohort == DetektCorpusCohort.NAME)", controls)
-        self.assertIn("val corpus = DetektCorpusCohort.analysesByRule.keys.map", driver)
+        self.assertIn('DetektCorpusCohort("exceptions-core-v1", linkedMapOf(', controls)
+        self.assertIn("val selectedCohort = DetektCorpusCohort.selected(cohort)", controls)
+        self.assertIn("cohort = settings.cohort", driver)
+        self.assertIn("val corpus = cohort.analysesByRule.keys.map", driver)
+        self.assertIn('System.getProperty("ktchecker.libraryFixtureEvidenceRoot"), cohort)', driver)
         self.assertIn('"not_run_rule_ids"', driver)
         self.assertIn('put("full_corpus_state", "not_run")', driver)
         self.assertIn('put("scope_exclusions", JsonArray(emptyList()))', driver)
@@ -219,7 +284,7 @@ class SyntaxCorpusAuthoringTest(unittest.TestCase):
         self.assertIn("limits.reserve(CorpusInvocationKind.ABSTENTION", driver)
         for name in ("detektCorpusCohort", "detektCorpusMaxInvocations", "detektCorpusAggregateMillis", "detektCorpusChildMillis"):
             self.assertIn(name, build)
-        self.assertIn('== "exceptions-core-v1"', build)
+        self.assertIn('.orNull in detektCorpusCohortNames', build)
 
     def test_source_only_budget_and_evidence_guards_are_fixed_and_isolated(self):
         base = ROOT / "modules/provider-detekt/src/corpusTest/kotlin/dev/ktchecker/providers/detekt"
@@ -228,7 +293,8 @@ class SyntaxCorpusAuthoringTest(unittest.TestCase):
         driver = (base / "DetektSyntaxCorpusIntegrationTest.kt").read_text()
         for guard in ("MAX_INVOCATIONS = 40", "MAX_AGGREGATE_MILLIS = 1_200_000L", "MAX_CHILD_MILLIS = 60_000L",
                       "active == null", "actual.reasons.isEmpty()", "actual.executionConfirmed", "signal != expected",
-                      "confirmedExecutions == 29", "observedRuntimeCallbacks == 32", "Duplicate invocation is a forbidden retry"):
+                      "confirmedExecutions == cohort.nativeLaunchCeiling", "observedRuntimeCallbacks == cohort.expectedRuntimeCallbacks",
+                      "analysesReservedByRule == cohort.analysesByRule", "Duplicate invocation is a forbidden retry"):
             self.assertIn(guard, controls)
         self.assertIn("System::nanoTime", controls)
         self.assertIn("minOf(settings.childMillis, remainingMillis())", controls)

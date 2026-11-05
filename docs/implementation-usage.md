@@ -6,6 +6,50 @@ implementation, integration testing, precision validation, or default activation
 The [implementation contract](implementation-contract.md) and baseline gates still
 apply. This document describes actual commands, not the future protocol-1 CLI.
 
+## Use the retained local handoff
+
+This local-only path is distinct from the preserved
+`modules/cli/build/install/ktchecker` in the original checkout. Do not overwrite
+that old installation or substitute its receipts. From the original repository
+root (the checkout containing `build/checkpoints`), select the retained entry
+point below; the recorded smoke used a disposable copy, not another invocation
+of this recipe:
+
+```sh
+REPO="$(pwd -P)"
+HANDOFF="$REPO/build/checkpoints/integration-5e00407-20261104/build/preview-handoffs/ktchecker-20261105-f909k8w0"
+KTC_HOME="$HANDOFF/install/ktchecker"
+(
+  cd "$KTC_HOME" || exit
+  env -u JAVA_TOOL_OPTIONS -u JDK_JAVA_OPTIONS -u _JAVA_OPTIONS \
+      -u JAVA_OPTS -u KTCHECKER_OPTS \
+      JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \
+      ./bin/ktchecker doctor --format json
+)
+```
+
+Java is not bundled. This selects the observed local JDK 21 for the launcher,
+not the separate complete compiler image required below. Do not reuse the
+disposable Unicode smoke directory or start a build merely to run this entry point.
+
+The local archives are `$HANDOFF/archives/ktchecker-updated-preview.zip` and
+`$HANDOFF/archives/ktchecker-updated-preview.tar`.
+Fresh postvalidation passed the actual spaces/Unicode-path `doctor`, dependency
+inventory and archive-byte checks; this establishes a **local doctor-runnable
+preview only**.
+See the [exact results and failures](implementation-evidence.md#latest-preview-handoff-2026-11-05).
+These are Linux x86_64 unsigned preview artifacts, not universal binaries or a
+publication/license grant. Keep their installation unchanged while its receipts
+are evidence; remove/archive it deliberately when no longer needed.
+
+The remaining commands are **current API recipes, not a fresh execution claim**.
+Add the selected `"$KTC_HOME/bin"` to your own PATH before using `ktchecker` below,
+or invoke its absolute launcher. Replace `/owner/...` with owner-selected paths;
+use the same private `--state DIR` and compiler JDK for every operation in a run.
+Output files/directories must be new and outside the reviewed source. The generic
+source-build recipe below targets a default install; do not use it to refresh
+the preserved install or this evidence-bound handoff in place.
+
 ## Build, install and remove
 
 Use JDK **21** for the checker, not the independently selected project toolchain.
@@ -18,7 +62,9 @@ selects the build interpreter (`python` is the Windows default). The helper is
 rebuilt locally; it is never downloaded or compiled by a review operation.
 
 ```sh
-./gradlew --no-daemon --max-workers=1 test :cli:installDist :cli:distZip :cli:distTar
+./gradlew --no-daemon --max-workers=1 test \
+  :worker-protocol:modelWireTest :provider-compiler:modelWorkerTest \
+  :cli:installDist :cli:distZip :cli:distTar
 modules/cli/build/install/ktchecker/bin/ktchecker doctor --format json
 modules/cli/build/install/ktchecker/bin/ktchecker rules
 ```
@@ -183,13 +229,38 @@ reference host use private, bounded NDJSON application RPC; this command is **no
 an MCP server** by itself. Independent credentials bind client/session/project/
 worktree/lineage, and each client has its own cursor, cancellation and delivery
 receipts. One agent's ACK does not consume another's observation obligation.
+The CLI supports `--workers 0|1|2`; this limits this process's worker threads, not
+the number of registered clients or a release-scale concurrency guarantee.
 
-For a runnable synthetic two-client example:
+For a second independent client, the owner registers different client/session/
+lineage/worktree identities in the **same chosen private state**, for example:
 
 ```sh
-python3 scripts/run_preview_example.py --compiler-java-home /owner/prepared-jdk21 \
-  --output /tmp/ktchecker-example
+ktchecker register --workspace sample --worktree task-tree-b --client agent-b \
+  --session session-b --lineage feature-b --out agent-b-private.json
+ktchecker --compiler-java-home /owner/prepared-jdk21 --workers 2 rpc
 ```
+
+Use separate preparations and patch/idempotency identities for each client.
+Owner-side `ktchecker events --client agent-a --limit 20` and the corresponding
+`--client agent-b` read each client's stream; later polls use that stream's own
+returned cursor. Event reads alone are not ACK or model-observation receipts.
+The private RPC/host adapter must retain each recipient's own delivery and
+subsequent model-request observations; the standalone CLI has no `ack` command.
+
+For an owner-authorized controlled-source two-client example (not rerun against
+this handoff by the documentation update):
+
+```sh
+python3 "$REPO/build/checkpoints/integration-5e00407-20261104/scripts/run_preview_example.py" \
+  --distribution "$KTC_HOME" --compiler-java-home /owner/prepared-jdk21 \
+  --output /owner/private/ktchecker-example-new
+```
+
+Do not omit `--distribution` when selecting this handoff: the script otherwise
+uses `modules/cli/build/install/ktchecker` relative to its working directory.
+The example performs real JVM compiler work on controlled source unless
+`--prepare-only` is selected; it is not the new imported-model live route.
 
 This example is POSIX-only; its transport needs no-follow private files,
 nonblocking pipes and `waitid(WNOWAIT)`. It polls outside any model reasoning loop
@@ -244,11 +315,23 @@ ktchecker suppressions export --client agent-a --out shared-policy.json
 
 Use `reported_false_positive` for a reported detector problem, not a claim the
 detector is proven wrong. Inspect again after conflicts; never silently overwrite
-another client's policy. To import shared policy use `suppressions import
---request shared-policy.json --expected revision.json --owner-action`.
-For enable/disable, use `suppressions enable|disable --rule STABLE_ID` with the same
-expected revision and explicit owner flag. Shared/local precedence, narrow finding/
-file/range/symbol binding and expiration are specified in [suppressions.md](suppressions.md).
+another client's policy. Import and activation also require the client identity,
+a newly inspected revision and an explicit owner decision, for example:
+
+```sh
+ktchecker suppressions inspect --client agent-a --out import-revision.json
+ktchecker suppressions import --client agent-a --request shared-policy.json \
+  --expected import-revision.json --owner-action
+ktchecker suppressions inspect --client agent-a --out enable-revision.json
+ktchecker suppressions enable --client agent-a \
+  --rule ktc.compiler.common.abstract_member_not_implemented \
+  --expected enable-revision.json --layer local --owner-action
+```
+
+`disable` uses the same arguments as `enable`. Enabling is policy, not execution
+authorization or qualification; prepare a new review against the changed policy.
+Shared/local precedence, narrow finding/file/range/symbol binding and expiration
+are specified in [suppressions.md](suppressions.md).
 Compiler/build failures and unavailability cannot be accepted into success.
 
 `selector` is a read-only helper: insert its complete JSON object as the
@@ -275,6 +358,10 @@ rejected before accepting a patch.
 
 ## Providers, host delivery and honest limitations
 
+- Build-contracts B1 and the new model-backed/live compiler route: source and
+  bounded controls are not default activation. This documented CLI exposes no
+  owner-runtime/B1 installation switch; the examples above use the manual
+  one-compilation route, not a completed genuine model/compiler/host acceptance.
 - Compiler: bundled exact Kotlin/JVM 2.4.21 subprocess; current compilation inputs
   and output locations are isolated. A persistent broker is not a persistent
   compiler daemon or proof of the warm latency target.
@@ -290,8 +377,11 @@ rejected before accepting a patch.
 - MCP and genuine model delivery: [implementation-host.md](implementation-host.md).
   Notifications alone are not model observation. Large events use digest-bound
   projections; omitted mandatory findings cannot be ACKed as observed.
-- Coverage/precision: generate `scripts/rule_coverage.py` output; current tuples
-  and tests are not a global release matrix. Strict coverage/qualification gates
+- Coverage/precision: the [latest valid gap inventory](implementation-evidence.md#current-rule-coverage-2026-11-05)
+  retains **1,663 IDs × eight contexts = 13,304 cells: two implemented, zero tested,
+  zero qualified**. Broad JVM controls and the separate eight actual wrapper
+  checksum API calls do not complete per-rule tests. Current tuples are not an
+  approved Android/iOS/Desktop release matrix; strict coverage/qualification gates
   intentionally fail while obligations remain unmet.
 
 Coverage-report consumers must check the invocation's exit code and

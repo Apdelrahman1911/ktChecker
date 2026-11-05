@@ -7,7 +7,7 @@ the normative [implementation acceptance contract](implementation-contract.md).
 Executable progress and test evidence must be reported separately from this plan;
 catalog requirements are not evidence of implemented or qualified coverage.
 
-The [current checkpoint](implementation-evidence.md#current-checkpoint-2026-11-04) records scoped local transport execution/controls and the failed older hosted baseline, not rule, platform, or release qualification.
+The [current checkpoint](implementation-evidence.md#current-checkpoint-2026-11-05) records scoped local transport execution/controls and the failed older hosted baseline, not rule, platform, or release qualification.
 
 This plan preserves three simultaneous launch requirements: **broad relevant rules,
 low false positives, and fast useful feedback after every patch**. None can be

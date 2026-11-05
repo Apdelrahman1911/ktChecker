@@ -30,6 +30,7 @@ class DetektSyntaxCorpusIntegrationTest {
     private val repository: Path get() = Path.of(System.getProperty("ktchecker.repositoryRoot")).toAbsolutePath().normalize()
     private val fixtures: Path get() = repository.resolve("providers/detekt-fixtures/corpus/syntax-v1")
     private val enabled: Boolean get() = System.getProperty("ktchecker.detekt.corpus.integration") == "true"
+    private lateinit var cohort: DetektCorpusCohort
     private var evidence: DetektCorpusEvidence? = null
     private var budget: DetektCorpusBudget? = null
     private var pendingSidecar: JsonObject? = null
@@ -57,7 +58,7 @@ class DetektSyntaxCorpusIntegrationTest {
                 owned.verifyDirectories()
                 owned.artifact("completion-ready-to-publish.json", buildJsonObject {
                     put("state", "selected_cohort_candidate_ready_to_publish"); put("captured_at", Instant.now().toString())
-                    put("cohort", DetektCorpusCohort.NAME); put("qualified", false)
+                    put("cohort", cohort.name); put("qualified", false)
                     put("candidate_only", true); put("run_complete", false); put("publication_committed", false)
                     put("budget", limits.summary())
                     put("note", "Candidate checkpoint only; expensive serialization/live write still require final deadline checks and real JUnit/build completion.")
@@ -84,7 +85,7 @@ class DetektSyntaxCorpusIntegrationTest {
                 runCatching { budget?.failure(cause) }
                 owned.artifact("completion-failed.json", buildJsonObject {
                     put("state", "failed_or_incomplete"); put("failure_type", cause.javaClass.name)
-                    put("cohort", DetektCorpusCohort.NAME); put("finished_at", Instant.now().toString()); put("qualified", false)
+                    put("cohort", cohort.name); put("finished_at", Instant.now().toString()); put("qualified", false)
                     put("run_complete", false); put("publication_committed", false); put("scratch_quarantined", true)
                     budget?.let { put("budget", it.summary()) }
                     put("note", "Retained/quarantined job scratch and every ancestor plus actual partial artifacts; no passing live cohort sidecar or retry.")
@@ -96,12 +97,13 @@ class DetektSyntaxCorpusIntegrationTest {
         }
     }
 
-    @Test fun `explicit bounded exceptions cohort retains actual native outcomes and heuristic gaps`() {
-        assumeTrue(enabled, "Separate real corpus disabled; explicitly select detektCorpusCohort=exceptions-core-v1 when scheduled")
+    @Test fun `explicit bounded selected cohort retains actual native outcomes and heuristic gaps`() {
+        assumeTrue(enabled, "Separate real corpus disabled; explicitly select one bounded detektCorpusCohort when scheduled")
         val settings = DetektCorpusSettings.selected(System.getProperty("ktchecker.detekt.corpus.cohort"),
             System.getProperty("ktchecker.detekt.corpus.maxInvocations"), System.getProperty("ktchecker.detekt.corpus.aggregateMillis"),
             System.getProperty("ktchecker.detekt.corpus.childMillis"))
-        val owned = DetektCorpusEvidence(repository, System.getProperty("ktchecker.libraryFixtureEvidenceRoot"))
+        cohort = settings.cohort
+        val owned = DetektCorpusEvidence(repository, System.getProperty("ktchecker.libraryFixtureEvidenceRoot"), cohort)
         evidence = owned
         val run = owned.runDirectory
         val limits = DetektCorpusBudget(settings, { event ->
@@ -123,16 +125,16 @@ class DetektSyntaxCorpusIntegrationTest {
         assertEquals(DetektCorpusCohort.FULL_AUTHORED_ANALYSES, approved.sumOf { 6 + it.controls.size })
         assertEquals(8, approved.count { it.activation == "advisory" })
         assertEquals(2, approved.count { it.activation == "opt_in" })
-        val corpus = DetektCorpusCohort.analysesByRule.keys.map { id -> approved.single { it.ruleId == id } }
-        for (fixture in corpus) assertEquals(DetektCorpusCohort.analysesByRule.getValue(fixture.ruleId), 6 + fixture.controls.size)
-        val notRun = approved.filter { it.ruleId !in DetektCorpusCohort.analysesByRule }
-        assertEquals(7, notRun.size)
+        val corpus = cohort.analysesByRule.keys.map { id -> approved.single { it.ruleId == id } }
+        for (fixture in corpus) assertEquals(cohort.analysesByRule.getValue(fixture.ruleId), 6 + fixture.controls.size)
+        val notRun = approved.filter { it.ruleId !in cohort.analysesByRule }
+        assertEquals(DetektCorpusCohort.FULL_AUTHORED_RULES - corpus.size, notRun.size)
         val controlReference = artifact(run, "selected-cohort-controls.json", buildJsonObject {
-            put("cohort", DetektCorpusCohort.NAME); put("cohort_plan_digest", Digests.sha256(DetektCorpusCohort.planIdentity))
+            put("cohort", cohort.name); put("cohort_plan_digest", Digests.sha256(cohort.planIdentity))
             put("selected_rule_ids", JsonArray(corpus.map { JsonPrimitive(it.ruleId) }))
             put("not_run_rule_ids", JsonArray(notRun.map { JsonPrimitive(it.ruleId) }))
             put("full_corpus_state", "not_run"); put("scope_exclusions", JsonArray(emptyList()))
-            put("planned_invocations", DetektCorpusCohort.plannedInvocations); put("budget", limits.summary())
+            put("planned_invocations", cohort.plannedInvocations); put("budget", limits.summary())
         }.toString().toByteArray())
         limits.requireWithinDeadline()
         val javaHome = Path.of(System.getProperty("java.home"))
@@ -144,7 +146,7 @@ class DetektSyntaxCorpusIntegrationTest {
         var versionEvidence: List<JsonObject>? = null
         val rows = mutableListOf<JsonObject>()
         for (fixture in corpus) {
-            val identity = SnapshotIdentity("detekt-corpus-owner", "detekt-syntax-corpus-${DetektCorpusCohort.NAME}", fixture.slug)
+            val identity = SnapshotIdentity("detekt-corpus-owner", "detekt-syntax-corpus-${cohort.name}", fixture.slug)
             val store = SnapshotStore(temporary.resolve("store-${fixture.slug}"), identity.ownerId)
             store.registerWorktree(identity)
             var head: SnapshotCommit? = null
@@ -176,7 +178,7 @@ class DetektSyntaxCorpusIntegrationTest {
                 head = commit
                 previousPaths = case.fixture.sources.keys
                 val materialized = store.materialize(identity, commit.snapshotId, temporary.resolve("${fixture.slug}-${case.id}-sources"))
-                val context = AnalysisContext(scope = RuleContext(module = ":detekt-syntax-corpus-${DetektCorpusCohort.NAME}", sourceSet = "synthetic"),
+                val context = AnalysisContext(scope = RuleContext(module = ":detekt-syntax-corpus-${cohort.name}", sourceSet = "synthetic"),
                     compilerVersion = "2.4.21", compilationFiles = case.fixture.sources.keys.sorted())
                 val settings = DetektSettings(disabledRuleIds = if (case.disabled) setOf(fixture.ruleId) else emptySet(),
                     options = if (case.fixture.options.isEmpty()) emptyMap() else mapOf(fixture.ruleId to case.fixture.options))
@@ -372,9 +374,9 @@ class DetektSyntaxCorpusIntegrationTest {
             put("schema_version", 1); put("provider_id", "detekt"); put("provider_version", DETEKT_VERSION)
             put("candidate_only", true); put("run_complete", false); put("publication_committed", false)
             put("context", buildJsonObject {
-                put("id", "detekt-syntax-corpus-${DetektCorpusCohort.NAME}-native-preview1"); put("target", "jvm"); put("source_set", "synthetic")
-                put("corpus_cohort", DetektCorpusCohort.NAME)
-                put("cohort_plan_digest", Digests.sha256(DetektCorpusCohort.planIdentity))
+                put("id", "detekt-syntax-corpus-${cohort.name}-native-preview1"); put("target", "jvm"); put("source_set", "synthetic")
+                put("corpus_cohort", cohort.name)
+                put("cohort_plan_digest", Digests.sha256(cohort.planIdentity))
                 put("corpus_source_tuple_digest", witness.sourceTupleDigest)
                 put("corpus_code_image_digest", witness.corpusImageDigest)
                 put("corpus_fixture_set_digest", witness.fixtureSetDigest)
@@ -388,14 +390,14 @@ class DetektSyntaxCorpusIntegrationTest {
                 put("runtime_execution_source_digest", witness.runtimeSourceDigest)
                 put("runtime_code_image_digest", witness.runtimeImageDigest)
                 put("native_qualification", false)
-                put("module", ":detekt-syntax-corpus-${DetektCorpusCohort.NAME}"); put("compilation", "main"); put("analysis_mode", "light")
+                put("module", ":detekt-syntax-corpus-${cohort.name}"); put("compilation", "main"); put("analysis_mode", "light")
                 put("kotlin_version", "2.4.21"); put("compiler_version", "2.4.21"); put("embedded_kotlin_version", DETEKT_EMBEDDED_KOTLIN)
                 put("jdk_version", System.getProperty("java.version")); put("library_versions", buildJsonObject {})
-                put("scope_note", "Three actually checked exception syntax routes only. Full ten/91 authoring scope remains not_run; seven other rows are not exclusions. Unqualified.")
+                put("scope_note", "${corpus.size} actually checked ${cohort.name} syntax routes only. Full ten/91 authoring scope remains not_run; ${notRun.size} other rows are not exclusions. Unqualified.")
             })
             put("start_witness", witness.manifestReference); put("rules", JsonArray(rows))
-            put("approved_corpus_rule_count", 10); put("approved_corpus_analysis_count", 91); put("full_corpus_state", "not_run")
-            put("selected_cohort_rule_count", 3); put("not_run_rule_ids", JsonArray(notRun.map { JsonPrimitive(it.ruleId) }))
+            put("approved_corpus_rule_count", DetektCorpusCohort.FULL_AUTHORED_RULES); put("approved_corpus_analysis_count", DetektCorpusCohort.FULL_AUTHORED_ANALYSES); put("full_corpus_state", "not_run")
+            put("selected_cohort_rule_count", corpus.size); put("not_run_rule_ids", JsonArray(notRun.map { JsonPrimitive(it.ruleId) }))
             put("scope_exclusions", JsonArray(emptyList())); put("cohort_controls", controlReference)
             put("checked_budget", budgetReference); put("progress_evidence", JsonArray(progressReferences))
         }
@@ -403,7 +405,7 @@ class DetektSyntaxCorpusIntegrationTest {
         artifact(run, "completion-assertions-checked.json", buildJsonObject {
             put("state", "selected_cohort_invocation_assertions_checked_candidate"); put("captured_at", Instant.now().toString())
             put("candidate_only", true); put("run_complete", false); put("publication_committed", false)
-            put("tested_rules", 3); put("not_run_rules", 7); put("sidecar", finished); put("qualified", false)
+            put("tested_rules", corpus.size); put("not_run_rules", notRun.size); put("sidecar", finished); put("qualified", false)
             put("checked_budget", budgetReference); put("progress_evidence", JsonArray(progressReferences))
             put("note", "JUnit/build logs require separately retained real task completion; this local witness is not a release certificate.")
         }.toString().toByteArray())
@@ -543,7 +545,7 @@ class DetektSyntaxCorpusIntegrationTest {
         }
         val nativeAnchor = Class.forName("dev.ktchecker.providers.runtime.OwnedProcessSupervisor", false, IsolatedProcessRunner::class.java.classLoader)
         val types = listOf(DetektSyntaxCorpusIntegrationTest::class.java, DetektProvider::class.java, DetektCatalog::class.java,
-            DetektCorpusBudget::class.java, DetektCorpusSettings::class.java, DetektCorpusEvidence::class.java,
+            DetektCorpusCohort::class.java, DetektCorpusBudget::class.java, DetektCorpusSettings::class.java, DetektCorpusEvidence::class.java,
             DetektReportParser::class.java, IsolatedProcessRunner::class.java, ExecutionPermit::class.java,
             ExactExecutionAuthority::class.java, OwnedProcessContainment::class.java, OwnedSupervisorIdentity::class.java, nativeAnchor,
             SnapshotStore::class.java, ArtifactIdentity::class.java)

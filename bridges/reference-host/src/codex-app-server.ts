@@ -12,6 +12,8 @@ export interface CodexOptions {
   timeoutMs?: number;
   maxLineBytes?: number;
   maxPublicBytes?: number;
+  /** Owner opt-in: an explicit service reroute must not become an exact-model witness. */
+  failOnModelReroute?: boolean;
 }
 export interface ApplicationRequestEvidence {
   applicationRequestId: string;
@@ -52,6 +54,8 @@ export class CodexAppServer {
   private readonly turns = new Map<string, PublicTurn>();
   private readonly waiters = new Map<string, TurnWaiter[]>();
   private readonly toolHandlers = new Map<string, (params: ObjectValue) => Promise<ObjectValue>>();
+  private readonly earlyModelReroutes = new Map<string, string>();
+  private modelRerouteFailure: string | null = null;
 
   constructor(options: CodexOptions | string = {}) {
     const supplied = typeof options === 'string' ? { executable: options } : options;
@@ -60,9 +64,11 @@ export class CodexAppServer {
       timeoutMs: supplied.timeoutMs ?? 15_000,
       maxLineBytes: supplied.maxLineBytes ?? 1_048_576,
       maxPublicBytes: supplied.maxPublicBytes ?? 262_144,
+      failOnModelReroute: supplied.failOnModelReroute ?? false,
     };
     if (!Number.isSafeInteger(this.options.timeoutMs) || this.options.timeoutMs < 1 ||
-        this.options.timeoutMs > 60_000 || this.options.maxLineBytes < 128 || this.options.maxPublicBytes < 128) {
+        this.options.timeoutMs > 60_000 || this.options.maxLineBytes < 128 || this.options.maxPublicBytes < 128 ||
+        typeof this.options.failOnModelReroute !== 'boolean') {
       throw new HostError('invalid_codex_limits');
     }
   }
@@ -86,7 +92,15 @@ export class CodexAppServer {
   ownThread(threadId: string): void {
     if (!threadId || this.ownedThreads.size >= 8) throw new HostError('codex_owned_thread_bound');
     this.ownedThreads.add(threadId);
+    const early = this.earlyModelReroutes.get(threadId);
+    if (this.options.failOnModelReroute && early) this.rejectModelReroute(early);
+    this.assertNoModelReroute();
   }
+  /** Safe negative observation only, not a claim about unobserved internal routing/effort. */
+  assertNoModelReroute(): void {
+    if (this.modelRerouteFailure) throw new HostError(this.modelRerouteFailure);
+  }
+  private rejectModelReroute(code: string): void { this.modelRerouteFailure ??= code; this.fail(code); }
   /** Explicit fixed-purpose controller tools only. Approvals and all other server requests stay denied. */
   handleTool(name: string, handler: (params: ObjectValue) => Promise<ObjectValue>): void {
     if (!/^[a-z][a-z0-9_]{0,63}$/.test(name)) throw new HostError('invalid_controller_tool');
@@ -131,6 +145,7 @@ export class CodexAppServer {
     if (!turn || typeof turn.id !== 'string') throw new HostError('codex_turn_unconfirmed');
     accepted?.(turn.id);
     const completed = await this.waitForTurn(threadId, turn.id, timeoutMs);
+    this.assertNoModelReroute(); // Also rejects reroutes later in the SAME decoded completion batch.
     return { ...completed, applicationRequest: response.evidence };
   }
   waitForTurn(threadId: string, turnId: string, timeoutMs = 120_000): Promise<PublicTurn> {
@@ -170,6 +185,8 @@ export class CodexAppServer {
         if (Object.hasOwn(value, 'error')) pending.reject(new HostError('codex_request_rejected'));
         else if (Object.hasOwn(value, 'result')) pending.resolve(value.result);
         else pending.reject(new HostError('codex_protocol_error'));
+      } else if (value.method === 'model/rerouted' && this.options.failOnModelReroute && !object(value.params)) {
+        this.rejectModelReroute('codex_model_reroute_notification_invalid');
       } else if (typeof value.method === 'string' && object(value.params)) {
         this.publicNotification(value.method, value.params);
       }
@@ -192,6 +209,23 @@ export class CodexAppServer {
     if (!this.closed && !this.failure) this.child?.stdin.write(JSON.stringify(response) + '\n');
   }
   private publicNotification(method: string, params: ObjectValue): void {
+    if (method === 'model/rerouted' && this.options.failOnModelReroute) {
+      // Never retain raw reasons/models. Before ownThread, remember only bounded public IDs so a
+      // notification arriving before the thread/start response cannot evade the ownership join.
+      const bounded = (value: unknown) => typeof value === 'string' && /^[a-zA-Z0-9_.:/-]{1,256}$/.test(value);
+      if (!bounded(params.threadId)) {
+        this.rejectModelReroute('codex_model_reroute_notification_invalid'); return;
+      }
+      const threadId = params.threadId as string;
+      if (this.ownedThreads.size > 0 && !this.ownedThreads.has(threadId)) return;
+      const code = Object.keys(params).sort().join(',') === 'fromModel,reason,threadId,toModel,turnId' &&
+        ['turnId', 'fromModel', 'toModel', 'reason'].every(key => bounded(params[key])) ?
+        'codex_selected_model_rerouted' : 'codex_model_reroute_notification_invalid';
+      if (this.ownedThreads.has(threadId)) this.rejectModelReroute(code);
+      else if (this.earlyModelReroutes.size >= 32 && !this.earlyModelReroutes.has(threadId)) this.rejectModelReroute('codex_model_reroute_ownership_bound');
+      else this.earlyModelReroutes.set(threadId, code);
+      return;
+    }
     if (typeof params.threadId !== 'string' || !this.ownedThreads.has(params.threadId)) return;
     let turnId: string;
     let message: { itemId: string; text: string } | undefined;

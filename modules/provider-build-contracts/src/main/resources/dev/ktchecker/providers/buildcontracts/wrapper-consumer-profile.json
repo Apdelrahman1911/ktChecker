@@ -1,0 +1,2087 @@
+{
+  "schema": "ktchecker/inspected-wrapper-consumer-profile/1",
+  "profile_id": "local-wrapper-7a9ce74c-properties-sha256-exact/1",
+  "artifact": {
+    "path": "gradle/wrapper/gradle-wrapper.jar",
+    "sha256": "7a9ce74cff467ca1bf60a4fcd9f05185acceda4d0f382434d393e17864262c5d",
+    "bytes": 47505
+  },
+  "inspection_kind": "Standard-library ZIP/class-file structural inspection only; no Java/Gradle/provider/class execution or network.",
+  "behavior": {
+    "parser": "java.util.Properties.load(java.io.InputStream)",
+    "property": "distributionSha256Sum",
+    "value_normalization": "Untrimmed Properties.getProperty value; no case conversion.",
+    "computed_digest": "SHA-256; each unsigned byte uses Integer.toHexString, padded with ASCII zero when length is one.",
+    "comparison": "String.equals(Object), case sensitive.",
+    "representation": "Exactly 64 lowercase ASCII hexadecimal characters.",
+    "absent_declaration": "Null expected checksum returns before verification.",
+    "cached_path": "No runtime inference; a separate independent exact owner path receipt must establish required comparison or cached-without-comparison."
+  },
+  "version_provenance": "Local exact consumer artifact identity/behavior only. Actual selected Gradle9.6.1 wrapper and distribution provenance must be independently owner-attested, not inferred from distribution URL/name.",
+  "runtime_json_authority": false,
+  "qualification_claimed": false,
+  "classes": [
+    {
+      "entry": "org/gradle/wrapper/Install.class",
+      "sha256": "e3a1406e36909e29423807e6bd0aca05d0173433857e3509a6a292bac5d2f8ee",
+      "methods": [
+        {
+          "name": "verifyDownloadChecksum",
+          "descriptor": "(Ljava/lang/String;Ljava/io/File;Ljava/lang/String;)V",
+          "code_sha256": "20eafba0f597066541da372514c2c193bf3c0f848cca7c75fc689a54d3060756",
+          "instructions": [
+            {
+              "offset": 0,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 1,
+              "opcode": "0xc7",
+              "name": "ifnonnull",
+              "operand_hex": "0004",
+              "branch_target": 5
+            },
+            {
+              "offset": 4,
+              "opcode": "0xb1",
+              "name": "return"
+            },
+            {
+              "offset": 5,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 6,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "73",
+              "selected_literal": "SHA-256"
+            },
+            {
+              "offset": 8,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "0079",
+              "member": "java/security/MessageDigest.getInstance(Ljava/lang/String;)Ljava/security/MessageDigest;"
+            },
+            {
+              "offset": 11,
+              "opcode": "0x4e",
+              "name": "jvm_op_4e"
+            },
+            {
+              "offset": 12,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "007d",
+              "member": "java/io/File.toPath()Ljava/nio/file/Path;"
+            },
+            {
+              "offset": 15,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 16,
+              "opcode": "0xbd",
+              "name": "jvm_op_bd",
+              "operand_hex": "007f"
+            },
+            {
+              "offset": 19,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "0085",
+              "member": "java/nio/file/Files.newInputStream(Ljava/nio/file/Path;[Ljava/nio/file/OpenOption;)Ljava/io/InputStream;"
+            },
+            {
+              "offset": 22,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 24,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 25,
+              "opcode": "0x36",
+              "name": "jvm_op_36",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 27,
+              "opcode": "0x11",
+              "name": "sipush",
+              "operand_hex": "1000"
+            },
+            {
+              "offset": 30,
+              "opcode": "0xbc",
+              "name": "jvm_op_bc",
+              "operand_hex": "08"
+            },
+            {
+              "offset": 32,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "06"
+            },
+            {
+              "offset": 34,
+              "opcode": "0x15",
+              "name": "iload",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 36,
+              "opcode": "0x2",
+              "name": "jvm_op_02"
+            },
+            {
+              "offset": 37,
+              "opcode": "0x9f",
+              "name": "jvm_op_9f",
+              "operand_hex": "0020",
+              "branch_target": 69
+            },
+            {
+              "offset": 40,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 42,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "06"
+            },
+            {
+              "offset": 44,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "008d",
+              "member": "java/io/InputStream.read([B)I"
+            },
+            {
+              "offset": 47,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 48,
+              "opcode": "0x36",
+              "name": "jvm_op_36",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 50,
+              "opcode": "0x9e",
+              "name": "jvm_op_9e",
+              "operand_hex": "fff0",
+              "branch_target": 34
+            },
+            {
+              "offset": 53,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 54,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "06"
+            },
+            {
+              "offset": 56,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 57,
+              "opcode": "0x15",
+              "name": "iload",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 59,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0091",
+              "member": "java/security/MessageDigest.update([BII)V"
+            },
+            {
+              "offset": 62,
+              "opcode": "0xa7",
+              "name": "goto",
+              "operand_hex": "ffe4",
+              "branch_target": 34
+            },
+            {
+              "offset": 65,
+              "opcode": "0x4b",
+              "name": "jvm_op_4b"
+            },
+            {
+              "offset": 66,
+              "opcode": "0xa7",
+              "name": "goto",
+              "operand_hex": "0093",
+              "branch_target": 213
+            },
+            {
+              "offset": 69,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 71,
+              "opcode": "0xc6",
+              "name": "ifnull",
+              "operand_hex": "0008",
+              "branch_target": 79
+            },
+            {
+              "offset": 74,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 76,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0096",
+              "member": "java/io/InputStream.close()V"
+            },
+            {
+              "offset": 79,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 80,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "009a",
+              "member": "java/security/MessageDigest.digest()[B"
+            },
+            {
+              "offset": 83,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 84,
+              "opcode": "0x4e",
+              "name": "jvm_op_4e"
+            },
+            {
+              "offset": 85,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "0046"
+            },
+            {
+              "offset": 88,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 89,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 91,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "009b",
+              "member": "java/lang/StringBuilder.<init>()V"
+            },
+            {
+              "offset": 94,
+              "opcode": "0xbe",
+              "name": "arraylength"
+            },
+            {
+              "offset": 95,
+              "opcode": "0x36",
+              "name": "jvm_op_36",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 97,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 98,
+              "opcode": "0x36",
+              "name": "jvm_op_36",
+              "operand_hex": "06"
+            },
+            {
+              "offset": 100,
+              "opcode": "0x15",
+              "name": "iload",
+              "operand_hex": "06"
+            },
+            {
+              "offset": 102,
+              "opcode": "0x15",
+              "name": "iload",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 104,
+              "opcode": "0xa2",
+              "name": "if_icmpge",
+              "operand_hex": "002e",
+              "branch_target": 150
+            },
+            {
+              "offset": 107,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 108,
+              "opcode": "0x15",
+              "name": "iload",
+              "operand_hex": "06"
+            },
+            {
+              "offset": 110,
+              "opcode": "0x33",
+              "name": "baload"
+            },
+            {
+              "offset": 111,
+              "opcode": "0x11",
+              "name": "sipush",
+              "operand_hex": "00ff"
+            },
+            {
+              "offset": 114,
+              "opcode": "0x7e",
+              "name": "iand"
+            },
+            {
+              "offset": 115,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "00a1",
+              "member": "java/lang/Integer.toHexString(I)Ljava/lang/String;"
+            },
+            {
+              "offset": 118,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 119,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "07"
+            },
+            {
+              "offset": 121,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "00a4",
+              "member": "java/lang/String.length()I"
+            },
+            {
+              "offset": 124,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 125,
+              "opcode": "0xa0",
+              "name": "if_icmpne",
+              "operand_hex": "000b",
+              "branch_target": 136
+            },
+            {
+              "offset": 128,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 130,
+              "opcode": "0x10",
+              "name": "bipush",
+              "operand_hex": "30"
+            },
+            {
+              "offset": 132,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "00a7",
+              "member": "java/lang/StringBuilder.append(C)Ljava/lang/StringBuilder;"
+            },
+            {
+              "offset": 135,
+              "opcode": "0x57",
+              "name": "jvm_op_57"
+            },
+            {
+              "offset": 136,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 138,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "07"
+            },
+            {
+              "offset": 140,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "004f",
+              "member": "java/lang/StringBuilder.append(Ljava/lang/String;)Ljava/lang/StringBuilder;"
+            },
+            {
+              "offset": 143,
+              "opcode": "0x57",
+              "name": "jvm_op_57"
+            },
+            {
+              "offset": 144,
+              "opcode": "0x84",
+              "name": "iinc",
+              "operand_hex": "0601"
+            },
+            {
+              "offset": 147,
+              "opcode": "0xa7",
+              "name": "goto",
+              "operand_hex": "ffd1",
+              "branch_target": 100
+            },
+            {
+              "offset": 150,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 151,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 153,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0055",
+              "member": "java/lang/StringBuilder.toString()Ljava/lang/String;"
+            },
+            {
+              "offset": 156,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 157,
+              "opcode": "0x4e",
+              "name": "jvm_op_4e"
+            },
+            {
+              "offset": 158,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "00aa",
+              "member": "java/lang/String.equals(Ljava/lang/Object;)Z"
+            },
+            {
+              "offset": 161,
+              "opcode": "0x99",
+              "name": "ifeq",
+              "operand_hex": "0004",
+              "branch_target": 165
+            },
+            {
+              "offset": 164,
+              "opcode": "0xb1",
+              "name": "return"
+            },
+            {
+              "offset": 165,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 166,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 167,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "00ad",
+              "member": "java/io/File.delete()Z"
+            },
+            {
+              "offset": 170,
+              "opcode": "0x57",
+              "name": "jvm_op_57"
+            },
+            {
+              "offset": 171,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "00b0",
+              "member": "java/io/File.getAbsolutePath()Ljava/lang/String;"
+            },
+            {
+              "offset": 174,
+              "opcode": "0x4c",
+              "name": "jvm_op_4c"
+            },
+            {
+              "offset": 175,
+              "opcode": "0x7",
+              "name": "jvm_op_07"
+            },
+            {
+              "offset": 176,
+              "opcode": "0xbd",
+              "name": "jvm_op_bd",
+              "operand_hex": "0007"
+            },
+            {
+              "offset": 179,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 180,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 181,
+              "opcode": "0x5c",
+              "name": "jvm_op_5c"
+            },
+            {
+              "offset": 182,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 184,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 185,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 186,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 187,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 188,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 189,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 190,
+              "opcode": "0x5",
+              "name": "jvm_op_05"
+            },
+            {
+              "offset": 191,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 192,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 193,
+              "opcode": "0x6",
+              "name": "jvm_op_06"
+            },
+            {
+              "offset": 194,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 195,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 196,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "b2"
+            },
+            {
+              "offset": 198,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 200,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "00b6",
+              "member": "java/lang/String.format(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;"
+            },
+            {
+              "offset": 203,
+              "opcode": "0x4b",
+              "name": "jvm_op_4b"
+            },
+            {
+              "offset": 204,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "00b8"
+            },
+            {
+              "offset": 207,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 208,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 209,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "00b9",
+              "member": "java/lang/RuntimeException.<init>(Ljava/lang/String;)V"
+            },
+            {
+              "offset": 212,
+              "opcode": "0xbf",
+              "name": "jvm_op_bf"
+            },
+            {
+              "offset": 213,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 215,
+              "opcode": "0xc6",
+              "name": "ifnull",
+              "operand_hex": "0010",
+              "branch_target": 231
+            },
+            {
+              "offset": 218,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 220,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0096",
+              "member": "java/io/InputStream.close()V"
+            },
+            {
+              "offset": 223,
+              "opcode": "0xa7",
+              "name": "goto",
+              "operand_hex": "0008",
+              "branch_target": 231
+            },
+            {
+              "offset": 226,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 227,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 228,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "00bd",
+              "member": "java/lang/Throwable.addSuppressed(Ljava/lang/Throwable;)V"
+            },
+            {
+              "offset": 231,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 232,
+              "opcode": "0xbf",
+              "name": "jvm_op_bf"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "entry": "org/gradle/wrapper/WrapperExecutor.class",
+      "sha256": "e4392708fabd56cdad10f6dcd6e8ae1b13e3f747245de8fd92a224d8465913e0",
+      "methods": [
+        {
+          "name": "<init>",
+          "descriptor": "(Ljava/io/File;Ljava/util/Properties;)V",
+          "code_sha256": "052117962db22cd7626d62eaff36d136a410e5d79080da1e277c065221714fbe",
+          "instructions": [
+            {
+              "offset": 0,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 1,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 2,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 3,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 4,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 5,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 6,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 7,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "0012",
+              "member": "java/lang/Object.<init>()V"
+            },
+            {
+              "offset": 10,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "0014"
+            },
+            {
+              "offset": 13,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 14,
+              "opcode": "0x4e",
+              "name": "jvm_op_4e"
+            },
+            {
+              "offset": 15,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "0015",
+              "member": "org/gradle/wrapper/WrapperConfiguration.<init>()V"
+            },
+            {
+              "offset": 18,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 19,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "0017",
+              "member": "org/gradle/wrapper/WrapperExecutor.configLorg/gradle/wrapper/WrapperConfiguration;"
+            },
+            {
+              "offset": 22,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "0019",
+              "member": "org/gradle/wrapper/WrapperExecutor.propertiesLjava/util/Properties;"
+            },
+            {
+              "offset": 25,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "001b",
+              "member": "org/gradle/wrapper/WrapperExecutor.propertiesFileLjava/io/File;"
+            },
+            {
+              "offset": 28,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0021",
+              "member": "java/io/File.exists()Z"
+            },
+            {
+              "offset": 31,
+              "opcode": "0x99",
+              "name": "ifeq",
+              "operand_hex": "013f",
+              "branch_target": 350
+            },
+            {
+              "offset": 34,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 35,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "0023"
+            },
+            {
+              "offset": 38,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 39,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 41,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 42,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 44,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 45,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 46,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "0026",
+              "member": "java/io/FileInputStream.<init>(Ljava/io/File;)V"
+            },
+            {
+              "offset": 49,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "002c",
+              "member": "java/util/Properties.load(Ljava/io/InputStream;)V"
+            },
+            {
+              "offset": 52,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0031",
+              "member": "java/io/InputStream.close()V"
+            },
+            {
+              "offset": 55,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "33",
+              "selected_literal": "distributionUrl"
+            },
+            {
+              "offset": 57,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0037",
+              "member": "java/util/Properties.getProperty(Ljava/lang/String;)Ljava/lang/String;"
+            },
+            {
+              "offset": 60,
+              "opcode": "0xc6",
+              "name": "ifnull",
+              "operand_hex": "00e9",
+              "branch_target": 293
+            },
+            {
+              "offset": 63,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 64,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 65,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "33",
+              "selected_literal": "distributionUrl"
+            },
+            {
+              "offset": 67,
+              "opcode": "0x1",
+              "name": "aconst_null"
+            },
+            {
+              "offset": 68,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 69,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 72,
+              "opcode": "0x4d",
+              "name": "jvm_op_4d"
+            },
+            {
+              "offset": 73,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003e",
+              "member": "java/io/File.getParentFile()Ljava/io/File;"
+            },
+            {
+              "offset": 76,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 78,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "0040"
+            },
+            {
+              "offset": 81,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 82,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 83,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 85,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 86,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "0043",
+              "member": "java/net/URI.<init>(Ljava/lang/String;)V"
+            },
+            {
+              "offset": 89,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0047",
+              "member": "java/net/URI.getScheme()Ljava/lang/String;"
+            },
+            {
+              "offset": 92,
+              "opcode": "0xc7",
+              "name": "ifnonnull",
+              "operand_hex": "0017",
+              "branch_target": 115
+            },
+            {
+              "offset": 95,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "001d"
+            },
+            {
+              "offset": 98,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 99,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 101,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "004a",
+              "member": "java/net/URI.getSchemeSpecificPart()Ljava/lang/String;"
+            },
+            {
+              "offset": 104,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 106,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 107,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "004d",
+              "member": "java/io/File.<init>(Ljava/io/File;Ljava/lang/String;)V"
+            },
+            {
+              "offset": 110,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0051",
+              "member": "java/io/File.toURI()Ljava/net/URI;"
+            },
+            {
+              "offset": 113,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 115,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 116,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 117,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 118,
+              "opcode": "0x5c",
+              "name": "jvm_op_5c"
+            },
+            {
+              "offset": 119,
+              "opcode": "0x5c",
+              "name": "jvm_op_5c"
+            },
+            {
+              "offset": 120,
+              "opcode": "0x5c",
+              "name": "jvm_op_5c"
+            },
+            {
+              "offset": 121,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 122,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "05"
+            },
+            {
+              "offset": 124,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "0055",
+              "member": "org/gradle/wrapper/WrapperConfiguration.distributionLjava/net/URI;"
+            },
+            {
+              "offset": 127,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "57"
+            },
+            {
+              "offset": 129,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 130,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "005a",
+              "member": "org/gradle/wrapper/WrapperConfiguration.distributionBaseLjava/lang/String;"
+            },
+            {
+              "offset": 133,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 134,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 137,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 138,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 139,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "005a",
+              "member": "org/gradle/wrapper/WrapperConfiguration.distributionBaseLjava/lang/String;"
+            },
+            {
+              "offset": 142,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "5c"
+            },
+            {
+              "offset": 144,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 145,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "005e",
+              "member": "org/gradle/wrapper/WrapperConfiguration.distributionPathLjava/lang/String;"
+            },
+            {
+              "offset": 148,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 149,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 152,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 153,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 154,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "005e",
+              "member": "org/gradle/wrapper/WrapperConfiguration.distributionPathLjava/lang/String;"
+            },
+            {
+              "offset": 157,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "60",
+              "selected_literal": "distributionSha256Sum"
+            },
+            {
+              "offset": 159,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 160,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "0062",
+              "member": "org/gradle/wrapper/WrapperConfiguration.distributionSha256SumLjava/lang/String;"
+            },
+            {
+              "offset": 163,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 164,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 167,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 168,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 169,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "0062",
+              "member": "org/gradle/wrapper/WrapperConfiguration.distributionSha256SumLjava/lang/String;"
+            },
+            {
+              "offset": 172,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "64"
+            },
+            {
+              "offset": 174,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 175,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "0067",
+              "member": "org/gradle/wrapper/WrapperConfiguration.zipBaseLjava/lang/String;"
+            },
+            {
+              "offset": 178,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 179,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 182,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 183,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 184,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "0067",
+              "member": "org/gradle/wrapper/WrapperConfiguration.zipBaseLjava/lang/String;"
+            },
+            {
+              "offset": 187,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "69"
+            },
+            {
+              "offset": 189,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 190,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "006c",
+              "member": "org/gradle/wrapper/WrapperConfiguration.zipPathLjava/lang/String;"
+            },
+            {
+              "offset": 193,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 194,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 197,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 198,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 199,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "006c",
+              "member": "org/gradle/wrapper/WrapperConfiguration.zipPathLjava/lang/String;"
+            },
+            {
+              "offset": 202,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "6e"
+            },
+            {
+              "offset": 204,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 205,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "0071",
+              "member": "org/gradle/wrapper/WrapperConfiguration.networkTimeoutI"
+            },
+            {
+              "offset": 208,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "0077",
+              "member": "java/lang/String.valueOf(I)Ljava/lang/String;"
+            },
+            {
+              "offset": 211,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 212,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 215,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "007d",
+              "member": "java/lang/Integer.parseInt(Ljava/lang/String;)I"
+            },
+            {
+              "offset": 218,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 219,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 220,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "0071",
+              "member": "org/gradle/wrapper/WrapperConfiguration.networkTimeoutI"
+            },
+            {
+              "offset": 223,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "7f"
+            },
+            {
+              "offset": 225,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 226,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "0082",
+              "member": "org/gradle/wrapper/WrapperConfiguration.validateDistributionUrlZ"
+            },
+            {
+              "offset": 229,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "0085",
+              "member": "java/lang/String.valueOf(Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 232,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 233,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 236,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "008b",
+              "member": "java/lang/Boolean.parseBoolean(Ljava/lang/String;)Z"
+            },
+            {
+              "offset": 239,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 240,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 241,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "0082",
+              "member": "org/gradle/wrapper/WrapperConfiguration.validateDistributionUrlZ"
+            },
+            {
+              "offset": 244,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "8d"
+            },
+            {
+              "offset": 246,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 247,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "008f",
+              "member": "org/gradle/wrapper/WrapperConfiguration.retriesI"
+            },
+            {
+              "offset": 250,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "0077",
+              "member": "java/lang/String.valueOf(I)Ljava/lang/String;"
+            },
+            {
+              "offset": 253,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 254,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 257,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "007d",
+              "member": "java/lang/Integer.parseInt(Ljava/lang/String;)I"
+            },
+            {
+              "offset": 260,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 261,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 262,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "008f",
+              "member": "org/gradle/wrapper/WrapperConfiguration.retriesI"
+            },
+            {
+              "offset": 265,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "91"
+            },
+            {
+              "offset": 267,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 268,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "0093",
+              "member": "org/gradle/wrapper/WrapperConfiguration.retryBackOffMsI"
+            },
+            {
+              "offset": 271,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "0077",
+              "member": "java/lang/String.valueOf(I)Ljava/lang/String;"
+            },
+            {
+              "offset": 274,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 275,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "003a",
+              "member": "org/gradle/wrapper/WrapperExecutor.getProperty(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;"
+            },
+            {
+              "offset": 278,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "007d",
+              "member": "java/lang/Integer.parseInt(Ljava/lang/String;)I"
+            },
+            {
+              "offset": 281,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 282,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 283,
+              "opcode": "0xb5",
+              "name": "putfield",
+              "operand_hex": "0093",
+              "member": "org/gradle/wrapper/WrapperConfiguration.retryBackOffMsI"
+            },
+            {
+              "offset": 286,
+              "opcode": "0xa7",
+              "name": "goto",
+              "operand_hex": "0040",
+              "branch_target": 350
+            },
+            {
+              "offset": 289,
+              "opcode": "0x4d",
+              "name": "jvm_op_4d"
+            },
+            {
+              "offset": 290,
+              "opcode": "0xa7",
+              "name": "goto",
+              "operand_hex": "0024",
+              "branch_target": 326
+            },
+            {
+              "offset": 293,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "0097"
+            },
+            {
+              "offset": 296,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 297,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "99"
+            },
+            {
+              "offset": 299,
+              "opcode": "0x5",
+              "name": "jvm_op_05"
+            },
+            {
+              "offset": 300,
+              "opcode": "0xbd",
+              "name": "jvm_op_bd",
+              "operand_hex": "0007"
+            },
+            {
+              "offset": 303,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 304,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 305,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "33",
+              "selected_literal": "distributionUrl"
+            },
+            {
+              "offset": 307,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 308,
+              "opcode": "0x5f",
+              "name": "jvm_op_5f"
+            },
+            {
+              "offset": 309,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 310,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 311,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 312,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 313,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "009d",
+              "member": "java/lang/String.format(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;"
+            },
+            {
+              "offset": 316,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "009e",
+              "member": "java/lang/RuntimeException.<init>(Ljava/lang/String;)V"
+            },
+            {
+              "offset": 319,
+              "opcode": "0xbf",
+              "name": "jvm_op_bf"
+            },
+            {
+              "offset": 320,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 322,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0031",
+              "member": "java/io/InputStream.close()V"
+            },
+            {
+              "offset": 325,
+              "opcode": "0xbf",
+              "name": "jvm_op_bf"
+            },
+            {
+              "offset": 326,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "0097"
+            },
+            {
+              "offset": 329,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 330,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 331,
+              "opcode": "0xbd",
+              "name": "jvm_op_bd",
+              "operand_hex": "0007"
+            },
+            {
+              "offset": 334,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 335,
+              "opcode": "0x4e",
+              "name": "jvm_op_4e"
+            },
+            {
+              "offset": 336,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 337,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 338,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 339,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "a2"
+            },
+            {
+              "offset": 341,
+              "opcode": "0x2d",
+              "name": "jvm_op_2d"
+            },
+            {
+              "offset": 342,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "009d",
+              "member": "java/lang/String.format(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;"
+            },
+            {
+              "offset": 345,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 346,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "00a5",
+              "member": "java/lang/RuntimeException.<init>(Ljava/lang/String;Ljava/lang/Throwable;)V"
+            },
+            {
+              "offset": 349,
+              "opcode": "0xbf",
+              "name": "jvm_op_bf"
+            },
+            {
+              "offset": 350,
+              "opcode": "0xb1",
+              "name": "return"
+            }
+          ]
+        },
+        {
+          "name": "getProperty",
+          "descriptor": "(Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;",
+          "code_sha256": "5cbfc3abcc6d9ce6b7925dafbf0d0df5f2555cba16eaf8ce86714012f4890e3c",
+          "instructions": [
+            {
+              "offset": 0,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 1,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "0019",
+              "member": "org/gradle/wrapper/WrapperExecutor.propertiesLjava/util/Properties;"
+            },
+            {
+              "offset": 4,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 5,
+              "opcode": "0xb6",
+              "name": "invokevirtual",
+              "operand_hex": "0037",
+              "member": "java/util/Properties.getProperty(Ljava/lang/String;)Ljava/lang/String;"
+            },
+            {
+              "offset": 8,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 9,
+              "opcode": "0x3a",
+              "name": "astore",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 11,
+              "opcode": "0xc6",
+              "name": "ifnull",
+              "operand_hex": "0006",
+              "branch_target": 17
+            },
+            {
+              "offset": 14,
+              "opcode": "0x19",
+              "name": "aload",
+              "operand_hex": "04"
+            },
+            {
+              "offset": 16,
+              "opcode": "0xb0",
+              "name": "areturn"
+            },
+            {
+              "offset": 17,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 18,
+              "opcode": "0xc6",
+              "name": "ifnull",
+              "operand_hex": "0005",
+              "branch_target": 23
+            },
+            {
+              "offset": 21,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 22,
+              "opcode": "0xb0",
+              "name": "areturn"
+            },
+            {
+              "offset": 23,
+              "opcode": "0x1d",
+              "name": "jvm_op_1d"
+            },
+            {
+              "offset": 24,
+              "opcode": "0x9a",
+              "name": "ifne",
+              "operand_hex": "0005",
+              "branch_target": 29
+            },
+            {
+              "offset": 27,
+              "opcode": "0x1",
+              "name": "aconst_null"
+            },
+            {
+              "offset": 28,
+              "opcode": "0xb0",
+              "name": "areturn"
+            },
+            {
+              "offset": 29,
+              "opcode": "0xbb",
+              "name": "jvm_op_bb",
+              "operand_hex": "0097"
+            },
+            {
+              "offset": 32,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 33,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 34,
+              "opcode": "0xb4",
+              "name": "getfield",
+              "operand_hex": "001b",
+              "member": "org/gradle/wrapper/WrapperExecutor.propertiesFileLjava/io/File;"
+            },
+            {
+              "offset": 37,
+              "opcode": "0x4b",
+              "name": "jvm_op_4b"
+            },
+            {
+              "offset": 38,
+              "opcode": "0x5",
+              "name": "jvm_op_05"
+            },
+            {
+              "offset": 39,
+              "opcode": "0xbd",
+              "name": "jvm_op_bd",
+              "operand_hex": "0007"
+            },
+            {
+              "offset": 42,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 43,
+              "opcode": "0x59",
+              "name": "jvm_op_59"
+            },
+            {
+              "offset": 44,
+              "opcode": "0x4d",
+              "name": "jvm_op_4d"
+            },
+            {
+              "offset": 45,
+              "opcode": "0x3",
+              "name": "jvm_op_03"
+            },
+            {
+              "offset": 46,
+              "opcode": "0x2b",
+              "name": "aload_1"
+            },
+            {
+              "offset": 47,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 48,
+              "opcode": "0x4",
+              "name": "iconst_1"
+            },
+            {
+              "offset": 49,
+              "opcode": "0x2a",
+              "name": "aload_0"
+            },
+            {
+              "offset": 50,
+              "opcode": "0x53",
+              "name": "jvm_op_53"
+            },
+            {
+              "offset": 51,
+              "opcode": "0x12",
+              "name": "ldc",
+              "operand_hex": "99"
+            },
+            {
+              "offset": 53,
+              "opcode": "0x2c",
+              "name": "aload_2"
+            },
+            {
+              "offset": 54,
+              "opcode": "0xb8",
+              "name": "invokestatic",
+              "operand_hex": "009d",
+              "member": "java/lang/String.format(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;"
+            },
+            {
+              "offset": 57,
+              "opcode": "0xb7",
+              "name": "invokespecial",
+              "operand_hex": "009e",
+              "member": "java/lang/RuntimeException.<init>(Ljava/lang/String;)V"
+            },
+            {
+              "offset": 60,
+              "opcode": "0xbf",
+              "name": "jvm_op_bf"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

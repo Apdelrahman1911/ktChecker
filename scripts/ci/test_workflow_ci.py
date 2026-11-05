@@ -31,6 +31,43 @@ PYTHON_REPORTS = ("build/ci-evidence/python/python-checks.json",
 LIVE_REPORTS = ("build/ci-evidence/live-supervisor/live-supervisor-checks.json",
                 "build/ci-evidence/live-supervisor/live-supervisor-checks.xml")
 LIVE_PROBE_RECEIPT = "build/ci-evidence/live-probe/receipt.json"
+# These additive model profiles are pure controls, not live compiler/Native gates.
+MODEL_TASKS = (":worker-protocol:modelWireTest", ":provider-compiler:modelWorkerTest")
+MODEL_REPORTS = (
+    "modules/worker-protocol/build/test-results/modelWireTest/TEST-dev.ktchecker.workerprotocol.CompilerModelWireTest.xml",
+    "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationFilesystemTest.xml",
+    "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationLifecycleTest.xml",
+)
+# B1 reports describe bounded JVM controls, not wrapper-entrypoint or Native qualification.
+BUILD_CONTRACTS_TASKS = (":provider-build-contracts:test",)
+BUILD_CONTRACTS_REPORTS = (
+    "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.GradleWrapperChecksumProviderTest.xml",
+    "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.InstalledWrapperContextTest.xml",
+    "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperActivationPolicyBoundsTest.xml",
+    "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperPropertiesTest.xml",
+    "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperChecksumConsumerIntegrationTest.xml",
+    "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperRulePolicyIntegrationTest.xml",
+)
+# Joint barrier reports are local JVM controls, not real owner/host or release-scale qualification.
+COMPLETION_BARRIER_TASKS = (":kernel:test", ":review-controller:test")
+COMPLETION_BARRIER_REPORTS = (
+    "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionBarrierTest.xml",
+    "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionAuditCodecTest.xml",
+    "modules/review-controller/build/test-results/test/TEST-dev.ktchecker.reviewcontroller.OwnerIntegratedCompletionRegistryTest.xml",
+)
+APPLICATION_TASKS = (":worker-protocol:test", ":provider-compiler:test",
+                     ":provider-compiler:workerTest", ":provider-runtime:test") + MODEL_TASKS + BUILD_CONTRACTS_TASKS + COMPLETION_BARRIER_TASKS
+APPLICATION_REPORTS = (
+    "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.ApplicationWireTest.xml",
+    "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.CompilerJobWireTest.xml",
+    "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerApplicationLifecycleTest.xml",
+    "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerLiveHostAuthorityTest.xml",
+    "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerLiveRenderingTest.xml",
+    "modules/provider-compiler/build/test-results/workerTest/TEST-dev.ktchecker.compilerworker.live.CompilerApplicationLifecycleTest.xml",
+    "modules/provider-compiler/build/test-results/workerTest/TEST-dev.ktchecker.compilerworker.live.CompilerApplicationFilesystemTest.xml",
+    "modules/provider-runtime/build/test-results/test/TEST-dev.ktchecker.providers.runtime.OwnedApplicationSessionsTest.xml",
+    "modules/provider-runtime/build/test-results/test/TEST-dev.ktchecker.providers.runtime.OwnedApplicationTypesTest.xml",
+) + MODEL_REPORTS + BUILD_CONTRACTS_REPORTS + COMPLETION_BARRIER_REPORTS
 
 
 def authored_command(document: str, name: str) -> list[str]:
@@ -77,6 +114,254 @@ class ImplementationWorkflowTests(unittest.TestCase):
         self.assertIn(STRESS, values(command, "--require-artifact"))
         self.assertIn("--require-tests", command)
         self.assertIn("modules/kernel/build/reports/stress/*.json", document)
+
+
+class ImplementationApplicationWorkflowTests(unittest.TestCase):
+    """Real authored stanzas and synthetic task statuses, not suite/hosted passes."""
+
+    build_name = "Build and test actual modules; assemble preview distributions"
+    collector_name = "Collect actual suites and artifact identities, including failures"
+    failure_steps = (
+        "Retain direct original owned live supervisor controls on every host",
+        collector_name,
+        "Retain sanitized observed evidence (not terminal transcripts)",
+        "Retain original controlled-fixture JUnit and kernel stress reports",
+    )
+
+    def document(self):
+        return (ci_common.REPO_ROOT / ".github/workflows/implementation.yml").read_text(encoding="utf-8")
+
+    def step(self, document, name):
+        rows = re.findall(r"^      - name: " + re.escape(name) + r"\n([\s\S]*?)(?=^      - name: |\Z)",
+                          document, re.MULTILINE)
+        self.assertEqual(1, len(rows), name)
+        return rows[0]
+
+    def assert_task_gate(self, document):
+        step = self.step(document, self.build_name)
+        self.assertNotRegex(step, r"(?m)^        (?:if|continue-on-error):")
+        command = authored_command(document, self.build_name)
+        self.assertEqual(["python", "scripts/ci/run_gradle.py"], command[:2])
+        self.assertEqual(1, command.count("--"))
+        boundary = command.index("--")
+        wrapper, arguments = command[:boundary], command[boundary + 1:]
+        self.assertEqual(["build/ci-evidence/host-build.json"], values(wrapper, "--output"))
+        self.assertEqual(["1200"], values(wrapper, "--timeout"))
+        required = values(wrapper, "--require-task")
+        for task in APPLICATION_TASKS:
+            self.assertEqual(1, required.count(task), task)
+        for task in MODEL_TASKS + BUILD_CONTRACTS_TASKS:
+            self.assertEqual(1, arguments.count(task), task)
+        for value in ("--rerun-tasks", "--no-build-cache", "test"):
+            self.assertEqual(1, arguments.count(value), value)
+        self.assertFalse(any(value in ("--tests", "--exclude-task", "-x") or
+                             value.startswith(("--tests=", "--exclude-task=", "-x"))
+                             for value in arguments))
+        return tuple(task for task in required if task in APPLICATION_TASKS), arguments
+
+    def assert_report_gate(self, document):
+        step = self.step(document, self.collector_name)
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertNotIn("continue-on-error:", step)
+        command = authored_command(document, self.collector_name)
+        self.assertEqual(["python", "scripts/ci/collect_evidence.py"], command[:2])
+        self.assertNotIn("--", command)
+        self.assertEqual(["build/ci-evidence/evidence.json"], values(command, "--output"))
+        self.assertEqual(["build/ci-evidence/environment.json"], values(command, "--environment"))
+        self.assertEqual(["modules/*/build/test-results/**/*.xml", "tests/audit/build/test-results/**/*.xml"],
+                         values(command, "--reports"))
+        required = values(command, "--require-report")
+        self.assertEqual(21, len(APPLICATION_REPORTS))
+        for report in APPLICATION_REPORTS:
+            self.assertEqual(1, required.count(report), report)
+        self.assertEqual(1, required.count("modules/provider-runtime/build/test-results/test/*.xml"))
+        self.assertEqual(1, command.count("--require-tests"))
+        self.assertEqual(1, values(command, "--command-result").count("build/ci-evidence/host-build.json"))
+
+    def assert_step_mutation_rejected(self, document, name, old, new, assertion):
+        step = self.step(document, name)
+        self.assertEqual(1, step.count(old), old)
+        changed = step.replace(old, new, 1)
+        self.assertNotEqual(step, changed)
+        with self.assertRaises(AssertionError):
+            assertion(document.replace(step, changed, 1))
+
+    def test_exact_wire_host_worker_and_runtime_tasks_are_required_before_gradle_arguments(self):
+        self.assert_task_gate(self.document())
+
+    def test_twenty_one_exact_class_reports_are_required_by_the_real_collector_stanza(self):
+        self.assert_report_gate(self.document())
+
+    def test_each_required_task_removal_or_gradle_only_forwarding_is_rejected(self):
+        document = self.document()
+        self.assert_task_gate(document)
+        for task in APPLICATION_TASKS:
+            old = "--require-task " + task
+            with self.subTest(task=task, mutation="removal"):
+                self.assert_step_mutation_rejected(document, self.build_name, old, "", self.assert_task_gate)
+            with self.subTest(task=task, mutation="after-delimiter"):
+                step = self.step(document, self.build_name)
+                changed = step.replace(old, "", 1).replace("-- --rerun-tasks", "-- " + old + " --rerun-tasks", 1)
+                self.assertNotEqual(step, changed)
+                with self.assertRaises(AssertionError):
+                    self.assert_task_gate(document.replace(step, changed, 1))
+
+    def test_each_additive_gradle_argument_omission_duplicate_or_wrong_task_is_rejected(self):
+        document = self.document()
+        self.assert_task_gate(document)
+        step = self.step(document, self.build_name)
+        self.assertEqual(1, step.count("-- --rerun-tasks"))
+        wrapper, delimiter, arguments = step.partition("-- --rerun-tasks")
+        for task in MODEL_TASKS + BUILD_CONTRACTS_TASKS:
+            old = " " + task
+            self.assertEqual(1, arguments.count(old), task)
+            wrong_task = task + "NotRequired"
+            self.assertNotEqual(task, wrong_task)
+            for replacement in ("", old + old, " " + wrong_task):
+                with self.subTest(task=task, replacement=replacement):
+                    changed = wrapper + delimiter + arguments.replace(old, replacement, 1)
+                    self.assertNotEqual(step, changed)
+                    with self.assertRaises(AssertionError):
+                        self.assert_task_gate(document.replace(step, changed, 1))
+
+    def test_each_required_report_removal_or_scan_only_demotion_is_rejected(self):
+        document = self.document()
+        self.assert_report_gate(document)
+        for report in APPLICATION_REPORTS:
+            old = '--require-report "' + report + '"'
+            for new in ("", '--reports "' + report + '"'):
+                with self.subTest(report=report, replacement=new):
+                    self.assert_step_mutation_rejected(document, self.collector_name, old, new,
+                                                       self.assert_report_gate)
+
+    def test_new_checksum_policy_and_audit_report_requirements_cannot_be_duplicated_or_widened(self):
+        document = self.document()
+        self.assert_report_gate(document)
+        new_reports = (
+            "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperChecksumConsumerIntegrationTest.xml",
+            "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperRulePolicyIntegrationTest.xml",
+            "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionAuditCodecTest.xml",
+        )
+        for report in new_reports:
+            self.assertIn(report, APPLICATION_REPORTS)
+            old = '--require-report "' + report + '"'
+            parent = report.rsplit("/", 1)[0]
+            replacements = (
+                ("duplicate", old + " " + old),
+                ("directory-wildcard", '--require-report "' + parent + '/*.xml"'),
+                ("neighbor-class", '--require-report "' + parent + '/TEST-synthetic.neighbor.xml"'),
+                ("other-task-directory", '--require-report "' + report.replace(
+                    "/test-results/test/", "/test-results/otherTest/") + '"'),
+            )
+            for mutation, replacement in replacements:
+                with self.subTest(report=report, mutation=mutation):
+                    self.assert_step_mutation_rejected(document, self.collector_name, old, replacement,
+                                                       self.assert_report_gate)
+
+    def test_runner_flags_and_receipt_outputs_cannot_be_removed_or_redirected(self):
+        document = self.document()
+        self.assert_task_gate(document)
+        self.assert_report_gate(document)
+        controls = (
+            (self.build_name, self.assert_task_gate, (
+                ("python scripts/ci/run_gradle.py", "python scripts/ci/run_python_checks.py"),
+                ("--output build/ci-evidence/host-build.json", "--output build/ci-evidence/other-build.json"),
+                ("--timeout 1200", "--timeout 2400"),
+                ("--rerun-tasks ", ""), ("--no-build-cache test", "test"),
+            )),
+            (self.collector_name, self.assert_report_gate, (
+                ("python scripts/ci/collect_evidence.py", "python scripts/ci/run_python_checks.py"),
+                ("--output build/ci-evidence/evidence.json", "--output build/ci-evidence/other-evidence.json"),
+                ("--environment build/ci-evidence/environment.json", "--environment build/ci-evidence/other-environment.json"),
+                ("--require-tests", ""),
+                ("--command-result build/ci-evidence/host-build.json", ""),
+            )),
+        )
+        for name, assertion, mutations in controls:
+            for old, new in mutations:
+                with self.subTest(step=name, mutation=old):
+                    self.assert_step_mutation_rejected(document, name, old, new, assertion)
+
+    def synthetic_task_receipt(self, required, arguments, changed_task=None, outcome="EXECUTED"):
+        # Minimal task-status contract only: no JUnit suites, provider/live runs,
+        # subprocess, actual Gradle command, files or hosted receipt are created.
+        output = "\n".join(
+            "> Task " + task + (" " + outcome if task == changed_task and outcome != "EXECUTED" else "")
+            for task in required if not (task == changed_task and outcome == "absent")
+        ) + "\n"
+        with patch.object(ci_common, "wrapper_argv", return_value=["synthetic-wrapper-not-executed"]), \
+             patch.object(ci_common, "run_logged", return_value=({"state": "completed", "return_code": 0}, output, "")):
+            result, _ = ci_common.gradle_result(arguments, log_base=Path("unused-synthetic-task-receipt"),
+                                                require_tasks=required)
+        return result
+
+    def test_only_synthetic_bare_task_markers_qualify_as_executed_receipts(self):
+        required, arguments = self.assert_task_gate(self.document())
+        result = self.synthetic_task_receipt(required, arguments)
+        self.assertEqual("passed", result["state"])
+        self.assertEqual(list(required), result["required_tasks"])
+        self.assertEqual({task: "EXECUTED" for task in required}, result["tasks"])
+
+    def test_each_synthetic_absent_cached_skipped_nosource_or_failed_task_is_rejected(self):
+        required, arguments = self.assert_task_gate(self.document())
+        for task in required:
+            for outcome in ("absent", "UP-TO-DATE", "FROM-CACHE", "NO-SOURCE", "SKIPPED", "FAILED"):
+                with self.subTest(task=task, outcome=outcome):
+                    result = self.synthetic_task_receipt(required, arguments, task, outcome)
+                    self.assertEqual("failed", result["state"])
+                    self.assertIn(f"Required task did not execute: {task} ({outcome})", result["errors"])
+
+    def assert_run_isolation(self, document):
+        blocks = re.findall(r"^concurrency:\n((?:  [^\n]+\n)+)", document, re.MULTILINE)
+        self.assertEqual(1, len(blocks))
+        self.assertEqual(["group: implementation-${{ github.workflow }}-${{ github.run_id }}",
+                          "cancel-in-progress: false"], [line.strip() for line in blocks[0].splitlines()])
+        self.assertEqual(["false"], re.findall(r"^      fail-fast: ([^\n]+)$", document, re.MULTILINE))
+        self.assertEqual(["3"], re.findall(r"^      max-parallel: ([^\n]+)$", document, re.MULTILINE))
+        self.assertEqual(["30"], re.findall(r"^    timeout-minutes: ([^\n]+)$", document, re.MULTILINE))
+        self.assertEqual(["ubuntu-24.04", "windows-2025", "macos-26"],
+                         re.findall(r"^          - os: ([^\n]+)$", document, re.MULTILINE))
+        for name in self.failure_steps:
+            step = self.step(document, name)
+            self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE), name)
+            self.assertNotIn("continue-on-error:", step)
+        collector = authored_command(document, self.collector_name)
+        self.assertEqual(1, values(collector, "--command-result").count("build/ci-evidence/host-build.json"))
+        evidence = self.step(document, self.failure_steps[2])
+        self.assertRegex(evidence, r"(?m)^            build/ci-evidence/\*\.json$")
+        original = self.step(document, self.failure_steps[3])
+        self.assertRegex(original, r"(?m)^            modules/\*/build/test-results/\*\*/\*\.xml$")
+
+    def test_unique_run_group_disables_auto_cancel_and_keeps_bounded_failure_diagnostics(self):
+        # Fixed source expressions only, not dispatch, scheduler evaluation or
+        # every-patch review coverage; distinct run IDs isolate unrelated runs.
+        self.assert_run_isolation(self.document())
+
+    def test_run_isolation_rejects_shared_ref_groups_auto_cancel_or_removed_bounds(self):
+        document = self.document()
+        self.assert_run_isolation(document)
+        for old, new in (
+            ("group: implementation-${{ github.workflow }}-${{ github.run_id }}",
+             "group: implementation-${{ github.workflow }}-${{ github.ref }}"),
+            ("group: implementation-${{ github.workflow }}-${{ github.run_id }}",
+             "group: implementation-${{ github.workflow }}"),
+            ("cancel-in-progress: false", "cancel-in-progress: true"),
+            ("max-parallel: 3", "max-parallel: 4"),
+            ("timeout-minutes: 30", "timeout-minutes: 90"),
+        ):
+            with self.subTest(mutation=old, replacement=new):
+                self.assertEqual(1, document.count(old), old)
+                changed = document.replace(old, new, 1)
+                with self.assertRaises(AssertionError):
+                    self.assert_run_isolation(changed)
+
+    def test_failure_receipt_collection_and_retention_cannot_be_success_only(self):
+        document = self.document()
+        self.assert_run_isolation(document)
+        for name in self.failure_steps:
+            with self.subTest(step=name):
+                self.assert_step_mutation_rejected(document, name, "if: always()", "if: success()",
+                                                   self.assert_run_isolation)
 
 
 class DistributionUploadWorkflowTests(unittest.TestCase):
@@ -631,6 +916,301 @@ class RequiredContextCollectorTests(unittest.TestCase):
             missing = self.collect(args, root)
             self.assertEqual("incomplete", missing["state"])
             self.assertIn(f"Required artifact absent: {STRESS}", missing["missing_evidence"])
+
+
+class ModelContextCollectorTests(unittest.TestCase):
+    """Owned synthetic path/status fixtures only; not retained model-control results."""
+
+    synthetic_pass = ('<testsuite name="synthetic.model-context" tests="1">'
+                      '<testcase classname="synthetic.model-context" name="authored-only"/></testsuite>')
+
+    def fixture(self, root: Path):
+        environment = root / "environment.json"
+        environment.write_text(json.dumps({"state": "passed", "source": IDENTITY}), encoding="utf-8")
+        paths = {}
+        for report in MODEL_REPORTS:
+            path = root / report
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(self.synthetic_pass, encoding="utf-8")
+            paths[report] = path
+        unrelated = root / "modules/worker-protocol/build/test-results/test/TEST-unrelated.xml"
+        unrelated.parent.mkdir(parents=True, exist_ok=True)
+        unrelated.write_text(self.synthetic_pass, encoding="utf-8")
+        args = argparse.Namespace(profile="synthetic-model-context-wiring", environment=environment,
+                                  reports=["modules/*/build/test-results/**/*.xml"],
+                                  require_report=list(MODEL_REPORTS), require_tests=True,
+                                  artifact=[], require_artifact=[], command_result=[])
+        return args, paths
+
+    def collect(self, args, root, job_status="success"):
+        with patch.object(collect_evidence, "source_identity", return_value=IDENTITY), \
+             patch.dict(os.environ, {"KT_CI_JOB_STATUS": job_status}):
+            return collect_evidence.collect(args, root)
+
+    def test_only_exact_synthetic_model_report_paths_satisfy_the_authored_contexts(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            args, _ = self.fixture(root)
+            result = self.collect(args, root)
+            self.assertEqual("passed", result["state"])
+            self.assertEqual(4, result["counts"]["passed"])
+            self.assertEqual([], result["missing_evidence"])
+            self.assertEqual([], result["errors"])
+
+    def test_other_passed_suites_cannot_mask_missing_empty_skipped_failed_or_errored_model_reports(self):
+        alternatives = {
+            "empty": '<testsuite name="synthetic.model-context" tests="0"/>',
+            "skipped": '<testsuite tests="1" skipped="1"><testcase name="authored-only"><skipped/></testcase></testsuite>',
+            "failure": '<testsuite tests="1" failures="1"><testcase name="authored-only"><failure/></testcase></testsuite>',
+            "error": '<testsuite tests="1" errors="1"><testcase name="authored-only"><error/></testcase></testsuite>',
+        }
+        for report in MODEL_REPORTS:
+            for state in ("missing", *alternatives):
+                with tempfile.TemporaryDirectory() as temporary, self.subTest(report=report, state=state):
+                    root = Path(temporary)
+                    args, paths = self.fixture(root)
+                    if state == "missing":
+                        paths[report].unlink()
+                    else:
+                        paths[report].write_text(alternatives[state], encoding="utf-8")
+                    result = self.collect(args, root)
+                    self.assertGreater(result["counts"]["passed"], 0)
+                    self.assertEqual("incomplete", result["state"])
+                    self.assertIn("No passed test cases in required report context: " + report,
+                                  result["missing_evidence"])
+                    if state in ("failure", "error"):
+                        self.assertIn("JUnit reports contain failures/errors", result["errors"])
+
+    def test_an_ordinary_test_directory_cannot_substitute_for_an_exact_model_task_context(self):
+        for report in MODEL_REPORTS:
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(report=report):
+                root = Path(temporary)
+                args, paths = self.fixture(root)
+                original = paths[report]
+                replacement = original.parent.parent / "test" / original.name
+                replacement.parent.mkdir(parents=True, exist_ok=True)
+                original.rename(replacement)
+                result = self.collect(args, root)
+                self.assertEqual(4, result["counts"]["passed"])
+                self.assertEqual("incomplete", result["state"])
+                self.assertIn("No passed test cases in required report context: " + report,
+                              result["missing_evidence"])
+
+    def test_passed_synthetic_model_reports_cannot_promote_a_failed_command_or_job(self):
+        for failure in ("command", "job"):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(failure=failure):
+                root = Path(temporary)
+                args, _ = self.fixture(root)
+                if failure == "command":
+                    command = root / "synthetic-host-build.json"
+                    command.write_text(json.dumps({"state": "failed", "return_code": 1, "source": IDENTITY}),
+                                       encoding="utf-8")
+                    args.command_result = [command]
+                result = self.collect(args, root, "failure" if failure == "job" else "success")
+                self.assertEqual(4, result["counts"]["passed"])
+                self.assertEqual("incomplete", result["state"])
+                if failure == "command":
+                    self.assertIn("Command/smoke evidence did not pass: synthetic-host-build.json", result["errors"])
+                else:
+                    self.assertEqual("failure", result["job_status"])
+
+
+class BuildContractsContextCollectorTests(unittest.TestCase):
+    """Owned synthetic path/status fixtures only; not the retained original B1 results."""
+
+    synthetic_pass = ('<testsuite name="synthetic.build-contract-context" tests="1">'
+                      '<testcase classname="synthetic.build-contract-context" name="authored-only"/></testsuite>')
+
+    def fixture(self, root: Path):
+        environment = root / "environment.json"
+        environment.write_text(json.dumps({"state": "passed", "source": IDENTITY}), encoding="utf-8")
+        paths = {}
+        for report in BUILD_CONTRACTS_REPORTS:
+            path = root / report
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(self.synthetic_pass, encoding="utf-8")
+            paths[report] = path
+        unrelated = root / "modules/provider-build-contracts/build/test-results/test/TEST-unrelated.xml"
+        unrelated.parent.mkdir(parents=True, exist_ok=True)
+        unrelated.write_text(self.synthetic_pass, encoding="utf-8")
+        args = argparse.Namespace(profile="synthetic-build-contract-context-wiring", environment=environment,
+                                  reports=["modules/*/build/test-results/**/*.xml"],
+                                  require_report=list(BUILD_CONTRACTS_REPORTS), require_tests=True,
+                                  artifact=[], require_artifact=[], command_result=[])
+        return args, paths
+
+    def collect(self, args, root, job_status="success"):
+        with patch.object(collect_evidence, "source_identity", return_value=IDENTITY), \
+             patch.dict(os.environ, {"KT_CI_JOB_STATUS": job_status}):
+            return collect_evidence.collect(args, root)
+
+    def test_only_six_exact_synthetic_build_contract_report_paths_satisfy_the_authored_contexts(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            args, _ = self.fixture(root)
+            result = self.collect(args, root)
+            self.assertEqual("passed", result["state"])
+            self.assertEqual(7, result["counts"]["passed"])
+            self.assertEqual([], result["missing_evidence"])
+            self.assertEqual([], result["errors"])
+
+    def test_other_passed_suites_cannot_mask_missing_empty_skipped_failed_or_errored_build_contract_reports(self):
+        alternatives = {
+            "empty": '<testsuite name="synthetic.build-contract-context" tests="0"/>',
+            "skipped": '<testsuite tests="1" skipped="1"><testcase name="authored-only"><skipped/></testcase></testsuite>',
+            "failure": '<testsuite tests="1" failures="1"><testcase name="authored-only"><failure/></testcase></testsuite>',
+            "error": '<testsuite tests="1" errors="1"><testcase name="authored-only"><error/></testcase></testsuite>',
+        }
+        for report in BUILD_CONTRACTS_REPORTS:
+            for state in ("missing", *alternatives):
+                with tempfile.TemporaryDirectory() as temporary, self.subTest(report=report, state=state):
+                    root = Path(temporary)
+                    args, paths = self.fixture(root)
+                    if state == "missing":
+                        paths[report].unlink()
+                    else:
+                        paths[report].write_text(alternatives[state], encoding="utf-8")
+                    result = self.collect(args, root)
+                    self.assertGreater(result["counts"]["passed"], 0)
+                    self.assertEqual("incomplete", result["state"])
+                    self.assertIn("No passed test cases in required report context: " + report,
+                                  result["missing_evidence"])
+                    if state in ("failure", "error"):
+                        self.assertIn("JUnit reports contain failures/errors", result["errors"])
+
+    def test_a_neighbor_class_or_other_task_directory_cannot_substitute_for_an_exact_build_contract_context(self):
+        for report in BUILD_CONTRACTS_REPORTS:
+            for mutation in ("neighbor-class", "other-task-directory"):
+                with tempfile.TemporaryDirectory() as temporary, self.subTest(report=report, mutation=mutation):
+                    root = Path(temporary)
+                    args, paths = self.fixture(root)
+                    original = paths[report]
+                    replacement = (original.with_name("TEST-synthetic.neighbor.xml") if mutation == "neighbor-class"
+                                   else original.parent.parent / "otherTest" / original.name)
+                    replacement.parent.mkdir(parents=True, exist_ok=True)
+                    original.rename(replacement)
+                    result = self.collect(args, root)
+                    self.assertEqual(7, result["counts"]["passed"])
+                    self.assertEqual("incomplete", result["state"])
+                    self.assertIn("No passed test cases in required report context: " + report,
+                                  result["missing_evidence"])
+
+    def test_passed_synthetic_build_contract_reports_cannot_promote_a_failed_command_or_job(self):
+        for failure in ("command", "job"):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(failure=failure):
+                root = Path(temporary)
+                args, _ = self.fixture(root)
+                if failure == "command":
+                    command = root / "synthetic-host-build.json"
+                    command.write_text(json.dumps({"state": "failed", "return_code": 1, "source": IDENTITY}),
+                                       encoding="utf-8")
+                    args.command_result = [command]
+                result = self.collect(args, root, "failure" if failure == "job" else "success")
+                self.assertEqual(7, result["counts"]["passed"])
+                self.assertEqual("incomplete", result["state"])
+                if failure == "command":
+                    self.assertIn("Command/smoke evidence did not pass: synthetic-host-build.json", result["errors"])
+                else:
+                    self.assertEqual("failure", result["job_status"])
+
+
+class CompletionBarrierContextCollectorTests(unittest.TestCase):
+    """Owned synthetic path/status fixtures only; not the retained original 26 barrier cases."""
+
+    synthetic_pass = ('<testsuite name="synthetic.completion-barrier-context" tests="1">'
+                      '<testcase classname="synthetic.completion-barrier-context" name="authored-only"/></testsuite>')
+
+    def fixture(self, root: Path):
+        environment = root / "environment.json"
+        environment.write_text(json.dumps({"state": "passed", "source": IDENTITY}), encoding="utf-8")
+        paths = {}
+        for report in COMPLETION_BARRIER_REPORTS:
+            path = root / report
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(self.synthetic_pass, encoding="utf-8")
+            paths[report] = path
+        unrelated = root / "modules/kernel/build/test-results/test/TEST-unrelated.xml"
+        unrelated.parent.mkdir(parents=True, exist_ok=True)
+        unrelated.write_text(self.synthetic_pass, encoding="utf-8")
+        args = argparse.Namespace(profile="synthetic-completion-barrier-context-wiring", environment=environment,
+                                  reports=["modules/*/build/test-results/**/*.xml"],
+                                  require_report=list(COMPLETION_BARRIER_REPORTS), require_tests=True,
+                                  artifact=[], require_artifact=[], command_result=[])
+        return args, paths
+
+    def collect(self, args, root, job_status="success"):
+        with patch.object(collect_evidence, "source_identity", return_value=IDENTITY), \
+             patch.dict(os.environ, {"KT_CI_JOB_STATUS": job_status}):
+            return collect_evidence.collect(args, root)
+
+    def test_only_three_exact_synthetic_completion_barrier_report_paths_satisfy_the_authored_contexts(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            args, _ = self.fixture(root)
+            result = self.collect(args, root)
+            self.assertEqual("passed", result["state"])
+            self.assertEqual(4, result["counts"]["passed"])
+            self.assertEqual([], result["missing_evidence"])
+            self.assertEqual([], result["errors"])
+
+    def test_other_passed_suites_cannot_mask_missing_empty_skipped_failed_or_errored_completion_barrier_reports(self):
+        alternatives = {
+            "empty": '<testsuite name="synthetic.completion-barrier-context" tests="0"/>',
+            "skipped": '<testsuite tests="1" skipped="1"><testcase name="authored-only"><skipped/></testcase></testsuite>',
+            "failure": '<testsuite tests="1" failures="1"><testcase name="authored-only"><failure/></testcase></testsuite>',
+            "error": '<testsuite tests="1" errors="1"><testcase name="authored-only"><error/></testcase></testsuite>',
+        }
+        for report in COMPLETION_BARRIER_REPORTS:
+            for state in ("missing", *alternatives):
+                with tempfile.TemporaryDirectory() as temporary, self.subTest(report=report, state=state):
+                    root = Path(temporary)
+                    args, paths = self.fixture(root)
+                    if state == "missing":
+                        paths[report].unlink()
+                    else:
+                        paths[report].write_text(alternatives[state], encoding="utf-8")
+                    result = self.collect(args, root)
+                    self.assertGreater(result["counts"]["passed"], 0)
+                    self.assertEqual("incomplete", result["state"])
+                    self.assertIn("No passed test cases in required report context: " + report,
+                                  result["missing_evidence"])
+                    if state in ("failure", "error"):
+                        self.assertIn("JUnit reports contain failures/errors", result["errors"])
+
+    def test_a_neighbor_class_or_other_task_directory_cannot_substitute_for_an_exact_completion_barrier_context(self):
+        for report in COMPLETION_BARRIER_REPORTS:
+            for mutation in ("neighbor-class", "other-task-directory"):
+                with tempfile.TemporaryDirectory() as temporary, self.subTest(report=report, mutation=mutation):
+                    root = Path(temporary)
+                    args, paths = self.fixture(root)
+                    original = paths[report]
+                    replacement = (original.with_name("TEST-synthetic.neighbor.xml") if mutation == "neighbor-class"
+                                   else original.parent.parent / "otherTest" / original.name)
+                    replacement.parent.mkdir(parents=True, exist_ok=True)
+                    original.rename(replacement)
+                    result = self.collect(args, root)
+                    self.assertEqual(4, result["counts"]["passed"])
+                    self.assertEqual("incomplete", result["state"])
+                    self.assertIn("No passed test cases in required report context: " + report,
+                                  result["missing_evidence"])
+
+    def test_passed_synthetic_completion_barrier_reports_cannot_promote_a_failed_command_or_job(self):
+        for failure in ("command", "job"):
+            with tempfile.TemporaryDirectory() as temporary, self.subTest(failure=failure):
+                root = Path(temporary)
+                args, _ = self.fixture(root)
+                if failure == "command":
+                    command = root / "synthetic-host-build.json"
+                    command.write_text(json.dumps({"state": "failed", "return_code": 1, "source": IDENTITY}),
+                                       encoding="utf-8")
+                    args.command_result = [command]
+                result = self.collect(args, root, "failure" if failure == "job" else "success")
+                self.assertEqual(4, result["counts"]["passed"])
+                self.assertEqual("incomplete", result["state"])
+                if failure == "command":
+                    self.assertIn("Command/smoke evidence did not pass: synthetic-host-build.json", result["errors"])
+                else:
+                    self.assertEqual("failure", result["job_status"])
 
 
 if __name__ == "__main__":

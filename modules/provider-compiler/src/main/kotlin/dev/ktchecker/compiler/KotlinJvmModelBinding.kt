@@ -37,8 +37,16 @@ class KotlinJvmModelBinding private constructor(
     internal val installation: KotlinJvmToolchain,
     internal val compilation: ModelCompilation,
     internal val originalContext: AnalysisContext,
+    internal val originalArgumentLayout: VerifiedJvmArgumentLayout?,
     val identity: JvmModelBindingIdentity,
 ) {
+    /** Typed execution projections are DISTINCT from unchanged raw context/identity at P/K/C/E. */
+    val normalizedCompilerOptions: List<String> = Collections.unmodifiableList(
+        (originalArgumentLayout?.normalizedCompilerOptions ?: originalContext.compilerArguments).toList())
+    val executableCompilationFiles: List<String> = Collections.unmodifiableList(
+        (originalArgumentLayout?.executableCompilationFiles ?: requireNotNull(originalContext.compilationFiles)).toList())
+    val argumentLayoutDigest: String? = originalArgumentLayout?.digest
+
     /** Never reads the old source/dependency paths; those may be gone after kernel acceptance. */
     fun verifyInstallation(checkpoint: () -> Unit = {}) = verifyModelInstallation(installation, checkpoint)
 
@@ -83,6 +91,8 @@ class KotlinJvmModelBinding private constructor(
         modelCheck(input.snapshot == model.snapshot && input.execution == null && input.outputRoot == null,
             "compiler_model_input_mismatch", "Preparation must retain the whole model snapshot without injected execution/output.")
         normalizedAbsolute(input.materializedRoot)
+        originalArgumentLayout?.let { layout -> modelCheck(input.materializedRoot == layout.originalSourceRoot,
+            "compiler_model_original_source_origin_mismatch", "Preparation must retain the exact registered original source root.") }
         val basePolicies = originalContext.policies
         val additions = input.context.policies.keys - basePolicies.keys
         modelCheck(input.context == originalContext.copy(policies = input.context.policies) &&
@@ -99,6 +109,7 @@ class KotlinJvmModelBinding private constructor(
 
     companion object {
         const val SCHEMA = "ktchecker/jvm-model-binding-1"
+        const val ORIGINAL_ARGV_SCHEMA = "ktchecker/jvm-model-binding-original-argv-2"
         const val PROFILE_PROPERTY = "-Dktchecker.compiler.modelBinding="
         private const val CATALOG_POLICY = "ktchecker.catalog-inventory"
         private const val ACTIVATION_POLICY = "ktchecker.activation-plan"
@@ -134,9 +145,32 @@ class KotlinJvmModelBinding private constructor(
             modelCheck(compilation.sourceSetIds.all { model.sourceSet(it)?.dependsOn?.isEmpty() == true } &&
                 compilation.sourceFiles.all { it.path.endsWith(".kt") }, "compiler_model_source_roles_unsupported",
                 "Common/actual refinement and Java source roles are not inferred from a flat JVM source list.")
-            modelCheck(pathFreeModelArguments(compilation.compilerArguments), "compiler_model_arguments_unsupported",
-                "Unknown/path-bearing compiler arguments cannot be stripped, normalized or guessed.")
-            try { CompilerFlags.validate(compilation.compilerArguments) }
+            val layout = if (compilation.jvmArgumentRoles == null) {
+                modelCheck(model.jvmArgumentLayout(compilationId) == null && pathFreeModelArguments(compilation.compilerArguments),
+                    "compiler_model_arguments_unsupported", "Absent original role facts retain the strict historical scalar-only path.")
+                null
+            } else model.jvmArgumentLayout(compilationId)
+                ?: modelFailure("compiler_model_arguments_unsupported", "No live importer/owner-verified total original-argument layout is available.")
+            layout?.let { checked ->
+                modelCheck(checked.originalArguments == compilation.compilerArguments && checked.renderOriginal() == compilation.compilerArguments &&
+                    checked.modelSourceFiles == compilation.sourceFiles &&
+                    checked.executableCompilationFiles == compilation.jvmArgumentRoles?.sourcePaths &&
+                    checked.executableSourceFiles.size == compilation.sourceFiles.size &&
+                    checked.executableSourceFiles == checked.executableCompilationFiles.map { path ->
+                        compilation.sourceFiles.singleOrNull { it.path == path }
+                    },
+                    "compiler_model_argument_layout_mismatch", "Typed execution order must retain every exact original source/argument occurrence.")
+                modelCheck(compilation.projectDependencies.isEmpty() && model.export.generatedInputs.none { generated ->
+                    generated.sourceSetIds.any { it in compilation.sourceSetIds }
+                }, "compiler_model_argument_provenance_unsupported",
+                    "The original-argv adapter does not infer generated sources or project-produced classpath provenance.")
+                modelCheck(chain.compilerArtifacts.singleOrNull {
+                    it.coordinate == "org.jetbrains.kotlin:kotlin-compiler-embeddable:${CompilerRuleRegistry.VERSION}"
+                }?.digest == VerifiedJvmArgumentLayout.COMPILER_DIGEST, "compiler_model_argument_compiler_unverified",
+                    "Original-argument normalization requires the exact reviewed pinned compiler, not a version label.")
+            }
+            val normalizedOptions = layout?.normalizedCompilerOptions ?: compilation.compilerArguments
+            try { CompilerFlags.validate(normalizedOptions) }
             catch (_: IllegalArgumentException) { modelFailure("compiler_model_arguments_unsupported", "The provider does not accept the original argument tokens.") }
             catch (_: IllegalStateException) { modelFailure("compiler_model_arguments_unsupported", "The provider does not accept the original argument tokens.") }
             for ((flag, value) in listOf("-language-version" to compilation.languageVersion, "-api-version" to compilation.apiVersion)) {
@@ -147,6 +181,8 @@ class KotlinJvmModelBinding private constructor(
             CompilerSnapshot.compilationPaths(AnalysisInput(model.snapshot, "/unused-model-identity", context))
             verifyModelInstallation(installation, checkpoint)
             val view = installation.installationView()
+            layout?.let { modelCheck(it.selectedJdkHome == view.runtime.root.toString(), "compiler_model_argument_jdk_mismatch",
+                "Original optional JDK operand and exported task selection must bind the identical installed full JDK image.") }
             modelCheck(chain.compilerArtifacts.size == view.compilerClasspath.size && chain.compilerArtifacts.isNotEmpty(),
                 "compiler_model_compiler_artifacts_mismatch", "Installed and modeled ordered compiler JAR domains differ.")
             modelCheck(chain.compilerArtifacts.count { it.coordinate == "org.jetbrains.kotlin:kotlin-compiler-embeddable:${CompilerRuleRegistry.VERSION}" } == 1,
@@ -174,7 +210,12 @@ class KotlinJvmModelBinding private constructor(
             val modelToolchainDigest = context.toolchainDigest
                 ?: modelFailure("compiler_model_toolchain_unavailable", "The model has no exact per-compilation toolchain identity.")
             val relation = buildJsonObject {
-                put("schema", SCHEMA)
+                put("schema", if (layout == null) SCHEMA else ORIGINAL_ARGV_SCHEMA)
+                layout?.let {
+                    put("originalArgumentLayout", it.digest)
+                    put("normalizedCompilerOptions", ContractJson.encodeToJsonElement(it.normalizedCompilerOptions))
+                    put("executableCompilationFiles", ContractJson.encodeToJsonElement(it.executableCompilationFiles))
+                }
                 put("archiveBinding", "ktchecker/kernel-regular-jar-archive-1")
                 put("mode", KotlinJvmInputMode.VERIFIED_MODEL.name)
                 put("namespace", ContractJson.encodeToJsonElement(model.namespace))
@@ -196,7 +237,7 @@ class KotlinJvmModelBinding private constructor(
                 put("compilerArguments", ContractJson.encodeToJsonElement(compilation.compilerArguments))
                 put("dependencies", ContractJson.encodeToJsonElement(compilation.classpath))
             }
-            return KotlinJvmModelBinding(model, compilationId, installation, compilation, context,
+            return KotlinJvmModelBinding(model, compilationId, installation, compilation, context, layout,
                 JvmModelBindingIdentity(jsonDigest(relation), compilationId, modelContextDigest, modelToolchainDigest,
                     installation.digest, view.runtime.digest))
         }
@@ -233,22 +274,7 @@ class PreparedJvmModelInput internal constructor(
         modelCheck(originalArgument == original && originalArgument.analysisKey() == originalAnalysisKey,
             "compiler_model_original_mismatch", "Kernel original differs from the complete retained owner input.")
         binding.requireProvider(provider)
-        val root = normalizedAbsolute(effective.materializedRoot)
-        modelCheck(root.fileName?.toString() == "sources" && root.parent != null && effective.outputRoot != null,
-            "compiler_model_archive_layout_mismatch", "Expected the kernel's exact private source archive and per-attempt output parent.")
-        val output = normalizedAbsolute(requireNotNull(effective.outputRoot))
-        modelCheck(!output.startsWith(root.parent) && !root.parent.startsWith(output),
-            "compiler_model_output_overlap", "Attempt output must be separate from the whole source/dependency archive.")
-        modelCheck(effective.copy(materializedRoot = original.materializedRoot,
-            context = effective.context.copy(classpath = original.context.classpath), outputRoot = original.outputRoot) == original,
-            "compiler_model_effective_mismatch", "Only exact kernel source/dependency paths and output parent may change.")
-        modelCheck(effective.context.classpath.size == original.context.classpath.size,
-            "compiler_model_classpath_mapping_mismatch", "The archive cannot change dependency count/order.")
-        original.context.classpath.zip(effective.context.classpath).forEachIndexed { index, (before, after) ->
-            val expectedPath = root.parent.resolve("classpath").resolve("artifact-$index.jar").toString()
-            modelCheck(after == before.copy(path = expectedPath), "compiler_model_classpath_mapping_mismatch",
-                "Every dependency must retain its ordinal, coordinate and digest at its exact private archive location.")
-        }
+        requireJvmModelArchiveRelocation(original, effective)
         modelCheck(child == effective.copy(requiredRuleIds = compilerRuleIds, execution = compilerProfile),
             "compiler_model_child_mismatch", "Provider child differs from the exact retained model-mode route/profile projection.")
         verifyFrozen()
@@ -257,6 +283,29 @@ class PreparedJvmModelInput internal constructor(
         verifyDependencies(binding.compilation.classpath, effective.context.classpath)
         verifyFrozen()
         return KotlinJvmModelPermit(binding, this, child, verifyFrozen)
+    }
+}
+
+/**
+ * Shared, pure whole-input archive relation. This is not a model, application, or execution grant.
+ * Both fixed cold and live model routes apply this SAME relation before reading any archive file.
+ */
+internal fun requireJvmModelArchiveRelocation(original: AnalysisInput, effective: AnalysisInput) {
+    val root = normalizedAbsolute(effective.materializedRoot)
+    modelCheck(root.fileName?.toString() == "sources" && root.parent != null && effective.outputRoot != null,
+        "compiler_model_archive_layout_mismatch", "Expected the kernel's exact private source archive and per-attempt output parent.")
+    val output = normalizedAbsolute(requireNotNull(effective.outputRoot))
+    modelCheck(!output.startsWith(root.parent) && !root.parent.startsWith(output),
+        "compiler_model_output_overlap", "Attempt output must be separate from the whole source/dependency archive.")
+    modelCheck(effective.copy(materializedRoot = original.materializedRoot,
+        context = effective.context.copy(classpath = original.context.classpath), outputRoot = original.outputRoot) == original,
+        "compiler_model_effective_mismatch", "Only exact kernel source/dependency paths and output parent may change.")
+    modelCheck(effective.context.classpath.size == original.context.classpath.size,
+        "compiler_model_classpath_mapping_mismatch", "The archive cannot change dependency count/order.")
+    original.context.classpath.zip(effective.context.classpath).forEachIndexed { index, (before, after) ->
+        val expectedPath = root.parent.resolve("classpath").resolve("artifact-$index.jar").toString()
+        modelCheck(after == before.copy(path = expectedPath), "compiler_model_classpath_mapping_mismatch",
+            "Every dependency must retain its ordinal, coordinate and digest at its exact private archive location.")
     }
 }
 
@@ -351,7 +400,7 @@ private fun compilerPathState(installation: KotlinJvmToolchain, checkpoint: () -
     return result
 }
 
-private fun verifyDependencies(model: List<ModelArtifact>, artifacts: List<ArtifactIdentity>, checkpoint: () -> Unit = {}) {
+internal fun verifyDependencies(model: List<ModelArtifact>, artifacts: List<ArtifactIdentity>, checkpoint: () -> Unit = {}) {
     modelCheck(model.size == artifacts.size, "compiler_model_dependency_mismatch", "Dependency domains differ.")
     model.zip(artifacts).forEach { (declared, actual) ->
         checkpoint()

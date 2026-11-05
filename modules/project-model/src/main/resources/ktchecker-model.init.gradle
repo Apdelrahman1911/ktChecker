@@ -265,6 +265,186 @@ class KtCheckerPinnedModelApi {
         if (operands != files.collect { it.absolutePath }) throw new IllegalStateException('Exact ordered task/argument path roles differ')
     }
 
+    static Map ordinaryJvmProducer(Object task, Object fullCapture) {
+        at('compiler-jvm-original-producer') {
+            if (task == null || task.getClass().getClassLoader() == null || !(fullCapture instanceof Map)) {
+                throw new IllegalStateException('Missing original JVM producer capture')
+            }
+            // The registered owner runtime supplies the byte pins. A class name alone is
+            // NOT origin authority. These checks additionally reject custom dispatch and
+            // argument-object implementations for the reviewed KGP lowering semantics.
+            def loader = task.getClass().getClassLoader()
+            def taskType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.KotlinCompile')
+            def baseType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile')
+            def contextType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer$CreateCompilerArgumentsContext')
+            def argumentsType = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments')
+            def commonArgumentsType = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments')
+            def toolArgumentsType = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.CommonToolArguments')
+            def changesType = loader.loadClass('org.gradle.work.InputChanges')
+            def backupType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.TaskOutputsBackup')
+            def providerType = loader.loadClass('org.gradle.api.provider.Provider')
+            if (!taskType.isInstance(task) || fullCapture.value == null || !fullCapture.value.getClass().is(argumentsType)) {
+                throw new IllegalStateException('Unsupported ordinary JVM producer/argument object')
+            }
+            def creates = task.getClass().getMethods().findAll { method ->
+                method.name == 'createCompilerArguments' && method.parameterTypes.toList() == [contextType]
+            }
+            def lowers = task.getClass().getMethods().findAll { method ->
+                method.name == 'callCompilerAsync$kotlin_gradle_plugin_common' && method.parameterCount == 3 &&
+                    method.parameterTypes[1].is(changesType) && method.parameterTypes[2].is(backupType)
+            }
+            if (creates.size() != 2 || creates.collect { it.returnType }.toSet() != [argumentsType, toolArgumentsType].toSet() ||
+                lowers.size() != 2 || lowers.collect { it.parameterTypes[0] }.toSet() != [argumentsType, commonArgumentsType].toSet() ||
+                (creates + lowers).any { method -> !method.declaringClass.is(taskType) ||
+                    java.lang.reflect.Modifier.isStatic(method.modifiers) || java.lang.reflect.Modifier.isAbstract(method.modifiers) } ||
+                lowers.any { !it.returnType.is(Void.TYPE) }) {
+                throw new IllegalStateException('Custom or unavailable pinned JVM producer/lowering dispatch')
+            }
+            def pluginGetter = task.getClass().getMethod('getKotlinPluginData$kotlin_gradle_plugin_common')
+            if (!pluginGetter.declaringClass.is(baseType) || !pluginGetter.returnType.is(providerType) ||
+                !java.lang.reflect.Modifier.isFinal(pluginGetter.modifiers)) {
+                throw new IllegalStateException('Unknown nullable plugin metadata producer')
+            }
+            [taskType: taskType, argumentsType: argumentsType,
+                pluginConfigType: loader.loadClass('org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig'),
+                pluginOptionsType: loader.loadClass('org.jetbrains.kotlin.gradle.tasks.CompilerPluginOptions'),
+                pluginDataType: loader.loadClass('org.jetbrains.kotlin.gradle.tasks.KotlinCompilerPluginData'),
+                pluginStateType: loader.loadClass('org.jetbrains.kotlin.gradle.tasks.KotlinCompilerPluginData$InputsOutputsState')]
+        }
+    }
+
+    static List<File> originalFiles(Object collection) {
+        def files = getter(collection, 'getFiles')
+        if (!(files instanceof Set) || files.size() > 16384 || files.any { !(it instanceof File) }) {
+            throw new IllegalStateException('Unavailable exact bounded Gradle file collection')
+        }
+        new ArrayList<File>(files)
+    }
+
+    static void requireEmptyPluginOptions(Object options, Map api) {
+        if (!api.pluginConfigType.isInstance(options)) throw new IllegalStateException('Unknown actual compiler plugin option configuration')
+        // Base CompilerPluginConfig has allOptions(), NOT getArguments(). The pinned
+        // producer folds these maps into CompilerPluginOptions without inventing entries.
+        // Empty containers are allowed; a nonempty lazy option is never evaluated away.
+        def getter = options.getClass().getMethod('allOptions')
+        if (!getter.declaringClass.is(api.pluginConfigType) || !java.lang.reflect.Modifier.isFinal(getter.modifiers)) {
+            throw new IllegalStateException('Unknown compiler plugin option producer')
+        }
+        def values = getter.invoke(options)
+        if (!(values instanceof Map) || values.size() > 16384 || values.any { key, value ->
+            !(key instanceof String) || key.length() > 8192 || !(value instanceof List) || !value.isEmpty()
+        }) throw new IllegalStateException('Nonempty or unavailable compiler plugin options')
+        if (api.pluginOptionsType.isInstance(options) && !strings(KtCheckerPinnedModelApi.getter(options, 'getArguments')).isEmpty()) {
+            throw new IllegalStateException('Nonempty serialized compiler plugin options')
+        }
+    }
+
+    static String emptyJvmPluginDomain(Object task, Object fullCapture, Object pluginCapture, Object effectiveFiles) {
+        def api = ordinaryJvmProducer(task, fullCapture)
+        if (!(pluginCapture instanceof Map) || !(effectiveFiles instanceof List) || !effectiveFiles.isEmpty() ||
+            !(pluginCapture.state in ['provider_absent', 'value_absent', 'available']) ||
+            ((pluginCapture.state == 'available') != (pluginCapture.value != null))) {
+            throw new IllegalStateException('Missing independent empty plugin-domain observations')
+        }
+        def arguments = fullCapture.value
+        ['getPluginClasspaths', 'getPluginOptions', 'getPluginConfigurations', 'getPluginOrderConstraints'].each { name ->
+            if (!pathArray(getter(arguments, name)).isEmpty()) throw new IllegalStateException('Nonempty compiler plugin argument domain')
+        }
+        if (getter(arguments, 'getIntellijPluginRoot') != null || strings(fullCapture.arguments).any { token ->
+            token.startsWith('@') || token == '-P' || token.startsWith('-P=') || token.startsWith('-Xplugin') ||
+                token.startsWith('-Xcompiler-plugin') || token.startsWith('-Xintellij-plugin-root')
+        }) throw new IllegalStateException('Plugin/response argument semantics are not an empty domain')
+        def taskOptions = getter(getter(task, 'getPluginOptions'), 'get')
+        if (!(taskOptions instanceof List) || taskOptions.size() > 16384) throw new IllegalStateException('Unavailable task plugin option domain')
+        taskOptions.each { requireEmptyPluginOptions(it, api) }
+        if (pluginCapture.value != null) {
+            def data = pluginCapture.value
+            if (!data.getClass().is(api.pluginDataType)) throw new IllegalStateException('Unknown actual compiler plugin metadata')
+            requireEmptyPluginOptions(getter(data, 'getOptions'), api)
+            def state = getter(data, 'getInputsOutputsState')
+            if (state == null || !state.getClass().is(api.pluginStateType)) throw new IllegalStateException('Unknown actual plugin input/output vocabulary')
+            def inputs = getter(state, 'getInputs')
+            def inputFiles = getter(state, 'getInputFiles')
+            def outputFiles = getter(state, 'getOutputFiles')
+            if (!(inputs instanceof Map) || !inputs.isEmpty() || !(inputFiles instanceof Set) || !inputFiles.isEmpty() ||
+                !(outputFiles instanceof Set) || !outputFiles.isEmpty()) {
+                throw new IllegalStateException('Nonempty actual compiler plugin inputs/properties/outputs')
+            }
+        }
+        if (!effectivePluginFiles(task, pluginCapture.value).isEmpty() || !originalFiles(getter(task, 'getJavaSources')).isEmpty()) {
+            throw new IllegalStateException('Nonempty actual plugin or Java input domain')
+        }
+        def scripts = getter(task, 'getScriptSources$kotlin_gradle_plugin_common')
+        if (!originalFiles(scripts).isEmpty() || !originalFiles(getter(scripts, 'getAsFileTree')).isEmpty() ||
+            getter(getter(task, 'getMultiPlatformEnabled'), 'get') != Boolean.FALSE ||
+            getter(arguments, 'getMultiPlatform') != Boolean.FALSE || getter(arguments, 'getScript') != Boolean.FALSE ||
+            getter(arguments, 'getRepl') != Boolean.FALSE || getter(arguments, 'getExpression') != null ||
+            getter(arguments, 'getBuildFile') != null || getter(arguments, 'getJavaPackagePrefix') != null ||
+            getter(arguments, 'getUseFirLT') != Boolean.TRUE) {
+            throw new IllegalStateException('Nonordinary script/Java/refinement/frontend domain')
+        }
+        ['getFriendPaths', 'getCommonSources', 'getFragments', 'getFragmentSources', 'getFragmentRefines',
+            'getFragmentDependencies', 'getFragmentFriendDependencies', 'getFragmentIncrementalClasspath',
+            'getJavaSourceRoots', 'getScriptTemplates', 'getScriptResolverEnvironment'].each { name ->
+            if (!pathArray(getter(arguments, name)).isEmpty()) throw new IllegalStateException('Nonordinary source/input argument domain')
+        }
+        pluginCapture.state == 'available' ? 'available_empty' : pluginCapture.state
+    }
+
+    static Map originalJvmArgumentRoles(Object task, Object fullCapture, Object sourceRoot, Object selectedHome,
+        Object sourceFiles, Object classpath, Object pluginDomain) {
+        ordinaryJvmProducer(task, fullCapture)
+        if (File.separator != '/' || File.pathSeparator != ':' || !(sourceRoot instanceof java.nio.file.Path) ||
+            !(selectedHome instanceof String) || !(sourceFiles instanceof List) || !(classpath instanceof List) ||
+            !(pluginDomain in ['provider_absent', 'value_absent', 'available_empty'])) {
+            throw new IllegalStateException('Unavailable original POSIX JVM role domain')
+        }
+        def root = sourceRoot.toAbsolutePath().normalize()
+        if (root != sourceRoot || root.toRealPath() != root) throw new IllegalStateException('Unaliased original snapshot root required')
+        def arguments = fullCapture.value
+        // The pinned Sources producer appends scripts + Java + Kotlin, with Kotlin in
+        // this actual FileTree iteration order. Java/scripts were independently empty.
+        def files = originalFiles(getter(getter(task, 'getSources'), 'getAsFileTree'))
+        samePaths(strings(getter(arguments, 'getFreeArgs')), files)
+        def paths = files.collect { file ->
+            def path = file.toPath().toAbsolutePath().normalize()
+            if (path.toString() != file.absolutePath || !path.startsWith(root) || path == root ||
+                !file.name.endsWith('.kt') || !java.nio.file.Files.isRegularFile(path, java.nio.file.LinkOption.NOFOLLOW_LINKS) ||
+                path.toRealPath() != path) throw new IllegalStateException('Nonregular or aliased original Kotlin source')
+            root.relativize(path).toString()
+        }
+        if (sourceFiles.any { !(it instanceof Map) || !(it.path instanceof String) } ||
+            paths.size() != paths.toSet().size() || sourceFiles.collect { it.path }.size() != sourceFiles.collect { it.path }.toSet().size() ||
+            paths.toSet() != sourceFiles.collect { it.path }.toSet()) {
+            throw new IllegalStateException('Original source order is not a bijection of complete model membership')
+        }
+        def declared = originalFiles(getter(task, 'getLibraries'))
+        def operand = getter(arguments, 'getClasspath')
+        if ((operand != null && !(operand instanceof String)) || classpath.any { !(it instanceof Map) || !(it.path instanceof String) } ||
+            classpath.collect { it.path } != declared.collect { it.absolutePath } || declared.any { file ->
+                def path = file.toPath().toAbsolutePath().normalize()
+                path.toString() != file.absolutePath || !java.nio.file.Files.isRegularFile(path, java.nio.file.LinkOption.NOFOLLOW_LINKS) ||
+                    path.toRealPath() != path
+            } || (operand == null ? !declared.isEmpty() : operand != declared.collect { it.absolutePath }.join(File.pathSeparator))) {
+            throw new IllegalStateException('Original full ordered classpath role differs from independently captured task files')
+        }
+        def destination = getter(arguments, 'getDestination')
+        def directory = getter(getter(getter(task, 'getDestinationDirectory'), 'get'), 'getAsFile')
+        def jdk = getter(arguments, 'getJdkHome')
+        def selected = new File(selectedHome).toPath()
+        if (!(destination instanceof String) || !(directory instanceof File) || destination != directory.absolutePath ||
+            directory.toPath().toAbsolutePath().normalize().toString() != destination || directory.canonicalPath != destination ||
+            !selected.isAbsolute() || selected.normalize() != selected || selected.toRealPath() != selected ||
+            (jdk != null && (!(jdk instanceof String) || jdk != selectedHome))) {
+            throw new IllegalStateException('Original destination/JDK task roles are not exact')
+        }
+        // This declares intended roles only. The importer separately requires registered
+        // owner source/JDK/default-output provenance; output presence is NOT attestation.
+        [schemaVersion: 1, adapterId: 'ktchecker/kgp-2.4.21-original-jvm-roles/1', compileTaskPath: getter(task, 'getPath'),
+            sourcePaths: paths, classpathOperand: operand, destinationPath: destination,
+            selectedJdkHome: selectedHome, jdkHomeOperand: jdk, pluginDataState: pluginDomain]
+    }
+
     static Map projectOwnerApi(Object project) {
         at('outgoing-project-owner-api') {
             if (project == null || project.getClass().getClassLoader() == null) {
@@ -740,20 +920,20 @@ gradle.projectsEvaluated {
                             artifact(file, resolved != null ? resolved.moduleVersion.id.toString() : 'compiler-file:' + file.name, id)
                         }]
                     }
-                    def jdkArtifacts = capture('compiler_arguments_unmodeled', id, 'compiler-selected-jdk') {
+                    def selectedJdk = capture('compiler_arguments_unmodeled', id, 'compiler-selected-jdk') {
                         def kotlinJdk = known(task, 'getDefaultKotlinJavaToolchain$kotlin_gradle_plugin_common').get()
                         def selectedJvm = known(kotlinJdk, 'getBuildJvm$kotlin_gradle_plugin_common').get()
-                        def selectedHome = selectedJvm.javaHome.toPath().toRealPath().toFile()
-                        runtime(selectedHome, 'compilation-jdk', id)
+                        def selectedHome = selectedJvm.javaHome
+                        if (!(selectedHome instanceof File)) throw new IllegalStateException('Unavailable exact selected JVM home')
+                        // Preserve the actual lowering operand separately; canonical runtime
+                        // inventory is not permission to rewrite an aliased original home.
+                        [home: selectedHome.absolutePath,
+                            artifacts: runtime(selectedHome.toPath().toRealPath().toFile(), 'compilation-jdk', id)]
                     }
                     def pluginDataCapture = capture('compiler_arguments_unmodeled', id, 'compiler-plugin-data') {
                         KtCheckerPinnedModelApi.optionalPluginData(task)
                     }
                     def pluginData = pluginDataCapture?.value
-                    if (pluginDataCapture != null && pluginDataCapture.state != 'available') {
-                        issue('compiler_arguments_unmodeled', id, 'compiler-plugin-data-' + pluginDataCapture.state +
-                            ': nullable pinned plugin metadata is absent; this is not an empty plugin/input-domain attestation')
-                    }
                     def pluginFiles = capture('compiler_arguments_unmodeled', id, 'compiler-plugin-files') {
                         KtCheckerPinnedModelApi.effectivePluginFiles(task, pluginData)
                     }
@@ -790,9 +970,19 @@ gradle.projectsEvaluated {
                     if (target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compilation-script-inputs') {
                         auxiliaryFiles += capturedTree(known(task, 'getScriptSources$kotlin_gradle_plugin_common').files.toList(), id)
                     }
-                    if (compiler != null || jdkArtifacts != null || pluginFiles != null) toolchain = [kind: target.platformType.toString(),
+                    def emptyPluginDomain = null
+                    if (target.platformType.toString() == 'jvm' && fullArguments != null && pluginDataCapture != null && pluginFiles != null) {
+                        emptyPluginDomain = capture('compiler_arguments_unmodeled', id, 'compiler-jvm-empty-plugin-domain') {
+                            KtCheckerPinnedModelApi.emptyJvmPluginDomain(task, fullArguments, pluginDataCapture, pluginFiles)
+                        }
+                    }
+                    if (pluginDataCapture != null && pluginDataCapture.state != 'available' && emptyPluginDomain == null) {
+                        issue('compiler_arguments_unmodeled', id, 'compiler-plugin-data-' + pluginDataCapture.state +
+                            ': nullable pinned plugin metadata is absent without a verified empty actual plugin/input/output/script domain')
+                    }
+                    if (compiler != null || selectedJdk != null || pluginFiles != null) toolchain = [kind: target.platformType.toString(),
                         compilerVersion: compiler?.version, compilerArtifacts: compiler?.artifacts ?: [],
-                        runtimeArtifacts: jdkArtifacts ?: [], compilerPlugins: plugins]
+                        runtimeArtifacts: selectedJdk?.artifacts ?: [], compilerPlugins: plugins]
                     try {
                         def declaredCompilerFiles = task.libraries.files.toList()
                         // Preserve ALL declared task entries, including absent/generated/tree
@@ -802,7 +992,9 @@ gradle.projectsEvaluated {
                         if (fullArguments != null && target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compiler-classpath-argument-roles') {
                             def actual = known(fullArguments.value, 'getClasspath')
                             def expected = declaredCompilerFiles.findAll { it.exists() }.collect { it.absolutePath }.join(File.pathSeparator)
-                            if (!(actual instanceof String) || actual != expected) throw new IllegalStateException('Exact declared/effective classpath roles differ')
+                            if ((actual != null && !(actual instanceof String)) || (actual == null ? !expected.isEmpty() : actual != expected)) {
+                                throw new IllegalStateException('Exact declared/effective classpath roles differ')
+                            }
                         }
                     }
                     catch (Exception error) {
@@ -819,13 +1011,21 @@ gradle.projectsEvaluated {
                     catch (Exception error) { issue('associated_compilations_unavailable', id, error.class.simpleName + ': actual friend/association graph unavailable') }
                     if (!associated.isEmpty() && friends.isEmpty()) issue('compiler_arguments_unmodeled', id,
                         'compiler-associated-friend-inputs: associated compilations are retained but no immutable friend-output bytes were established')
+                    def jvmArgumentRoles = null
+                    if (target.platformType.toString() == 'jvm' && fullArguments != null && selectedJdk != null && emptyPluginDomain != null) {
+                        jvmArgumentRoles = capture('compiler_arguments_unmodeled', id, 'compiler-original-jvm-argument-roles') {
+                            KtCheckerPinnedModelApi.originalJvmArgumentRoles(task, fullArguments, rootPath, selectedJdk.home,
+                                actualFiles, cp, emptyPluginDomain)
+                        }
+                    }
                     def fact = [id: id, moduleId: p.path, target: target.name, platform: target.platformType.toString(), name: c.name,
                         defaultSourceSetId: "${p.path}|${c.defaultSourceSet.name}".toString(), sourceSetIds: members, sourceFiles: actualFiles,
                         compileTaskPath: task != null ? task.path : "${p.path}:<unavailable-${target.name}-${c.name}>".toString(),
                         dependencyConfiguration: c.compileDependencyConfigurationName, classpath: cp, projectDependencies: [],
                         toolchain: toolchain, compilerArguments: args, languageVersion: language, apiVersion: api,
                         friendArtifacts: friends, producedVariants: [], associatedCompilationIds: associated,
-                        auxiliaryInputFiles: auxiliaryFiles.unique { it.path }.sort { it.path }, auxiliaryArtifacts: auxiliaryArtifacts]
+                        auxiliaryInputFiles: auxiliaryFiles.unique { it.path }.sort { it.path }, auxiliaryArtifacts: auxiliaryArtifacts,
+                        jvmArgumentRoles: jvmArgumentRoles]
                     compilations << fact
                     compilationObjects << [project: p, target: target, compilation: c, task: task, fact: fact]
                 }

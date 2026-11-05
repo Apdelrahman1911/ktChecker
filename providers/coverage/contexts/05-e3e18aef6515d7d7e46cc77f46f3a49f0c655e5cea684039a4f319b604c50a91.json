@@ -1,0 +1,23 @@
+{
+  "base_flags": [
+    "-jvm-target",
+    "17"
+  ],
+  "compilation": "main",
+  "evidence_state": "bounded_selected_cohort_completion_candidate_unqualified",
+  "fixture_scope": "All98 ordinary pairs/16 unsupported graphs/443 mappings remain visible; named cohort is bounded trusted scheduling, not an exclusion or complete project.",
+  "id": "bounded-type_boundaries-synthetic-jvm-jdk21-2026-11-04T13-39-44.288807198Z-type_boundaries-b57a9fc9-e61e-45c7-a9c9-60afaa83032b",
+  "jdk_version": "21.0.12",
+  "kotlin_version": "2.4.21",
+  "library_versions": {
+    "kotlin-stdlib": "2.4.21"
+  },
+  "module": ":compiler-fixtures",
+  "named_cohort": "type_boundaries",
+  "resume_or_merge": false,
+  "run": "providers/compiler-fixtures/runs/2026-11-04T13-39-44.288807198Z-type_boundaries-b57a9fc9-e61e-45c7-a9c9-60afaa83032b",
+  "source_provenance": "Independent START originals and actual executed artifacts/native resources; no source-to-bytecode inference.",
+  "source_set": "synthetic",
+  "target": "jvm",
+  "toolchain_digest": "sha256:ff463a7a129905e390b4e5826fa2b2b07a8dd49f7838a69b5b2a94bd19d6111d"
+}

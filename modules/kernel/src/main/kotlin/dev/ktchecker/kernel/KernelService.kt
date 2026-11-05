@@ -42,7 +42,10 @@ class KernelService private constructor(
     internal val providerVersion = provider.version
     internal val supportedRules = provider.supportedRuleIds.toSortedSet().toSet()
     internal val authorizedFindingProviders = findingProviders.mapValues { it.value.toSet() }.toMap()
-    internal val providerKey = Digests.sha256(canonical(listOf(providerId, providerVersion,
+    // A new raw-publication contract cannot reuse a pre-fence execution certificate. Old rows
+    // remain audited under their old key; upgrading never invents historical deadline evidence.
+    private val rawPublicationValidationProfile = "ktchecker/kernel/raw-publication-validation/2"
+    internal val providerKey = Digests.sha256(canonical(listOf(rawPublicationValidationProfile, providerId, providerVersion,
         canonical(supportedRules.toList()), canonical(authorizedFindingProviders.mapValues { it.value.sorted() }))))
     private val stopped = AtomicBoolean(false)
     internal val ingestion = Semaphore(maxOf(1, config.workerCount))
@@ -551,6 +554,19 @@ class KernelService private constructor(
 
     private fun evaluateResultPolicy(binding: ClientBinding, input: AnalysisInput, raw: ProviderResult): Pair<ProviderResult, List<String>> {
         val rawJson = canonical(raw)
+        // Retaining failure bytes is not enough: accounted dispositions bypass the finding gate.
+        // These intrinsic signals need no catalog/config lookup under the publication transaction.
+        // Keep them aligned with config's isProtectedFailure; registered protected rules remain the
+        // trusted policy adapter's responsibility. This handles current results, not absence proof.
+        fun currentExecutionFailure(finding: Finding): Boolean {
+            val kinds = finding.evidence.map { it.kind.lowercase() }
+            if (kinds.any { it in setOf("build_failure", "execution_failure", "compiler_failure", "test_failure", "worker_failure") }) return true
+            if (finding.verification.any { it.state.lowercase() in setOf("failed", "error", "crashed") }) return true
+            return finding.severity.lowercase() in setOf("error", "fatal") && (
+                kinds.any { it in setOf("compiler_diagnostic", "build_result", "test_result", "execution_result") } ||
+                    finding.providerId.lowercase().let { "compiler" in it || "native" in it || "build" in it || "runtime" in it }
+                )
+        }
         val issues = mutableListOf<String>()
         val transformed = try {
             // Never let mutable collections owned by a policy callback rewrite raw evidence.
@@ -558,7 +574,8 @@ class KernelService private constructor(
             val proposed = ContractJson.decodeFromString<ProviderResult>(canonical(resultPolicy.apply(binding, input, detached)))
             val restored = proposed.copy(findings = proposed.findings.map { it.copy(disposition = "open") })
             if (raw.findings.any { it.disposition != "open" } || canonical(restored) != rawJson ||
-                proposed.findings.any { it.disposition !in setOf("open", "accepted", "suppressed", "disabled", "baselined", "unavailable") }) {
+                proposed.findings.any { it.disposition !in setOf("open", "accepted", "suppressed", "disabled", "baselined", "unavailable") ||
+                    (it.disposition != "open" && currentExecutionFailure(it)) }) {
                 issues += "result_policy_changed_protected_evidence"
                 raw
             } else proposed
@@ -795,7 +812,7 @@ class KernelService private constructor(
     }
 
     private data class ReviewRecord(val status: ReviewStatus, val input: AnalysisInput, val certificateValid: Boolean)
-    private fun lineageReasons(c: Connection, binding: ClientBinding, latest: AnalysisInput?, plan: ParentPlans.Stored?): List<String> {
+    internal fun lineageReasons(c: Connection, binding: ClientBinding, latest: AnalysisInput?, plan: ParentPlans.Stored?): List<String> {
         val records = c.query("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM reviews r JOIN work w
             ON w.work_key=r.work_key WHERE r.client_id=? ORDER BY r.sequence""", binding.clientId) {
             val input = ContractJson.decodeFromString<AnalysisInput>(it.getString("input_json"))

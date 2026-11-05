@@ -1,12 +1,15 @@
 package dev.ktchecker.cli
 
 import dev.ktchecker.compiler.*
+import dev.ktchecker.compiler.live.model.PreparedJvmLiveModelInput
+import dev.ktchecker.compiler.live.model.bindPreparedLiveInput
 import dev.ktchecker.config.*
 import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.*
 import dev.ktchecker.projectmodel.VerifiedProjectModel
 import dev.ktchecker.providers.runtime.ExecutionAuthority
 import dev.ktchecker.providers.runtime.ExecutionPermit
+import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.reviewcontroller.*
 import dev.ktchecker.snapshot.MaterializedSnapshot
 import dev.ktchecker.snapshot.SnapshotIdentity
@@ -30,6 +33,9 @@ import kotlinx.serialization.json.*
     val executionAuthorized: Boolean,
     val approvalId: String,
     val schemaVersion: Int = 1,
+    val executionMode: String = "cold-model",
+    val originalDeadlineIdentity: String? = null,
+    val originalDeadlineMillis: Long? = null,
 )
 
 /** Capture this before the owner runs the importer. Ordinary RPC cannot create or restore it. */
@@ -37,6 +43,7 @@ internal class OwnerModelIntent internal constructor(
     internal val origin: Any,
     internal val evidence: ModelIntentEvidence,
     val configuration: ConfigSnapshot,
+    internal val originalDeadline: OwnedApplicationDeadline? = null,
 ) {
     val binding: ClientBinding get() = evidence.binding
     val request: SubmitPlanRequest get() = evidence.request
@@ -168,6 +175,7 @@ internal class OwnerModelPlans(
     private val verifyCode: () -> Unit,
     private val maxPlans: Int = 1024,
     private val maxInputs: Int = 4096,
+    private val liveRuntime: OwnerLiveModelRuntime? = null,
 ) : ReviewPlanAuthority {
     private val origin = Any()
     private val publicationLock = Any()
@@ -179,31 +187,61 @@ internal class OwnerModelPlans(
     private val policies = ConcurrentHashMap<String, ConfigSnapshot>()
     private val byOriginalInput = ConcurrentHashMap<String, String>()
     private val liveInputs = ConcurrentHashMap<String, PreparedJvmModelInput>()
+    private val preparedLiveInputs = ConcurrentHashMap<String, PreparedJvmLiveModelInput>()
+    private val intentLock = Any()
+    // Failed/overlapping starts retain their original clock too; do not retry with a fresh budget.
+    private val liveIntentStarts = mutableMapOf<String, OwnedApplicationDeadline>()
     private val inventory = OwnerCatalogInventory(modelDigest(JsonArray(catalog.records)), catalog.ids)
 
     init {
         require(maxPlans in 1..4096 && maxInputs in 1..16384)
         require((installation == null) == (compiler == null))
         require(compiler == null || compiler.inputMode == KotlinJvmInputMode.VERIFIED_MODEL)
+        require(liveRuntime == null || (installation == null && compiler == null && liveRuntime.ownerId == state.ownerId))
         restoreEvidence()
     }
 
+    /** Start at the owner API boundary, before registration IO or request-key serialization. */
+    fun ingressDeadline(): OwnedApplicationDeadline? =
+        liveRuntime?.let { OwnedApplicationDeadline.afterMillis(it.reviewTimeoutMillis) }
+
     /** Only the explicit owner control calls this, before model export/import or admission. */
-    fun begin(binding: ClientBinding, request: SubmitPlanRequest, authorizeExecution: Boolean): OwnerModelIntent {
-        verifyCode()
+    fun begin(binding: ClientBinding, request: SubmitPlanRequest, authorizeExecution: Boolean,
+              originalIngressDeadline: OwnedApplicationDeadline? = ingressDeadline()): OwnerModelIntent {
+        require((liveRuntime == null) == (originalIngressDeadline == null))
+        require(liveRuntime == null || originalIngressDeadline?.durationMillis == liveRuntime.reviewTimeoutMillis)
         if (binding.ownerId != state.ownerId) throw CliProblem("permission_denied", "Model preparation belongs to another owner.")
         val key = planKey(binding, request)
-        intents[key]?.let {
+        fun duplicate(it: OwnerModelIntent): OwnerModelIntent {
             if (it.evidence.executionAuthorized != authorizeExecution) throw CliProblem("model_intent_conflict", "Execution consent cannot be changed in place.")
             return it
         }
+        // This is the ORIGINAL live ingress clock, before code/config verification and importer
+        // work. An overlapping call gets an explicit pending result; it never refreshes the clock.
+        val deadline = if (liveRuntime != null) synchronized(intentLock) {
+            intents[key]?.let { return duplicate(it) }
+            if (key in liveIntentStarts) throw CliProblem("model_live_intent_pending_or_unavailable", "Retry cannot replace an original live intent clock.")
+            if (liveIntentStarts.size >= maxPlans) throw CliProblem("model_live_intent_capacity", "Live intent tombstones are bounded and not evicted.")
+            requireNotNull(originalIngressDeadline).also { liveIntentStarts[key] = it }
+        } else null
+        checkDeadline(deadline)
+        verifyCode()
+        checkDeadline(deadline)
+        intents[key]?.let { return duplicate(it) }
         // Capture outside controller file locks. Repeated explicit owner actions retain the old
         // immutable revision rather than silently replacing an already-bound policy with latest.
         val captured = configs.capture(modelConfigBinding(binding))
-        val candidate = ModelIntentEvidence(binding, request, configs.exportSnapshot(captured), authorizeExecution, UUID.randomUUID().toString())
+        checkDeadline(deadline)
+        val candidate = ModelIntentEvidence(binding, request, configs.exportSnapshot(captured), authorizeExecution, UUID.randomUUID().toString(),
+            executionMode = if (liveRuntime == null) "cold-model" else "live-model-preview",
+            originalDeadlineIdentity = deadline?.identity, originalDeadlineMillis = deadline?.durationMillis)
         val evidence = state.locked("model-intents") {
+            checkDeadline(deadline)
             val file = state.keyFile("model-intents", key)
             if (Files.exists(file, NOFOLLOW_LINKS)) state.read<ModelIntentEvidence>(file).also {
+                if (deadline != null || it.executionMode != "cold-model") {
+                    throw CliProblem("model_live_intent_not_restorable", "Saved intent evidence cannot recreate an original clock or live application authority.")
+                }
                 if (it.schemaVersion != 1 || it.binding != binding || it.request != request || it.executionAuthorized != authorizeExecution) {
                     throw CliProblem("model_intent_conflict", "A captured owner request cannot be rebound or escalated.")
                 }
@@ -214,13 +252,15 @@ internal class OwnerModelPlans(
             }
         }
         val policy = if (evidence == candidate) captured else configs.restoreSnapshot(evidence.configuration, evidence.configuration.revisionToken)
-        val intent = OwnerModelIntent(origin, evidence, policy)
+        checkDeadline(deadline)
+        val intent = OwnerModelIntent(origin, evidence, policy, deadline)
         return intents.putIfAbsent(key, intent) ?: intent
     }
 
     fun prepare(intent: OwnerModelIntent, before: VerifiedProjectModel?, after: VerifiedProjectModel,
                 materialized: MaterializedSnapshot): PreparedOwnerModelPlan {
         verifyCode()
+        checkDeadline(intent.originalDeadline)
         if (intent.origin !== origin || intents[planKey(intent.binding, intent.request)] !== intent || !intent.used.compareAndSet(false, true)) {
             throw CliProblem("model_intent_invalid_or_replayed", "Use this owner's live, unused captured model intent.")
         }
@@ -231,6 +271,7 @@ internal class OwnerModelPlans(
         val source = materialization(after, materialized, intent.binding)
         val staged = ConcurrentHashMap<PolicyPreparationRequest, ExecutionPreparation>()
         val preparedInputs = ConcurrentHashMap<String, PreparedJvmModelInput>()
+        val stagedLiveInputs = ConcurrentHashMap<String, PreparedJvmLiveModelInput>()
         val reasons = linkedMapOf<String, String>()
         val policyPreparer = OwnerPolicyPreparer { request ->
             val activation = activationPlan(catalog, request.input.requiredRuleIds, false,
@@ -252,17 +293,22 @@ internal class OwnerModelPlans(
             val id = requireNotNull(request.compilationId)
             val execution = try {
                 if (!intent.evidence.executionAuthorized) throw CliProblem("model_execution_not_authorized", "Owner execution approval was not captured.")
-                val selected = installation ?: throw CliProblem("model_compiler_installation_unavailable", "The exact selected compiler/JDK is unavailable.")
-                val provider = requireNotNull(compiler)
+                val selected = liveRuntime?.installation ?: installation
+                    ?: throw CliProblem("model_compiler_installation_unavailable", "The exact selected compiler/JDK is unavailable.")
+                val provider: AnalysisProvider = liveRuntime?.provider ?: requireNotNull(compiler)
                 verifyCode()
-                val binding = KotlinJvmModelBinding.verifyAndBind(request.model, id, selected)
+                checkDeadline(intent.originalDeadline)
+                val binding = KotlinJvmModelBinding.verifyAndBind(request.model, id, selected) { checkDeadline(intent.originalDeadline) }
                 verifyCode()
                 val active = validatedActivation(request.input, catalog)
                 val rules = request.input.requiredRuleIds.filter { active[it]?.active == true && it in provider.supportedRuleIds }
                 if (rules.isEmpty()) throw CliProblem("model_compiler_rules_inactive", "No compiler rules were explicitly enabled in the captured owner policy.")
-                val profiles = mapOf(provider.id to provider.executionProfile(request.input.copy(requiredRuleIds = rules), binding))
+                val profiles = if (liveRuntime != null) emptyMap() else mapOf(provider.id to
+                    requireNotNull(compiler).executionProfile(request.input.copy(requiredRuleIds = rules), binding))
                 val approval = modelDigest(buildJsonObject {
-                    put("mode", KotlinJvmInputMode.VERIFIED_MODEL.name)
+                    put("mode", if (liveRuntime == null) KotlinJvmInputMode.VERIFIED_MODEL.name else "live-model-preview")
+                    liveRuntime?.let { put("runtimeOwner", it.owner.identity); put("implementation", it.implementationIdentity) }
+                    intent.originalDeadline?.let { put("originalDeadline", it.identity) }
                     put("intent", modelDigest(ContractJson.encodeToJsonElement(intent.evidence)))
                     put("model", after.ingressCertificate); put("input", request.input.analysisKey())
                     put("binding", binding.identity.digest)
@@ -278,8 +324,14 @@ internal class OwnerModelPlans(
                 staged[request.policyRequest] = execution
                 CapturedPlanExecution(request, execution.identity, execution.profiles, request.withProfiles(execution.profiles)) { final ->
                     verifyCode()
-                    val prepared = execution.binding.bindPreparedInput(final, execution.rules, requireNotNull(compiler), execution.profiles)
-                    preparedInputs[modelPolicyKey(intent.binding, final)] = prepared
+                    checkDeadline(intent.originalDeadline)
+                    if (liveRuntime != null) {
+                        stagedLiveInputs[modelPolicyKey(intent.binding, final)] = execution.binding.bindPreparedLiveInput(
+                            final, execution.rules, liveRuntime.provider, requireNotNull(intent.originalDeadline))
+                    } else {
+                        preparedInputs[modelPolicyKey(intent.binding, final)] = execution.binding.bindPreparedInput(
+                            final, execution.rules, requireNotNull(compiler), execution.profiles)
+                    }
                     execution.identity
                 }
             }
@@ -302,6 +354,7 @@ internal class OwnerModelPlans(
         // Nothing before this whole-plan commit grants per-input admission or a live attempt.
         publishEvidence(evidence)
         liveInputs.putAll(preparedInputs)
+        preparedLiveInputs.putAll(stagedLiveInputs)
         return PreparedOwnerModelPlan(assembly, reasons).also { livePlans[key] = it }
     }
 
@@ -321,13 +374,20 @@ internal class OwnerModelPlans(
         if (policies[modelPolicyKey(evidence.binding, original)] == null) {
             throw KernelException("model_captured_policy_unavailable", "The accepted model policy could not be restored.")
         }
-        val prepared = liveInputs[modelPolicyKey(evidence.binding, original)]
-            ?: throw KernelException("model_live_authority_unavailable", "An accepted review survives restart; its live importer/compiler capability does not.")
         if (!evidence.executionAuthorized || !livePlans.containsKey(planKey(evidence.binding, evidence.request))) {
             throw KernelException("model_live_authority_unavailable", "An uncommitted or restored approval cannot authorize a compiler attempt.")
         }
         verifyCode()
-        attempts.prepared(prepared, original, effective, verifyFrozen)
+        if (liveRuntime != null) {
+            val prepared = preparedLiveInputs[modelPolicyKey(evidence.binding, original)]
+                ?: throw KernelException("model_live_authority_unavailable", "A restart cannot recreate a live imported preparation or its original clock.")
+            checkDeadline(prepared.originalDeadline)
+            liveRuntime.prepared(prepared, original, effective, verifyFrozen)
+        } else {
+            val prepared = liveInputs[modelPolicyKey(evidence.binding, original)]
+                ?: throw KernelException("model_live_authority_unavailable", "An accepted review survives restart; its live importer/compiler capability does not.")
+            attempts.prepared(prepared, original, effective, verifyFrozen)
+        }
     }
 
     /** Pure lookup for the kernel's publication transaction; all restoration occurs beforehand. */
@@ -343,6 +403,12 @@ internal class OwnerModelPlans(
 
     private data class ExecutionPreparation(val binding: KotlinJvmModelBinding, val rules: List<String>,
         val profiles: Map<String, TrustedExecution>, val identity: CapturedExecutionIdentity)
+
+    private fun checkDeadline(deadline: OwnedApplicationDeadline?) {
+        if (deadline == null) return
+        if (deadline.isExpired()) throw CliProblem("model_live_original_deadline_expired", "Original intent budget was exhausted; no new clock is granted.")
+        if (Thread.currentThread().isInterrupted) throw CliProblem("model_live_interrupted", "Live model preparation was interrupted.")
+    }
 
     private fun retainProvisional(evidence: ModelInputEvidence, policy: ConfigSnapshot) {
         val key = modelPolicyKey(evidence.binding, evidence.input)
@@ -480,7 +546,7 @@ private fun freezeModelProfile(profile: TrustedExecution): TrustedExecution = pr
 private fun freezeModelProfiles(profiles: Map<String, TrustedExecution>): Map<String, TrustedExecution> =
     Collections.unmodifiableMap(profiles.toSortedMap().mapValues { freezeModelProfile(it.value) })
 
-private fun freezeModelInput(input: AnalysisInput): AnalysisInput = input.copy(
+internal fun freezeModelInput(input: AnalysisInput): AnalysisInput = input.copy(
     snapshot = input.snapshot.copy(files = Collections.unmodifiableList(input.snapshot.files.map { it.copy() }),
         declaredRoots = Collections.unmodifiableList(input.snapshot.declaredRoots.toList()),
         scopeExclusions = Collections.unmodifiableList(input.snapshot.scopeExclusions.toList()),

@@ -6,6 +6,8 @@ val bundledCompiler = configurations.create("bundledCompiler") {
 }
 
 dependencies {
+    implementation(project(":worker-protocol"))
+    implementation(project(path = ":worker-protocol", configuration = "modelWireElements"))
     implementation(project(":contracts"))
     implementation(project(":snapshot"))
     implementation(project(":kernel"))

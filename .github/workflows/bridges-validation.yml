@@ -70,8 +70,11 @@ jobs:
           path: build/ci-evidence/bridges.json
           if-no-files-found: error
           retention-days: 14
-      - name: Retain actual tested unsigned preview npm packages (never publish/sign)
-        if: success()
+      - name: Hold npm archive upload pending bridge-specific publication clearance
+        # Keep npm build/test/pack validation; do not deliver these archives.
+        # No bridge-specific owner/license/NOTICE publication gate exists yet.
+        # JVM distribution approval does not authorize bridge package uploads.
+        if: ${{ false }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: unsigned-preview-bridges-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}

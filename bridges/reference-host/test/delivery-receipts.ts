@@ -233,7 +233,13 @@ export class DeliveryReceiptCapture {
  */
 export function verifyDeliveryReceiptJoin(
   snapshot: DeliveryReceiptSnapshot, phaseValue: unknown, expectedBinding: ClientBinding,
+  /** Explicit finite owner-harness bounds only; existing callers keep their original limits. */
+  limits: { maxApplicationBytes?: number; maxContextBytes?: number; maxPublicBytes?: number } = {},
 ): Readonly<{ joinedEvents: number; applicationRequestIdDigest: string; observationConfirmationOrders: readonly number[] }> {
+  const maxApplication = limits.maxApplicationBytes ?? 262_144, maxContext = limits.maxContextBytes ?? 32_768,
+    maxPublic = limits.maxPublicBytes ?? 262_144;
+  if (![maxApplication, maxContext, maxPublic].every(Number.isSafeInteger) || maxApplication < 1 || maxApplication > 16 * 1024 * 1024 ||
+      maxContext < 1 || maxContext > 2 * 1024 * 1024 || maxPublic < 1 || maxPublic > 2 * 1024 * 1024) throw new HostError('delivery_join_limits');
   const phase = object(phaseValue), binding = deliveryBinding(expectedBinding);
   if (snapshot.schema !== 'ktchecker-captured-delivery-rpc-confirmations/preview-1' ||
       snapshot.evidenceScope !== 'captured_application_rpc_confirmations_not_signed_kernel_or_internal_inference_attestations' || !snapshot.complete ||
@@ -245,12 +251,13 @@ export function verifyDeliveryReceiptJoin(
   }
   const applicationEvidence = object(phase.applicationRequest);
   const serialized = phase.serializedApplicationRequest;
-  if (typeof serialized !== 'string' || serialized.length > 262_144 || digest(serialized) !== applicationEvidence.serializedRequestDigest || applicationEvidence.method !== 'turn/start') {
+  if (typeof serialized !== 'string' || Buffer.byteLength(serialized) > maxApplication || digest(serialized) !== applicationEvidence.serializedRequestDigest || applicationEvidence.method !== 'turn/start') {
     throw new HostError('delivery_join_application_bytes');
   }
   const application = object(JSON.parse(serialized)), params = object(application.params), toolOutput = object(params.toolOutput);
   if (application.method !== 'turn/start' || application.id !== applicationEvidence.applicationRequestId || !Array.isArray(params.input) ||
       params.input.length !== 0 || toolOutput.name !== 'ktchecker' || typeof toolOutput.output !== 'string') throw new HostError('delivery_join_application');
+  if (params.effort !== (phase.effort ?? 'low')) throw new HostError('delivery_join_effort');
   const applicationId = identifier(application.id), threadId = identifier(params.threadId), output = object(JSON.parse(toolOutput.output));
   if (output.contractVersion !== PREVIEW_CONTRACT || !Array.isArray(output.contexts) || !output.contexts.length || output.contexts.length > MAX_PAGE) {
     throw new HostError('delivery_join_contexts');
@@ -258,7 +265,7 @@ export function verifyDeliveryReceiptJoin(
   const contextEvents: { contextDigest: string; event: Readonly<DeliveryEventMetadata> }[] = [];
   const contexts = output.contexts.map(raw => {
     const context = object(raw), text = context.text, contextDigest = sha(context.contextDigest);
-    if (typeof text !== 'string' || text.length > 32_768 || digest(text) !== contextDigest) throw new HostError('delivery_join_context_digest');
+    if (typeof text !== 'string' || Buffer.byteLength(text) > maxContext || digest(text) !== contextDigest) throw new HostError('delivery_join_context_digest');
     const envelope = object(JSON.parse(text.slice(text.indexOf('\n') + 1)));
     if (envelope.clientId !== expectedBinding.clientId || envelope.generation !== binding.generation ||
         envelope.marker !== `ktchecker-event:${envelope.eventId}:${envelope.payloadDigest}`) throw new HostError('delivery_join_context_binding');
@@ -274,7 +281,8 @@ export function verifyDeliveryReceiptJoin(
   same(request.requestDigest, digest(canonical({ hostThreadId: threadId, generation: binding.generation, contexts })), 'delivery_join_request_digest');
   same(phase.requestDigest, request.requestDigest); same(phase.invocationId, request.invocationId);
   same([...(phase.contextDigests as string[])].sort(), contexts.map(context => context.digest).sort());
-  if (typeof phase.verifiedPublicResponseText !== 'string' || !verifyPublicResponse(phase.verifiedPublicResponseText, request) ||
+  if (typeof phase.verifiedPublicResponseText !== 'string' || Buffer.byteLength(phase.verifiedPublicResponseText) > maxPublic ||
+      !verifyPublicResponse(phase.verifiedPublicResponseText, request) ||
       digest(phase.verifiedPublicResponseText) !== phase.publicResponseDigest) throw new HostError('delivery_join_public_response');
   const applicationRequestIdDigest = deliveryIdentity('application-request', applicationId);
   const modelRequestIdDigest = deliveryIdentity('model-request', 'codex-app-request:' + applicationId);

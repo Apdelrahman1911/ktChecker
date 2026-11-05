@@ -5,44 +5,91 @@ import dev.ktchecker.contracts.ProviderResult
 import dev.ktchecker.providers.runtime.OwnedSupervisorIdentity
 import dev.ktchecker.providers.runtime.ProcessOutcome
 import java.time.Instant
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.json.*
 
-/** The full ten-rule authoring scope is unchanged; there is deliberately no full-corpus selector. */
-internal object DetektCorpusCohort {
-    const val NAME = "exceptions-core-v1"
-    const val MAX_INVOCATIONS = 40
-    const val MAX_AGGREGATE_MILLIS = 1_200_000L
-    const val MAX_CHILD_MILLIS = 60_000L
-    const val FULL_AUTHORED_RULES = 10
-    const val FULL_AUTHORED_ANALYSES = 91
-    val analysesByRule = linkedMapOf(
-        "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally" to 8,
-        "ktc.kotlin.detekt.exceptions.swallowed-exception" to 11,
-        "ktc.kotlin.detekt.exceptions.not-implemented-declaration" to 9,
-    )
-    val authoredRuleIds = analysesByRule.keys + setOf(
-        "ktc.kotlin.detekt.potential-bugs.equals-always-returns-true-or-false",
-        "ktc.kotlin.detekt.potential-bugs.invalid-range",
-        "ktc.kotlin.detekt.potential-bugs.iterator-has-next-calls-next-method",
-        "ktc.kotlin.detekt.potential-bugs.unconditional-jump-statement-in-loop",
-        "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression",
-        "ktc.kotlin.detekt.style.data-class-should-be-immutable",
-        "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public",
-    )
-    val invocationsByKind = linkedMapOf(
-        CorpusInvocationKind.ANALYSIS to 28,
+/** Closed, disjoint plans for the unchanged ten fixtures; no implicit or full-corpus selector. */
+internal class DetektCorpusCohort private constructor(val name: String, analysesByRule: Map<String, Int>) {
+    val analysesByRule: Map<String, Int> = Collections.unmodifiableMap(LinkedHashMap(analysesByRule))
+    val invocationsByKind: Map<CorpusInvocationKind, Int> = Collections.unmodifiableMap(linkedMapOf(
+        CorpusInvocationKind.ANALYSIS to this.analysesByRule.values.sum(),
         CorpusInvocationKind.CLI_PROBE to 1,
-        CorpusInvocationKind.ABSTENTION to 6,
-        CorpusInvocationKind.AUTHORIZATION_DENIAL to 3,
-    )
-    val plannedInvocations: Int get() = invocationsByKind.values.sum()
+        CorpusInvocationKind.ABSTENTION to this.analysesByRule.size * 2,
+        CorpusInvocationKind.AUTHORIZATION_DENIAL to this.analysesByRule.size,
+    ))
+    val plannedInvocations: Int = invocationsByKind.values.sum()
+    val nativeLaunchCeiling: Int = invocationsByKind.getValue(CorpusInvocationKind.ANALYSIS) +
+        invocationsByKind.getValue(CorpusInvocationKind.CLI_PROBE)
+    val expectedRuntimeCallbacks: Int = nativeLaunchCeiling +
+        invocationsByKind.getValue(CorpusInvocationKind.AUTHORIZATION_DENIAL)
+
+    init {
+        require(name.matches(Regex("[a-z0-9-]+")))
+        require(this.analysesByRule.isNotEmpty() && this.analysesByRule.values.all { it >= 6 })
+        require(plannedInvocations <= MAX_INVOCATIONS)
+    }
+
+    // Keep the exceptions plan's exact identity; changed source/images still require new evidence.
     val planIdentity: String get() = buildString {
-        append("detekt-corpus-cohort/1\n$NAME\n")
+        append("detekt-corpus-cohort/1\n$name\n")
         analysesByRule.forEach { (rule, count) -> append("$rule=$count\n") }
         invocationsByKind.forEach { (kind, count) -> append("${kind.id}=$count\n") }
         append("full_authoring_scope=$FULL_AUTHORED_RULES/$FULL_AUTHORED_ANALYSES/not_run\n")
         append("limits=$MAX_INVOCATIONS/$MAX_AGGREGATE_MILLIS/$MAX_CHILD_MILLIS\n")
+    }
+
+    companion object {
+        const val MAX_INVOCATIONS = 40
+        const val MAX_AGGREGATE_MILLIS = 1_200_000L
+        const val MAX_CHILD_MILLIS = 60_000L
+        const val FULL_AUTHORED_RULES = 10
+        const val FULL_AUTHORED_ANALYSES = 91
+        val EXCEPTIONS_CORE = DetektCorpusCohort("exceptions-core-v1", linkedMapOf(
+            "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally" to 8,
+            "ktc.kotlin.detekt.exceptions.swallowed-exception" to 11,
+            "ktc.kotlin.detekt.exceptions.not-implemented-declaration" to 9,
+        ))
+        val ITERATION_CORE = DetektCorpusCohort("iteration-core-v1", linkedMapOf(
+            "ktc.kotlin.detekt.potential-bugs.invalid-range" to 9,
+            "ktc.kotlin.detekt.potential-bugs.iterator-has-next-calls-next-method" to 9,
+            "ktc.kotlin.detekt.potential-bugs.unconditional-jump-statement-in-loop" to 10,
+        ))
+        val VALUE_CORE = DetektCorpusCohort("value-core-v1", linkedMapOf(
+            "ktc.kotlin.detekt.potential-bugs.equals-always-returns-true-or-false" to 9,
+            "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression" to 8,
+        ))
+        // Naming this cohort is an explicit selection of both opt-in conventions, not default activation.
+        val OPT_IN_POLICY = DetektCorpusCohort("opt-in-policy-v1", linkedMapOf(
+            "ktc.kotlin.detekt.style.data-class-should-be-immutable" to 9,
+            "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public" to 9,
+        ))
+        val all: List<DetektCorpusCohort> = Collections.unmodifiableList(listOf(
+            EXCEPTIONS_CORE, ITERATION_CORE, VALUE_CORE, OPT_IN_POLICY,
+        ))
+        val authoredRuleIds: Set<String> = Collections.unmodifiableSet(linkedSetOf(
+            "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally",
+            "ktc.kotlin.detekt.exceptions.swallowed-exception",
+            "ktc.kotlin.detekt.exceptions.not-implemented-declaration",
+            "ktc.kotlin.detekt.potential-bugs.equals-always-returns-true-or-false",
+            "ktc.kotlin.detekt.potential-bugs.invalid-range",
+            "ktc.kotlin.detekt.potential-bugs.iterator-has-next-calls-next-method",
+            "ktc.kotlin.detekt.potential-bugs.unconditional-jump-statement-in-loop",
+            "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression",
+            "ktc.kotlin.detekt.style.data-class-should-be-immutable",
+            "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public",
+        ))
+
+        init {
+            val selected = all.flatMap { it.analysesByRule.keys }
+            require(all.map { it.name }.distinct().size == all.size)
+            require(selected.size == FULL_AUTHORED_RULES && selected.toSet() == authoredRuleIds)
+            require(all.sumOf { it.analysesByRule.values.sum() } == FULL_AUTHORED_ANALYSES)
+        }
+
+        fun selected(name: String?): DetektCorpusCohort = requireNotNull(all.singleOrNull { it.name == name }) {
+            "Real corpus requires one explicit -PdetektCorpusCohort from ${all.map { it.name }}; no implicit/full-ten execution path"
+        }
     }
 }
 
@@ -52,25 +99,24 @@ internal enum class CorpusInvocationKind(val id: String) {
 }
 
 internal data class DetektCorpusSettings(
+    val cohort: DetektCorpusCohort,
     val maxInvocations: Int,
     val aggregateMillis: Long,
     val childMillis: Long,
 ) {
     companion object {
         fun selected(cohort: String?, invocations: String?, aggregate: String?, child: String?): DetektCorpusSettings {
-            require(cohort == DetektCorpusCohort.NAME) {
-                "Real corpus requires explicit -PdetektCorpusCohort=${DetektCorpusCohort.NAME}; no implicit/full-ten execution path"
-            }
+            val selectedCohort = DetektCorpusCohort.selected(cohort)
             fun bounded(value: String?, default: Long, maximum: Long, label: String): Long {
                 val parsed = value?.toLongOrNull() ?: if (value == null) default else error("$label must be a decimal integer")
                 require(parsed in 1..maximum) { "$label must be in 1..$maximum" }
                 return parsed
             }
-            val maximum = bounded(invocations, 40, DetektCorpusCohort.MAX_INVOCATIONS.toLong(), "invocation ceiling").toInt()
-            require(maximum >= DetektCorpusCohort.plannedInvocations) {
-                "Approved cohort requires ${DetektCorpusCohort.plannedInvocations} reservations; insufficient budget fails before execution"
+            val maximum = bounded(invocations, DetektCorpusCohort.MAX_INVOCATIONS.toLong(), DetektCorpusCohort.MAX_INVOCATIONS.toLong(), "invocation ceiling").toInt()
+            require(maximum >= selectedCohort.plannedInvocations) {
+                "Selected cohort requires ${selectedCohort.plannedInvocations} reservations; insufficient budget fails before execution"
             }
-            return DetektCorpusSettings(maximum,
+            return DetektCorpusSettings(selectedCohort, maximum,
                 bounded(aggregate, DetektCorpusCohort.MAX_AGGREGATE_MILLIS, DetektCorpusCohort.MAX_AGGREGATE_MILLIS, "aggregate milliseconds"),
                 bounded(child, DetektCorpusCohort.MAX_CHILD_MILLIS, DetektCorpusCohort.MAX_CHILD_MILLIS, "child milliseconds"))
         }
@@ -89,6 +135,7 @@ internal class DetektCorpusBudget(
     private val emit: (JsonObject) -> Unit,
     private val nowNanos: () -> Long = System::nanoTime,
 ) {
+    private val cohort = settings.cohort
     internal class Ticket(val ordinal: Int, val kind: CorpusInvocationKind, val ruleId: String, val caseId: String)
     private enum class Signal(val id: String) {
         NATIVE_TERMINAL("runtime_validated_owned_child_terminal"),
@@ -113,7 +160,7 @@ internal class DetektCorpusBudget(
     val cancellation = CancellationToken { stopped.get() || elapsedNanos() >= settings.aggregateMillis * 1_000_000 }
 
     init {
-        require(settings.maxInvocations in DetektCorpusCohort.plannedInvocations..DetektCorpusCohort.MAX_INVOCATIONS)
+        require(settings.maxInvocations in cohort.plannedInvocations..DetektCorpusCohort.MAX_INVOCATIONS)
         require(settings.aggregateMillis in 1..DetektCorpusCohort.MAX_AGGREGATE_MILLIS)
         require(settings.childMillis in 1..DetektCorpusCohort.MAX_CHILD_MILLIS)
         event("run_started", null)
@@ -138,13 +185,13 @@ internal class DetektCorpusBudget(
             event("invocation_budget_exhausted", null)
             error("Corpus invocation budget exhausted; retries are prohibited")
         }
-        require(ruleId in DetektCorpusCohort.analysesByRule)
+        require(ruleId in cohort.analysesByRule)
         require(caseId.matches(Regex("[a-z0-9-]+")))
-        require(reservedByKind.getValue(kind) < DetektCorpusCohort.invocationsByKind.getValue(kind)) { "Cohort kind limit reached; no extra call path" }
+        require(reservedByKind.getValue(kind) < cohort.invocationsByKind.getValue(kind)) { "Cohort kind limit reached; no extra call path" }
         require(invocationIdentities.add(Triple(kind, ruleId, caseId))) { "Duplicate invocation is a forbidden retry" }
         if (kind == CorpusInvocationKind.ANALYSIS) {
             val count = analysesReservedByRule.getOrDefault(ruleId, 0) + 1
-            require(count <= DetektCorpusCohort.analysesByRule.getValue(ruleId)) { "Selected rule analysis limit reached" }
+            require(count <= cohort.analysesByRule.getValue(ruleId)) { "Selected rule analysis limit reached" }
             analysesReservedByRule[ruleId] = count
         }
         val ticket = Ticket(++reserved, kind, ruleId, caseId)
@@ -239,16 +286,17 @@ internal class DetektCorpusBudget(
     fun finish(): JsonObject {
         requireWithinDeadline()
         check(active == null && !finished)
-        check(reserved == DetektCorpusCohort.plannedInvocations && checked == reserved)
-        check(reservedByKind == DetektCorpusCohort.invocationsByKind && checkedByKind == reservedByKind)
-        check(confirmedExecutions == 29 && observedRuntimeCallbacks == 32)
+        check(reserved == cohort.plannedInvocations && checked == reserved)
+        check(reservedByKind == cohort.invocationsByKind && checkedByKind == reservedByKind)
+        check(analysesReservedByRule == cohort.analysesByRule)
+        check(confirmedExecutions == cohort.nativeLaunchCeiling && observedRuntimeCallbacks == cohort.expectedRuntimeCallbacks)
         event("all_cohort_invocations_checked", null)
         finished = true
         return summary()
     }
 
     fun summary(): JsonObject = buildJsonObject {
-        put("cohort", DetektCorpusCohort.NAME); put("reserved_invocations", reserved); put("checked_invocations", checked)
+        put("cohort", cohort.name); put("reserved_invocations", reserved); put("checked_invocations", checked)
         put("invocation_ceiling", settings.maxInvocations); put("aggregate_limit_millis", settings.aggregateMillis)
         put("child_limit_millis", settings.childMillis); put("elapsed_monotonic_millis", elapsedNanos() / 1_000_000)
         put("remaining_millis", remainingMillis()); put("stopped", stopped.get()); put("all_invocations_checked", finished)
@@ -256,14 +304,14 @@ internal class DetektCorpusBudget(
         put("actual_execution_confirmations", confirmedExecutions); put("actual_runtime_callbacks", observedRuntimeCallbacks)
         put("reserved_by_kind", buildJsonObject { reservedByKind.forEach { (kind, count) -> put(kind.id, count) } })
         put("checked_by_kind", buildJsonObject { checkedByKind.forEach { (kind, count) -> put(kind.id, count) } })
-        put("native_launch_ceiling", 29); put("qualified", false)
+        put("native_launch_ceiling", cohort.nativeLaunchCeiling); put("qualified", false)
     }
 
     private fun event(phase: String, ticket: Ticket?, details: JsonObject = buildJsonObject {}) {
         check(sequence < DetektCorpusCohort.MAX_INVOCATIONS * 3 + 4) { "Bounded progress-event capacity exhausted" }
         val value = buildJsonObject {
             put("schema_version", 1); put("sequence", ++sequence); put("phase", phase)
-            put("cohort", DetektCorpusCohort.NAME); put("captured_at", Instant.now().toString())
+            put("cohort", cohort.name); put("captured_at", Instant.now().toString())
             put("elapsed_monotonic_millis", elapsedNanos() / 1_000_000); put("remaining_millis", remainingMillis())
             put("reserved_invocations", reserved); put("checked_invocations", checked); put("qualified", false)
             ticket?.let { put("invocation", it.ordinal); put("kind", it.kind.id); put("rule_id", it.ruleId); put("case_id", it.caseId) }
