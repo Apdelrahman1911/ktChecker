@@ -35,7 +35,17 @@ on:
         required: true
         default: all
         type: choice
-        options: [all, desktop, android, ios]
+        options: [all, desktop, android, ios, darwin-private-state-components]
+      confirm_policy:
+        description: Authorize fresh ordinary-user native components plus isolated sudo-chown fixture; no model call
+        required: false
+        default: false
+        type: boolean
+      expected_commit:
+        description: Full reviewed source/workflow SHA for Darwin components; retries require a fresh dispatch
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -287,4 +297,63 @@ jobs:
           name: preview-ios-original-reports-${{ github.run_id }}-${{ github.run_attempt }}
           path: fixtures/kmp/build/test-results/iosSimulatorArm64Test/*.xml
           if-no-files-found: warn
+          retention-days: 14
+
+  darwin-private-state-components:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.profile == 'darwin-private-state-components' && inputs.confirm_policy == true }}
+    runs-on: macos-26
+    timeout-minutes: 25
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.1.app/Contents/Developer
+    steps:
+      - name: Bind fresh consent to exact source and workflow commit
+        env:
+          CONFIRM_POLICY: ${{ inputs.confirm_policy }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          EVENT_COMMIT: ${{ github.sha }}
+          WORKFLOW_COMMIT: ${{ github.workflow_sha }}
+          SDK_VERSION: '26.4'
+        run: |
+          set -euo pipefail
+          [[ "$CONFIRM_POLICY" == 'true' ]]
+          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$EXPECTED_COMMIT" == "$EVENT_COMMIT" ]]
+          [[ "$EXPECTED_COMMIT" == "$WORKFLOW_COMMIT" ]]
+          [[ "$GITHUB_RUN_ATTEMPT" == '1' ]]
+          [[ "$SDK_VERSION" == '26.4' ]]
+      - name: Check out reviewed source without persisted credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Select bounded evidence runtime
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Select exact bridge Node runtime (binary bytes separately checked)
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.20.0'
+          check-latest: false
+      - name: Build target-native addon and execute sixteen explicit component controls
+        id: native_components
+        timeout-minutes: 18
+        env:
+          KTC_DARWIN_NATIVE_COMPONENT_CONSENT: '1'
+          KTC_DARWIN_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          SDK_VERSION: '26.4'
+        run: >-
+          python scripts/ci/run_darwin_private_state.py
+          --policy darwin-private-state-components-v1
+          --expected-commit "$EXPECTED_COMMIT"
+          --sdk-version "$SDK_VERSION"
+      - name: Retain sanitized unqualified component summary only
+        if: ${{ always() && steps.native_components.outputs.summary_created == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: darwin-private-state-components-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/darwin-private-state.json
+          if-no-files-found: error
           retention-days: 14

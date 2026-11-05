@@ -85,7 +85,8 @@ def run(argv: list[str], timeout: int, env: dict[str, str]) -> bytes:
 def source_digest(env: dict[str, str]) -> str:
     names = run(['git', 'ls-files', '-z', '--', 'bridges/mcp', 'bridges/reference-host',
                  'scripts/ci/run_darwin_private_state.py',
-                 '.github/workflows/darwin-private-state-validation.yml'], 15, env).split(b'\0')
+                 '.github/workflows/darwin-private-state-validation.yml',
+                 '.github/workflows/platform-validation.yml'], 15, env).split(b'\0')
     digest = hashlib.sha256()
     for name in sorted(filter(None, names)):
         path = ROOT / os.fsdecode(name)

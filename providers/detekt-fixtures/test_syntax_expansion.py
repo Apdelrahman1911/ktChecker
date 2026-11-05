@@ -440,8 +440,12 @@ class SyntaxExpansionAuthoringTest(unittest.TestCase):
             self.assertEqual([(rule, "9") for rule in EXPECTED_COHORTS[name]], re.findall(r'"(ktc\.[^"]+)" to ([0-9]+)', body))
         gate = re.search(r'val detektCorpusCohortNames = setOf\((.*?)\)', build, re.DOTALL)
         self.assertIsNotNone(gate)
-        self.assertEqual(list(OLD_IDENTITIES) + list(EXPECTED_COHORTS), re.findall(r'"([^"]+)"', gate.group(1)))
-        for anchor in ("BASELINE_AUTHORED_RULES = 10", "BASELINE_AUTHORED_ANALYSES = 91", "FULL_AUTHORED_RULES = 16", "FULL_AUTHORED_ANALYSES = 145",
+        selected_names = re.findall(r'"([^"]+)"', gate.group(1))
+        self.assertEqual(list(OLD_IDENTITIES) + list(EXPECTED_COHORTS) + ["protocol-and-catch-boundaries-v1"], selected_names[:7])
+        self.assertEqual(list(OLD_IDENTITIES) + list(EXPECTED_COHORTS) + ["protocol-and-catch-boundaries-v1", "exception-observability-policy-v1"], selected_names)
+        for anchor in ("BASELINE_AUTHORED_RULES = 10", "BASELINE_AUTHORED_ANALYSES = 91", "PRE_PROTOCOL_AUTHORED_RULES = 16", "PRE_PROTOCOL_AUTHORED_ANALYSES = 145",
+                       "PRE_OBSERVABILITY_AUTHORED_RULES = 19", "PRE_OBSERVABILITY_AUTHORED_ANALYSES = 172",
+                       "FULL_AUTHORED_RULES = 22", "FULL_AUTHORED_ANALYSES = 199",
                        "all.singleOrNull { it.name == name }", "schedule.getOrNull(reserved) == CorpusInvocationSpec(kind, ruleId, caseId)"):
             self.assertIn(anchor, controls)
         self.assertIn("DetektCorpusInventory.load(repository)", driver)
@@ -452,7 +456,9 @@ class SyntaxExpansionAuthoringTest(unittest.TestCase):
         self.assertIn("full_corpus_state", driver)
         self.assertIn('put("provider_status", "not_run")', driver)
         self.assertIn('put("attempted", false)', driver)
-        self.assertIn("hash(bytes) == DetektCorpusExpansionPins.files.getValue(relative)", inventory)
+        self.assertIn("hash(bytes) == filePins.getValue(relative)", inventory)
+        self.assertIn("DetektCorpusExpansionPins.files + DetektCorpusProtocolPins.files", inventory)
+        self.assertIn("DetektCorpusExpansionPins.files.size == 22", inventory)
         self.assertIn("bytes.contentEquals(readPinned(repository, path))", inventory)
         self.assertIn("Files.walk(repository.resolve(root), 3)", inventory)
         self.assertIn("it.limit(65)", inventory)
@@ -497,7 +503,7 @@ class SyntaxExpansionAuthoringTest(unittest.TestCase):
                        "confirmedExecutions == cohort.nativeLaunchCeiling", "observedRuntimeCallbacks == cohort.expectedRuntimeCallbacks",
                        "minOf(settings.childMillis, remainingMillis())", "Duplicate invocation is a forbidden retry"):
             self.assertIn(anchor, controls)
-        self.assertIn('if (expansion) "syntax-expansion" else "syntax-corpus"', controls)
+        self.assertIn('expansion -> "syntax-expansion"; else -> "syntax-corpus"', controls)
         self.assertIn('"evidence/verified-jvm-${cohort.evidenceStem}-${cohort.name}-native-preview1.json"', evidence)
         for anchor in ("SecureDirectoryStream", "CREATE_NEW, WRITE, NOFOLLOW_LINKS", "requireSingleLink(path)", "path == root.resolve(liveRelative)"):
             self.assertIn(anchor, evidence)

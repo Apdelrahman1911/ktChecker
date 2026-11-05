@@ -378,6 +378,9 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
     }
 
     private fun validateFinal(input: AnalysisInput, result: ProviderResult): List<String> = buildList {
+        // Unknown configuration reads permanently deny full completion, even if provider or
+        // policy code returns a clean-looking aggregate. Raw provider bytes remain unchanged.
+        addAll(observedExportReasons(input))
         if (result.providerId != service.providerId || result.providerVersion != service.providerVersion) add("provider_identity_mismatch")
         if (!result.completeFor(input)) add("required_coverage_incomplete_or_wrong_context")
         if (input.requiredRuleIds.isEmpty()) add("required_rule_plan_empty")

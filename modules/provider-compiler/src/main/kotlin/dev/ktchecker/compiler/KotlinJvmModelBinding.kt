@@ -33,7 +33,7 @@ class JvmModelBindingIdentity internal constructor(
  * the complete independently observed model domain and approved immutable external artifacts.
  */
 class KotlinJvmModelBinding private constructor(
-    val model: VerifiedProjectModel,
+    internal val origin: JvmCompilerModelOrigin,
     val compilationId: String,
     internal val installation: KotlinJvmToolchain,
     internal val compilation: ModelCompilation,
@@ -42,6 +42,9 @@ class KotlinJvmModelBinding private constructor(
     val identity: JvmModelBindingIdentity,
     internal val producedResolution: JvmProducedCompilationResolution? = null,
 ) {
+    /** Compatibility getter fails closed for observed origin; shared mechanics never call it. */
+    val model: VerifiedProjectModel get() = origin.verified
+    val observedModel: ObservedProjectModel? get() = origin.observed
     /** Typed execution projections are DISTINCT from unchanged raw context/identity at P/K/C/E. */
     val normalizedCompilerOptions: List<String> = Collections.unmodifiableList(
         (originalArgumentLayout?.normalizedCompilerOptions ?: originalContext.compilerArguments).toList())
@@ -86,6 +89,8 @@ class KotlinJvmModelBinding private constructor(
     }
 
     internal fun requireProvider(provider: KotlinJvmCompilerProvider) {
+        modelCheck(origin is JvmCompilerModelOrigin.VerifiedOrigin, "compiler_model_observed_origin_forbidden",
+            "Observed diagnostics never enter an ordinary cold compiler route.")
         modelCheck(producedResolution == null, "compiler_model_produced_live_preview_required",
             "Deferred outputs require the explicit live produced-output capability, never the cold route.")
         modelCheck(provider.inputMode == KotlinJvmInputMode.VERIFIED_MODEL && provider.usesInstallation(installation),
@@ -93,19 +98,28 @@ class KotlinJvmModelBinding private constructor(
     }
 
     internal fun requireOriginalInput(input: AnalysisInput, requireFinal: Boolean = false) {
-        modelCheck(input.snapshot == model.snapshot && input.execution == null && input.outputRoot == null,
+        modelCheck(input.snapshot == origin.snapshot && input.execution == null && input.outputRoot == null,
             "compiler_model_input_mismatch", "Preparation must retain the whole model snapshot without injected execution/output.")
         normalizedAbsolute(input.materializedRoot)
         originalArgumentLayout?.let { layout -> modelCheck(input.materializedRoot == layout.originalSourceRoot,
             "compiler_model_original_source_origin_mismatch", "Preparation must retain the exact registered original source root.") }
+        origin.requireObservedPolicies(input.context)
         val basePolicies = originalContext.policies
+        val controllerPolicies = if (origin is JvmCompilerModelOrigin.ObservedOneShotOrigin) {
+            val declaration = producedResolution?.declarationArchive
+                ?: modelFailure("compiler_model_observed_declared_archive_required", "Observed diagnostics require the exact two retained D archives.")
+            val expected = declaration.original.context.policies[OBSERVED_PLAN_EVIDENCE_POLICY]
+            modelCheck(expected != null && Digests.valid(expected) && input.context.policies[OBSERVED_PLAN_EVIDENCE_POLICY] == expected,
+                "compiler_model_observed_evidence_mismatch", "Only the exact retained owner declaration's plan evidence may be added.")
+            CONTROLLER_POLICIES + OBSERVED_PLAN_EVIDENCE_POLICY
+        } else CONTROLLER_POLICIES
         val additions = input.context.policies.keys - basePolicies.keys
         modelCheck(input.context == originalContext.copy(policies = input.context.policies) &&
             basePolicies.all { (key, value) -> input.context.policies[key] == value } &&
-            additions.all { it in CONTROLLER_POLICIES }, "compiler_model_context_mismatch",
+            additions.all { it in controllerPolicies }, "compiler_model_context_mismatch",
             "Imported scope, model, arguments, classpath, configuration, membership and ingress policies cannot be rewritten.")
         if (requireFinal) {
-            modelCheck(additions == CONTROLLER_POLICIES &&
+            modelCheck(additions == controllerPolicies &&
                 input.context.policies[CATALOG_POLICY]?.let(Digests::valid) == true &&
                 !input.context.policies[ACTIVATION_POLICY].isNullOrBlank(), "compiler_model_preparation_incomplete",
                 "Final owner preparation must retain its catalog, activation and full execution-plan identities.")
@@ -127,26 +141,37 @@ class KotlinJvmModelBinding private constructor(
             compilationId: String,
             installation: KotlinJvmToolchain,
             checkpoint: () -> Unit = {},
-        ): KotlinJvmModelBinding = bindChecked(model, compilationId, installation, null, checkpoint)
+        ): KotlinJvmModelBinding = bindChecked(JvmCompilerModelOrigin.VerifiedOrigin(model), compilationId, installation, null, checkpoint)
 
-        internal fun verifyAndBindProducedPreview(model: VerifiedProjectModel, compilationId: String,
+        internal fun verifyAndBindProducedPreview(origin: JvmCompilerModelOrigin, compilationId: String,
             installation: KotlinJvmToolchain, resolution: JvmProducedCompilationResolution,
-            checkpoint: () -> Unit): KotlinJvmModelBinding = bindChecked(model, compilationId, installation, resolution, checkpoint)
+            checkpoint: () -> Unit): KotlinJvmModelBinding = bindChecked(origin, compilationId, installation, resolution, checkpoint)
 
-        private fun bindChecked(model: VerifiedProjectModel, compilationId: String, installation: KotlinJvmToolchain,
+        private fun bindChecked(origin: JvmCompilerModelOrigin, compilationId: String, installation: KotlinJvmToolchain,
             resolution: JvmProducedCompilationResolution?, checkpoint: () -> Unit): KotlinJvmModelBinding {
             checkpoint()
-            val verified = model.context(compilationId, model.identity.configurationDigest)
+            when (origin) {
+                is JvmCompilerModelOrigin.VerifiedOrigin -> Unit
+                is JvmCompilerModelOrigin.ObservedOneShotOrigin -> {
+                    val preview = resolution?.preview ?: modelFailure("compiler_model_observed_declared_archive_required",
+                        "Observed models require their typed one-shot produced declaration.")
+                    modelCheck(resolution.declarationArchive != null, "compiler_model_observed_declared_archive_required",
+                        "Observed models cannot use a nonarchived or scalar preview.")
+                    origin.requireOriginalDeadline(preview.originalDeadline)
+                }
+            }
+            val verified = origin.context(compilationId)
             val compilation = verified.compilation
                 ?: modelFailure("compiler_model_compilation_unavailable", "No exact live compilation capability is available.")
             val rawContext = verified.context
                 ?: modelFailure("compiler_model_context_unavailable", "No verified compiler context is available.")
-            resolution?.verify(model, installation, compilationId, checkpoint)
+            resolution?.verify(origin, installation, compilationId, checkpoint)
             val context = resolution?.context ?: rawContext
+            origin.requireObservedPolicies(context)
             val artifacts = resolution?.artifacts ?: compilation.classpath
             modelCheck((resolution != null || (verified.completeness == ModelCompleteness.COMPLETE && verified.certificateId != null &&
-                model.issues.isEmpty() && context.fullProject)) && model.snapshot.scopeExclusions.isEmpty() &&
-                model.snapshot.unknownInputs.isEmpty(), "compiler_model_incomplete", "Incomplete model domains cannot establish JVM execution semantics.")
+                origin.issues.isEmpty() && context.fullProject)) && origin.snapshot.scopeExclusions.isEmpty() &&
+                origin.snapshot.unknownInputs.isEmpty(), "compiler_model_incomplete", "Incomplete model domains cannot establish JVM execution semantics.")
             val chain = compilation.toolchain
                 ?: modelFailure("compiler_model_toolchain_unavailable", "The compilation has no verified toolchain.")
             modelCheck(compilation.platform == "jvm" && chain.kind == "jvm", "compiler_model_platform_unsupported",
@@ -157,14 +182,14 @@ class KotlinJvmModelBinding private constructor(
                 compilation.auxiliaryArtifacts.isEmpty() && compilation.auxiliaryInputFiles.isEmpty() &&
                 (resolution != null || compilation.associatedCompilationIds.isEmpty()), "compiler_model_auxiliary_inputs_unsupported",
                 "Plugins, friend/associated compilations and auxiliary inputs require separately verified execution semantics.")
-            modelCheck(compilation.sourceSetIds.all { model.sourceSet(it)?.dependsOn?.isEmpty() == true } &&
+            modelCheck(compilation.sourceSetIds.all { origin.sourceSet(it)?.dependsOn?.isEmpty() == true } &&
                 compilation.sourceFiles.all { it.path.endsWith(".kt") }, "compiler_model_source_roles_unsupported",
                 "Common/actual refinement and Java source roles are not inferred from a flat JVM source list.")
             val layout = if (compilation.jvmArgumentRoles == null) {
-                modelCheck(model.jvmArgumentLayout(compilationId) == null && pathFreeModelArguments(compilation.compilerArguments),
+                modelCheck(origin.jvmArgumentLayout(compilationId) == null && pathFreeModelArguments(compilation.compilerArguments),
                     "compiler_model_arguments_unsupported", "Absent original role facts retain the strict historical scalar-only path.")
                 null
-            } else model.jvmArgumentLayout(compilationId)
+            } else origin.jvmArgumentLayout(compilationId)
                 ?: modelFailure("compiler_model_arguments_unsupported", "No live importer/owner-verified total original-argument layout is available.")
             layout?.let { checked ->
                 modelCheck(checked.originalArguments == compilation.compilerArguments && checked.renderOriginal() == compilation.compilerArguments &&
@@ -175,7 +200,7 @@ class KotlinJvmModelBinding private constructor(
                         compilation.sourceFiles.singleOrNull { it.path == path }
                     },
                     "compiler_model_argument_layout_mismatch", "Typed execution order must retain every exact original source/argument occurrence.")
-                modelCheck(compilation.projectDependencies.isEmpty() && model.export.generatedInputs.none { generated ->
+                modelCheck(compilation.projectDependencies.isEmpty() && origin.export.generatedInputs.none { generated ->
                     generated.sourceSetIds.any { it in compilation.sourceSetIds }
                 }, "compiler_model_argument_provenance_unsupported",
                     "The original-argv adapter does not infer generated sources or project-produced classpath provenance.")
@@ -193,7 +218,7 @@ class KotlinJvmModelBinding private constructor(
                 modelCheck(value == null || positions.lastOrNull()?.let { compilation.compilerArguments.getOrNull(it + 1) } == value,
                     "compiler_model_language_options_mismatch", "Exported language/API selection must agree with the actual original arguments.")
             }
-            CompilerSnapshot.compilationPaths(AnalysisInput(model.snapshot, "/unused-model-identity", context))
+            CompilerSnapshot.compilationPaths(AnalysisInput(origin.snapshot, "/unused-model-identity", context))
             verifyModelInstallation(installation, checkpoint)
             val view = installation.installationView()
             layout?.let { modelCheck(it.selectedJdkHome == view.runtime.root.toString(), "compiler_model_argument_jdk_mismatch",
@@ -227,11 +252,11 @@ class KotlinJvmModelBinding private constructor(
             val relation = buildJsonObject {
                 put("schema", if (resolution != null) JVM_PRODUCED_OUTPUT_PREVIEW else if (layout == null) SCHEMA else ORIGINAL_ARGV_SCHEMA)
                 resolution?.let {
-                    put("deferredGraph", it.preview.graph.digest)
+                    put("deferredGraph", it.preview.graphIdentity.digest)
                     put("resolvedDependencyIdentity", requireNotNull(context.dependencyDigest))
                     put("rawImportedContext", ContractJson.encodeToJsonElement(rawContext))
                     put("resolvedArtifacts", ContractJson.encodeToJsonElement(artifacts))
-                    put("deferredObligations", ContractJson.encodeToJsonElement(model.issues))
+                    put("deferredObligations", ContractJson.encodeToJsonElement(origin.issues))
                     it.declarationArchive?.let { archive ->
                         put("declaredArchiveKey", archive.archiveKey)
                         put("declaredOriginalInput", archive.original.analysisKey())
@@ -244,10 +269,21 @@ class KotlinJvmModelBinding private constructor(
                     put("executableCompilationFiles", ContractJson.encodeToJsonElement(it.executableCompilationFiles))
                 }
                 put("archiveBinding", "ktchecker/kernel-regular-jar-archive-1")
-                put("mode", KotlinJvmInputMode.VERIFIED_MODEL.name)
-                put("namespace", ContractJson.encodeToJsonElement(model.namespace))
-                put("modelIdentity", ContractJson.encodeToJsonElement(model.identity))
-                put("ingressCertificate", model.ingressCertificate)
+                put("mode", when (origin) {
+                    is JvmCompilerModelOrigin.VerifiedOrigin -> KotlinJvmInputMode.VERIFIED_MODEL.name
+                    is JvmCompilerModelOrigin.ObservedOneShotOrigin -> OBSERVED_EXPORT_PROFILE
+                })
+                put("namespace", ContractJson.encodeToJsonElement(origin.namespace))
+                put("modelIdentity", ContractJson.encodeToJsonElement(origin.identity))
+                when (origin) {
+                    is JvmCompilerModelOrigin.VerifiedOrigin -> put("ingressCertificate", origin.value.ingressCertificate)
+                    is JvmCompilerModelOrigin.ObservedOneShotOrigin -> {
+                        put("observedEvidence", origin.value.evidenceIdentity)
+                        put("observedInvocation", origin.value.invocation.identity)
+                        put("originalDeadline", origin.value.invocation.originalDeadline.identity)
+                        put("configurationGap", CONFIGURATION_INPUT_CLOSURE_UNPROVEN)
+                    }
+                }
                 put("compilationId", compilationId)
                 put("modelContext", modelContextDigest)
                 put("modelToolchain", modelToolchainDigest)
@@ -264,7 +300,7 @@ class KotlinJvmModelBinding private constructor(
                 put("compilerArguments", ContractJson.encodeToJsonElement(compilation.compilerArguments))
                 put("dependencies", ContractJson.encodeToJsonElement(compilation.classpath))
             }
-            return KotlinJvmModelBinding(model, compilationId, installation, compilation, context, layout,
+            return KotlinJvmModelBinding(origin, compilationId, installation, compilation, context, layout,
                 JvmModelBindingIdentity(jsonDigest(relation), compilationId, modelContextDigest, modelToolchainDigest,
                     installation.digest, view.runtime.digest), resolution)
         }
@@ -385,11 +421,14 @@ class ExactKotlinJvmModelAuthority(private val permit: KotlinJvmModelPermit) : K
 internal fun legacyDeclaredSingleCompilation(input: AnalysisInput): Boolean =
     input.context.policies["ktchecker.model"] == "owner-declared-single-compilation" &&
         input.context.policies["ktchecker.coverage"] == "partial-project" && !input.context.fullProject &&
-        input.context.policies.keys.none { it != "ktchecker.model" && it.startsWith("ktchecker.model") } &&
+        input.context.policies.keys.none { it != "ktchecker.model" && it.startsWith("ktchecker.model") || observedModelPolicyKey(it) } &&
         input.execution?.arguments?.any { it.startsWith(KotlinJvmModelBinding.PROFILE_PROPERTY) } != true
 
+private fun observedModelPolicyKey(key: String): Boolean = key == OBSERVED_ASSURANCE_POLICY || key.startsWith("ktchecker.observed-")
+
 internal fun modelBearingInput(input: AnalysisInput): Boolean =
-    input.execution?.arguments?.any { it.startsWith(KotlinJvmModelBinding.PROFILE_PROPERTY) } == true ||
+    input.context.policies.keys.any(::observedModelPolicyKey) ||
+        input.execution?.arguments?.any { it.startsWith(KotlinJvmModelBinding.PROFILE_PROPERTY) } == true ||
         input.context.policies.keys.any { it.startsWith("ktchecker.model") } && !legacyDeclaredSingleCompilation(input)
 
 /**

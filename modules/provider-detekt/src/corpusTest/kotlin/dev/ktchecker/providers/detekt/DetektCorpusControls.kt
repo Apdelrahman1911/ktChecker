@@ -9,11 +9,26 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.json.*
 
-/** Six closed, disjoint plans; old ten/91 identities stay byte-identical. No aggregate selector. */
+/** Eight closed, disjoint plans; old ten/91, sixteen/145 and nineteen/172 identities stay exact. No aggregate selector. */
 internal class DetektCorpusCohort private constructor(val name: String, analysesByRule: Map<String, Int>,
-    private val expansionPlan: String? = null) {
+    private val expansionPlan: String? = null, private val protocolPlan: String? = null,
+    private val observabilityPlan: String? = null) {
     val expansion: Boolean get() = expansionPlan != null
-    val evidenceStem: String get() = if (expansion) "syntax-expansion" else "syntax-corpus"
+    val protocol: Boolean get() = protocolPlan != null
+    val observability: Boolean get() = observabilityPlan != null
+    val evidenceStem: String get() = when { observability -> "syntax-exception-observability"; protocol -> "syntax-protocol"; expansion -> "syntax-expansion"; else -> "syntax-corpus" }
+    val namespace: String? get() = when { observability -> DetektCorpusObservabilityPins.ROOT; protocol -> DetektCorpusProtocolPins.ROOT; expansion -> DetektCorpusExpansionPins.ROOT; else -> null }
+    val independentControlIds: Map<String, List<String>> get() = when {
+        observability -> DetektCorpusObservabilityPins.controlIds
+        protocol -> DetektCorpusProtocolPins.controlIds
+        expansion -> DetektCorpusExpansionPins.controlIds
+        else -> emptyMap()
+    }
+    // Explicit closed selection acknowledges any policy within a mixed cohort; never default activation or execution authority.
+    val requiresExplicitOwnerOptIn: Boolean get() = name in setOf(
+        "opt-in-policy-v1", "public-contract-policy-v1", "protocol-and-catch-boundaries-v1",
+        "exception-observability-policy-v1",
+    )
     val contextId: String get() = "detekt-$evidenceStem-$name"
     val analysesByRule: Map<String, Int> = Collections.unmodifiableMap(LinkedHashMap(analysesByRule))
     val invocationsByKind: Map<CorpusInvocationKind, Int> = Collections.unmodifiableMap(linkedMapOf(
@@ -29,13 +44,14 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         invocationsByKind.getValue(CorpusInvocationKind.AUTHORIZATION_DENIAL)
 
     init {
+        require(listOf(expansionPlan, protocolPlan, observabilityPlan).count { it != null } <= 1)
         require(name.matches(Regex("[a-z0-9-]+")))
         require(this.analysesByRule.isNotEmpty() && this.analysesByRule.values.all { it >= 6 })
         require(plannedInvocations <= MAX_INVOCATIONS)
     }
 
     // Keep the exceptions plan's exact identity; changed source/images still require new evidence.
-    val planIdentity: String get() = expansionPlan ?: buildString {
+    val planIdentity: String get() = observabilityPlan ?: protocolPlan ?: expansionPlan ?: buildString {
         append("detekt-corpus-cohort/1\n$name\n")
         analysesByRule.forEach { (rule, count) -> append("$rule=$count\n") }
         invocationsByKind.forEach { (kind, count) -> append("${kind.id}=$count\n") }
@@ -43,11 +59,11 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         append("limits=$MAX_INVOCATIONS/$MAX_AGGREGATE_MILLIS/$MAX_CHILD_MILLIS\n")
     }
 
-    val expectedSchedule: List<CorpusInvocationSpec>? = if (!expansion) null else
+    val expectedSchedule: List<CorpusInvocationSpec>? = if (!expansion && !protocol && !observability) null else
         Collections.unmodifiableList(buildList {
             this@DetektCorpusCohort.analysesByRule.keys.forEachIndexed { ruleIndex, rule ->
                 (listOf("positive", "negative", "configuration", "version", "suppression", "regression") +
-                    DetektCorpusExpansionPins.controlIds.getValue(rule)).forEach { case ->
+                    independentControlIds.getValue(rule)).forEach { case ->
                     add(CorpusInvocationSpec(CorpusInvocationKind.ANALYSIS, rule, case))
                     if (case == "positive") add(CorpusInvocationSpec(CorpusInvocationKind.AUTHORIZATION_DENIAL, rule, "configuration-permit-replay"))
                     if (case == "version") {
@@ -65,8 +81,12 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         const val MAX_CHILD_MILLIS = 60_000L
         const val BASELINE_AUTHORED_RULES = 10
         const val BASELINE_AUTHORED_ANALYSES = 91
-        const val FULL_AUTHORED_RULES = 16
-        const val FULL_AUTHORED_ANALYSES = 145
+        const val PRE_PROTOCOL_AUTHORED_RULES = 16
+        const val PRE_PROTOCOL_AUTHORED_ANALYSES = 145
+        const val PRE_OBSERVABILITY_AUTHORED_RULES = 19
+        const val PRE_OBSERVABILITY_AUTHORED_ANALYSES = 172
+        const val FULL_AUTHORED_RULES = 22
+        const val FULL_AUTHORED_ANALYSES = 199
         val EXCEPTIONS_CORE = DetektCorpusCohort("exceptions-core-v1", linkedMapOf(
             "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally" to 8,
             "ktc.kotlin.detekt.exceptions.swallowed-exception" to 11,
@@ -98,12 +118,30 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
             "ktc.maintainability.detekt.complexity.complex-condition" to 9,
             "ktc.maintainability.detekt.libraries.forbidden-public-data-class" to 9,
         ))
+        private fun protocol(name: String, rules: Map<String, Int>) =
+            DetektCorpusCohort(name, rules, protocolPlan = DetektCorpusProtocolPins.planIdentities.getValue(name))
+        // Naming this mixed cohort explicitly opts into TooGenericExceptionCaught as style policy, not cancellation/leak proof.
+        val PROTOCOL_AND_CATCH_BOUNDARIES = protocol("protocol-and-catch-boundaries-v1", linkedMapOf(
+            "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception" to 9,
+            "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter" to 9,
+            "ktc.kotlin.detekt.exceptions.too-generic-exception-caught" to 9,
+        ))
+        private fun observability(name: String, rules: Map<String, Int>) =
+            DetektCorpusCohort(name, rules, observabilityPlan = DetektCorpusObservabilityPins.planIdentities.getValue(name))
+        // All three are opt-in info/intent-dependent conventions, not semantic correctness or safe-logging proof.
+        val EXCEPTION_OBSERVABILITY_POLICY = observability("exception-observability-policy-v1", linkedMapOf(
+            "ktc.kotlin.detekt.exceptions.rethrow-caught-exception" to 9,
+            "ktc.kotlin.detekt.exceptions.print-stack-trace" to 9,
+            "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause" to 9,
+        ))
         val baseline: List<DetektCorpusCohort> = Collections.unmodifiableList(listOf(
             EXCEPTIONS_CORE, ITERATION_CORE, VALUE_CORE, OPT_IN_POLICY,
         ))
-        val all: List<DetektCorpusCohort> = Collections.unmodifiableList(baseline + listOf(
+        val preProtocol: List<DetektCorpusCohort> = Collections.unmodifiableList(baseline + listOf(
             PERFORMANCE_SHAPES, PUBLIC_CONTRACT_POLICY,
         ))
+        val preObservability: List<DetektCorpusCohort> = Collections.unmodifiableList(preProtocol + PROTOCOL_AND_CATCH_BOUNDARIES)
+        val all: List<DetektCorpusCohort> = Collections.unmodifiableList(preObservability + EXCEPTION_OBSERVABILITY_POLICY)
         val authoredRuleIds: Set<String> = Collections.unmodifiableSet(linkedSetOf(
             "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally",
             "ktc.kotlin.detekt.exceptions.swallowed-exception",
@@ -121,11 +159,21 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
             "ktc.performance.detekt.performance.for-each-on-range",
             "ktc.performance.detekt.performance.unnecessary-init-on-array",
             "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+            "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception",
+            "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter",
+            "ktc.kotlin.detekt.exceptions.too-generic-exception-caught",
+            "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+            "ktc.kotlin.detekt.exceptions.print-stack-trace",
+            "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
         ))
 
         init {
             require(baseline.flatMap { it.analysesByRule.keys }.size == BASELINE_AUTHORED_RULES)
             require(baseline.sumOf { it.analysesByRule.values.sum() } == BASELINE_AUTHORED_ANALYSES)
+            require(preProtocol.flatMap { it.analysesByRule.keys }.size == PRE_PROTOCOL_AUTHORED_RULES)
+            require(preProtocol.sumOf { it.analysesByRule.values.sum() } == PRE_PROTOCOL_AUTHORED_ANALYSES)
+            require(preObservability.flatMap { it.analysesByRule.keys }.size == PRE_OBSERVABILITY_AUTHORED_RULES)
+            require(preObservability.sumOf { it.analysesByRule.values.sum() } == PRE_OBSERVABILITY_AUTHORED_ANALYSES)
             val selected = all.flatMap { it.analysesByRule.keys }
             require(all.map { it.name }.distinct().size == all.size)
             require(selected.size == FULL_AUTHORED_RULES && selected.toSet() == authoredRuleIds)
@@ -133,7 +181,7 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         }
 
         fun selected(name: String?): DetektCorpusCohort = requireNotNull(all.singleOrNull { it.name == name }) {
-            "Real corpus requires one explicit -PdetektCorpusCohort from ${all.map { it.name }}; no implicit/full-ten execution path or full-sixteen/aggregate selector"
+            "Real corpus requires one explicit -PdetektCorpusCohort from ${all.map { it.name }}; no implicit/full-ten execution path or full-sixteen/full-nineteen/full-twenty-two/aggregate selector"
         }
     }
 }
@@ -236,7 +284,7 @@ internal class DetektCorpusBudget(
         require(caseId.matches(Regex("[a-z0-9-]+")))
         cohort.expectedSchedule?.let { schedule ->
             require(schedule.getOrNull(reserved) == CorpusInvocationSpec(kind, ruleId, caseId)) {
-                "Invocation does not match the exact selected expansion schedule; no reorder, substitution or extra call"
+                "Invocation does not match the exact selected pinned schedule; no reorder, substitution or extra call"
             }
         }
         require(reservedByKind.getValue(kind) < cohort.invocationsByKind.getValue(kind)) { "Cohort kind limit reached; no extra call path" }

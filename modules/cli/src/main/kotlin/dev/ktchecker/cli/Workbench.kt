@@ -10,6 +10,7 @@ import dev.ktchecker.kernel.*
 import dev.ktchecker.projectmodel.GradleModelExporter
 import dev.ktchecker.projectmodel.ProjectModelImporter
 import dev.ktchecker.projectmodel.VerifiedProjectModel
+import dev.ktchecker.projectmodel.ObservedProjectModel
 import dev.ktchecker.reviewcontroller.OwnerPlanAssembler
 import dev.ktchecker.providers.detekt.DetektInstallation
 import dev.ktchecker.providers.detekt.DetektProvider
@@ -23,6 +24,7 @@ import dev.ktchecker.providers.lint.LintCatalog
 import dev.ktchecker.providers.native.KotlinNativeProvider
 import dev.ktchecker.providers.native.NativeCatalog
 import dev.ktchecker.providers.runtime.IsolatedProcessRunner
+import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.providers.runtime.fileDigest
 import dev.ktchecker.workerprotocol.ApplicationWire
 import dev.ktchecker.workerprotocol.CompilerModelWire
@@ -98,7 +100,7 @@ internal data class WorkbenchOptions(
     val compilerJavaHome: Path? = null,
     /** In-process owner selection only; paths/profile JSON cannot reconstruct this capability. */
     val modelCompilerInstallation: KotlinJvmToolchain? = null,
-    /** Explicit in-process owner runtime; no serialized option, launcher flag or MCP counterpart. */
+    /** Explicit owner runtime, selected by the owner model command or typed owner composition, never RPC. */
     val liveModelRuntime: OwnerLiveModelRuntime? = null,
 ) {
     init { require(modelCompilerInstallation == null || liveModelRuntime == null) { "Select one exact model execution mode; no fallback" } }
@@ -136,6 +138,7 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             "/dev/ktchecker/providers/runtime/native/manifest"),
         "compiler-mappings" to CodeImage.resourceRoot(CompilerRuleRegistry::class.java, "/compiler-rule-map.json"),
         "project-model-exporter" to CodeImage.resourceRoot(GradleModelExporter::class.java, "/${GradleModelExporter.SCRIPT}"),
+        "owner-model-origins" to CodeImage.resourceRoot(Workbench::class.java, "/ktchecker-owner-model-origin.init.gradle"),
         "detekt-mappings" to CodeImage.resourceRoot(DetektCatalog::class.java, "/detekt-rule-map.json"),
         "detekt-artifact-pins" to CodeImage.resourceRoot(DetektCatalog::class.java, "/detekt-artifacts.json"),
         "ktlint-mappings" to CodeImage.resourceRoot(KtlintCatalog::class.java, "/ktlint-rule-map.json"),
@@ -165,7 +168,7 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             ContractJson.encodeToJsonElement(KtlintCatalog.verifyArtifacts(installed.artifactDirectory)))) }.getOrNull()
     }
     private val routes = buildList {
-        liveModelRuntime?.let { runtime -> add(ProviderRoute(runtime.provider, runtime::routes,
+        liveModelRuntime?.let { runtime -> add(ProviderRoute(runtime.routingProvider, runtime::routes,
             implementationIdentity = runtime.implementationIdentity, preparedChild = runtime::child,
             finishAttempt = runtime::finish)) }
         modelCompiler?.let { provider -> add(ProviderRoute(provider, modelGrants::routes,
@@ -206,7 +209,7 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     })
     val configs = ConfigStore(state.namespace("configuration"), aliases)
     private val modelPlans = OwnerModelPlans(state, snapshots, configs, catalog, modelCompilerInstallation, modelCompiler,
-        modelGrants, codeImage::verify, liveRuntime = liveModelRuntime)
+        modelGrants, codeImage::verify, liveRuntime = liveModelRuntime, parentProvider = coordinator)
     private val loadedPolicies = ConcurrentHashMap<String, ConfigSnapshot>()
     private val records = ConcurrentHashMap<String, PreparedReview>()
     /** The exact trusted policy object used by this composition, including lazy restart recovery. */
@@ -235,6 +238,11 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         config = KernelConfig(workerCount = options.workerCount, globalParallelism = 2, perWorktreeParallelism = 1),
         snapshotGate = sourceGate(),
         preparedInputObserver = object : PreparedInputObserver {
+            override fun preparedProduced(attempt: ProducedExecutionAttempt) {
+                codeImage.verify()
+                modelPlans.observeProduced(attempt)
+            }
+
             override fun prepared(original: AnalysisInput, effective: AnalysisInput, verifyFrozen: () -> Unit) {
                 codeImage.verify()
                 if (modelPlans.evidence(original) != null) modelPlans.observe(original, effective, verifyFrozen)
@@ -260,6 +268,9 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         resultPolicy = capturedResultPolicy)
 
     override fun close() = kernel.close()
+
+    internal val ownerCodeDigest: String get() = codeImage.digest
+    internal fun verifyOwnerCode() = codeImage.verify()
 
     private fun isModelAttempt(input: AnalysisInput): Boolean =
         liveModelRuntime?.routes(input) == true || modelGrants.routes(input)
@@ -287,9 +298,9 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     fun registration(clientId: String): ClientRegistration = state.read(state.keyFile("clients", clientId))
 
     /** Owner-only beginning of a model import; capture configuration and consent BEFORE Gradle. */
-    fun beginModelReview(clientId: String, request: SubmitPlanRequest, authorizeExecution: Boolean): OwnerModelIntent {
-        val originalDeadline = modelPlans.ingressDeadline()
-        return modelPlans.begin(registration(clientId).binding, request, authorizeExecution, originalDeadline)
+    fun beginModelReview(clientId: String, request: SubmitPlanRequest, authorizeExecution: Boolean,
+        originalIngressDeadline: OwnedApplicationDeadline? = modelPlans.ingressDeadline()): OwnerModelIntent {
+        return modelPlans.begin(registration(clientId).binding, request, authorizeExecution, originalIngressDeadline)
     }
 
     /** Typed live importer capability only. There is deliberately no model JSON/RPC counterpart. */
@@ -299,6 +310,16 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             throw CliProblem("model_client_binding_changed", "Model intent belongs to another exact client session.")
         }
         return modelPlans.prepare(intent, before, after, materialized)
+    }
+
+    /** Nominal observed-only API. The earlier model is documentary; no previous grant/clock is
+     * restored. Failure retains the entire attempted vector and registers no scalar/prefix plan. */
+    fun prepareObservedModelReview(intent: OwnerModelIntent, before: ObservedProjectModel?, after: ObservedProjectModel,
+        materialized: MaterializedSnapshot): PreparedOwnerModelPlan {
+        if (registration(intent.binding.clientId).binding != intent.binding) {
+            throw CliProblem("model_client_binding_changed", "Observed intent belongs to another exact client session.")
+        }
+        return modelPlans.prepareObserved(intent, before, after, materialized)
     }
 
     /** A parent reference resolves only through live owner authority; cached inputs are not plans. */
@@ -568,7 +589,7 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     private fun providerIdentity(provider: AnalysisProvider): String = "${provider.id}:${provider.version}:${codeImage.digest}"
 
     companion object {
-        private fun distributionHome(): Path? {
+        internal fun distributionHome(): Path? {
             val location = Path.of(Workbench::class.java.protectionDomain.codeSource.location.toURI())
             return if (Files.isRegularFile(location) && location.parent.fileName.toString() == "lib") location.parent.parent else null
         }

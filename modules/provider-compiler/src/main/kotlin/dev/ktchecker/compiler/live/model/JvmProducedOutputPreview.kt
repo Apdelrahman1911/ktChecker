@@ -33,11 +33,17 @@ import kotlinx.serialization.json.*
  * Imported context/identity/issues remain unchanged and incomplete throughout this preview.
  */
 class KotlinJvmProducedOutputPreview private constructor(
-    val model: VerifiedProjectModel,
+    internal val origin: JvmCompilerModelOrigin,
     internal val installation: KotlinJvmToolchain,
     val originalDeadline: OwnedApplicationDeadline,
-    val graph: VerifiedJvmProducedGraph,
 ) {
+    /** Strict compatibility views. Neither getter can launder an observed origin as verified. */
+    val model: VerifiedProjectModel get() = origin.verified
+    val observedModel: ObservedProjectModel? get() = origin.observed
+    val graph: VerifiedJvmProducedGraph get() = requireNotNull(origin.verified.jvmProducedGraph)
+    val observedGraph: ObservedJvmProducedGraph? get() = origin.observed?.jvmProducedGraph
+    val graphIdentity: JvmProducedPreviewGraphIdentity = origin.graphIdentity()
+        ?: liveFailure("compiler_model_produced_graph_unavailable")
     private val application = AtomicReference<KotlinJvmModelCompilerApplication?>(null)
     private val declarations = ConcurrentHashMap<String, JvmProducedDeclaredArchive>()
     private val declarationAdmission = AtomicReference<Any?>(null)
@@ -48,15 +54,24 @@ class KotlinJvmProducedOutputPreview private constructor(
         original: AnalysisInput, frozen: AnalysisInput, held: AnalysisInput,
         currentRead: () -> AnalysisInput, verifyFrozen: () -> Unit): JvmProducedDeclaredArchive {
         checkpoint()
-        liveCheck(compilationId in graph.compilationIds, "compiler_model_produced_obligation_unfulfilled")
-        val raw = requireNotNull(model.context(compilationId, model.identity.configurationDigest).context)
+        liveCheck(compilationId in graphIdentity.compilationIds, "compiler_model_produced_obligation_unfulfilled")
+        val raw = requireNotNull(origin.context(compilationId).context)
         val detached = freezeModelLiveInput(original)
-        val layout = requireNotNull(model.jvmArgumentLayout(compilationId))
+        val layout = requireNotNull(origin.jvmArgumentLayout(compilationId))
+        origin.requireObservedPolicies(detached.context)
+        val controllerPolicies = when (origin) {
+            is JvmCompilerModelOrigin.VerifiedOrigin -> setOf("ktchecker.catalog-inventory", "ktchecker.activation-plan")
+            is JvmCompilerModelOrigin.ObservedOneShotOrigin -> {
+                liveCheck(detached.context.policies[OBSERVED_PLAN_EVIDENCE_POLICY]?.let(Digests::valid) == true,
+                    "compiler_model_observed_evidence_mismatch")
+                setOf("ktchecker.catalog-inventory", "ktchecker.activation-plan", OBSERVED_PLAN_EVIDENCE_POLICY)
+            }
+        }
         val additions = detached.context.policies.keys - raw.policies.keys
-        liveCheck(detached.snapshot == model.snapshot && detached.materializedRoot == layout.originalSourceRoot &&
+        liveCheck(detached.snapshot == origin.snapshot && detached.materializedRoot == layout.originalSourceRoot &&
             detached.context == raw.copy(policies = detached.context.policies) &&
             raw.policies.all { detached.context.policies[it.key] == it.value } &&
-            additions == setOf("ktchecker.catalog-inventory", "ktchecker.activation-plan") &&
+            additions == controllerPolicies &&
             detached.context.policies["ktchecker.catalog-inventory"]?.let(Digests::valid) == true &&
             !detached.context.policies["ktchecker.activation-plan"].isNullOrBlank() &&
             detached.outputRoot == null && detached.execution == null,
@@ -76,12 +91,15 @@ class KotlinJvmProducedOutputPreview private constructor(
     fun bindCompilationFromDeclaration(declaration: JvmProducedDeclaredArchive, admissionIdentity: Any,
         archiveIdentity: Any, producer: ModelProducedOutputArtifact? = null): JvmProducedPreviewCompilation {
         declaration.requireIdentity(this, admissionIdentity, archiveIdentity)
+        if (origin is JvmCompilerModelOrigin.ObservedOneShotOrigin) liveCheck(
+            declarations.keys == graphIdentity.compilationIds.toSet(), "compiler_model_observed_whole_declaration_required")
         liveCheck(declarations[declaration.compilationId] === declaration, "compiler_model_produced_archive_foreign_identity")
         return bindCompilationChecked(declaration.compilationId, producer, declaration)
     }
 
     /** The result's context is a NEW explicit resolution, before P, never a rewritten import. */
     fun bindCompilation(compilationId: String, producer: ModelProducedOutputArtifact? = null): JvmProducedPreviewCompilation {
+        liveCheck(origin is JvmCompilerModelOrigin.VerifiedOrigin, "compiler_model_observed_declared_archive_required")
         liveCheck(declarations.isEmpty(), "compiler_model_produced_archive_capability_required")
         return bindCompilationChecked(compilationId, producer, null)
     }
@@ -89,22 +107,22 @@ class KotlinJvmProducedOutputPreview private constructor(
     private fun bindCompilationChecked(compilationId: String, producer: ModelProducedOutputArtifact?,
         declaration: JvmProducedDeclaredArchive?): JvmProducedPreviewCompilation {
         checkpoint()
-        liveCheck(compilationId in graph.compilationIds && (producer != null) == (compilationId == graph.consumerCompilationId),
+        liveCheck(compilationId in graphIdentity.compilationIds && (producer != null) == (compilationId == graphIdentity.consumerCompilationId),
             "compiler_model_produced_obligation_unfulfilled")
         liveCheck(producer == null || producer.success.preview === this, "compiler_model_produced_foreign_identity")
         // Foreign capabilities fail by object identity before touching their old clocks/custody.
         // Even a still-live, byte-identical previous import is not this resolution's producer.
         producer?.verify(::checkpoint)
-        val raw = requireNotNull(model.context(compilationId, model.identity.configurationDigest).context)
-        val compilation = requireNotNull(model.compilation(compilationId))
+        val raw = requireNotNull(origin.context(compilationId).context)
+        val compilation = requireNotNull(origin.compilation(compilationId))
         val artifacts = compilation.classpath.mapIndexed { index, artifact ->
-            if (producer != null && index == graph.reference.classpathIndex) producer.artifact else artifact
+            if (producer != null && index == graphIdentity.reference.classpathIndex) producer.artifact else artifact
         }
-        val lineage = producer?.success?.lineage(graph.reference)?.let(::listOf).orEmpty()
+        val lineage = producer?.success?.lineage(graphIdentity.reference)?.let(::listOf).orEmpty()
         val resolutionDigest = producedJsonDigest(buildJsonObject {
-            put("schema", JVM_PRODUCED_OUTPUT_PREVIEW); put("graph", graph.digest)
+            put("schema", JVM_PRODUCED_OUTPUT_PREVIEW); put("graph", graphIdentity.digest)
             put("rawContext", producedJsonDigest(ContractJson.encodeToJsonElement(raw)))
-            put("originalObligations", ContractJson.encodeToJsonElement(model.issues))
+            put("originalObligations", ContractJson.encodeToJsonElement(origin.issues))
             put("resolvedArtifacts", ContractJson.encodeToJsonElement(artifacts))
             producer?.let {
                 put("successfulProducerResult", it.success.resultDigest); put("completeOutput", it.success.outputDigest)
@@ -116,22 +134,26 @@ class KotlinJvmProducedOutputPreview private constructor(
             ArtifactIdentity(artifact.coordinate, requireNotNull(artifact.digest), artifact.path)
         }), dependencyDigest = resolutionDigest, fullProject = false,
             policies = Collections.unmodifiableMap(raw.policies + mapOf(
-                "ktchecker.jvm-produced-preview" to graph.digest,
+                "ktchecker.jvm-produced-preview" to graphIdentity.digest,
                 "ktchecker.jvm-produced-resolution" to resolutionDigest)))
-        val projection = ModelWire.ProducedExecution(graph.digest, compilationId,
+        val projection = ModelWire.ProducedExecution(graphIdentity.digest, compilationId,
             producedJsonDigest(ContractJson.encodeToJsonElement(raw)), resolutionDigest, lineage)
         val resolution = JvmProducedCompilationResolution(this, compilationId, raw, context,
             Collections.unmodifiableList(artifacts), producer, projection, declaration)
-        val binding = KotlinJvmModelBinding.verifyAndBindProducedPreview(model, compilationId, installation, resolution, ::checkpoint)
+        val binding = KotlinJvmModelBinding.verifyAndBindProducedPreview(origin, compilationId, installation, resolution, ::checkpoint)
         return JvmProducedPreviewCompilation(binding, context)
     }
 
-    internal fun checkpoint() = modelDeadlineCheckpoint(originalDeadline)
+    internal fun checkpoint() {
+        origin.requireOriginalDeadline(originalDeadline)
+        modelDeadlineCheckpoint(originalDeadline)
+    }
     internal fun bindApplication(value: KotlinJvmModelCompilerApplication) {
         checkpoint()
+        origin.requireOriginalDeadline(value.request.originalDeadline)
         liveCheck(value.request.installation === installation && value.request.generation.profile() == ModelWire.PRODUCED_PROFILE &&
-            value.request.namespace.ownerId == model.namespace.ownerId && value.request.namespace.workspaceId == model.namespace.workspaceId &&
-            value.request.namespace.worktreeId == model.namespace.worktreeId, "compiler_model_produced_generation_mismatch")
+            value.request.namespace.ownerId == origin.namespace.ownerId && value.request.namespace.workspaceId == origin.namespace.workspaceId &&
+            value.request.namespace.worktreeId == origin.namespace.worktreeId, "compiler_model_produced_generation_mismatch")
         val old = application.get()
         liveCheck(old === value || (old == null && application.compareAndSet(null, value)), "compiler_model_produced_generation_mismatch")
         value.checkLive(); checkpoint()
@@ -139,15 +161,36 @@ class KotlinJvmProducedOutputPreview private constructor(
     internal fun matchesApplication(value: KotlinJvmModelCompilerApplication): Boolean = application.get() === value
 
     companion object {
+        /** Existing verified factory remains statically strict and unchanged in assurance. */
         fun create(model: VerifiedProjectModel, installation: KotlinJvmToolchain,
             originalDeadline: OwnedApplicationDeadline): KotlinJvmProducedOutputPreview {
             modelDeadlineCheckpoint(originalDeadline)
             val graph = model.jvmProducedGraph ?: liveFailure("compiler_model_produced_graph_unavailable")
             liveCheck(graph.modelDigest == model.identity.modelDigest && !model.context(graph.consumerCompilationId,
                 model.identity.configurationDigest).context!!.fullProject, "compiler_model_produced_identity_mismatch")
-            return KotlinJvmProducedOutputPreview(model, installation, originalDeadline, graph)
+            return KotlinJvmProducedOutputPreview(JvmCompilerModelOrigin.VerifiedOrigin(model), installation, originalDeadline)
+        }
+
+        internal fun createObserved(model: ObservedProjectModel, installation: KotlinJvmToolchain,
+            originalDeadline: OwnedApplicationDeadline): KotlinJvmProducedOutputPreview {
+            val origin = JvmCompilerModelOrigin.ObservedOneShotOrigin(model)
+            origin.requireOriginalDeadline(originalDeadline)
+            val graph = model.jvmProducedGraph ?: liveFailure("compiler_model_observed_graph_unavailable")
+            liveCheck(graph.modelDigest == model.identity.modelDigest && graph.evidenceIdentity == model.evidenceIdentity &&
+                graph.invocationIdentity == model.invocation.identity && model.issues.any {
+                    it.kind == CONFIGURATION_INPUT_CLOSURE_UNPROVEN && it.scopeId == null
+                }, "compiler_model_observed_evidence_mismatch")
+            graph.compilationIds.forEach { origin.requireObservedPolicies(requireNotNull(origin.context(it).context)) }
+            return KotlinJvmProducedOutputPreview(origin, installation, originalDeadline)
         }
     }
+}
+
+/** Distinct owner-only observed factory. No verified model/graph or ordinary admission is created. */
+object ObservedJvmProducedOutputPreview {
+    fun create(model: ObservedProjectModel, installation: KotlinJvmToolchain,
+        originalDeadline: OwnedApplicationDeadline): KotlinJvmProducedOutputPreview =
+        KotlinJvmProducedOutputPreview.createObserved(model, installation, originalDeadline)
 }
 
 class JvmProducedPreviewCompilation internal constructor(val binding: KotlinJvmModelBinding, val context: AnalysisContext)
@@ -167,7 +210,7 @@ internal class JvmProducedCompilationResolution(
     fun dependencyReadArtifacts(checkpoint: () -> Unit): List<ArtifactIdentity> {
         val declaration = declarationArchive ?: return context.classpath
         val retained = declaration.verify(checkpoint).context.classpath.iterator()
-        val index = preview.graph.reference.classpathIndex
+        val index = preview.graphIdentity.reference.classpathIndex
         val result = context.classpath.mapIndexed { ordinal, artifact ->
             if (producer != null && ordinal == index) artifact else retained.next()
         }
@@ -175,14 +218,18 @@ internal class JvmProducedCompilationResolution(
         return result
     }
 
-    fun verify(model: VerifiedProjectModel, installation: KotlinJvmToolchain, compilationId: String, checkpoint: () -> Unit) {
+    fun verify(origin: JvmCompilerModelOrigin, installation: KotlinJvmToolchain, compilationId: String, checkpoint: () -> Unit) {
         checkpoint(); preview.checkpoint()
-        liveCheck(preview.model === model && preview.installation === installation && this.compilationId == compilationId &&
-            model.jvmProducedGraph === preview.graph && rawContext == model.context(compilationId, model.identity.configurationDigest).context &&
+        liveCheck(preview.origin === origin && preview.installation === installation && this.compilationId == compilationId &&
+            rawContext == origin.context(compilationId).context &&
             !context.fullProject && context.compilerArguments == rawContext.compilerArguments &&
             context.modelDigest == rawContext.modelDigest && context.configurationDigest == rawContext.configurationDigest &&
             context.toolchainDigest == rawContext.toolchainDigest && context.compilationFiles == rawContext.compilationFiles,
             "compiler_model_produced_identity_mismatch")
+        origin.requireObservedPolicies(rawContext)
+        origin.requireObservedPolicies(context)
+        if (origin is JvmCompilerModelOrigin.ObservedOneShotOrigin) liveCheck(declarationArchive != null,
+            "compiler_model_observed_declared_archive_required")
         declarationArchive?.let { archive ->
             liveCheck(archive.preview === preview && archive.compilationId == compilationId && archive.original.context.copy(
                 policies = rawContext.policies) == rawContext, "compiler_model_produced_archive_foreign_identity")
@@ -219,7 +266,7 @@ class ModelSuccessfulJvmOutput internal constructor(
     val outputDigest: String = ModelWire.producedOutputDigest(this.members)
     init {
         ModelWire.requireSealed(observation)
-        liveCheck(observation.compilerCode() == 0 && compilationId == preview.graph.producerCompilationId &&
+        liveCheck(observation.compilerCode() == 0 && compilationId == preview.graphIdentity.producerCompilationId &&
             materialized.wireRequest.producedExecution()?.producers()?.isEmpty() == true &&
             result.originalKey() == permit.providerInputKey && result.effectiveKey() == materialized.effective.analysisKey(),
             "compiler_model_produced_success_required")

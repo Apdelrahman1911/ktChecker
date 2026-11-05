@@ -37,7 +37,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
     fun submit(credential: ClientCredential, binding: ClientBinding, request: SubmitPlanRequest,
         definition: RequiredReviewPlan): ParentPlanStatus {
         validateDeclaration(binding, request, definition)
-        ledger.read { c -> service.plans.prior(c, binding.clientId, request.idempotencyKey, Digests.sha256(canonical(request))) }?.let { return it }
+        ledger.read { c -> prior(c, binding, request, definition) }?.let { return it }
         val id = UUID.randomUUID().toString()
         val admitted = ProducedPlanAdmissionRequest(definition, id, Digests.sha256(canonical(definition)), service.providerKey, service.instanceId)
         val grant = authority.authorizeProduced(admitted)
@@ -49,7 +49,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         requireLive(grant)
         grant.verifyForAdmission()
         val preflightResult = ledger.read { c ->
-            val previous = service.plans.prior(c, binding.clientId, request.idempotencyKey, Digests.sha256(canonical(request)))
+            val previous = prior(c, binding, request, definition)
             if (previous != null) previous to 0L else {
                 preflight(c, admitted)
                 null to (config.maxArchiveBytes - service.archiveBytesUsed(c))
@@ -87,7 +87,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             return ledger.transaction { c ->
                 service.ensureOpen()
                 if (service.authenticate(c, credential) != binding) fail("unauthorized", "Client enrollment changed")
-                service.plans.prior(c, binding.clientId, request.idempotencyKey, Digests.sha256(canonical(request)))?.let { return@transaction it }
+                prior(c, binding, request, definition)?.let { return@transaction it }
                 preflight(c, admitted)
                 requireLive(grant) // Final concrete clock/atomic validity only: no owner callback.
                 if (bytes > config.maxArchiveBytes - service.archiveBytesUsed(c)) fail("archive_full", "Whole declaration and execution archives exceed quota")
@@ -100,6 +100,11 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                 c.execute("""INSERT INTO parent_plans(plan_id,client_id,patch_id,idempotency_key,request_hash,definition_json,plan_digest,review_frontier)
                     VALUES(?,?,?,?,?,?,?,0)""", id, binding.clientId, request.patchId, request.idempotencyKey,
                     Digests.sha256(canonical(request)), canonical(definition), admitted.planDigest)
+                // Same transaction as the entire parent/vector/outbox. A used export can never
+                // acquire another parent, even after restart or for a different client/worktree.
+                admitted.declaration.observedExport?.let { observed ->
+                    c.execute("INSERT INTO metadata(key,value) VALUES(?,?)", observedNonceKey(observed), observedNonceValue(admitted))
+                }
                 val archiveIdentities = archives.map { it.identity }
                 val archiveBytes = archiveIdentities.sumOf { it.byteCount }
                 val fair = fairKey(binding)
@@ -121,7 +126,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                     c.execute("INSERT INTO plan_slots(plan_id,slot_id,review_id) VALUES(?,?,?)", id, slot.slotId, review)
                     c.execute("UPDATE clients SET next_review=next_review+1,epoch=epoch+1 WHERE client_id=?", binding.clientId)
                     service.appendEvent(c, binding, ReviewStatus(review, binding.clientId, child.patchId, sequence,
-                        slot.input.snapshot.snapshotId, "accepted"), "accepted")
+                        slot.input.snapshot.snapshotId, "accepted", reasons = observedExportReasons(slot.input)), "accepted")
                 }
                 c.execute("UPDATE parent_plans SET review_frontier=(SELECT next_review-1 FROM clients WHERE client_id=?) WHERE plan_id=?", binding.clientId, id)
                 insertReady(c, live, producer, ready)
@@ -151,6 +156,11 @@ internal class ProducedPlans(private val service: KernelService, private val aut
     private fun preflight(c: Connection, request: ProducedPlanAdmissionRequest) {
         val definition = request.definition
         val binding = definition.binding
+        request.declaration.observedExport?.let { observed ->
+            if (c.count("SELECT COUNT(*) FROM metadata WHERE key=?", observedNonceKey(observed)) != 0L) {
+                fail("observed_export_already_admitted", "A one-shot export invocation cannot be reused; only the original exact request is idempotent")
+            }
+        }
         service.preflightAdmission(c, binding.clientId)
         if (c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=? AND (patch_id=? OR idempotency_key=?)", binding.clientId,
                 definition.request.patchId, definition.request.idempotencyKey) != 0L ||
@@ -168,6 +178,13 @@ internal class ProducedPlans(private val service: KernelService, private val aut
 
     private fun validateDeclaration(binding: ClientBinding, request: SubmitPlanRequest, plan: RequiredReviewPlan) {
         val graph = plan.jvmProduced ?: fail("produced_plan_declaration_missing", "Typed graph declaration is required")
+        val observed = graph.observedExport
+        if (observed != null) {
+            if (observed.binding != binding || observed.assurance != OBSERVED_EXPORT_PLAN_ASSURANCE || !Digests.valid(observed.evidenceDigest)) {
+                fail("observed_export_evidence_invalid", "One-shot export evidence must retain this exact client/session/lineage and nominal assurance")
+            }
+            identifier(observed.invocationId, "observed export invocation")
+        }
         if (plan.binding != binding || plan.request != request || plan.requiredRecipientClientIds != listOf(binding.clientId) ||
             plan.slots.size != 2 || plan.slots != plan.slots.sortedBy { it.slotId } ||
             plan.slots.map { it.slotId }.toSet() != setOf(graph.producer.slotId, graph.consumer.slotId) ||
@@ -188,12 +205,23 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             snapshot.scopeExclusions.isNotEmpty() || snapshot.unknownInputs.isNotEmpty()) fail("produced_plan_source_incomplete", "Whole canonical source scope is required")
         plan.slots.forEach { slot ->
             val input = slot.input
-            service.validateInput(binding, SubmitRequest("produced-validation", "produced-validation", input))
+            service.validateInput(binding, SubmitRequest("produced-validation", "produced-validation", input), allowObserved = observed != null)
+            if (observed != null && (input.context.policies.filterKeys { it in OBSERVED_EXPORT_POLICY_KEYS } != observed.policies() ||
+                    OBSERVED_EXPORT_CONFIGURATION_GAP !in slot.reasons)) {
+                fail("observed_export_declaration_gap_missing", "All observed policies and the permanent closure gap must be retained in every declared slot")
+            }
             val declared = if (slot.slotId == graph.producer.slotId) graph.producer else graph.consumer
-            val rawContext = input.context.copy(policies = input.context.policies - setOf("ktchecker.catalog-inventory", "ktchecker.activation-plan"))
+            // The importer supplies four raw observed markers. Only the binding-specific fifth
+            // marker is controller-added; stripping the other four would erase raw provenance.
+            val controllerPolicies = setOf("ktchecker.catalog-inventory", "ktchecker.activation-plan") +
+                if (observed == null) emptySet() else setOf("ktchecker.observed-export-evidence")
+            val rawContext = input.context.copy(policies = input.context.policies - controllerPolicies)
+            val allowedReasons = setOf("verified_compilation_context_unavailable", "jvm_produced_output_deferred",
+                "friend_artifact_rewrite_unavailable", "compiler_arguments_require_verified_rewrite") +
+                if (observed == null) emptySet() else setOf("observed_compilation_context_unavailable", OBSERVED_EXPORT_CONFIGURATION_GAP)
             val expectedName = if (slot.slotId == graph.producer.slotId) "main" else "test"
             if (slot.state != "declared" || slot.identity != null || slot.reasons.isEmpty() ||
-                slot.reasons.any { it !in setOf("verified_compilation_context_unavailable", "jvm_produced_output_deferred", "friend_artifact_rewrite_unavailable", "compiler_arguments_require_verified_rewrite") } ||
+                slot.reasons.any { it !in allowedReasons } ||
                 input.snapshot != snapshot || input.materializedRoot != source || input.execution != null || input.outputRoot != null ||
                 input.requiredRuleIds.size != 1663 || input.requiredRuleIds != input.requiredRuleIds.distinct().sorted() ||
                 input.requiredRuleIds != plan.slots.first().input.requiredRuleIds ||
@@ -230,14 +258,16 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         }
         proposed.producedManifest?.let { manifest ->
             val p = requireNotNull(producer); val pub = requireNotNull(publication)
-            if (pub.workKey != p.workKey || pub.operationalFaults.isNotEmpty() ||
+            if (pub.workKey != p.workKey || pub.operationalFaults.isNotEmpty() || pub.observedExport != request.declaration.observedExport ||
+                p.certificate.observedExport != request.declaration.observedExport ||
                 manifest.producerBindingDigest != p.certificate.compilerBindingDigest) fail("produced_plan_output_identity_invalid", "Produced bytes belong to another or failed producer")
         }
         val certificate = PlanExecutionCertificate(request.planId, request.planDigest, slotId, live.reviewIds.getValue(slotId),
             Digests.sha256(canonical(slot)), slot.input.analysisKey(), request.declaration.graphDigest,
             live.preparation.archive(slotId).identity.digest(), input.analysisKey(), requireNotNull(contextIdentity(input)),
             proposed.bindingDigest, request.providerKey, request.originInstance, request.declaration.originalDeadlineIdentity,
-            producer?.reviewId, producer?.workKey, publication?.digest(), proposed.producedManifest)
+            producer?.reviewId, producer?.workKey, publication?.digest(), proposed.producedManifest,
+            observedExport = request.declaration.observedExport)
         val result = ResolvedPlanExecution(input, certificate)
         if (canonical(result).toByteArray().size > config.maxInputBytes) fail("input_limit", "Complete D-to-P relation exceeds metadata quota")
         return result
@@ -276,7 +306,8 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                 fail("produced_plan_manifest_invalid", "Exact complete accepted producer output manifest is required")
             }
         }
-        service.validateInput(request.binding, SubmitRequest("produced-execution-validation", "produced-execution-validation", input))
+        service.validateInput(request.binding, SubmitRequest("produced-execution-validation", "produced-execution-validation", input),
+            allowObserved = graph.observedExport != null)
     }
 
     private fun retainExecution(live: Live, execution: ResolvedPlanExecution) {
@@ -346,7 +377,8 @@ internal class ProducedPlans(private val service: KernelService, private val aut
     /** Called after exact teardown and frozen result detach, outside the writer; unknown errors deny. */
     fun operationalFaults(key: String, original: AnalysisInput, effective: AnalysisInput, result: ProviderResult): List<String> {
         val (live, execution) = executions[key] ?: return listOf("produced_live_publication_authority_unavailable")
-        return try {
+        val rawFaults = observedResultFaults(live.request.declaration.observedExport, result)
+        val ownerFaults = try {
             requireLive(live.grant)
             if (original != execution.input) corrupt()
             val faults = live.grant.operationalFaults(ProducedPublicationCheck(live.request, execution, original, effective, result))
@@ -355,6 +387,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             } else faults.distinct().sorted()
         } catch (_: Exception) { listOf("produced_publication_classifier_unavailable") }
           catch (_: AssertionError) { listOf("produced_publication_classifier_unavailable") }
+        return (ownerFaults + rawFaults).distinct().sorted()
     }
 
     fun publish(c: Connection, key: String, attempt: Long, original: AnalysisInput, effective: AnalysisInput,
@@ -367,7 +400,8 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         if (cancelled(c, load(c, live.request.planId))) faults += "produced_dependency_cancelled"
         if (service.isStopped() || c.count("SELECT COUNT(*) FROM instances WHERE instance_id=? AND closed=0", service.instanceId) != 1L) faults += "produced_broker_closed"
         val publication = ProducedWorkPublication(key, attempt, service.instanceId, execution.certificate.digest(), original.analysisKey(),
-            effective.analysisKey(), service.providerKey, rawDigest, faults.distinct().sorted())
+            effective.analysisKey(), service.providerKey, rawDigest, faults.distinct().sorted(),
+            observedExport = live.request.declaration.observedExport)
         c.execute("INSERT INTO work_publications(work_key,attempt,origin_instance,record_json,certificate_id) VALUES(?,?,?,?,?)",
             key, attempt, service.instanceId, canonical(publication), publication.digest())
     }
@@ -572,6 +606,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         val state = if (cancelled) "cancelled" else if (slots.any { it.state in setOf("incomplete", "unavailable") }) "incomplete" else "pending"
         return ParentPlanStatus(id, clientId, stored.request.request.patchId, stored.request.definition.slots.first().input.snapshot.snapshotId,
             stored.request.planDigest, state, slots, listOf("produced_plan_preview_unqualified") +
+                (if (stored.request.declaration.observedExport != null) listOf(OBSERVED_EXPORT_CONFIGURATION_GAP) else emptyList()) +
                 if (cancelled) listOf("parent_cancelled_obligations_retained") else emptyList())
     }
 
@@ -624,6 +659,9 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                 r.getString("idempotency_key") != plan.request.idempotencyKey) corrupt()
             validateDeclaration(plan.binding, plan.request, plan)
             val request = ProducedPlanAdmissionRequest(plan, id, r.getString("plan_digest"), r.getString("provider_key"), r.getString("origin_instance"))
+            request.declaration.observedExport?.let { observed ->
+                if (c.one("SELECT value FROM metadata WHERE key=?", observedNonceKey(observed)) { it.getString(1) } != observedNonceValue(request)) corrupt()
+            }
             val encodedArchives = r.getString("archives_json")
             if (encodedArchives.toByteArray().size > config.maxInputBytes) corrupt()
             val archives = ContractJson.decodeFromString<List<DeclaredArchiveIdentity>>(encodedArchives)
@@ -674,7 +712,8 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             val cert = execution.certificate
             val slot = stored.request.definition.slots.single { it.slotId == slotId }
             validateResolvedInput(stored.request, slot, execution.input, cert.producedManifest)
-            if (cert.profile != PRODUCED_JVM_PLAN_PROFILE || cert.planId != stored.request.planId || cert.planDigest != stored.request.planDigest ||
+            if (cert.profile != PRODUCED_JVM_PLAN_PROFILE || cert.observedExport != stored.request.declaration.observedExport ||
+                cert.planId != stored.request.planId || cert.planDigest != stored.request.planDigest ||
                 cert.slotId != slotId || cert.reviewId != value.reviewId || cert.declarationDigest != Digests.sha256(canonical(slot)) ||
                 cert.declarationInputKey != slot.input.analysisKey() || cert.graphDigest != stored.request.declaration.graphDigest ||
                 cert.declaredArchiveDigest != stored.archives.single { it.slotId == slotId }.digest() || cert.resolvedInputKey != execution.input.analysisKey() ||
@@ -717,7 +756,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         val encoded = row.getString("record_json")
         if (encoded.toByteArray().size > config.maxInputBytes) corrupt()
         val value = ContractJson.decodeFromString<ProducedWorkPublication>(encoded)
-        if (value.profile != "ktchecker/produced-work-publication/1" || canonical(value) != encoded ||
+        if (value.profile != "ktchecker/produced-work-publication/1" || value.observedExport != execution.certificate.observedExport || canonical(value) != encoded ||
             value.digest() != row.getString("certificate_id") || value.workKey != execution.workKey ||
             value.operationalFaults != value.operationalFaults.distinct().sorted() || value.operationalFaults.size > 256 ||
             value.operationalFaults.any { it.isBlank() || it.length > 256 || it.any { ch -> ch in "\u0000\r\n" } } ||
@@ -727,6 +766,8 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             value.providerKey != execution.certificate.providerKey || value.providerKey != row.getString("work_provider") || row.getString("state") != "complete" ||
             row.getString("input_json") != canonical(execution.input) || row.getString("result_json") == null ||
             value.rawResultDigest != Digests.sha256(row.getString("result_json"))) corrupt()
+        val raw = ContractJson.decodeFromString<ProviderResult>(row.getString("result_json"))
+        if (!value.operationalFaults.containsAll(observedResultFaults(value.observedExport, raw))) corrupt()
         val frozen = ContractJson.decodeFromString<AnalysisInput>(row.getString("frozen_json"))
         requireArchivedRelation(execution.input, frozen, execution.workKey)
         val output = service.root.resolve("outputs").resolve(execution.workKey.removePrefix("sha256:"))
@@ -757,7 +798,8 @@ internal class ProducedPlans(private val service: KernelService, private val aut
 
     private fun appendPlanEvent(c: Connection, binding: ClientBinding, status: ParentPlanStatus, kind: String) {
         val anchor = service.readStatus(c, status.slots.last().reviewId, binding.clientId)
-        val payload = anchor.copy(state = kind, result = null, reasons = emptyList(), parentPlan = status)
+        val payload = anchor.copy(state = kind, result = null,
+            reasons = status.reasons.filter { it == OBSERVED_EXPORT_CONFIGURATION_GAP }, parentPlan = status)
         if (canonical(payload).toByteArray().size > config.maxResultBytes) fail("input_limit", "Complete plan event exceeds payload quota")
         service.appendEvent(c, binding, payload, kind)
     }
@@ -776,6 +818,28 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         return SubmitRequest("plan-child:$key", "plan-child:$key", slot.input)
     }
     private fun fairKey(binding: ClientBinding): String = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
+    private fun prior(c: Connection, binding: ClientBinding, request: SubmitPlanRequest, definition: RequiredReviewPlan): ParentPlanStatus? {
+        val prior = service.plans.prior(c, binding.clientId, request.idempotencyKey, Digests.sha256(canonical(request))) ?: return null
+        if (prior.planDigest != Digests.sha256(canonical(definition))) fail("produced_plan_idempotency_evidence_conflict",
+            "Idempotency returns only the original exact declaration; it cannot retarget an export or rearm a grant")
+        return prior
+    }
+    private fun observedNonceKey(observed: ObservedExportPlanEvidence): String = "observed-export:${Digests.sha256(observed.invocationId)}"
+    private fun observedNonceValue(request: ProducedPlanAdmissionRequest): String = canonical(listOf(
+        request.planId, request.planDigest, canonical(request.binding), canonical(request.request),
+        request.originInstance, request.providerKey, canonical(requireNotNull(request.declaration.observedExport)),
+    ))
+    /** Inspect exact raw shape, never add/normalize/repair a provider's missing taint. The owner
+     * classifier separately checks the real compiler child before this aggregate can unlock P. */
+    private fun observedResultFaults(observed: ObservedExportPlanEvidence?, result: ProviderResult): List<String> {
+        if (observed == null) return emptyList()
+        val expected = if (service.providerId == "ktchecker-coordinator")
+            "kotlin-jvm-live-model-preview:$OBSERVED_EXPORT_CONFIGURATION_GAP" else OBSERVED_EXPORT_CONFIGURATION_GAP
+        return buildList {
+            if (result.status != "partial") add("observed_export_raw_result_not_partial")
+            if (expected !in result.reasons) add("observed_export_raw_configuration_gap_missing")
+        }
+    }
     private fun admissionDigest(request: ProducedPlanAdmissionRequest, authority: String, archives: List<DeclaredArchiveIdentity>): String =
         Digests.sha256(canonical(listOf(request.planId, request.planDigest, request.originInstance, request.providerKey, authority, canonical(archives))))
     private fun corrupt(): Nothing = fail("produced_plan_corrupt", "The immutable declared/executed relation is missing or inconsistent")

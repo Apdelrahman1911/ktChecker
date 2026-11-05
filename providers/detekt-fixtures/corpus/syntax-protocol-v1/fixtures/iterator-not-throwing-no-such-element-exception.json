@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-protocol-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception",
+  "upstream_id": "potential-bugs:IteratorNotThrowingNoSuchElementException",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "3acf18abed5aa19e709c5ad876e7d30a3ed1a2ca634d60bd4a6ed387b38fdd37",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-potential-bugs/src/main/kotlin/dev/detekt/rules/potentialbugs/IteratorNotThrowingNoSuchElementException.kt",
+    "source_file_sha256": "027df9c850dcda0cf4335940abd256b5e227317c0ea5655deb160aefeef0e1b1",
+    "predicate_line_numbers": [
+      52,
+      53,
+      54,
+      55,
+      58,
+      68,
+      69,
+      71,
+      72,
+      73
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/potentialbugs/IteratorNotThrowingNoSuchElementException",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:5464fd74793abbdf95b364ec434c9077ace27361dc566ff4cdf375963edaf4d0"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "For a class/object whose syntactic super names contain Iterator, locate next and report the class/object name if no descendant throw has a direct call expression with callee text NoSuchElementException. No reachability, exhausted-state or delegated-call proof.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.iteratorcontract\n\nclass ExhaustedSentinel(private val values: List<Int>) : Iterator<Int> {\n    private var index = 0\n    override fun hasNext(): Boolean = index < values.size\n    override fun next(): Int {\n        if (!hasNext()) return 0\n        return values[index++]\n    }\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 6,
+        "end_line": 3,
+        "end_column": 23,
+        "span": "ExhaustedSentinel",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A valid Iterator implementation returns a sentinel after exhaustion. hasNext is side-effect-free: this is the next exhaustion contract, not the earlier hasNext-calls-next rule."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.iteratorcontract\n\nclass ExhaustedSentinel(private val values: List<Int>) : Iterator<Int> {\n    private var index = 0\n    override fun hasNext(): Boolean = index < values.size\n    override fun next(): Int {\n        if (!hasNext()) throw NoSuchElementException(\"No elements\")\n        return values[index++]\n    }\n}\n"
+    },
+    "expected": [],
+    "intent": "The same legal implementation explicitly throws the standard exhaustion exception before indexing. The selected rule stays active."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.iteratorcontract\n\nclass ExhaustedSentinel(private val values: List<Int>) : Iterator<Int> {\n    private var index = 0\n    override fun hasNext(): Boolean = index < values.size\n    override fun next(): Int {\n        if (!hasNext()) return 0\n        return values[index++]\n    }\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"IteratorNotThrowingNoSuchElementException\")\n\npackage suppressed.corpus.iteratorcontract\n\nclass ExhaustedSentinel(private val values: List<Int>) : Iterator<Int> {\n    private var index = 0\n    override fun hasNext(): Boolean = index < values.size\n    override fun next(): Int {\n        if (!hasNext()) return 0\n        return values[index++]\n    }\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 6,
+        "end_line": 3,
+        "end_column": 23,
+        "span": "ExhaustedSentinel",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.iteratorcontract\n\nclass DelegatingIterator(values: List<Int>) : Iterator<Int> {\n    private val delegate = values.iterator()\n    override fun hasNext(): Boolean = delegate.hasNext()\n    override fun next(): Int = delegate.next()\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 6,
+          "end_line": 3,
+          "end_column": 24,
+          "span": "DelegatingIterator",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The actual List iterator supplies next and its exhaustion exception. A local throw is unnecessary, but the shallow rule still reports; retain the anticipated false positive.",
+      "id": "delegated-list-iterator-already-throws",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.iteratorcontract\n\nclass DormantExhaustionGuard(private val values: List<Int>) : Iterator<Int> {\n    private var index = 0\n    override fun hasNext(): Boolean = index < values.size\n    override fun next(): Int {\n        fun unusedExhaustion(): Nothing = throw NoSuchElementException(\"No elements\")\n        if (!hasNext()) return 0\n        return values[index++]\n    }\n}\n"
+      },
+      "expected": [],
+      "intent": "An uncalled local function contains the recognized throw while the exhausted execution path still returns a sentinel. Descendant presence is not reachability or contract proof; preserve the anticipated miss.",
+      "id": "dormant-local-throw-does-not-enforce-exhaustion",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.iteratorcontract\n\nclass QualifiedExhaustionGuard(private val values: List<Int>) : Iterator<Int> {\n    private var index = 0\n    override fun hasNext(): Boolean = index < values.size\n    override fun next(): Int {\n        if (!hasNext()) throw java.util.NoSuchElementException(\"No elements\")\n        return values[index++]\n    }\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 6,
+          "end_line": 3,
+          "end_column": 30,
+          "span": "QualifiedExhaustionGuard",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The live exhaustion guard throws the genuine fully qualified JDK exception. Its qualified-expression shape is not the direct KtCallExpression accepted by the predicate; retain this anticipated false positive.",
+      "id": "qualified-exhaustion-exception-is-still-correct",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    }
+  ],
+  "limitations": [
+    "This is a syntactic next-exhaustion warning, distinct from hasNext consuming the iterator. No existing hasNext case, count or identity is replaced.",
+    "Delegation and qualified exception names produce anticipated false positives; an uncalled nested throw produces an anticipated false negative. All three are retained, not fixed by host filters.",
+    "Supertype names and descendant syntax are not resolved Kotlin class identity, control flow, reachability or exception guarantees.",
+    "No iterator execution, Kotlin type-checking, collection completeness, semantic or cross-platform qualification is claimed."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, parser, semantic, ownership, cancellation-flow, model or release qualification."
+}

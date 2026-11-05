@@ -10,7 +10,18 @@ import type { ClientBinding, ModelRequest } from '../src/types.js';
 
 const MAX_EVENTS = 256, MAX_ROWS = 1_024, MAX_PAGE = 100, MAX_PENDING = 16;
 const SHA256 = /^sha256:[0-9a-f]{64}$/;
-const KINDS = new Set(['accepted', 'progress', 'result', 'recovered', 'cancelled', 'plan_accepted']);
+const KINDS = new Set(['accepted', 'progress', 'result', 'recovered', 'cancelled', 'plan_accepted', 'plan_resolved', 'plan_unavailable']);
+// Exact sorted IDs of the FOUR reviewed catalog inputs, shared with fullRealRules' source pin.
+// This is a closed experiment's data commitment, never authority to execute those rules.
+const PRODUCED_RULE_VECTOR_DIGEST = 'sha256:fc45c20ddecf87113dc392a3127f4dfa9d2dd75177a71252f8fd9c67929e316b';
+const OBSERVED_PRODUCED_ASSURANCE = 'ktchecker/observed-export-one-shot/1';
+const OBSERVED_CONFIGURATION_GAP = 'configuration_input_closure_unproven';
+export interface DeliveryReceiptCaptureOptions {
+  /** Owner-selected expected lane, NOT inferred from potentially stripped event reasons.
+   * The current-image runner must select observed before the first event request.
+   * This nominal data expectation is not compiler/model/qualification authority. */
+  readonly expectedProducedAssurance?: 'legacy-strict' | typeof OBSERVED_PRODUCED_ASSURANCE;
+}
 type ObjectValue = Record<string, unknown>;
 function object(value: unknown): ObjectValue {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new HostError('delivery_capture_shape');
@@ -72,6 +83,74 @@ function eventMetadata(value: unknown): Readonly<DeliveryEventMetadata> {
     sourceSnapshotId: sha(event.sourceSnapshotId), payloadDigest: sha(event.payloadDigest), kind: event.kind as string,
     deliveryRequired: event.deliveryRequired });
 }
+
+/** These are the existing ProducedPlans.appendPlanEvent notifications, not new RPCs.
+ * Retain the whole original two-slot declaration vector. A resolution notification is
+ * NOT successful parent completion, authority to execute, or qualification evidence.
+ * Only explicitly selected public fields are read; no credential-bearing object is cloned.
+ */
+function validateProducedPlanNotification(rawEvent: unknown, payload: string, observed: boolean): void {
+  const event = object(rawEvent);
+  // Default generic/legacy plan_accepted capture is unchanged. The explicit observed
+  // produced lane must retain its taint already at acceptance, not only at resolution.
+  if (event.kind !== 'plan_resolved' && event.kind !== 'plan_unavailable' && !(observed && event.kind === 'plan_accepted')) return;
+  const value = object(JSON.parse(payload)), parent = object(value.parentPlan);
+  if (event.deliveryRequired !== true || value.contractVersion !== PREVIEW_CONTRACT || value.state !== event.kind ||
+      value.clientId !== event.clientId || value.reviewId !== event.reviewId || value.patchId !== event.patchId ||
+      value.sourceSnapshotId !== event.sourceSnapshotId || value.result !== null || typeof value.cancelled !== 'boolean' ||
+      !Array.isArray(value.reasons) || parent.contractVersion !== PREVIEW_CONTRACT ||
+      parent.clientId !== event.clientId || parent.sourceSnapshotId !== event.sourceSnapshotId ||
+      !['pending', 'incomplete', 'cancelled'].includes(parent.state as string) ||
+      !Array.isArray(parent.slots) || parent.slots.length !== 2) throw new HostError('delivery_capture_produced_parent');
+  integer(value.sequence); identifier(parent.planId); identifier(parent.patchId); sha(parent.planDigest);
+  const reasons = (input: unknown) => {
+    if (!Array.isArray(input) || input.length > 10_000 || input.some(reason => typeof reason !== 'string' || reason.length > 16_384)) {
+      throw new HostError('delivery_capture_produced_reasons');
+    }
+  };
+  reasons(parent.reasons);
+  const slots = parent.slots.map(object), slotIds: string[] = [], reviewIds: string[] = [];
+  for (const slot of slots) {
+    slotIds.push(identifier(slot.slotId)); reviewIds.push(identifier(slot.reviewId)); identifier(slot.state); reasons(slot.reasons);
+    if (observed && (slot.reasons as string[]).filter(reason => reason === OBSERVED_CONFIGURATION_GAP).length !== 1) {
+      throw new HostError('delivery_capture_produced_observed_gap');
+    }
+    if (!['queued', 'running', 'deferred', 'incomplete', 'unavailable', 'cancelled'].includes(slot.state as string)) {
+      throw new HostError('delivery_capture_produced_state');
+    }
+    const context = object(slot.context);
+    for (const key of ['target', 'sourceSet', 'module', 'compilation']) {
+      // Actual Kotlin/JVM produced declarations preserve the export's EMPTY target.
+      // "jvm" is not an interchangeable relabeling of that model context.
+      if (typeof context[key] !== 'string' || (key === 'target' ? context[key] !== '' : !context[key]) ||
+          (context[key] as string).length > 4096) {
+        throw new HostError('delivery_capture_produced_context');
+      }
+    }
+    if (!Array.isArray(slot.requiredRuleIds) || slot.requiredRuleIds.length !== 1663) {
+      throw new HostError('delivery_capture_produced_rules');
+    }
+    const rules = slot.requiredRuleIds.map(identifier);
+    if (new Set(rules).size !== rules.length) throw new HostError('delivery_capture_produced_rules');
+    same(rules, [...rules].sort(), 'delivery_capture_produced_rules');
+    if (digest(canonical(rules)) !== PRODUCED_RULE_VECTOR_DIGEST) throw new HostError('delivery_capture_produced_rules');
+  }
+  if (new Set(slotIds).size !== 2 || new Set(reviewIds).size !== 2 || reviewIds[1] !== event.reviewId) {
+    throw new HostError('delivery_capture_produced_anchor');
+  }
+  same(slotIds, [...slotIds].sort(), 'delivery_capture_produced_slot_order');
+  same(slots[0]!.requiredRuleIds, slots[1]!.requiredRuleIds, 'delivery_capture_produced_rules');
+  const cancelled = slots.some(slot => slot.state === 'cancelled');
+  const incomplete = slots.some(slot => slot.state === 'incomplete' || slot.state === 'unavailable');
+  if (cancelled && parent.state !== 'cancelled' || parent.state === 'incomplete' && !incomplete ||
+      parent.state === 'pending' && (incomplete || cancelled)) throw new HostError('delivery_capture_produced_state');
+  if (value.cancelled !== (slots[1]!.state === 'cancelled')) throw new HostError('delivery_capture_produced_anchor');
+  same(value.reasons, observed ? [OBSERVED_CONFIGURATION_GAP] : [], 'delivery_capture_produced_reasons');
+  same(parent.reasons, ['produced_plan_preview_unqualified', ...(observed ? [OBSERVED_CONFIGURATION_GAP] : []),
+    ...(parent.state === 'cancelled' ? ['parent_cancelled_obligations_retained'] : [])],
+    'delivery_capture_produced_reasons');
+  // A parent can also be cancelled by its stored flag, not present in ParentPlanStatus.
+}
 export interface AckProjection {
   readonly receiptIdDigest: string; readonly contextDigest: string; readonly contextItemIdDigest: string; readonly insertedAtDigest: string;
 }
@@ -110,12 +189,18 @@ type Intent = { readonly clientIdDigest: string; readonly kind: 'review.events' 
  * separate confirmations, never relabeled as a deduplicated durable mutation.
  */
 export class DeliveryReceiptCapture {
+  private readonly observedProduced: boolean;
   private readonly bindings = new Map<string, Readonly<DeliveryBinding>>();
   private readonly events = new Map<string, Readonly<DeliveryEventMetadata>>();
   private readonly rows: Readonly<DeliveryConfirmationRow>[] = [];
   private pending = 0;
   private calls = 0;
   private failed = false;
+  constructor(options: DeliveryReceiptCaptureOptions = {}) {
+    const expected = options.expectedProducedAssurance ?? 'legacy-strict';
+    if (expected !== 'legacy-strict' && expected !== OBSERVED_PRODUCED_ASSURANCE) throw new HostError('delivery_capture_produced_assurance');
+    this.observedProduced = expected === OBSERVED_PRODUCED_ASSURANCE;
+  }
   bind(value: ClientBinding): void {
     this.healthy();
     const binding = deliveryBinding(value), old = this.bindings.get(binding.clientIdDigest);
@@ -182,6 +267,7 @@ export class DeliveryReceiptCapture {
         const event = eventMetadata(raw), payload = object(raw).payload;
         if (typeof payload !== 'string' || payload.length > 2_097_152 || Buffer.byteLength(payload) > 2_097_152 || digest(payload) !== event.payloadDigest ||
             event.clientIdDigest !== binding.clientIdDigest || event.generation !== binding.generation) throw new HostError('delivery_capture_event_binding');
+        validateProducedPlanNotification(raw, payload, this.observedProduced);
         const previous = additions.get(event.eventIdDigest) ?? this.events.get(event.eventIdDigest);
         if (previous) same(previous, event, 'delivery_capture_event_revision');
         additions.set(event.eventIdDigest, event);

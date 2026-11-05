@@ -1,0 +1,1387 @@
+{
+  "schema": "ktchecker/detekt-syntax-exception-observability-case-matrix/1",
+  "cohort_id": "exception-observability-policy-v1",
+  "state": "AUTHORED_NOT_RUN",
+  "candidate_only": true,
+  "baseline_scope_reference": "../scope.json#/preserved_baseline",
+  "analyses": [
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 4,
+          "end_line": 6,
+          "end_column": 17,
+          "span": "throw failure",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e9264d9beff3662ae40806a47a64e22e38dfd5c418c7dea51b3cd0ae1f94b7e5",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "e0e4b552f10a90d32f9e046305b0e487fc9464bf4b4214fb38f74a4f5e73b412",
+          "bytes": 164
+        }
+      ],
+      "expected_override": null,
+      "intent": "A valid callback boundary catches IOException only to rethrow the same instance. This is redundant scaffolding under the explicitly selected style convention, not swallowed-exception or cancellation detection.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3b71de5eb9281e8b2a0c70d8343a071e0f1920216df857b8e47004c181ca6468",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6189a844241985c5af44ed5b02c439a78518d6e26a79094f3ced8e04641ddfc3",
+          "bytes": 211
+        }
+      ],
+      "expected_override": null,
+      "intent": "The catch performs a caller-controlled recording action before rethrowing the same instance. The selected rule remains active and does not match a first-child rethrow; no assurance about the callback or exception-flow safety is implied.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e9264d9beff3662ae40806a47a64e22e38dfd5c418c7dea51b3cd0ae1f94b7e5",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "e0e4b552f10a90d32f9e046305b0e487fc9464bf4b4214fb38f74a4f5e73b412",
+          "bytes": 164
+        }
+      ],
+      "expected_override": [],
+      "intent": "A valid callback boundary catches IOException only to rethrow the same instance. This is redundant scaffolding under the explicitly selected style convention, not swallowed-exception or cancellation detection.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 4,
+          "end_line": 6,
+          "end_column": 17,
+          "span": "throw failure",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e9264d9beff3662ae40806a47a64e22e38dfd5c418c7dea51b3cd0ae1f94b7e5",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "e0e4b552f10a90d32f9e046305b0e487fc9464bf4b4214fb38f74a4f5e73b412",
+          "bytes": 164
+        }
+      ],
+      "expected_override": null,
+      "intent": "A valid callback boundary catches IOException only to rethrow the same instance. This is redundant scaffolding under the explicitly selected style convention, not swallowed-exception or cancellation detection.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 4,
+          "end_line": 6,
+          "end_column": 17,
+          "span": "throw failure",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "5110f5a9d513bdc7aada15937b6f2e016e4138569bbead7769d2099a5970f2ab",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "e0e4b552f10a90d32f9e046305b0e487fc9464bf4b4214fb38f74a4f5e73b412",
+          "bytes": 164
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "bb46cc81f71d2127a518b075d2742fbcee80e0d1f0fad5d2bfe386bacc852350",
+          "bytes": 217
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3b71de5eb9281e8b2a0c70d8343a071e0f1920216df857b8e47004c181ca6468",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6189a844241985c5af44ed5b02c439a78518d6e26a79094f3ced8e04641ddfc3",
+          "bytes": 211
+        }
+      ],
+      "expected_override": null,
+      "intent": "The catch performs a caller-controlled recording action before rethrowing the same instance. The selected rule remains active and does not match a first-child rethrow; no assurance about the callback or exception-flow safety is implied.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "parenthesized-rethrow-escapes-exact-name",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b4cec75e6258306e9ac6f61fd79475666fff05a3fd4db366c66f037d214c90e2",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "5137e456736cdae812b9cf994a870f1d3245e3abf1456c13da729b92742aac71",
+          "bytes": 166
+        }
+      ],
+      "expected_override": null,
+      "intent": "Parentheses do not change the rethrown instance, but thrown-expression text is (failure), not failure. Retain the anticipated syntactic false negative instead of normalizing the source or claiming propagation proof.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "following-work-exempts-earlier-rethrow",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "df5d397393b44e70de3182718105423c4a21e58963280257f1e02985d93727bc",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6eb0d9bfa52a6a76e7695e750f3ed53e23170a6fc552540ab4c81863cdbaf23f",
+          "bytes": 270
+        }
+      ],
+      "expected_override": null,
+      "intent": "The later disjoint IllegalStateException catch performs recovery. takeLastWhile stops on that worked catch, so the earlier redundant IOException rethrow is exempt. This exercises the actual ordered-suffix predicate, not a body-effect or reachability analysis.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "earlier-work-does-not-exempt-trailing-rethrow",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 4,
+          "end_line": 8,
+          "end_column": 17,
+          "span": "throw failure",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "opt_in_policy_limit",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "aff481f0f19f941032942b8b25723175507ac2d2de0527d1b4418c4e9b2179bd",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f2468b3411c32e110f0fd7dd5351ac59fe6bb9fdcef86cad585f5556942698e3",
+          "bytes": 270
+        }
+      ],
+      "expected_override": null,
+      "intent": "The same disjoint recovery catch now precedes the IOException rethrow. The trailing rethrow still reports despite the earlier work. Preserve this opt-in policy limit and the source/documentation ordering discrepancy; do not describe all worked multi-catch blocks as exempt.",
+      "selected_sarif_rule_id": "detekt.exceptions.RethrowCaughtException",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 11,
+          "end_line": 4,
+          "end_column": 22,
+          "span": "dumpStack()",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 11,
+          "column": 8,
+          "end_line": 11,
+          "end_column": 15,
+          "span": "failure",
+          "occurrence": 1
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "09e44ac9806835b1cd44b7b781fed414ab3e04eac943228a3c2b77f25545d56c",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "a087ae7395ba5ba177fc263f446e96b2bf52ae4faef60958d22e7d276fc5e460",
+          "bytes": 236
+        }
+      ],
+      "expected_override": null,
+      "intent": "Exercise both actual entity shapes on valid JVM spellings: direct Thread.dumpStack reports only dumpStack(), while a caught throwable printStackTrace reports only its failure receiver. Both violate the explicitly selected output convention, not a proved confidentiality property.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "4fc8f55361880ac4d8923dc7678a12b44d81313fe6c0b29688d48104ed17273d",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "fe7a340c4799e855849e732979dfdf7ad2495e21bc982015903554c9dd97bb3d",
+          "bytes": 298
+        }
+      ],
+      "expected_override": null,
+      "intent": "Use caller-controlled recording/report callbacks instead of the two direct stack-print spellings. The rule stays active; absence of this warning is not proof that the callbacks redact, persist, or handle failure correctly.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "09e44ac9806835b1cd44b7b781fed414ab3e04eac943228a3c2b77f25545d56c",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "a087ae7395ba5ba177fc263f446e96b2bf52ae4faef60958d22e7d276fc5e460",
+          "bytes": 236
+        }
+      ],
+      "expected_override": [],
+      "intent": "Exercise both actual entity shapes on valid JVM spellings: direct Thread.dumpStack reports only dumpStack(), while a caught throwable printStackTrace reports only its failure receiver. Both violate the explicitly selected output convention, not a proved confidentiality property.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 11,
+          "end_line": 4,
+          "end_column": 22,
+          "span": "dumpStack()",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 11,
+          "column": 8,
+          "end_line": 11,
+          "end_column": 15,
+          "span": "failure",
+          "occurrence": 1
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "09e44ac9806835b1cd44b7b781fed414ab3e04eac943228a3c2b77f25545d56c",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "a087ae7395ba5ba177fc263f446e96b2bf52ae4faef60958d22e7d276fc5e460",
+          "bytes": 236
+        }
+      ],
+      "expected_override": null,
+      "intent": "Exercise both actual entity shapes on valid JVM spellings: direct Thread.dumpStack reports only dumpStack(), while a caught throwable printStackTrace reports only its failure receiver. Both violate the explicitly selected output convention, not a proved confidentiality property.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 11,
+          "end_line": 4,
+          "end_column": 22,
+          "span": "dumpStack()",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 11,
+          "column": 8,
+          "end_line": 11,
+          "end_column": 15,
+          "span": "failure",
+          "occurrence": 1
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "46c21b218abf0597993379157f5f6ba73e1c292996c30d6a01edeac69daf94f1",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "a087ae7395ba5ba177fc263f446e96b2bf52ae4faef60958d22e7d276fc5e460",
+          "bytes": 236
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "3aabe93c6ce80c9e0cd21a367436d217f1e53687b033233a98feda7c52b0ceb8",
+          "bytes": 282
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "4fc8f55361880ac4d8923dc7678a12b44d81313fe6c0b29688d48104ed17273d",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "fe7a340c4799e855849e732979dfdf7ad2495e21bc982015903554c9dd97bb3d",
+          "bytes": 298
+        }
+      ],
+      "expected_override": null,
+      "intent": "Use caller-controlled recording/report callbacks instead of the two direct stack-print spellings. The rule stays active; absence of this warning is not proof that the callbacks redact, persist, or handle failure correctly.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "non-jdk-thread-dumpstack-is-not-stack-printing",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 7,
+          "column": 45,
+          "end_line": 7,
+          "end_column": 56,
+          "span": "dumpStack()",
+          "occurrence": 1
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "8ff992bfcba57162a6ec1aa682b80ba28bb54891c1a0ad65c86d9a5ce353518a",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "eeb2dcfed5cb47b643c2c7f0342d5780771f16e56400ace9538048b5d85056ad",
+          "bytes": 175
+        }
+      ],
+      "expected_override": null,
+      "intent": "This private non-JDK Thread object returns a benign work-name list; it does not print a stack trace. The exact receiver/call spelling still matches. Retain the anticipated false positive caused by absent type resolution.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "caught-throwable-alias-still-prints",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "44ddcb07b4919a79ac490ff7ccdc1112770c56f3b8a2a07f1380b65d6f480d5b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "9e08b12425449e9abacdfeaa388a95a8387e1c90d0762877130e2761a3aeb017",
+          "bytes": 212
+        }
+      ],
+      "expected_override": null,
+      "intent": "The caught throwable is still directly printed, but through a local alias rather than a receiver named exactly like the catch parameter. Preserve the anticipated false negative; alias flow is not inspected.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "qualified-jdk-thread-dumpstack-is-missed",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "7cc94e6227237e67b99565243f8793effed70e299eb54de7dc6d3925928155e3",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "e99d089a0e090573fa450d5c3b37fcc09dddb07d83cb5e7eb97dae77f3b302da",
+          "bytes": 102
+        }
+      ],
+      "expected_override": null,
+      "intent": "The real JDK java.lang.Thread.dumpStack still prints a stack dump, but the receiver text is qualified rather than exactly Thread. Retain this anticipated false negative instead of treating qualification as safe logging.",
+      "selected_sarif_rule_id": "detekt.exceptions.PrintStackTrace",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 26,
+          "end_line": 4,
+          "end_column": 52,
+          "span": "IllegalArgumentException()",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 22,
+          "end_line": 8,
+          "end_column": 45,
+          "span": "IllegalStateException()",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fa1409d4eec428bba9069d13b77682dddb80f164b6fcfac9193d378f74e813e4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4b94794e60301212a4c696a51ae74963bd4d75c2775f14e2f4087539dff8371c",
+          "bytes": 206
+        }
+      ],
+      "expected_override": null,
+      "intent": "Two valid no-argument standard exception construction sites lack explicit message/cause arguments and violate the selected style convention. These are authored construction findings, not semantic proof about all eventual exception context.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "804bf1835ee7ca963fd81bc9a7f26d172902c458f575931befdc2f3bc5815e9b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6aea26b29b937e60e122832187520b6e802f4c5746d9ad2fb3320376bbbce39a",
+          "bytes": 253
+        }
+      ],
+      "expected_override": null,
+      "intent": "Supply a useful input message at the argument check and the caller-supplied Throwable cause at the state check. Both calls keep the rule active while satisfying its nonempty-arguments boundary.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fa1409d4eec428bba9069d13b77682dddb80f164b6fcfac9193d378f74e813e4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4b94794e60301212a4c696a51ae74963bd4d75c2775f14e2f4087539dff8371c",
+          "bytes": 206
+        }
+      ],
+      "expected_override": [],
+      "intent": "Two valid no-argument standard exception construction sites lack explicit message/cause arguments and violate the selected style convention. These are authored construction findings, not semantic proof about all eventual exception context.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 26,
+          "end_line": 4,
+          "end_column": 52,
+          "span": "IllegalArgumentException()",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 22,
+          "end_line": 8,
+          "end_column": 45,
+          "span": "IllegalStateException()",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fa1409d4eec428bba9069d13b77682dddb80f164b6fcfac9193d378f74e813e4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4b94794e60301212a4c696a51ae74963bd4d75c2775f14e2f4087539dff8371c",
+          "bytes": 206
+        }
+      ],
+      "expected_override": null,
+      "intent": "Two valid no-argument standard exception construction sites lack explicit message/cause arguments and violate the selected style convention. These are authored construction findings, not semantic proof about all eventual exception context.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 26,
+          "end_line": 4,
+          "end_column": 52,
+          "span": "IllegalArgumentException()",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 22,
+          "end_line": 8,
+          "end_column": 45,
+          "span": "IllegalStateException()",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "f1ad598d8fb2a989ba46313f3055fd464c57e43e0dcd1c037fd5c1cb92fc6403",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4b94794e60301212a4c696a51ae74963bd4d75c2775f14e2f4087539dff8371c",
+          "bytes": 206
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "cad64259665946ec36273f5f193b24546bebef05c1cb329963e910e9a9dfe5f6",
+          "bytes": 276
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "804bf1835ee7ca963fd81bc9a7f26d172902c458f575931befdc2f3bc5815e9b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6aea26b29b937e60e122832187520b6e802f4c5746d9ad2fb3320376bbbce39a",
+          "bytes": 253
+        }
+      ],
+      "expected_override": null,
+      "intent": "Supply a useful input message at the argument check and the caller-supplied Throwable cause at the state check. Both calls keep the rule active while satisfying its nonempty-arguments boundary.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "same-named-string-factory-is-not-an-exception",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 7,
+          "column": 46,
+          "end_line": 7,
+          "end_column": 72,
+          "span": "IllegalArgumentException()",
+          "occurrence": 1
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "c111e811e064b65c23425acfea2c10cc0c9a57b0b6a3760271d06bd201cd4448",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "2d494832e91a1ce8bd5bc6129dd9aaadd36c7e7a448e48b55e4d9e56541f5bd0",
+          "bytes": 201
+        }
+      ],
+      "expected_override": null,
+      "intent": "The same-spelled member factory returns a diagnostic category String, not a Throwable, and is never thrown. Its no-argument call still reports. Retain this anticipated false positive rather than pretending the matcher resolves constructor identity or requires throw.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "import-aliased-no-argument-exception-is-missed",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b565def5500d4737a033c3e3d829e4787c289a7a0a0da219a4e50f7a1e30ed9a",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "53642aa5fc854e4e6daed63d90560a755dd87ed62cca9601cca753d028a132dd",
+          "bytes": 169
+        }
+      ],
+      "expected_override": null,
+      "intent": "The import alias constructs the genuine JDK exception with no message/cause arguments, but InvalidInput is not in the default textual exceptions list. Preserve the anticipated false negative instead of resolving or renaming the alias.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "configured-state-exception-only-keeps-one-active-finding",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 22,
+          "end_line": 8,
+          "end_column": 45,
+          "span": "IllegalStateException()",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "owner_configured_policy_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "exceptions": [
+          "IllegalStateException"
+        ]
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fa1409d4eec428bba9069d13b77682dddb80f164b6fcfac9193d378f74e813e4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4b94794e60301212a4c696a51ae74963bd4d75c2775f14e2f4087539dff8371c",
+          "bytes": 206
+        }
+      ],
+      "expected_override": null,
+      "intent": "Set the genuine exceptions option to [IllegalStateException] on the exact original positive bytes. Remove only the IllegalArgumentException range while retaining one active IllegalStateException finding and enabled SARIF descriptor; this is not whole-rule disabling.",
+      "selected_sarif_rule_id": "detekt.exceptions.ThrowingExceptionsWithoutMessageOrCause",
+      "selected_sarif_descriptor_enabled_required": true
+    }
+  ],
+  "invocation_schedule": [
+    {
+      "ordinal": 1,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 0
+    },
+    {
+      "ordinal": 2,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 3,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 1
+    },
+    {
+      "ordinal": 4,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 2
+    },
+    {
+      "ordinal": 5,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 3
+    },
+    {
+      "ordinal": 6,
+      "kind": "cli_probe",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "cli-version-probe",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "expected_version": "2.0.0-alpha.6"
+    },
+    {
+      "ordinal": 7,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 8,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 9,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 4
+    },
+    {
+      "ordinal": 10,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 5
+    },
+    {
+      "ordinal": 11,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "parenthesized-rethrow-escapes-exact-name",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 6
+    },
+    {
+      "ordinal": 12,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "following-work-exempts-earlier-rethrow",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 7
+    },
+    {
+      "ordinal": 13,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "case_id": "earlier-work-does-not-exempt-trailing-rethrow",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 8
+    },
+    {
+      "ordinal": 14,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 9
+    },
+    {
+      "ordinal": 15,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 16,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 10
+    },
+    {
+      "ordinal": 17,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 11
+    },
+    {
+      "ordinal": 18,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 12
+    },
+    {
+      "ordinal": 19,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 20,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 21,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 13
+    },
+    {
+      "ordinal": 22,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 14
+    },
+    {
+      "ordinal": 23,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "non-jdk-thread-dumpstack-is-not-stack-printing",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 15
+    },
+    {
+      "ordinal": 24,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "caught-throwable-alias-still-prints",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 16
+    },
+    {
+      "ordinal": 25,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "case_id": "qualified-jdk-thread-dumpstack-is-missed",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 17
+    },
+    {
+      "ordinal": 26,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 18
+    },
+    {
+      "ordinal": 27,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 28,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 19
+    },
+    {
+      "ordinal": 29,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 20
+    },
+    {
+      "ordinal": 30,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 21
+    },
+    {
+      "ordinal": 31,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 32,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 33,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 22
+    },
+    {
+      "ordinal": 34,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 23
+    },
+    {
+      "ordinal": 35,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "same-named-string-factory-is-not-an-exception",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 24
+    },
+    {
+      "ordinal": 36,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "import-aliased-no-argument-exception-is-missed",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 25
+    },
+    {
+      "ordinal": 37,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "case_id": "configured-state-exception-only-keeps-one-active-finding",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 26
+    }
+  ],
+  "counts": {
+    "authored_analyses": 27,
+    "all_calls": 37,
+    "native_launch_ceiling": 28,
+    "expected_runtime_callbacks": 31,
+    "planned_progress_events": 113,
+    "independent_controls": 9,
+    "authored_alert_bearing_analyses": 13,
+    "authored_zero_finding_analyses": 14,
+    "authored_expected_finding_observations": 19,
+    "unique_rule_source_sets": 17,
+    "unique_rule_source_configuration_sets": 21,
+    "independent_control_assessments": {
+      "anticipated_upstream_false_negative": 4,
+      "predicate_boundary": 1,
+      "opt_in_policy_limit": 1,
+      "anticipated_upstream_false_positive": 2,
+      "owner_configured_policy_boundary": 1
+    },
+    "actual_executions": 0,
+    "actual_findings": null,
+    "natural_project_observations": 0,
+    "precision_reviewed_natural_observations": 0
+  },
+  "explicit_opt_in_policy_rule_ids": [
+    "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+    "ktc.kotlin.detekt.exceptions.print-stack-trace",
+    "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause"
+  ],
+  "source_authored_not_observed": true
+}

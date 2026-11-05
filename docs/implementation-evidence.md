@@ -7,6 +7,64 @@ catalog mapping, mocked diagnostic, or successful prerequisite probe does not
 establish the next category. Release gates in [validation-ci.md](validation-ci.md)
 and [PLAN.md](PLAN.md) remain unchanged.
 
+## Parallel implementation checkpoint — 2026-11-05
+
+The [machine-readable checkpoint](evidence/parallel-checkpoint-20261105.json)
+binds these **separate scoped executions**, their source identities, receipt
+hashes and prior-commit GitHub Actions URLs. They are not a combined release
+test pass or a new runnable distribution.
+
+| Executed lane | Verified result | Boundary |
+| --- | --- | --- |
+| Affected Kotlin compilation | Exit 0, **77.104 s** | Corrected two retained compilation failures; no tests or real owner/model run in this lane. |
+| Kernel and selected owner/model/corpus controls | **380/380**, zero failures/errors/skips, **377.945 s** | Kernel 189, project-model 10, compiler 6, CLI 121, corpus 54. Real SQLite/files/threads; synthetic providers and authorities, not the full test graph. |
+| Host bridge build and selected controls | Both TypeScript builds passed; **56/56** controls | Fourteen parent/projection and 42 delivery regressions. **Zero actual model requests**. |
+| Expanded Detekt corpus controls | **67/67**, zero failures/errors/skips, **61.086 s** | Includes the previous 54 plus 13 observability controls; no provider execution in this control lane. |
+| Real protocol/catch cohort | **27 analyses, 37 calls, 28 native confirmations, 31 callbacks, 113 events**, **103.947 s** | Three rules, nine authored cases each, 1/1 JUnit; 585 evidence references rehashed. |
+| Real exception-observability cohort | **27 analyses, 37 calls, 28 native confirmations, 31 callbacks, 113 events**, **104.144 s** | Three rules, nine authored cases each, 1/1 JUnit; 585 evidence references rehashed. |
+| Windows distribution-observation correction, private Linux controls | **80 methods / 199 synthetic subtests**, zero failures/errors/skips | Independently reviewed source; Windows API/buffer/handle seams mocked. Actual Windows execution remains pending. |
+
+The two real cohorts use unchanged source
+`6869fa11e5e5fb43c25daa058c28b69ff3730a3031a52933ec6ac2c507ad09a9`.
+They exercise actual Detekt 2.0.0-alpha.6 on **Linux/JVM LIGHT synthetic fixtures**,
+including configured negatives, suppressions and explicitly documented heuristic
+false positives/misses. Matching those expected predicates is **not** measured
+real-world precision. The declared/compiler 2.4.21 versus embedded 2.4.10 parser
+boundary remains unqualified. Each lane preserves all 22 authored rule routes and
+199 analyses while marking its 19 unexecuted rule rows `not_run`; it does not claim
+to execute that entire inventory. The initial protocol evidence-reader failure
+is retained; only its path interpretation was corrected, without rerunning the
+provider.
+
+The Windows correction retains full native file identity and no-follow/failure
+guards instead of assuming identical POSIX-style path/descriptor metadata
+encodings. Its first private runner stopped at a Linux standard-library import
+guard before any test method; that zero-method failure is retained. A separately
+reviewed runner correction passed the 80 controls without real Windows/native-ABI
+execution. This supports adoption, not a proven hosted Windows failure cause.
+
+The current source adds a nominal observed-export path, produced-output/owner
+composition and parent-event/projection controls. Observed exports retain the
+permanent `configuration_input_closure_unproven` gap and cannot grant complete
+project coverage. The adopted owner command is still an interim one-parent path;
+fresh explicit compiler-policy configuration and same-lineage patch→fix host
+acceptance remain unfinished. No review silently enables or disables rules.
+
+All four inspected Actions runs for prior head `663113117bb3784c1a7638ac8282e64beabe59d0`
+(actual tested merge `295b716498200f27415bc02cac7218bd8c7e2143`) ended in failure.
+Linux/macOS planning and Linux bridges passed their individual jobs; those do
+not qualify Windows, macOS implementation or iOS target checks. Step metadata
+alone does not establish their failure causes. An explicit consent/exact-commit
+Darwin component profile is now authored in the indexed platform workflow;
+**dispatch and native success are not claimed by this checkpoint**.
+
+The full **1,663-rule release scope remains unchanged**. The last strict global
+ledger still records 13,304 rule/context cells, two implemented, zero tested and
+zero qualified; this checkpoint does not regenerate or promote it. Fresh host
+delivery, platform qualification, general full/incremental equivalence, broad
+per-rule reliability, fresh packaging/license approval and the warm 1–3-second
+useful-result target remain open.
+
 ## Later focused receipts and retained failures — 2026-11-05
 
 **These are separate source-bound observations, not an aggregate pass, a full

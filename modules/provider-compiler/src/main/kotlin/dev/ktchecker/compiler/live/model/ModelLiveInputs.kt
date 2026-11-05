@@ -47,6 +47,7 @@ fun KotlinJvmModelBinding.bindPreparedLiveInput(
     provider: KotlinJvmModelLiveCompilerProvider,
     originalDeadline: OwnedApplicationDeadline,
 ): PreparedJvmLiveModelInput {
+    liveCheck(observedModel == null, "compiler_model_observed_declared_archive_required")
     liveCheck(producedResolution?.declarationArchive == null, "compiler_model_produced_archive_capability_required")
     return prepareLiveInput(original, compilerRuleIds, provider, originalDeadline, null)
 }
@@ -74,6 +75,7 @@ private fun KotlinJvmModelBinding.prepareLiveInput(
     original: AnalysisInput, compilerRuleIds: List<String>, provider: KotlinJvmModelLiveCompilerProvider,
     originalDeadline: OwnedApplicationDeadline, declaration: JvmProducedDeclaredArchive?,
 ): PreparedJvmLiveModelInput {
+    origin.requireOriginalDeadline(originalDeadline)
     modelDeadlineCheckpoint(originalDeadline)
     val frozen = freezeModelLiveInput(original)
     requireOriginalInput(frozen, requireFinal = true) // Original-root guard stays unchanged for BOTH routes.
@@ -103,7 +105,7 @@ private fun KotlinJvmModelBinding.prepareLiveInput(
     checkpoint()
     producedResolution?.let {
         liveCheck(it.preview.originalDeadline === originalDeadline, "compiler_model_produced_original_deadline_mismatch")
-        it.verify(model, installation, compilationId, checkpoint)
+        it.verify(origin, installation, compilationId, checkpoint)
     }
     return PreparedJvmLiveModelInput(this, frozen, rules, provider, originalDeadline)
 }
@@ -141,6 +143,7 @@ class PreparedJvmLiveModelInput internal constructor(
         registerMaterialization: (ModelCompilerJobMaterialization) -> Unit,
         verifyMaterialization: (ModelCompilerJobMaterialization) -> Unit,
     ): ModelCompilerAttemptPermit {
+        liveCheck(binding.observedModel == null, "compiler_model_observed_declared_archive_required")
         liveCheck(binding.producedResolution?.declarationArchive == null, "compiler_model_produced_archive_capability_required")
         return bindAttemptChecked(kernelOriginal, kernelEffective, compilerChild, application, verifyFrozen,
             registerMaterialization, verifyMaterialization)
@@ -180,6 +183,8 @@ class PreparedJvmLiveModelInput internal constructor(
         registerMaterialization: (ModelCompilerJobMaterialization) -> Unit,
         verifyMaterialization: (ModelCompilerJobMaterialization) -> Unit,
     ): ModelCompilerAttemptPermit {
+        binding.origin.requireOriginalDeadline(originalDeadline)
+        binding.origin.requireOriginalDeadline(application.request.originalDeadline)
         modelDeadlineCheckpoint(originalDeadline)
         val suppliedOriginal = freezeModelLiveInput(kernelOriginal)
         val archived = freezeModelLiveInput(kernelEffective)

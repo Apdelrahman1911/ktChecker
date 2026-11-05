@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-exception-observability-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+  "upstream_id": "exceptions:RethrowCaughtException",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "severity": "info",
+  "kind": "style",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "8002d33ab2d9bde457626a09d01e404084497e027cae8d52f0e21549f68d7d1b",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-exceptions/src/main/kotlin/dev/detekt/rules/exceptions/RethrowCaughtException.kt",
+    "source_file_sha256": "1c9d3fad5e751ee828dedd15c2883ed525f4a685ba39a6e4d160b59476ffdbf2",
+    "predicate_line_numbers": [
+      62,
+      63,
+      64,
+      65,
+      66,
+      68,
+      71,
+      74,
+      75,
+      76,
+      77,
+      78
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/exceptions/RethrowCaughtException",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:ebab09167005829edf9c685603d38c488264ca69b3d4627f7f55c1a30e495ce5"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [],
+  "bounded_predicate": "Opt-in style convention: inspect direct catch clauses, map a catch whose first body child is a throw with thrown-expression text exactly equal to the catch parameter name, then report only the trailing contiguous nonnull suffix via takeLastWhile. The finding entity is the whole throw expression. No rule-specific options.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.rethrowpolicy\n\nfun invokeOrPropagate(action: () -> String): String = try {\n    action()\n} catch (failure: java.io.IOException) {\n    throw failure\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 6,
+        "column": 4,
+        "end_line": 6,
+        "end_column": 17,
+        "span": "throw failure",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A valid callback boundary catches IOException only to rethrow the same instance. This is redundant scaffolding under the explicitly selected style convention, not swallowed-exception or cancellation detection."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.rethrowpolicy\n\nfun invokeAndRecord(action: () -> String, record: (Throwable) -> Unit): String = try {\n    action()\n} catch (failure: java.io.IOException) {\n    record(failure)\n    throw failure\n}\n"
+    },
+    "expected": [],
+    "intent": "The catch performs a caller-controlled recording action before rethrowing the same instance. The selected rule remains active and does not match a first-child rethrow; no assurance about the callback or exception-flow safety is implied."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.rethrowpolicy\n\nfun invokeOrPropagate(action: () -> String): String = try {\n    action()\n} catch (failure: java.io.IOException) {\n    throw failure\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"RethrowCaughtException\")\n\npackage suppressed.corpus.rethrowpolicy\n\nfun invokeOrPropagate(action: () -> String): String = try {\n    action()\n} catch (failure: java.io.IOException) {\n    throw failure\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 6,
+        "column": 4,
+        "end_line": 6,
+        "end_column": 17,
+        "span": "throw failure",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.rethrowpolicy\n\nfun invokeOrPropagate(action: () -> String): String = try {\n    action()\n} catch (failure: java.io.IOException) {\n    throw (failure)\n}\n"
+      },
+      "expected": [],
+      "intent": "Parentheses do not change the rethrown instance, but thrown-expression text is (failure), not failure. Retain the anticipated syntactic false negative instead of normalizing the source or claiming propagation proof.",
+      "id": "parenthesized-rethrow-escapes-exact-name",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.rethrowpolicy\n\nfun invokeOrRecover(action: () -> String, recover: (IllegalStateException) -> String): String = try {\n    action()\n} catch (failure: java.io.IOException) {\n    throw failure\n} catch (failure: IllegalStateException) {\n    recover(failure)\n}\n"
+      },
+      "expected": [],
+      "intent": "The later disjoint IllegalStateException catch performs recovery. takeLastWhile stops on that worked catch, so the earlier redundant IOException rethrow is exempt. This exercises the actual ordered-suffix predicate, not a body-effect or reachability analysis.",
+      "id": "following-work-exempts-earlier-rethrow",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.rethrowpolicy\n\nfun invokeOrRecover(action: () -> String, recover: (IllegalStateException) -> String): String = try {\n    action()\n} catch (failure: IllegalStateException) {\n    recover(failure)\n} catch (failure: java.io.IOException) {\n    throw failure\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 4,
+          "end_line": 8,
+          "end_column": 17,
+          "span": "throw failure",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The same disjoint recovery catch now precedes the IOException rethrow. The trailing rethrow still reports despite the earlier work. Preserve this opt-in policy limit and the source/documentation ordering discrepancy; do not describe all worked multi-catch blocks as exempt.",
+      "id": "earlier-work-does-not-exempt-trailing-rethrow",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit"
+    }
+  ],
+  "limitations": [
+    "This is an explicit opt-in info/style/intent-dependent rule, not a mandatory correctness rewrite. Intentional propagation boundaries can be legitimate.",
+    "Only the first catch-body child and exact thrown-expression text are inspected. Parenthesized spelling is an anticipated miss; an earlier body statement prevents the match.",
+    "The actual implementation reports a trailing contiguous suffix of violating catches. The documentation saying any worked catch exempts the block is broader than the actual ordered predicate; both orderings are independently retained.",
+    "No type resolution, cancellation detection, swallowing analysis, cleanup effect, reachability, ownership, resource lifetime or coroutine graph proof is delivered.",
+    "No rule-specific options exist. The standard disabled lifecycle control is not a fabricated genuine-option demonstration."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. All three rules require explicit owner opt-in and retain info/intent-dependent classification. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, parser, semantic, ownership, cancellation-flow, taint, redaction, model or release qualification."
+}

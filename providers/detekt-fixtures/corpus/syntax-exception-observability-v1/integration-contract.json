@@ -1,0 +1,267 @@
+{
+  "schema": "ktchecker/detekt-syntax-exception-observability-integration-contract/1",
+  "state": "CONNECTED_SOURCE_CANDIDATE_UNCOMPILED_UNEXECUTED_NOT_ADMITTED",
+  "corpus_id": "detekt-syntax-exception-observability-v1",
+  "execution_admitted": false,
+  "actual_executions": 0,
+  "input_contract": {
+    "provider_id": "detekt",
+    "provider_version": "2.0.0-alpha.6",
+    "provider_input_mode": "LEGACY_EXPLICIT_INPUT",
+    "analysis_mode": "light",
+    "target": "jvm",
+    "source_set": "synthetic",
+    "jdk_major": 21,
+    "modeled_kotlin_version": "2.4.21",
+    "modeled_compiler_version": "2.4.21",
+    "embedded_kotlin_version": "2.4.10",
+    "parser_compatibility_qualified": false,
+    "genuine_imported_model_execution": false,
+    "raw_compiler_arguments_executed": false,
+    "rule_scope": "Owner-selected existing exact included156 syntax mappings only; no semantic/refinement/alias substitution.",
+    "one_rule_per_analysis": true,
+    "exact_compilation_file_membership_required": true,
+    "natural_project": false
+  },
+  "registration_boundary": [
+    "All nineteen prior fixtures, 172 authored analyses and seven plan identities stay exact. The entire twelve-file syntax-expansion-v1 and eight-file syntax-protocol-v1 namespaces and baseline ten JSON fixtures remain byte-identical.",
+    "The additive loader validates thirty-eight fixed file hashes before JSON decoding: the preserved thirty data pins and this independent eight-file namespace. Closed twenty-two-fixture membership, matrix joins and the exact selected schedule reject substituted data.",
+    "The candidate accounts for twenty-two/199 with explicit preserved ten/91, sixteen/145 and nineteen/172 subsets. Historical evidence is never renewed or transferred to the enlarged source tuple.",
+    "The same real provider and isolated runtime execute each case. No mock detector, direct JVM bypass, model relabeling or alternate execution route is added.",
+    "Every new rule is info/intent-dependent and opt-in: RethrowCaughtException and ThrowingExceptionsWithoutMessageOrCause are style, PrintStackTrace is policy. Explicit cohort selection acknowledges all three, but is not execution authority or a correctness/security promotion.",
+    "Before execution, the owner independently reviews/adopts and freshly compiles/control-tests this exact source/code/data image, then admits the one selected plan and unchanged resource budget.",
+    "A plan hash is identity, not consent, capability, reproducible-build proof or execution/stage evidence."
+  ],
+  "selection": {
+    "cohort_names": [
+      "exception-observability-policy-v1"
+    ],
+    "requires_explicit_single_cohort_selection": true,
+    "default_cohort": null,
+    "all_or_multi_cohort_selector_allowed": false,
+    "arbitrary_rule_subset_allowed": false,
+    "rules_per_cohort": 3,
+    "standard_cases_per_rule": 6,
+    "independent_controls_per_rule": 3,
+    "analyses_per_rule": 9,
+    "analyses_per_cohort": 27,
+    "opt_in_policy_cohort": "exception-observability-policy-v1",
+    "advisory_does_not_waive_execution_authorization": true,
+    "mixed_advisory_and_opt_in": false,
+    "opt_in_rule_ids": [
+      "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause"
+    ],
+    "acknowledgement": "Naming exception-observability-policy-v1 explicitly selects all three opt-in exception propagation/output/construction conventions. It is not cancellation, cause-quality, ownership/resource, taint, security or redaction proof. There is no default or aggregate selector.",
+    "all_rules_opt_in": true
+  },
+  "budgets": {
+    "per_cohort": {
+      "detector_analysis": 27,
+      "cli_probe": 1,
+      "unsupported_target_abstention": 6,
+      "changed_configuration_authorization_denial": 3,
+      "all_calls": 37,
+      "native_launch_ceiling": 28,
+      "expected_runtime_callbacks": 31,
+      "success_path_progress_events": 113
+    },
+    "unchanged_hard_maxima": {
+      "max_invocations": 40,
+      "aggregate_millis": 1200000,
+      "child_millis": 60000,
+      "progress_events": 124
+    },
+    "reserves_before_provider_execution_plan_and_runtime_preparation": true,
+    "source_sealing_materialization_and_input_construction_precede_reservation": true,
+    "pre_reservation_source_work_uses_original_monotonic_aggregate": true,
+    "monotonic_aggregate_includes_start_capture_and_between_call_work": true,
+    "child_timeout_is_minimum_of_child_limit_and_remaining_aggregate": true,
+    "no_retries_or_unreserved_calls": true,
+    "one_active_reservation": true,
+    "advance_only_after_checked_actual_native_terminal_or_exact_no_execution_result": true,
+    "on_failure": "Stop; retain raw partial artifacts and scratch/ancestors; no passing/live sidecar, no next reservation, no self-issued retry or process/supervisor cleanup."
+  },
+  "analysis_assertions": {
+    "every_analysis_including_disabled_configuration": {
+      "real_isolated_native_launch_required": true,
+      "runtime_callback_required": true,
+      "runtime_status": "executed",
+      "runtime_reasons": [],
+      "exit_code": 0,
+      "execution_confirmed": true,
+      "cancelled": false,
+      "timed_out": false,
+      "truncated": false,
+      "exact_owned_supervisor_identity_required": true,
+      "cleanup_signal": "runtime_validated_owned_child_terminal",
+      "execution_permit_or_confirmation_flag_alone_is_insufficient": true,
+      "provider_id": "detekt",
+      "provider_status": "partial",
+      "provider_complete": false,
+      "required_provider_reasons": [
+        "detekt_compatibility_tuple_unqualified",
+        "project_compiler_2.4.21_differs_from_detekt_embedded_compiler"
+      ],
+      "coverage_rows": 1,
+      "coverage_rule_id": "exact selected fixture rule_id",
+      "coverage_provenance": "executed",
+      "coverage_tested": false,
+      "coverage_qualified": false,
+      "coverage_certificate_id": null,
+      "coverage_successful": false,
+      "raw_report_and_process_and_configuration_and_provider_result_retained_before_assertions": true
+    },
+    "enabled": {
+      "plan_active_rule_ids": "exact singleton selected rule_id",
+      "required_sarif_descriptor": "detekt. + upstream_id with colon replaced by dot",
+      "descriptor_default_configuration_enabled": true,
+      "coverage_implemented": true,
+      "coverage_reason": "exact_upstream_executed_but_compatibility_and_release_qualification_missing",
+      "coverage_state_when_findings": "findings",
+      "coverage_state_when_no_findings": "unknown",
+      "applies_to_negative_suppression_and_independent_configuration_controls": true,
+      "empty_report_is_not_enough": true
+    },
+    "disabled_standard_configuration_only": {
+      "plan_active_rule_ids": [],
+      "selected_descriptor_must_not_be_enabled": true,
+      "coverage_implemented": false,
+      "coverage_state": "unknown",
+      "coverage_reason": "rule_disabled_by_owner_selected_configuration",
+      "findings": [],
+      "source_bytes": "unchanged original positive",
+      "is_global_scope_or_default_activation_change": false
+    },
+    "findings": {
+      "compare": "Exact multiset of selected rule/upstream IDs, path, one-based start/end lines and zero-based start/end-exclusive columns.",
+      "file_digest": "Each location must identify the exact captured source bytes.",
+      "unexpected_diagnostics": "Retain raw outputs and fail the authored expectation; do not drop, relabel, relax counts/ranges or silently regenerate expectations.",
+      "known_heuristic_gap_controls": "Anticipated FP/FN labels are source-authored intent, not observations. Actual FP findings remain in raw/normalized receipts; misses remain gaps even if the expected-output assertion passes.",
+      "natural_precision_or_recall_claim_allowed": false
+    }
+  },
+  "non_analysis_assertions": {
+    "changed_configuration_authorization_denial": {
+      "case_id": "configuration-permit-replay",
+      "after": "each positive analysis",
+      "changed_input": "Same positive snapshot and old permit, selected rule disabled in a newly derived configuration-bound plan.",
+      "require_different_execution_profile": true,
+      "runtime_callback_required": true,
+      "native_launch_allowed": false,
+      "runtime_status": "unavailable",
+      "reasons": [
+        "execution_not_authorized"
+      ],
+      "execution_confirmed": false,
+      "executed": false,
+      "successful_execution": false,
+      "supervisor_identity": null,
+      "exit_code": null,
+      "output_directory": null,
+      "command": [],
+      "stdout": "",
+      "stderr": "",
+      "cancelled": false,
+      "timed_out": false,
+      "truncated": false,
+      "output_bytes": 0,
+      "cpu_millis": null,
+      "peak_rss_bytes": null,
+      "cleanup_signal": "exact_authorization_refusal_before_setup",
+      "coverage": "Exact requested rule, not_executed, not implemented/tested/qualified/successful; no findings."
+    },
+    "cli_probe": {
+      "case_id": "cli-version-probe",
+      "when": "After the first rule version replay and before its Common/Native requests; once freshly per cohort.",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "exit_code": 0,
+      "stdout_trimmed": "2.0.0-alpha.6",
+      "no_historical_probe_reuse": true,
+      "same_runtime_and_source_witness_safety_checks": true,
+      "compatibility_qualified": false
+    },
+    "unsupported_target_abstention": {
+      "when": "After each version replay, following the fresh probe for the first rule.",
+      "targets_in_order": [
+        "common",
+        "native"
+      ],
+      "case_id_format": "unsupported-{target}",
+      "native_launch_allowed": false,
+      "runtime_callback_allowed": false,
+      "provider_status": "partial",
+      "provider_reason": "detekt_jvm_provider_does_not_qualify_common_or_native_targets",
+      "coverage_rows": 1,
+      "coverage_rule_id": "exact requested fixture rule_id",
+      "coverage_context_target": "exact requested target",
+      "coverage_state": "unsupported",
+      "coverage_provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "successful": false,
+      "findings": [],
+      "cleanup_signal": "provider_abstention_without_runtime_callback"
+    }
+  },
+  "snapshot_and_suppression": {
+    "sources_must_be_immutable_registered_snapshots": true,
+    "verify_before_and_after_every_call": true,
+    "source_autocorrection_allowed": false,
+    "suppression": "Actual @file:Suppress using the pinned upstream simple rule name on a package-isolated positive copy only; original Case.kt is byte-identical and retains every authored expected range.",
+    "host_filter_or_ktchecker_id_alias_allowed": false,
+    "regression": "Next standard analysis seals negative bytes as child of suppression, deletes SuppressedCase.kt, uses a distinct snapshot ID and verifies the registered parent plus child unchanged."
+  },
+  "evidence_custody": {
+    "requires_fresh_start_witness": true,
+    "start_witness_membership": "Include all four corpus namespaces plus this entire new namespace (three fixtures, matrix, registry, scope, this contract and README), new Python suite and ObservabilityPins, loader/control/provider/runtime source, actual loaded project code images and pinned Detekt/plugin/supervisor tuple.",
+    "recheck_source_and_code_and_fixture_images_during_run_and_before_publication": true,
+    "retain": "Exact input/snapshot membership, source bytes and hashes, configuration bytes/digest, command/artifact pins, raw SARIF, stdout/stderr/process outcome, provider result, active descriptor, actual assertion/denial/abstention/version receipts, ordered budget progress and final external task outcome.",
+    "source_and_loaded_images_alone_are_reproducible_build_proof": false,
+    "sidecar_namespace": "evidence/verified-jvm-syntax-exception-observability-{cohort_id}-native-preview1.json",
+    "new_run_namespace_required": true,
+    "may_touch_other_cohort_evidence_or_current_pointer": false,
+    "publication": "The existing runner may locally publish after its successful-test callback and final source/image/deadline gates, before the external task/build terminal is known. That local sidecar is not independent task completion proof: the owner must separately retain and verify the actual successful task terminal and exact run/source/code witnesses before accepting evidence. Explicit current owner execution authorization is still required. No sidecar is created by this proposal.",
+    "nonselected_new_rows": "not_run, attempted=false, no borrowed stages",
+    "old_rows": "Historical evidence remains unchanged. An old rule unselected in the fresh selected-cohort context is explicitly not_run here; this never erases or imports its earlier execution state.",
+    "selected_prior_live": "Only the explicitly selected namespace live path may be withdrawn/replaced after retaining its exact prior bytes under existing anchored I/O rules. Never touch another/baseline/expansion/protocol cohort path from an observability selection or any CURRENT pointer."
+  },
+  "hash_contract": {
+    "file_hashes": "SHA-256 over the exact file bytes including their final LF.",
+    "canonical_json": "UTF-8 JSON with sorted object keys, compact comma/colon separators, ensure_ascii=true, no trailing LF; arrays retain order.",
+    "source_set_sha256": "SHA-256 of canonical_json of the complete fixture case sources object, not only the list of filenames.",
+    "plan_identity_sha256": "SHA-256 of canonical_json of each cohorts.json plan_identity object; it binds exact fixture hashes, matrix, scope, this integration contract, limits and call counts.",
+    "identity_is_execution_authority": false
+  },
+  "denominators": {
+    "new_authored_rules": 3,
+    "new_authored_analyses": 27,
+    "new_independent_controls": 9,
+    "old_authored_rules_unchanged": 19,
+    "old_authored_analyses_unchanged": 172,
+    "combined_proposed_authoring_rules": 22,
+    "combined_proposed_authoring_analyses": 199,
+    "actual_new_detector_analyses": 0,
+    "natural_project_observations": 0,
+    "precision_reviewed_natural_observations": 0,
+    "historical_stage_transfer": 0,
+    "full_catalog_ids_unchanged": 1663,
+    "full_contexts_unchanged": 8,
+    "new_contexts": 0,
+    "scope_exclusions": []
+  },
+  "candidate_driver_recognizes_these_cohorts": true,
+  "non_delivered_rules": [
+    "ktc.coroutines.swallowed-cancellation",
+    "ktc.coroutines.result-swallowing-cancellation",
+    "ktc.coroutines.suspending-finally-cleanup",
+    "ktc.resources.owned_autocloseable_exit",
+    "ktc.kotlin.detekt.potential-bugs.missing-use-call"
+  ],
+  "no_cancellation_or_resource_proof": "Rethrow first-child/text/order, stack-print spelling and no-argument callee-name syntax are not exception-flow, cancellation, cause-chain quality, suspending cleanup, alias ownership or resource-exit proofs. All named semantic/graph gaps remain unavailable in this LIGHT corpus context; no external capability stages are imported.",
+  "next_capability_reference": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/scope.json#/next_reusable_capability",
+  "no_taint_or_redaction_proof": "PrintStackTrace does not inspect types, aliases, stream/writer destinations, secrets, log retention or redaction. Its findings and known misses cannot certify information disclosure or safe logging."
+}

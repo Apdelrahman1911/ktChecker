@@ -22,6 +22,7 @@ ktchecker register --workspace ID --worktree ID --client ID --session ID --linea
 ktchecker overlay --request overlay.json [--out result.json]
 ktchecker prepare --request compilation.json [--authorize-execution] --out prepared.json
 ktchecker submit --prepared prepared.json [--wait-ms 10000]
+ktchecker model-plan --request PRIVATE.json --authorize-execution --compiler-java-home LINK_FREE_JDK --state NEW_DIR [--out result.json]
 ktchecker status|events|cancel --client ID [--review ID] [--cursor CURSOR] [--limit 20]
 ktchecker suppressions inspect --client ID [--out policy.json]
 ktchecker suppressions add --client ID --request suppression.json --expected revision.json --owner-action
@@ -36,6 +37,7 @@ ktchecker rpc
 Global options: --state DIR --compiler-dir DIR --compiler-java-home DIR --detekt-artifacts DIR --ktlint-artifacts DIR --workers 0|1|2
 Review commands never edit project source or grant execution/suppression permission.
 Only explicit owner prepare with --authorize-execution permits the pinned provider profiles.
+model-plan is an opt-in whole imported JVM main/test preview; it never grants release/final-answer success.
 Compiler execution requires a complete link-free JDK 21 image. A rejected image is unavailable, not a launcher-only fallback.
 RPC accepts private NDJSON; use bridges/mcp for actual MCP. Do not send owner/adapter credentials to a model.
 Unavailable/partial analysis is not passing. Exit 0 on submit without waiting means accepted only.
@@ -82,6 +84,7 @@ internal fun runCli(args: Array<String>): Int {
         if (options.has("help") || command in setOf(null, "help", "--help")) { println(HELP); return 0 }
         if (command == "doctor") { emit(doctor(), options["out"]); return 0 }
         if (command == "rules") { emit(Catalog().inspect(options["id"]), options["out"]); return 0 }
+        if (command == "model-plan") return runOwnerModelPlan(options)
         val workers = options.integer("workers", 2)
         if (workers !in 0..2) throw CliProblem("invalid_arguments", "Preview supports zero to two persistent worker threads per process.")
         Workbench(WorkbenchOptions(options["state"]?.let(Path::of) ?: PrivateState.defaultPath(),

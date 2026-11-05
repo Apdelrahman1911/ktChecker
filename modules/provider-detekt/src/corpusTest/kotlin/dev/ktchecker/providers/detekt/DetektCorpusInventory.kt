@@ -18,17 +18,20 @@ internal class DetektCorpusInventory private constructor(
         Json.parseToJsonElement(bytes.toString(Charsets.UTF_8)).jsonObject
     }
     val fixtures: List<JsonObject> = Collections.unmodifiableList(parsed.filterKeys {
-        it.startsWith(BASELINE + "/") || it.startsWith(EXPANSION + "/fixtures/")
+        it.startsWith(BASELINE + "/") || it.startsWith(EXPANSION + "/fixtures/") || it.startsWith(PROTOCOL + "/fixtures/") ||
+            it.startsWith(OBSERVABILITY + "/fixtures/")
     }.values.toList())
     val expansionRegistry: JsonObject get() = parsed.getValue("$EXPANSION/cohorts.json")
+    val protocolRegistry: JsonObject get() = parsed.getValue("$PROTOCOL/cohorts.json")
+    val observabilityRegistry: JsonObject get() = parsed.getValue("$OBSERVABILITY/cohorts.json")
 
     init {
         require(fixtures.size == DetektCorpusCohort.FULL_AUTHORED_RULES)
         val ids = fixtures.map { it.text("rule_id") }
         require(ids.size == ids.distinct().size && ids.toSet() == DetektCorpusCohort.authoredRuleIds)
         require(fixtures.sumOf { 6 + it.getValue("controls").jsonArray.size } == DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
-        require(fixtures.count { it.text("default_activation") == "advisory" } == 11)
-        require(fixtures.count { it.text("default_activation") == "opt_in" } == 5)
+        require(fixtures.count { it.text("default_activation") == "advisory" } == 13)
+        require(fixtures.count { it.text("default_activation") == "opt_in" } == 9)
         for (fixture in fixtures) {
             val mapping = DetektCatalog.byId.getValue(fixture.text("rule_id"))
             require(mapping.exact && mapping.depth == "syntax")
@@ -38,11 +41,33 @@ internal class DetektCorpusInventory private constructor(
             require(fixture.text("upstream_id") == mapping.upstream_id && fixture.text("relation") == mapping.relation)
             require(fixture.text("depth") == mapping.depth && fixture.text("default_activation") == mapping.default_activation)
             require(fixture.text("catalog_record_sha256") == mapping.catalog_record_sha256)
+            if (fixture.text("corpus_id") == "detekt-syntax-exception-observability-v1") {
+                require(mapping.default_activation == "opt_in" && mapping.severity == "info" && mapping.certainty == "intent_dependent")
+                require(fixture.text("severity") == mapping.severity && fixture.text("kind") == mapping.kind && fixture.text("certainty") == mapping.certainty)
+            }
         }
         val baseline = fixtures.filter { it.text("corpus_id") == "detekt-syntax-corpus-v1" }
         require(baseline.size == DetektCorpusCohort.BASELINE_AUTHORED_RULES)
         require(baseline.sumOf { 6 + it.getValue("controls").jsonArray.size } == DetektCorpusCohort.BASELINE_AUTHORED_ANALYSES)
-        validateExpansion()
+        val previousIds = DetektCorpusCohort.preProtocol.flatMap { it.analysesByRule.keys }.toSet()
+        val previous = fixtures.filter { it.text("rule_id") in previousIds }
+        require(previous.size == DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_RULES)
+        require(previous.sumOf { 6 + it.getValue("controls").jsonArray.size } == DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_ANALYSES)
+        val priorIds = DetektCorpusCohort.preObservability.flatMap { it.analysesByRule.keys }.toSet()
+        val prior = fixtures.filter { it.text("rule_id") in priorIds }
+        require(prior.size == DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_RULES)
+        require(prior.sumOf { 6 + it.getValue("controls").jsonArray.size } == DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_ANALYSES)
+        require(prior.count { it.text("default_activation") == "advisory" } == 13)
+        require(prior.count { it.text("default_activation") == "opt_in" } == 6)
+        // Fixed compiled scopes, not bounds/cohort selection inferred from the data being validated.
+        validateNamespace(EXPANSION, listOf(DetektCorpusCohort.PERFORMANCE_SHAPES, DetektCorpusCohort.PUBLIC_CONTRACT_POLICY),
+            DetektCorpusCohort.baseline, DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_RULES, DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_ANALYSES)
+        validateNamespace(PROTOCOL, listOf(DetektCorpusCohort.PROTOCOL_AND_CATCH_BOUNDARIES),
+            DetektCorpusCohort.preProtocol, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_RULES, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_ANALYSES)
+        validateNamespace(OBSERVABILITY, listOf(DetektCorpusCohort.EXCEPTION_OBSERVABILITY_POLICY),
+            DetektCorpusCohort.preObservability, DetektCorpusCohort.FULL_AUTHORED_RULES, DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
+        validateNamedGaps(PROTOCOL)
+        validateNamedGaps(OBSERVABILITY)
     }
 
     /** The driver invokes this at START and with every later source/code witness verification. */
@@ -54,51 +79,97 @@ internal class DetektCorpusInventory private constructor(
     }
 
     fun matrix(cohort: DetektCorpusCohort): JsonObject {
-        require(cohort.expansion)
-        return parsed.getValue("$EXPANSION/cohorts/${cohort.name}.json")
+        require(cohort.expansion || cohort.protocol || cohort.observability)
+        return parsed.getValue("${requireNotNull(cohort.namespace)}/cohorts/${cohort.name}.json")
     }
 
-    private fun validateExpansion() {
-        val registry = expansionRegistry
+    private fun validateNamespace(root: String, selectedCohorts: List<DetektCorpusCohort>,
+        preservedCohorts: List<DetektCorpusCohort>, boundRuleCount: Int, boundAnalysisCount: Int) {
+        require(root in setOf(EXPANSION, PROTOCOL, OBSERVABILITY) && selectedCohorts.all { it.namespace == root })
+        val corpusId = when (root) {
+            EXPANSION -> "detekt-syntax-expansion-v1"
+            PROTOCOL -> "detekt-syntax-protocol-v1"
+            OBSERVABILITY -> "detekt-syntax-exception-observability-v1"
+            else -> error("Unknown compiled corpus namespace")
+        }
+        val registry = parsed.getValue("$root/cohorts.json")
+        require(registry.text("corpus_id") == corpusId)
         require(registry.text("state") == "CONNECTED_SOURCE_CANDIDATE_UNCOMPILED_UNEXECUTED_NOT_ADMITTED")
         require(registry["default_cohort"] == JsonNull && !registry.flag("multi_cohort_or_all_selector_allowed"))
         require(registry.integer("actual_tests_executed") == 0 && registry.integer("actual_provider_invocations") == 0)
         require(registry.integer("historical_stage_transfer") == 0)
-        val expanded = DetektCorpusCohort.all.filter { it.expansion }
-        require(registry.getValue("allowed_cohort_names").jsonArray.map { it.jsonPrimitive.content } == expanded.map { it.name })
-        val scope = parsed.getValue("$EXPANSION/scope.json")
-        require(registry.text("scope_reference") == "$EXPANSION/scope.json")
-        require(registry.text("scope_sha256") == hash(captured.getValue("$EXPANSION/scope.json")))
-        require(registry.text("integration_contract_path") == "$EXPANSION/integration-contract.json")
-        require(registry.text("integration_contract_sha256") == hash(captured.getValue("$EXPANSION/integration-contract.json")))
+        require(registry.getValue("allowed_cohort_names").jsonArray.map { it.jsonPrimitive.content } == selectedCohorts.map { it.name })
+        val scope = parsed.getValue("$root/scope.json")
+        require(registry.text("scope_reference") == "$root/scope.json")
+        require(registry.text("scope_sha256") == hash(captured.getValue("$root/scope.json")))
+        require(registry.text("integration_contract_path") == "$root/integration-contract.json")
+        require(registry.text("integration_contract_sha256") == hash(captured.getValue("$root/integration-contract.json")))
         val currentScope = scope.getValue("current_scope").jsonObject
         require(currentScope.integer("ids") == 1663 && currentScope.integer("contexts") == 8 && currentScope.integer("new_contexts") == 0)
         require(currentScope.integer("historical_stage_transfer") == 0 && currentScope["scope_exclusions"] == JsonArray(emptyList()))
         require(currentScope["changed_catalog_or_activation_files"] == JsonArray(emptyList()))
         val combined = scope.getValue("combined_proposed_authoring_scope").jsonObject
-        require(combined.integer("rule_count") == DetektCorpusCohort.FULL_AUTHORED_RULES)
-        require(combined.integer("authored_analyses") == DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
+        require(combined.integer("rule_count") == boundRuleCount)
+        require(combined.integer("authored_analyses") == boundAnalysisCount)
         require(!combined.flag("scope_reduction") && !combined.flag("aggregate_execution_or_sidecar_created"))
         require(combined.integer("baseline_execution_stage_transfer") == 0)
         val included = DetektCatalog.mappings.filter { it.exact && it.depth == "syntax" }.map { it.rule_id }.sorted()
         require(included.size == 156 && scope.getValue("existing_detekt_mapping").jsonObject
             .getValue("included156_rule_ids").jsonArray.map { it.jsonPrimitive.content } == included)
-        val oldPlans = scope.getValue("preserved_baseline").jsonObject.getValue("cohorts").jsonArray
-        require(oldPlans.size == DetektCorpusCohort.baseline.size)
-        for (old in DetektCorpusCohort.baseline) {
+        val preserved = scope.getValue("preserved_baseline").jsonObject
+        val preservedRules = preservedCohorts.flatMap { it.analysesByRule.keys }
+        require(preserved.integer("rule_count") == preservedRules.size)
+        require(preserved.integer("authored_analyses") == preservedCohorts.sumOf { it.analysesByRule.values.sum() })
+        require(preserved.integer("execution_stage_transfer") == 0)
+        val oldFixtures = preserved.getValue("fixture_files").jsonArray
+        require(oldFixtures.size == preservedRules.size && oldFixtures.map { it.jsonObject.text("rule_id") }.toSet() == preservedRules.toSet())
+        for (value in oldFixtures) {
+            val row = value.jsonObject
+            val path = row.text("path")
+            val fixture = parsed.getValue(path)
+            require(row.text("sha256") == hash(captured.getValue(path)) && row.integer("bytes") == captured.getValue(path).size)
+            require(row.text("rule_id") == fixture.text("rule_id"))
+            require(row.integer("analyses") == 6 + fixture.getValue("controls").jsonArray.size)
+            require(row.getValue("control_ids").jsonArray == JsonArray(fixture.getValue("controls").jsonArray.map { it.jsonObject.getValue("id") }))
+        }
+        val oldPlans = preserved.getValue("cohorts").jsonArray
+        require(oldPlans.size == preservedCohorts.size)
+        for (old in preservedCohorts) {
             val row = oldPlans.single { it.jsonObject.text("cohort_id") == old.name }.jsonObject
             require(row.text("plan_identity_sha256") == hash(old.planIdentity.toByteArray()))
             require(row.integer("planned_invocations") == old.plannedInvocations)
+            require(row.getValue("analyses_by_rule").jsonObject.mapValues { it.value.jsonPrimitive.int } == old.analysesByRule)
+            require(!row.flag("modified_by_this_packet"))
+        }
+        if (root in setOf(PROTOCOL, OBSERVABILITY)) {
+            val oldFiles = preserved.getValue("preserved_expansion_namespace_files").jsonArray
+            require(oldFiles.map { it.jsonObject.text("path") }.toSet() == DetektCorpusExpansionPins.files.keys.filter { it.startsWith("$EXPANSION/") }.toSet())
+            require(oldFiles.size == 12)
+            for (value in oldFiles) {
+                val row = value.jsonObject
+                val bytes = captured.getValue(row.text("path"))
+                require(row.text("sha256") == hash(bytes) && row.integer("bytes") == bytes.size)
+            }
+        }
+        if (root == OBSERVABILITY) {
+            val oldFiles = preserved.getValue("preserved_protocol_namespace_files").jsonArray
+            require(oldFiles.map { it.jsonObject.text("path") }.toSet() == DetektCorpusProtocolPins.files.keys)
+            require(oldFiles.size == 8)
+            for (value in oldFiles) {
+                val row = value.jsonObject
+                val bytes = captured.getValue(row.text("path"))
+                require(row.text("sha256") == hash(bytes) && row.integer("bytes") == bytes.size)
+            }
         }
         val plans = registry.getValue("cohorts").jsonArray
-        require(plans.size == expanded.size)
-        for ((cohort, value) in expanded.zip(plans)) {
+        require(plans.size == selectedCohorts.size)
+        for ((cohort, value) in selectedCohorts.zip(plans)) {
             val plan = value.jsonObject
             require(plan.text("cohort_id") == cohort.name && !plan.flag("execution_admitted"))
             require(plan.text("runtime_registration_state") == "connected_source_candidate_uncompiled_unexecuted")
-            require(plan.flag("requires_explicit_owner_opt_in") == (cohort === DetektCorpusCohort.PUBLIC_CONTRACT_POLICY))
+            require(plan.flag("requires_explicit_owner_opt_in") == cohort.requiresExplicitOwnerOptIn)
             require(plan.text("proposed_sidecar") == "evidence/verified-jvm-${cohort.evidenceStem}-${cohort.name}-native-preview1.json")
-            val matrixPath = "$EXPANSION/cohorts/${cohort.name}.json"
+            val matrixPath = "$root/cohorts/${cohort.name}.json"
             require(plan.text("case_matrix_path") == matrixPath && plan.text("case_matrix_sha256") == hash(captured.getValue(matrixPath)))
             val identity = plan.getValue("plan_identity").jsonObject
             require(canonical(identity) == cohort.planIdentity)
@@ -117,19 +188,30 @@ internal class DetektCorpusInventory private constructor(
             val selected = plan.getValue("selected_rules").jsonArray
             require(selected.map { it.jsonObject.text("rule_id") } == cohort.analysesByRule.keys.toList())
             val matrix = matrix(cohort)
+            if (cohort.protocol || cohort.observability) {
+                val policyRules = if (cohort.protocol) JsonArray(listOf(JsonPrimitive("ktc.kotlin.detekt.exceptions.too-generic-exception-caught")))
+                    else JsonArray(listOf(
+                        JsonPrimitive("ktc.kotlin.detekt.exceptions.rethrow-caught-exception"),
+                        JsonPrimitive("ktc.kotlin.detekt.exceptions.print-stack-trace"),
+                        JsonPrimitive("ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause"),
+                    ))
+                require(identity.flag("requires_explicit_owner_opt_in"))
+                require(identity["opt_in_rule_ids"] == policyRules && plan["opt_in_rule_ids"] == policyRules)
+                require(matrix["explicit_opt_in_policy_rule_ids"] == policyRules)
+            }
             require(matrix.text("state") == "AUTHORED_NOT_RUN" && matrix.flag("candidate_only"))
             val analyses = matrix.getValue("analyses").jsonArray
             require(analyses.size == 27)
             selected.forEachIndexed { ruleIndex, item ->
                 val selection = item.jsonObject
                 val path = selection.text("fixture_path")
-                require(path.startsWith("$EXPANSION/fixtures/") && selection.text("fixture_sha256") == hash(captured.getValue(path)))
+                require(path.startsWith("$root/fixtures/") && selection.text("fixture_sha256") == hash(captured.getValue(path)))
                 val fixture = parsed.getValue(path)
-                require(fixture.text("corpus_id") == "detekt-syntax-expansion-v1")
+                require(fixture.text("corpus_id") == corpusId)
                 require(selection.text("rule_id") == fixture.text("rule_id") && selection.text("upstream_id") == fixture.text("upstream_id"))
                 require(selection.text("default_activation") == fixture.text("default_activation") && selection.integer("analyses") == 9)
                 val controls = fixture.getValue("controls").jsonArray
-                require(controls.map { it.jsonObject.text("id") } == DetektCorpusExpansionPins.controlIds.getValue(fixture.text("rule_id")))
+                require(controls.map { it.jsonObject.text("id") } == cohort.independentControlIds.getValue(fixture.text("rule_id")))
                 repeat(9) { caseIndex -> validateAnalysis(analyses[ruleIndex * 9 + caseIndex].jsonObject, fixture, path, caseIndex) }
             }
             val schedule = matrix.getValue("invocation_schedule").jsonArray
@@ -170,6 +252,37 @@ internal class DetektCorpusInventory private constructor(
             }.distinct().size)
             require(counts.integer("natural_project_observations") == 0 && counts.integer("precision_reviewed_natural_observations") == 0)
         }
+    }
+
+    private fun validateNamedGaps(root: String) {
+        require(root in setOf(PROTOCOL, OBSERVABILITY))
+        val scope = parsed.getValue("$root/scope.json")
+        val expected = linkedMapOf(
+            "ktc.coroutines.swallowed-cancellation" to ("requires_refinement" to "graph"),
+            "ktc.coroutines.result-swallowing-cancellation" to ("requires_refinement" to "graph"),
+            "ktc.coroutines.suspending-finally-cleanup" to ("requires_refinement" to "graph"),
+            "ktc.resources.owned_autocloseable_exit" to ("requires_refinement" to "semantic"),
+            "ktc.kotlin.detekt.potential-bugs.missing-use-call" to ("exact" to "semantic"),
+        )
+        val gaps = scope.getValue("named_coroutine_and_resource_gaps").jsonArray
+        require(gaps.map { it.jsonObject.text("rule_id") } == expected.keys.toList())
+        for (value in gaps) {
+            val row = value.jsonObject
+            val rule = row.text("rule_id")
+            val mapping = DetektCatalog.byId.getValue(rule)
+            require(rule !in DetektCorpusCohort.authoredRuleIds)
+            require((row.text("relation") to row.text("depth")) == expected.getValue(rule))
+            require(row.text("relation") == mapping.relation && row.text("depth") == mapping.depth)
+            require(row.text("upstream_id") == mapping.upstream_id && row.text("catalog_record_sha256") == mapping.catalog_record_sha256)
+            require(row.text("default_activation") == mapping.default_activation)
+            require(!row.flag("delivered_by_this_cohort") && row.text("state") == "unavailable_in_this_light_context")
+            require(listOf("attempted", "implemented", "tested", "qualified").none { row.flag(it) })
+            require(row.flag("no_stage_transfer_from_broad_catch_or_other_syntax_rules"))
+            if (root == OBSERVABILITY) require(row.flag("no_stage_transfer_from_observability_or_other_syntax_rules"))
+        }
+        val next = scope.getValue("next_reusable_capability").jsonObject
+        require(next.text("first_exact_rule_id") == "ktc.kotlin.detekt.potential-bugs.missing-use-call")
+        require(!next.flag("semantic_execution_claimed") && !next.flag("qualification_claimed"))
     }
 
     private fun validateAnalysis(row: JsonObject, fixture: JsonObject, path: String, index: Int) {
@@ -216,16 +329,23 @@ internal class DetektCorpusInventory private constructor(
     companion object {
         const val BASELINE = "providers/detekt-fixtures/corpus/syntax-v1"
         const val EXPANSION = DetektCorpusExpansionPins.ROOT
+        const val PROTOCOL = DetektCorpusProtocolPins.ROOT
+        const val OBSERVABILITY = DetektCorpusObservabilityPins.ROOT
+        val filePins: Map<String, String> = Collections.unmodifiableMap(DetektCorpusExpansionPins.files + DetektCorpusProtocolPins.files + DetektCorpusObservabilityPins.files).also {
+            require(DetektCorpusExpansionPins.files.keys.intersect(DetektCorpusProtocolPins.files.keys).isEmpty())
+            require((DetektCorpusExpansionPins.files.keys + DetektCorpusProtocolPins.files.keys).intersect(DetektCorpusObservabilityPins.files.keys).isEmpty())
+            require(DetektCorpusExpansionPins.files.size == 22 && DetektCorpusProtocolPins.files.size == 8 && DetektCorpusObservabilityPins.files.size == 8 && it.size == 38)
+        }
 
         fun load(repository: Path): DetektCorpusInventory {
             val root = repository.toAbsolutePath().normalize()
             verifyMembership(root)
-            val bytes = DetektCorpusExpansionPins.files.keys.associateWith { readPinned(root, it) }
+            val bytes = filePins.keys.associateWith { readPinned(root, it) }
             return DetektCorpusInventory(root, bytes).also { it.verify() }
         }
 
         private fun verifyMembership(repository: Path) {
-            for (root in listOf(BASELINE, EXPANSION)) {
+            for (root in listOf(BASELINE, EXPANSION, PROTOCOL, OBSERVABILITY)) {
                 checkedPath(repository, root, directory = true)
                 // Bound even a replaced tree before filtering it; unknown directories cannot hide inputs.
                 val entries = Files.walk(repository.resolve(root), 3).use { it.limit(65).toList() }
@@ -238,10 +358,10 @@ internal class DetektCorpusInventory private constructor(
                         false
                     } else {
                         require(Files.isRegularFile(path, NOFOLLOW_LINKS))
-                        root == EXPANSION || path.toString().endsWith(".json")
+                        root != BASELINE || path.toString().endsWith(".json")
                     }
                 }.map { repository.relativize(it).toString().replace('\\', '/') }.sorted()
-                require(actual == DetektCorpusExpansionPins.files.keys.filter { it.startsWith("$root/") }.sorted()) {
+                require(actual == filePins.keys.filter { it.startsWith("$root/") }.sorted()) {
                     "Closed corpus file membership changed: $root"
                 }
             }
@@ -263,7 +383,7 @@ internal class DetektCorpusInventory private constructor(
             val path = checkedPath(repository, relative)
             require(Files.size(path) in 1..1_048_576L)
             val bytes = Files.newInputStream(path, NOFOLLOW_LINKS).use { it.readNBytes(1_048_577) }
-            require(bytes.size in 1..1_048_576 && hash(bytes) == DetektCorpusExpansionPins.files.getValue(relative)) {
+            require(bytes.size in 1..1_048_576 && hash(bytes) == filePins.getValue(relative)) {
                 "Pinned authored corpus bytes changed: $relative"
             }
             return bytes

@@ -115,6 +115,25 @@ internal fun verifyDeferredJvmOrigin(request: ModelImportRequest, graph: GradleP
 internal fun verifiedJvmProducedGraph(request: ModelImportRequest, graph: GradleProjectExport, modelDigest: String,
     issues: List<ModelIssue>, layouts: Map<String, VerifiedJvmArgumentLayout>,
     origins: Map<String, ModelJvmProducedOutputOrigin>): VerifiedJvmProducedGraph? {
+    val shape = jvmProducedGraphShape(graph, layouts, origins) ?: return null
+    val producer = shape.producer
+    val consumer = shape.consumer
+    val ref = shape.reference
+    // The ordinary verified branch retains its EXACT prior issue gate. Observed closure gaps
+    // are not excluded/allowed here, even if their serialized metadata otherwise looks equal.
+    if (issues.distinct() != listOf(deferredJvmIssue(consumer.id, ref))) return null
+    val identity = canonicalDigest(ContractJson.encodeToJsonElement(listOf(JVM_PRODUCED_OUTPUT_PREVIEW,
+        request.digest(), modelDigest, producer.id, consumer.id, ref.digest(),
+        layouts.getValue(producer.id).digest, layouts.getValue(consumer.id).digest)))
+    return VerifiedJvmProducedGraph(request.digest(), modelDigest, producer.id, consumer.id, ref, identity)
+}
+
+/** Pure structural projection, not a permit/graph capability or an issue allowlist. */
+internal class JvmProducedGraphShape(val producer: ModelCompilation, val consumer: ModelCompilation,
+    val reference: ModelJvmProducedOutputReference)
+
+internal fun jvmProducedGraphShape(graph: GradleProjectExport, layouts: Map<String, VerifiedJvmArgumentLayout>,
+    origins: Map<String, ModelJvmProducedOutputOrigin>): JvmProducedGraphShape? {
     if (origins.size != 1) return null
     val consumerId = origins.keys.single()
     val consumer = graph.compilations.single { it.id == consumerId }
@@ -123,7 +142,6 @@ internal fun verifiedJvmProducedGraph(request: ModelImportRequest, graph: Gradle
     if (graph.compilations.size != 2 || graph.modules.size != 1 || graph.generatedInputs.isNotEmpty() ||
         graph.sourceSets.any { it.resources.isNotEmpty() } ||
         graph.includedBuilds.isNotEmpty() || producer.deferredJvmOutputs.isNotEmpty() ||
-        issues.distinct() != listOf(deferredJvmIssue(consumerId, ref)) ||
         layouts.keys != setOf(producer.id, consumer.id) || graph.compilations.any { c ->
             c.target.isNotEmpty() || c.platform != "jvm" || c.sourceFiles.isEmpty() || c.sourceFiles.any { !it.path.endsWith(".kt") } ||
                 c.projectDependencies.isNotEmpty() || c.auxiliaryArtifacts.isNotEmpty() || c.auxiliaryInputFiles.isNotEmpty() ||
@@ -133,8 +151,5 @@ internal fun verifiedJvmProducedGraph(request: ModelImportRequest, graph: Gradle
         } || producer.associatedCompilationIds.isNotEmpty() || producer.friendArtifacts.isNotEmpty() ||
         producer.sourceFiles.any { p -> consumer.sourceFiles.any { it.path == p.path } } ||
         producer.toolchain != consumer.toolchain) return null
-    val identity = canonicalDigest(ContractJson.encodeToJsonElement(listOf(JVM_PRODUCED_OUTPUT_PREVIEW,
-        request.digest(), modelDigest, producer.id, consumer.id, ref.digest(),
-        layouts.getValue(producer.id).digest, layouts.getValue(consumer.id).digest)))
-    return VerifiedJvmProducedGraph(request.digest(), modelDigest, producer.id, consumer.id, ref, identity)
+    return JvmProducedGraphShape(producer, consumer, ref)
 }

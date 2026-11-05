@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-exception-observability-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+  "upstream_id": "exceptions:ThrowingExceptionsWithoutMessageOrCause",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "severity": "info",
+  "kind": "style",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "2ec79877f724aaa69aa598b835cb4946e800d0c9b494ebf195b2f2c9141e1d36",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-exceptions/src/main/kotlin/dev/detekt/rules/exceptions/ThrowingExceptionsWithoutMessageOrCause.kt",
+    "source_file_sha256": "a3d03787c817ecda9047093f7f92f5613af1db230e4ab46da1e3f8a54295f4d0",
+    "predicate_line_numbers": [
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      60,
+      61,
+      62,
+      64,
+      65
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/exceptions/ThrowingExceptionsWithoutMessageOrCause",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:4b14cad465e94d62f471c1597f65205c81ee437ce55648247273ed9f447dbcaf"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [
+    {
+      "name": "exceptions",
+      "type": "List<String>",
+      "defaults": [
+        "ArrayIndexOutOfBoundsException",
+        "Exception",
+        "IllegalArgumentException",
+        "IllegalMonitorStateException",
+        "IllegalStateException",
+        "IndexOutOfBoundsException",
+        "NullPointerException",
+        "RuntimeException",
+        "Throwable"
+      ]
+    }
+  ],
+  "bounded_predicate": "Opt-in construction style: report each KtCallExpression whose callee text exactly matches an entry in the genuine exceptions list and whose valueArguments is empty. Entity is the whole call expression. The visitor does not require a throw or resolve Throwable identity; nonempty arguments are not checked for useful context.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.exceptioncontext\n\nfun requirePositive(value: Int) {\n    if (value <= 0) throw IllegalArgumentException()\n}\n\nfun requireReady(ready: Boolean) {\n    if (!ready) throw IllegalStateException()\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 26,
+        "end_line": 4,
+        "end_column": 52,
+        "span": "IllegalArgumentException()",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 8,
+        "column": 22,
+        "end_line": 8,
+        "end_column": 45,
+        "span": "IllegalStateException()",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Two valid no-argument standard exception construction sites lack explicit message/cause arguments and violate the selected style convention. These are authored construction findings, not semantic proof about all eventual exception context."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.exceptioncontext\n\nfun requirePositive(value: Int) {\n    if (value <= 0) throw IllegalArgumentException(\"value must be positive\")\n}\n\nfun requireReady(ready: Boolean, cause: Throwable) {\n    if (!ready) throw IllegalStateException(cause)\n}\n"
+    },
+    "expected": [],
+    "intent": "Supply a useful input message at the argument check and the caller-supplied Throwable cause at the state check. Both calls keep the rule active while satisfying its nonempty-arguments boundary."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.exceptioncontext\n\nfun requirePositive(value: Int) {\n    if (value <= 0) throw IllegalArgumentException()\n}\n\nfun requireReady(ready: Boolean) {\n    if (!ready) throw IllegalStateException()\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"ThrowingExceptionsWithoutMessageOrCause\")\n\npackage suppressed.corpus.exceptioncontext\n\nfun requirePositive(value: Int) {\n    if (value <= 0) throw IllegalArgumentException()\n}\n\nfun requireReady(ready: Boolean) {\n    if (!ready) throw IllegalStateException()\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 26,
+        "end_line": 4,
+        "end_column": 52,
+        "span": "IllegalArgumentException()",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 8,
+        "column": 22,
+        "end_line": 8,
+        "end_column": 45,
+        "span": "IllegalStateException()",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.exceptioncontext\n\nprivate object StatusFactory {\n    fun IllegalArgumentException(): String = \"invalid input\"\n}\n\nfun failureCategory(): String = StatusFactory.IllegalArgumentException()\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 7,
+          "column": 46,
+          "end_line": 7,
+          "end_column": 72,
+          "span": "IllegalArgumentException()",
+          "occurrence": 1
+        }
+      ],
+      "intent": "The same-spelled member factory returns a diagnostic category String, not a Throwable, and is never thrown. Its no-argument call still reports. Retain this anticipated false positive rather than pretending the matcher resolves constructor identity or requires throw.",
+      "id": "same-named-string-factory-is-not-an-exception",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.exceptioncontext\n\nimport java.lang.IllegalArgumentException as InvalidInput\n\nfun requirePositive(value: Int) {\n    if (value <= 0) throw InvalidInput()\n}\n"
+      },
+      "expected": [],
+      "intent": "The import alias constructs the genuine JDK exception with no message/cause arguments, but InvalidInput is not in the default textual exceptions list. Preserve the anticipated false negative instead of resolving or renaming the alias.",
+      "id": "import-aliased-no-argument-exception-is-missed",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.exceptioncontext\n\nfun requirePositive(value: Int) {\n    if (value <= 0) throw IllegalArgumentException()\n}\n\nfun requireReady(ready: Boolean) {\n    if (!ready) throw IllegalStateException()\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 8,
+          "column": 22,
+          "end_line": 8,
+          "end_column": 45,
+          "span": "IllegalStateException()",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Set the genuine exceptions option to [IllegalStateException] on the exact original positive bytes. Remove only the IllegalArgumentException range while retaining one active IllegalStateException finding and enabled SARIF descriptor; this is not whole-rule disabling.",
+      "id": "configured-state-exception-only-keeps-one-active-finding",
+      "case_kind": "configuration",
+      "assessment": "owner_configured_policy_boundary",
+      "options": {
+        "exceptions": [
+          "IllegalStateException"
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "This is explicit opt-in info/style/intent-dependent construction convention. It does not prove an exception is semantically uninformative or require an unconditional rewrite.",
+    "The real exceptions List<String> option defaults to the nine pinned upstream names. The enabled configured control uses unchanged positive bytes and retains one actual expected finding; the separately counted disabled lifecycle control is not a substitute.",
+    "The visitor examines every call, including same-named non-Throwable factories and values that are not thrown. The benign String factory anticipated false positive is retained.",
+    "Import aliases are not resolved and are independently retained as an anticipated false negative. A nonempty null argument can also provide no useful context while passing this syntactic boundary; that form is documented but not separately run in this bounded three-control plan.",
+    "A fixed-context constructor/factory or later initCause can provide useful context while a no-argument call still reports. This is a limit of semantic interpretation, not proof that a strict constructor-argument convention is invalid.",
+    "No type/flow, cause-chain quality, cancellation, cleanup, ownership, resource lifetime, imported-model, natural-project or release qualification is claimed."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. All three rules require explicit owner opt-in and retain info/intent-dependent classification. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, parser, semantic, ownership, cancellation-flow, taint, redaction, model or release qualification."
+}

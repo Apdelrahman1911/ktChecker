@@ -113,7 +113,11 @@ class DetektCorpusEvidenceTest {
                 originals[live] = Files.readAllBytes(live)
             }
         }
-        assertEquals(6, originals.size)
+        val preservedNames = DetektCorpusCohort.preProtocol.map { "verified-jvm-${it.evidenceStem}-${it.name}-native-preview1.json" }.toSet()
+        assertEquals(6, originals.keys.count { it.fileName.toString() in preservedNames })
+        val priorNames = DetektCorpusCohort.preObservability.map { "verified-jvm-${it.evidenceStem}-${it.name}-native-preview1.json" }.toSet()
+        assertEquals(7, originals.keys.count { it.fileName.toString() in priorNames })
+        assertEquals(8, originals.size)
         val ordinary = root.resolve("build/evidence/corpus/detekt/evidence/verified-jvm-syntax-native-preview1.json")
         Files.writeString(ordinary, "ordinary unchanged")
         for (selected in DetektCorpusCohort.all) {

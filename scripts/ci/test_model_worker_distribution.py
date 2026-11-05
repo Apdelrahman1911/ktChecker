@@ -428,6 +428,334 @@ class ModelWorkerDistributionTests(unittest.TestCase):
         self.assertNotIn("private destination", text)
         self.assertFalse(self.output.exists())
 
+    # The following controls model API facts only. Their mocks do not change
+    # the original positive/path/identity/CLI controls above or establish that
+    # a real Windows runtime implements the declared native observation ABI.
+    def stat_fixture(self, initial, **changes):
+        return SimpleNamespace(**{**{name: getattr(initial, name) for name in
+                                     ("st_dev", "st_ino", "st_mode", "st_nlink", "st_size", "st_mtime_ns", "st_ctime_ns")},
+                                  **changes})
+
+    def native_fixture(self):
+        return ((1 << 48) | 7, (1 << 100) | 13, 0x20, 1, self.built.stat().st_size, 300, 400, 100)
+
+    def native_structures_fixture(self):
+        # Pure Python buffers: even importing ctypes can initialize a native
+        # process-library handle. This suite does not do that. Real structure
+        # declarations are checked as AST below, not qualified by these stubs.
+        class BasicInfo(SimpleNamespace):
+            _fixture_bytes = 40
+
+            def __init__(self):
+                super().__init__(CreationTime=0, LastAccessTime=0, LastWriteTime=0, ChangeTime=0, FileAttributes=0)
+
+        class StandardInfo(SimpleNamespace):
+            _fixture_bytes = 24
+
+            def __init__(self):
+                super().__init__(AllocationSize=0, EndOfFile=0, NumberOfLinks=0, DeletePending=0, Directory=0)
+
+        class FileIdInfo(SimpleNamespace):
+            _fixture_bytes = 24
+
+            def __init__(self):
+                super().__init__(VolumeSerialNumber=0, Identifier=bytearray(16))
+
+        ctypes_stub = SimpleNamespace(sizeof=lambda value: value._fixture_bytes,
+                                      byref=lambda value: SimpleNamespace(_obj=value),
+                                      c_void_p=lambda value: SimpleNamespace(value=value % (1 << (8 * struct.calcsize("P")))))
+        return ctypes_stub, BasicInfo, StandardInfo, FileIdInfo
+
+    def native_api_fixture(self, **changes):
+        calls = []
+        native = self.native_fixture()
+
+        def create(*args):
+            calls.append(("create", args))
+            return changes.get("handle", 19)
+
+        def file_type(handle):
+            calls.append(("type", handle))
+            return changes.get("file_type", 1)
+
+        def query(handle, kind, pointer, size):
+            calls.append(("query", handle, kind, size))
+            if kind == changes.get("failed_query"):
+                return 0
+            values = {
+                0: {"CreationTime": 100, "LastAccessTime": 200, "LastWriteTime": 300,
+                    "ChangeTime": 400, "FileAttributes": 0x20},
+                1: {"AllocationSize": 8192, "EndOfFile": native[4], "NumberOfLinks": 1,
+                    "DeletePending": 0, "Directory": 0},
+                18: {"VolumeSerialNumber": native[0], "Identifier": native[1].to_bytes(16, "little")},
+            }[kind]
+            values.update(changes.get("fields", {}))
+            for name, value in values.items():
+                if hasattr(pointer._obj, name):
+                    if name == "Identifier":
+                        pointer._obj.Identifier[:] = value
+                    else:
+                        setattr(pointer._obj, name, value)
+            return 1
+
+        def close(handle):
+            calls.append(("close", handle))
+            return changes.get("close_result", 1)
+
+        return SimpleNamespace(CreateFileW=create, GetFileType=file_type,
+                               GetFileInformationByHandleEx=query, CloseHandle=close), calls
+
+    def test_nonwindows_read_keeps_every_exact_cross_api_stat_field(self):
+        initial = self.built.stat()
+        for name in vars(self.stat_fixture(initial)):
+            changed = self.stat_fixture(initial, **{name: getattr(initial, name) + 1})
+            with self.subTest(field=name), patch.object(verifier, "windows_observation_required", return_value=False), \
+                    patch.object(verifier.os, "fstat", return_value=changed), \
+                    patch.object(verifier, "_windows_file_observation", side_effect=AssertionError("native call forbidden")):
+                with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                    verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+                self.assertEqual("observed_input_drift", raised.exception.code)
+
+    def test_windows_stat_view_encodings_require_full_independent_native_binding(self):
+        initial = self.built.stat()
+        # Deliberately unlike path stat: this is an API-contract fixture, not
+        # an assertion about the exact fields of any observed Windows runtime.
+        descriptor = self.stat_fixture(initial, st_dev=0, st_ino=0, st_mode=stat.S_IFREG | 0o666,
+                                       st_mtime_ns=initial.st_mtime_ns - 101, st_ctime_ns=initial.st_ctime_ns - 103)
+        native = self.native_fixture()
+        with patch.object(verifier, "windows_observation_required", return_value=True), \
+                patch.object(verifier.os, "fstat", return_value=descriptor), \
+                patch.object(verifier, "_windows_file_observation", return_value=native) as observe:
+            raw, observed = verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+        self.assertEqual(self.built.read_bytes(), raw)
+        self.assertEqual(verifier.fingerprint(initial), observed)
+        self.assertEqual(4, observe.call_count)
+        self.assertEqual({"path": self.built}, observe.call_args_list[0].kwargs)
+        self.assertEqual({"path": self.built}, observe.call_args_list[3].kwargs)
+        self.assertEqual(observe.call_args_list[1], observe.call_args_list[2])
+        self.assertEqual({"descriptor"}, set(observe.call_args_list[1].kwargs))
+
+    def test_windows_native_binding_compares_every_field_at_every_boundary(self):
+        native = self.native_fixture()
+        for boundary in (1, 2, 3):
+            for field in range(len(native)):
+                calls = []
+
+                def observe(**kwargs):
+                    value = list(native)
+                    if len(calls) == boundary:
+                        value[field] += 1 << 96 if field == 1 else 1
+                    calls.append(kwargs)
+                    return tuple(value)
+
+                with self.subTest(boundary=boundary, field=field), \
+                        patch.object(verifier, "windows_observation_required", return_value=True), \
+                        patch.object(verifier, "_windows_file_observation", side_effect=observe):
+                    with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                        verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+                    self.assertEqual("observed_input_drift", raised.exception.code)
+                    self.assertEqual(boundary + 1, len(calls))
+
+    def test_windows_read_retains_every_descriptor_stat_drift_check(self):
+        initial = self.built.stat()
+        for name in vars(self.stat_fixture(initial)):
+            changed = self.stat_fixture(initial, **{name: getattr(initial, name) + 1})
+            with self.subTest(field=name), patch.object(verifier, "windows_observation_required", return_value=True), \
+                    patch.object(verifier.os, "fstat", side_effect=[initial, changed]), \
+                    patch.object(verifier, "_windows_file_observation", return_value=self.native_fixture()):
+                with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                    verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+                self.assertEqual("observed_input_drift", raised.exception.code)
+
+    def test_windows_read_retains_every_path_stat_drift_check(self):
+        initial, original = self.built.stat(), verifier.checked_path
+        for boundary in (2, 3, 4):
+            for name in vars(self.stat_fixture(initial)):
+                calls = []
+
+                def checked(path, **kwargs):
+                    value, info = original(path, **kwargs)
+                    calls.append(value)
+                    if len(calls) == boundary:
+                        info = self.stat_fixture(info, **{name: getattr(info, name) + 1})
+                    return value, info
+
+                with self.subTest(boundary=boundary, field=name), \
+                        patch.object(verifier, "windows_observation_required", return_value=True), \
+                        patch.object(verifier, "checked_path", side_effect=checked), \
+                        patch.object(verifier, "_windows_file_observation", return_value=self.native_fixture()):
+                    with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                        verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+                    self.assertEqual("observed_input_drift", raised.exception.code)
+                    self.assertEqual(boundary, len(calls))
+
+    def test_windows_native_facts_do_not_override_common_descriptor_type_links_or_size(self):
+        initial = self.built.stat()
+        for changes in ({"st_mode": stat.S_IFDIR | 0o700}, {"st_nlink": 0}, {"st_nlink": 2},
+                        {"st_size": initial.st_size + 1}, {"st_size": initial.st_size - 1}):
+            with self.subTest(changes=changes), patch.object(verifier, "windows_observation_required", return_value=True), \
+                    patch.object(verifier.os, "fstat", return_value=self.stat_fixture(initial, **changes)), \
+                    patch.object(verifier, "_windows_file_observation", return_value=self.native_fixture()):
+                with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                    verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+                self.assertEqual("observed_input_drift", raised.exception.code)
+
+    def test_windows_native_size_must_match_path_before_open(self):
+        native = list(self.native_fixture())
+        native[4] += 1
+        with patch.object(verifier, "windows_observation_required", return_value=True), \
+                patch.object(verifier, "_windows_file_observation", return_value=tuple(native)), \
+                patch.object(verifier.os, "open", side_effect=AssertionError("must not open mismatched input")):
+            with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+        self.assertEqual("observed_input_drift", raised.exception.code)
+
+    def test_windows_unavailable_path_identity_is_not_replaced_by_a_native_fallback(self):
+        initial = self.built.stat()
+        with patch.object(verifier, "windows_observation_required", return_value=True), \
+                patch.object(verifier, "checked_path", return_value=(self.built, self.stat_fixture(initial, st_ino=0))), \
+                patch.object(verifier, "_windows_file_observation", side_effect=AssertionError("path identity required first")):
+            with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+        self.assertEqual("physical_identity_unavailable", raised.exception.code)
+
+    def test_windows_unavailable_native_observation_cannot_fall_back_to_equal_bytes(self):
+        for code in ("windows_observation_unavailable", "physical_identity_unavailable", "linked_input_path"):
+            with self.subTest(code=code), patch.object(verifier, "windows_observation_required", return_value=True), \
+                    patch.object(verifier, "_windows_file_observation", side_effect=verifier.WorkerVerificationError(code)), \
+                    patch.object(verifier.os, "open", side_effect=AssertionError("must not open unbound input")):
+                with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                    verifier.read_file(self.built, verifier.MAX_ARCHIVE_BYTES)
+                self.assertEqual(code, raised.exception.code)
+
+    def test_windows_observer_declares_fixed_width_layouts_and_runtime_abi_size_guard(self):
+        tree = ast.parse(Path(verifier.__file__).read_text())
+        function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "_windows_structures")
+        expected = {
+            "BasicInfo": [("CreationTime", "ctypes.c_int64"), ("LastAccessTime", "ctypes.c_int64"),
+                          ("LastWriteTime", "ctypes.c_int64"), ("ChangeTime", "ctypes.c_int64"), ("FileAttributes", "ctypes.c_uint32")],
+            "StandardInfo": [("AllocationSize", "ctypes.c_int64"), ("EndOfFile", "ctypes.c_int64"),
+                             ("NumberOfLinks", "ctypes.c_uint32"), ("DeletePending", "ctypes.c_ubyte"), ("Directory", "ctypes.c_ubyte")],
+            "FileIdInfo": [("VolumeSerialNumber", "ctypes.c_uint64"), ("Identifier", "ctypes.c_ubyte * 16")],
+        }
+        classes = {node.name: node for node in function.body if isinstance(node, ast.ClassDef)}
+        self.assertEqual(set(expected), set(classes))
+        for name, fields in expected.items():
+            with self.subTest(structure=name):
+                declaration = next(node for node in classes[name].body if isinstance(node, ast.Assign)
+                                   and any(isinstance(target, ast.Name) and target.id == "_fields_" for target in node.targets))
+                self.assertEqual(["ctypes.Structure"], [ast.unparse(base) for base in classes[name].bases])
+                self.assertEqual(fields, [(ast.literal_eval(row.elts[0]), ast.unparse(row.elts[1])) for row in declaration.value.elts])
+        guards = [node for node in function.body if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
+                  and isinstance(node.value.func, ast.Name) and node.value.func.id == "require"
+                  and isinstance(node.value.args[0], ast.Compare)]
+        self.assertEqual(1, len(guards))
+        expected_guard = ast.parse("tuple(ctypes.sizeof(kind) for kind in (BasicInfo, StandardInfo, FileIdInfo)) == (40, 24, 24)", mode="eval").body
+        self.assertEqual(ast.dump(expected_guard), ast.dump(guards[0].value.args[0]))
+        self.assertEqual("windows_observation_unavailable", ast.literal_eval(guards[0].value.args[1]))
+        with patch.object(verifier, "windows_observation_required", return_value=False):
+            with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                verifier._windows_structures()
+        self.assertEqual("windows_observation_unavailable", raised.exception.code)
+
+    def test_windows_native_loader_is_lazy_fixed_name_and_system32_only(self):
+        tree = ast.parse(Path(verifier.__file__).read_text())
+        loader = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "_windows_api")
+        loads = [node for node in ast.walk(loader) if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                 and node.func.attr == "WinDLL"]
+        self.assertEqual(1, len(loads))
+        self.assertEqual("kernel32.dll", ast.literal_eval(loads[0].args[0]))
+        self.assertEqual({"use_last_error": True, "winmode": 0x00000800},
+                         {entry.arg: ast.literal_eval(entry.value) for entry in loads[0].keywords})
+        with patch.object(verifier, "windows_observation_required", return_value=False):
+            with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                verifier._windows_api()
+        self.assertEqual("windows_observation_unavailable", raised.exception.code)
+
+    def test_windows_observer_opens_metadata_only_without_following_leaf_and_keeps_full_identity(self):
+        api, calls = self.native_api_fixture()
+        with patch.object(verifier, "_windows_api", return_value=api), \
+                patch.object(verifier, "_windows_structures", return_value=self.native_structures_fixture()):
+            observed = verifier._windows_file_observation(path=self.built)
+        self.assertEqual(self.native_fixture(), observed)
+        self.assertEqual([("create", (str(self.built), 0x80, 0x7, None, 3, 0x02200000, None)),
+                          ("type", 19), ("query", 19, 0, 40), ("query", 19, 1, 24),
+                          ("query", 19, 18, 24), ("close", 19)], calls)
+        self.assertGreater(observed[0], 2 ** 32)
+        self.assertGreater(observed[1], 2 ** 64)
+
+    def test_windows_observer_borrows_descriptor_without_reopening_or_closing_it(self):
+        api, calls = self.native_api_fixture()
+        with patch.object(verifier, "_windows_api", return_value=api), \
+                patch.object(verifier, "_windows_structures", return_value=self.native_structures_fixture()), \
+                patch.object(verifier, "_windows_descriptor_handle", return_value=23) as borrowed:
+            observed = verifier._windows_file_observation(descriptor=77)
+        borrowed.assert_called_once_with(77)
+        self.assertEqual(self.native_fixture(), observed)
+        self.assertEqual([("type", 23), ("query", 23, 0, 40), ("query", 23, 1, 24), ("query", 23, 18, 24)], calls)
+
+    def test_windows_observer_rejects_reparse_nonregular_multiple_links_and_pending_delete(self):
+        cases = [({"file_type": value}, "independent_regular_file_required") for value in (0, 2, 3)]
+        cases += [({"fields": {"FileAttributes": 0x400}}, "linked_input_path")]
+        cases += [({"fields": changes}, "independent_regular_file_required") for changes in
+                  ({"FileAttributes": 0x10}, {"FileAttributes": 0x40}, {"Directory": 1},
+                   {"NumberOfLinks": 0}, {"NumberOfLinks": 2}, {"EndOfFile": -1})]
+        cases += [({"fields": {"DeletePending": 1}}, "observed_input_drift"),
+                  ({"fields": {"Identifier": bytes(16)}}, "physical_identity_unavailable")]
+        for changes, code in cases:
+            api, calls = self.native_api_fixture(**changes)
+            with self.subTest(changes=changes), patch.object(verifier, "_windows_api", return_value=api), \
+                    patch.object(verifier, "_windows_structures", return_value=self.native_structures_fixture()):
+                with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                    verifier._windows_file_observation(path=self.built)
+                self.assertEqual(code, raised.exception.code)
+                self.assertEqual([("close", 19)], [row for row in calls if row[0] == "close"])
+
+    def test_windows_observer_requires_all_native_queries_without_retry_or_fallback(self):
+        for kind in (0, 1, 18):
+            api, calls = self.native_api_fixture(failed_query=kind)
+            with self.subTest(kind=kind), patch.object(verifier, "_windows_api", return_value=api), \
+                    patch.object(verifier, "_windows_structures", return_value=self.native_structures_fixture()):
+                with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                    verifier._windows_file_observation(path=self.built)
+                self.assertEqual("windows_observation_unavailable", raised.exception.code)
+                self.assertEqual(1, sum(row[0] == "query" and row[2] == kind for row in calls))
+                self.assertEqual([("close", 19)], [row for row in calls if row[0] == "close"])
+
+    def test_windows_observer_invalid_handles_and_loader_errors_never_become_success(self):
+        for handle in (None, 0, -1, (1 << (8 * struct.calcsize("P"))) - 1):
+            api, calls = self.native_api_fixture(handle=handle)
+            with self.subTest(handle=handle), patch.object(verifier, "_windows_api", return_value=api), \
+                    patch.object(verifier, "_windows_structures", return_value=self.native_structures_fixture()):
+                with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                    verifier._windows_file_observation(path=self.built)
+                self.assertEqual("windows_observation_unavailable", raised.exception.code)
+                self.assertEqual(["create"], [row[0] for row in calls])
+        with patch.object(verifier, "_windows_api", side_effect=OSError("private unavailable API")), \
+                patch.object(verifier, "_windows_structures", return_value=self.native_structures_fixture()):
+            with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                verifier._windows_file_observation(path=self.built)
+        self.assertEqual("windows_observation_unavailable", str(raised.exception))
+
+    def test_windows_observer_failed_close_cannot_report_a_completed_observation(self):
+        api, calls = self.native_api_fixture(close_result=0)
+        with patch.object(verifier, "_windows_api", return_value=api), \
+                patch.object(verifier, "_windows_structures", return_value=self.native_structures_fixture()):
+            with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                verifier._windows_file_observation(path=self.built)
+        self.assertEqual("windows_observation_unavailable", raised.exception.code)
+        self.assertEqual([("close", 19)], [row for row in calls if row[0] == "close"])
+
+    def test_windows_observer_api_exception_closes_owned_handle_and_is_sanitized(self):
+        api, calls = self.native_api_fixture()
+        with patch.object(verifier, "_windows_api", return_value=api), \
+                patch.object(verifier, "_windows_structures", return_value=self.native_structures_fixture()), \
+                patch.object(api, "GetFileInformationByHandleEx", side_effect=OSError("private native detail")):
+            with self.assertRaises(verifier.WorkerVerificationError) as raised:
+                verifier._windows_file_observation(path=self.built)
+        self.assertEqual("windows_observation_unavailable", str(raised.exception))
+        self.assertEqual([("close", 19)], [row for row in calls if row[0] == "close"])
+
     def test_source_wires_only_reviewed_task_output_into_separate_distribution_directory(self):
         source = (SOURCE_ROOT / "modules/cli/build.gradle.kts").read_text()
         self.assertIn('val bundledCompilerModel = files(providers.provider {', source)

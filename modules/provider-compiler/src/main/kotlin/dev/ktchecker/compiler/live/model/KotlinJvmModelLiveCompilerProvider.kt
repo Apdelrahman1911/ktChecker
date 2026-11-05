@@ -5,6 +5,7 @@ import dev.ktchecker.compiler.KotlinJvmToolchain
 import dev.ktchecker.compiler.KotlinJvmModelBinding
 import dev.ktchecker.compiler.live.*
 import dev.ktchecker.contracts.*
+import dev.ktchecker.projectmodel.CONFIGURATION_INPUT_CLOSURE_UNPROVEN
 import dev.ktchecker.providers.runtime.OwnedApplicationJobResult
 import dev.ktchecker.providers.runtime.OwnedApplicationReason
 import dev.ktchecker.workerprotocol.ApplicationWire as Wire
@@ -121,6 +122,15 @@ internal fun renderModelObservation(
     val reasons = linkedSetOf("compiler_model_live_preview_not_qualified", "compiler_model_live_semantic_extraction_not_authorized",
         "compiler_model_live_elapsed_measured_to_armed_render_not_call_completion", "compiler_model_live_cpu_rss_unavailable")
     if (binding?.producedResolution != null) reasons += "compiler_model_live_produced_output_preview_not_qualified"
+    if (binding != null && binding.observedModel != null) {
+        val observed = requireNotNull(binding.observedModel)
+        // This is generated UNDER ARM from the retained nominal importer origin, never from
+        // policy strings or a detached Accepted result. Absence is an operational failure.
+        binding.origin.requireOriginalDeadline(observed.invocation.originalDeadline)
+        binding.origin.requireObservedPolicies(input.context)
+        liveCheck(binding.producedResolution?.declarationArchive != null, "compiler_model_observed_declared_archive_required")
+        reasons += CONFIGURATION_INPUT_CLOSURE_UNPROVEN
+    }
     if (observation.compilerCode() == 1) reasons += "compiler_model_live_api_diagnostic_failure"
     if (sourceTexts.values.any { MODEL_SUPPRESSION.containsMatchIn(it) }) reasons += "compiler_model_live_suppression_scope_not_certified"
     if ("-nowarn" in input.context.compilerArguments) reasons += "compiler_model_live_warnings_disabled_under_selected_configuration"

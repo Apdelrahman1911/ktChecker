@@ -3,10 +3,42 @@ package dev.ktchecker.kernel
 import dev.ktchecker.contracts.*
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
 /** Narrow, unqualified declaration profile. Never an exception to ordinary pending/fullProject. */
 const val PRODUCED_JVM_PLAN_PROFILE = "ktchecker/produced-jvm-plan/1"
+
+/** Separate one-shot assurance. This evidence is never a verified/reusable project model. */
+const val OBSERVED_EXPORT_PLAN_ASSURANCE = "ktchecker/observed-export-one-shot/1"
+const val OBSERVED_EXPORT_CONFIGURATION_GAP = "configuration_input_closure_unproven"
+
+/** Serializable identity only. An exact live owner grant is still required for each execution. */
+@Serializable data class ObservedExportPlanEvidence(
+    val binding: ClientBinding,
+    val invocationId: String,
+    val evidenceDigest: String,
+    val assurance: String = OBSERVED_EXPORT_PLAN_ASSURANCE,
+) {
+    fun digest(): String = Digests.sha256(canonical(this))
+    fun policies(): Map<String, String> = mapOf(
+        "ktchecker.model-assurance" to assurance,
+        "ktchecker.observed-export-invocation" to invocationId,
+        "ktchecker.observed-model-evidence" to evidenceDigest,
+        "ktchecker.observed-export-closure" to OBSERVED_EXPORT_CONFIGURATION_GAP,
+        "ktchecker.observed-export-evidence" to digest(),
+    )
+}
+
+internal val OBSERVED_EXPORT_POLICY_KEYS = setOf(
+    "ktchecker.model-assurance", "ktchecker.observed-export-invocation", "ktchecker.observed-model-evidence",
+    "ktchecker.observed-export-closure", "ktchecker.observed-export-evidence",
+)
+
+/** Also taint incomplete/corrupt marker combinations: absence of proof cannot become clean. */
+internal fun observedExportReasons(input: AnalysisInput): List<String> =
+    if (input.context.policies.keys.any { it in OBSERVED_EXPORT_POLICY_KEYS }) listOf(OBSERVED_EXPORT_CONFIGURATION_GAP) else emptyList()
 
 @Serializable data class ProducedCompilationDeclaration(
     val slotId: String,
@@ -16,6 +48,7 @@ const val PRODUCED_JVM_PLAN_PROFILE = "ktchecker/produced-jvm-plan/1"
 )
 
 /** Immutable unresolved graph evidence. A JSON instance grants neither model nor execution authority. */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable data class JvmProducedPlanDeclaration(
     val graphDigest: String,
     val importRequestDigest: String,
@@ -33,6 +66,9 @@ const val PRODUCED_JVM_PLAN_PROFILE = "ktchecker/produced-jvm-plan/1"
     val originalDeadlineIdentity: String,
     val originalDeadlineMillis: Long,
     val profile: String = PRODUCED_JVM_PLAN_PROFILE,
+    /** Omitted for the old profile so existing schema3 canonical bytes and work keys stay exact. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val observedExport: ObservedExportPlanEvidence? = null,
 )
 
 /** Same-process original budget evidence copied from the owner's ORIGINAL clock, not a new timer.
@@ -126,6 +162,7 @@ class PreparedProducedExecution(
     val format: String = "complete-sorted-stored-jar-dos1980/1",
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable data class PlanExecutionCertificate(
     val planId: String,
     val planDigest: String,
@@ -146,6 +183,8 @@ class PreparedProducedExecution(
     val producerPublicationCertificate: String? = null,
     val producedManifest: ProducedByteManifest? = null,
     val profile: String = PRODUCED_JVM_PLAN_PROFILE,
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val observedExport: ObservedExportPlanEvidence? = null,
 ) {
     fun digest(): String = Digests.sha256(canonical(this))
     fun workKey(): String = Digests.sha256(canonical(listOf(profile, providerKey, digest(), resolvedInputKey)))
@@ -161,6 +200,7 @@ class PreparedProducedExecution(
 }
 
 /** Final operational fence, NOT a rule-coverage or successful producer certificate by itself. */
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable data class ProducedWorkPublication(
     val workKey: String,
     val attempt: Long,
@@ -172,6 +212,8 @@ class PreparedProducedExecution(
     val rawResultDigest: String,
     val operationalFaults: List<String>,
     val profile: String = "ktchecker/produced-work-publication/1",
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val observedExport: ObservedExportPlanEvidence? = null,
 ) { fun digest(): String = Digests.sha256(canonical(this)) }
 
 class ProducedPublicationCheck internal constructor(

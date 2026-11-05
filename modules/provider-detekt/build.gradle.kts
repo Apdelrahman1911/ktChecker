@@ -27,6 +27,8 @@ configurations[corpusTestSources.runtimeOnlyConfigurationName]
 val detektCorpusCohortNames = setOf(
     "exceptions-core-v1", "iteration-core-v1", "value-core-v1", "opt-in-policy-v1",
     "performance-shapes-v1", "public-contract-policy-v1",
+    "protocol-and-catch-boundaries-v1", // Explicit mixed-cohort selection includes the generic-catch opt-in policy.
+    "exception-observability-policy-v1", // Explicit selection acknowledges all three opt-in exception policies.
 )
 
 tasks.register<Test>("corpusTest") {
@@ -49,7 +51,7 @@ tasks.register<Test>("corpusTest") {
     doFirst {
         if (providers.gradleProperty("detektCorpusIntegration").getOrElse("false") == "true") {
             require(providers.gradleProperty("detektCorpusCohort").orNull in detektCorpusCohortNames) {
-                "Real corpus requires one explicit -PdetektCorpusCohort from $detektCorpusCohortNames; integration alone never selects any cohort or all sixteen rules"
+                "Real corpus requires one explicit -PdetektCorpusCohort from $detektCorpusCohortNames; integration alone never selects any cohort or all twenty-two rules"
             }
         }
     }

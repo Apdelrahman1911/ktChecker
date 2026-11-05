@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-protocol-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter",
+  "upstream_id": "potential-bugs:WrongEqualsTypeParameter",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "catalog_record_sha256": "49cf040ce936a8d84078ec40e34f8e8a410fbe99f3699262e2580a791732443b",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-potential-bugs/src/main/kotlin/dev/detekt/rules/potentialbugs/WrongEqualsTypeParameter.kt",
+    "source_file_sha256": "90c3ea58e885b36c37113bea7a1b77246316ba556e27f3e6167d9868b685f7ef",
+    "predicate_line_numbers": [
+      42,
+      43,
+      44,
+      46,
+      49,
+      50,
+      53,
+      61
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/potentialbugs/WrongEqualsTypeParameter",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:510cc7647078e82f058e52b5553aa56940c7bdbbbff701c8331c0348a404b2d8"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "Skip interface traversal. Report a non-top-level function named equals with exactly one parameter whose type-reference text is neither Any? nor kotlin.Any?. Report the function name; no override, alias or value-semantics resolution.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.equalitycontract\n\nclass DomainKey(private val raw: String) {\n    fun equals(other: DomainKey): Boolean = raw == other.raw\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 8,
+        "end_line": 4,
+        "end_column": 14,
+        "span": "equals",
+        "occurrence": 0
+      }
+    ],
+    "intent": "This is a valid typed equals overload, not an illegal override. It does not replace Any.equals for ordinary value equality, despite the apparent domain comparison."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.equalitycontract\n\nclass DomainKey(private val raw: String) {\n    override fun equals(other: kotlin.Any?): Boolean = other is DomainKey && raw == other.raw\n    override fun hashCode(): Int = raw.hashCode()\n}\n"
+    },
+    "expected": [],
+    "intent": "A valid override uses the explicitly recognized kotlin.Any? spelling and a matching hashCode. The same selected rule stays active; no compiler execution is claimed."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.equalitycontract\n\nclass DomainKey(private val raw: String) {\n    fun equals(other: DomainKey): Boolean = raw == other.raw\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"WrongEqualsTypeParameter\")\n\npackage suppressed.corpus.equalitycontract\n\nclass DomainKey(private val raw: String) {\n    fun equals(other: DomainKey): Boolean = raw == other.raw\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 8,
+        "end_line": 4,
+        "end_column": 14,
+        "span": "equals",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.equalitycontract\n\nclass ComparedKey(private val raw: String) {\n    override fun equals(other: Any?): Boolean = other is ComparedKey && raw == other.raw\n    override fun hashCode(): Int = raw.hashCode()\n    fun equals(other: ComparedKey): Boolean = raw == other.raw\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 8,
+          "end_line": 6,
+          "end_column": 14,
+          "span": "equals",
+          "occurrence": 1
+        }
+      ],
+      "intent": "The class already implements correct Any? equality and hashCode, and also intentionally offers a typed comparison overload. Only the second equals declaration reports. Retain the advisory false-positive boundary rather than calling the whole class broken.",
+      "id": "typed-overload-beside-correct-any-override",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.equalitycontract\n\ntypealias AnyValue = kotlin.Any?\n\nclass AliasedKey(private val raw: String) {\n    override fun equals(other: AnyValue): Boolean = other is AliasedKey && raw == other.raw\n    override fun hashCode(): Int = raw.hashCode()\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 17,
+          "end_line": 6,
+          "end_column": 23,
+          "span": "equals",
+          "occurrence": 0
+        }
+      ],
+      "intent": "AnyValue expands to kotlin.Any?, so this is a valid equality override with matching hashCode. The textual helper does not expand typealiases; retain its anticipated false positive.",
+      "id": "nullable-any-typealias-is-a-valid-override",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.equalitycontract\n\ninterface StringMatcher {\n    fun equals(other: String): Boolean\n}\n"
+      },
+      "expected": [],
+      "intent": "A legal interface declares an explicit typed overload. The visitor returns before traversing interface declarations. This is a predicate boundary, not a universal defect or an equality implementation proof.",
+      "id": "interface-typed-overload-is-outside-visitor",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    }
+  ],
+  "limitations": [
+    "Every authored declaration is intended to be legal Kotlin. Typed positives do not use override; actual correctness of compiler type-checking remains unverified here.",
+    "Correct Any? equality may coexist with a typed overload. Nullable Any typealiases are not expanded by the two-string helper. Their anticipated false positives remain visible.",
+    "Interfaces are skipped. Top-level functions and non-single-parameter equals functions are also outside this predicate; no exhaustive signature or receiver analysis is claimed.",
+    "The MethodSignature source file imports Analysis API for unrelated hasImplicitUnitReturnType. The selected hasCorrectEqualsParameter helper itself only checks type-reference text.",
+    "No semantic value-equality, hashing-law, Kotlin parser compatibility or release qualification is claimed."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, parser, semantic, ownership, cancellation-flow, model or release qualification.",
+  "predicate_helper_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-psi-utils/src/main/kotlin/dev/detekt/psi/MethodSignature.kt",
+    "source_file_sha256": "d65162aebf6693adc9a7a0b2633246f5f75e823b326142d0be04fbbb295bb38b",
+    "predicate_line_numbers": [
+      30,
+      31
+    ],
+    "research_only": true
+  }
+}

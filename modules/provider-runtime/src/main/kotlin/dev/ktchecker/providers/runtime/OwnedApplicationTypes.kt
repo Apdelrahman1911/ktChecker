@@ -10,6 +10,8 @@ import java.util.HexFormat
 class OwnedApplicationDeadline private constructor(internal val original: OwnedSessionDeadline) {
     val identity: String = newApplicationIdentity()
     val durationMillis: Long get() = original.durationMillis
+    /** Same-process original origin for a downstream clock fence; never a fresh timer. */
+    val startedAtNanos: Long get() = original.startedNanos
     fun isExpired(): Boolean = original.expired()
 
     companion object {

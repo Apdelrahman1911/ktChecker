@@ -1,5 +1,7 @@
 dependencies {
     implementation(project(":contracts"))
+    // Observed one-shot import retains the SAME owner deadline; never a reconstructed timer.
+    implementation(project(":provider-runtime"))
     testImplementation(project(":snapshot"))
     testImplementation(project(":provider-runtime"))
     // Exercise the pinned exporter helpers without configuring or executing a Gradle build.

@@ -173,7 +173,7 @@ class ModelCompilerAttemptPermit internal constructor(
     internal fun verifyOriginal(checkpoint: () -> Unit) {
         checkpoint(); this.checkpoint(); verifyFrozen(); checkpoint(); this.checkpoint()
         prepared.binding.verifyInstallation(checkpoint)
-        prepared.binding.producedResolution?.let { it.verify(prepared.binding.model, prepared.binding.installation,
+        prepared.binding.producedResolution?.let { it.verify(prepared.binding.origin, prepared.binding.installation,
             prepared.binding.compilationId, checkpoint) }
         capture.verify(checkpoint)
         checkpoint(); this.checkpoint()

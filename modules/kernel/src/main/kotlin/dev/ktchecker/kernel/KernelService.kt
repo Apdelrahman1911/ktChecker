@@ -452,10 +452,13 @@ class KernelService private constructor(
     internal fun isStopped(): Boolean = stopped.get()
     internal fun ensureOpen() { if (stopped.get()) fail("service_closed", "Kernel service is closed") }
 
-    internal fun validateInput(binding: ClientBinding, request: SubmitRequest) {
+    internal fun validateInput(binding: ClientBinding, request: SubmitRequest, allowObserved: Boolean = false) {
         identifier(request.patchId, "patch ID")
         identifier(request.idempotencyKey, "idempotency key")
         val input = request.input
+        if (!allowObserved && observedExportReasons(input).isNotEmpty()) {
+            fail("observed_export_typed_plan_required", "Observed one-shot inputs cannot be submitted as ordinary or downgraded reusable work")
+        }
         if (input.snapshot.ownerId != binding.ownerId || input.snapshot.workspaceId != binding.workspaceId || input.snapshot.worktreeId != binding.worktreeId) {
             fail("snapshot_scope_mismatch", "Snapshot does not belong to the bound owner/workspace/worktree")
         }
@@ -526,6 +529,7 @@ class KernelService private constructor(
         val effectiveJson = row.getString("effective_result_json")
         val result = (effectiveJson ?: rawJson)?.let { ContractJson.decodeFromString<ProviderResult>(it) }
         val validation = ContractJson.decodeFromString<List<String>>(row.getString("validation_json") ?: "[]") +
+            observedExportReasons(input) +
             ContractJson.decodeFromString<List<String>>(row.getString("resolution_reasons_json")) +
             (if (row.getString("kind") == "produced") listOf("produced_plan_preview_unqualified") else emptyList()) +
             (if (row.getString("resolution_state") == "deferred") listOf("produced_slot_deferred") else emptyList()) +
@@ -862,6 +866,7 @@ class KernelService private constructor(
         val reasons = mutableListOf<String>()
         if (records.isEmpty() || latest == null) return listOf("no_accepted_reviews")
         for (record in records) {
+            if (observedExportReasons(record.input).isNotEmpty()) reasons += "$OBSERVED_EXPORT_CONFIGURATION_GAP:${record.status.reviewId}"
             record.status.reasons.filter { it in setOf("policy_evaluator_identity_unknown", "policy_evaluator_mismatch") }
                 .forEach { reasons += "$it:${record.status.reviewId}" }
             when (record.status.state) {

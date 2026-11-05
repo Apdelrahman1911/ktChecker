@@ -33,7 +33,10 @@ class DetektCorpusControlsTest {
     @Test fun `integration alone has no cohort and full-ten selection is rejected`() {
         for (cohort in listOf(null, "", "syntax-v1", "all", "full-ten", "exceptions-core-v2",
             "iteration-core-v2", "iteration-core-v1 ", " iteration-core-v1", "value-core-v1,opt-in-policy-v1", "../value-core-v1", "full-sixteen", "performance-shapes-v1 ",
-            "performance-shapes-v1,public-contract-policy-v1", "syntax-expansion-v1"))
+            "performance-shapes-v1,public-contract-policy-v1", "syntax-expansion-v1", "full-nineteen", "syntax-protocol-v1",
+            "protocol-and-catch-boundaries-v1 ", "protocol-and-catch-boundaries-v1,exceptions-core-v1",
+            "full-twenty-two", "syntax-exception-observability-v1", "exception-observability-policy-v1 ",
+            "exception-observability-policy-v1,protocol-and-catch-boundaries-v1"))
             assertFailsWith<IllegalArgumentException> { DetektCorpusSettings.selected(cohort, null, null, null) }
         assertEquals(40, settings().maxInvocations)
         assertEquals(1_200_000L, settings().aggregateMillis)
@@ -45,9 +48,13 @@ class DetektCorpusControlsTest {
         assertEquals(38, cohort.plannedInvocations)
         assertEquals(listOf(28, 1, 6, 3), cohort.invocationsByKind.values.toList())
         assertEquals(10, DetektCorpusCohort.BASELINE_AUTHORED_RULES)
-        assertEquals(16, DetektCorpusCohort.FULL_AUTHORED_RULES)
+        assertEquals(16, DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_RULES)
+        assertEquals(19, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_RULES)
+        assertEquals(22, DetektCorpusCohort.FULL_AUTHORED_RULES)
         assertEquals(91, DetektCorpusCohort.BASELINE_AUTHORED_ANALYSES)
-        assertEquals(145, DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
+        assertEquals(145, DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_ANALYSES)
+        assertEquals(172, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_ANALYSES)
+        assertEquals(199, DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
         assertTrue(cohort.planIdentity.contains("10/91/not_run"))
         assertEquals("sha256:1a04a745f3a90b093f07725c33f7aa5e4f68dcb4e08300e7498eabb23046469f", Digests.sha256(cohort.planIdentity))
     }
@@ -64,7 +71,7 @@ class DetektCorpusControlsTest {
         val rules = plans.flatMap { it.analysesByRule.keys }
         assertEquals(10, rules.size)
         assertEquals(10, rules.distinct().size)
-        assertEquals(DetektCorpusCohort.authoredRuleIds - DetektCorpusExpansionPins.controlIds.keys, rules.toSet())
+        assertEquals(DetektCorpusCohort.authoredRuleIds - DetektCorpusExpansionPins.controlIds.keys - DetektCorpusProtocolPins.controlIds.keys - DetektCorpusObservabilityPins.controlIds.keys, rules.toSet())
         assertEquals(91, plans.sumOf { it.analysesByRule.values.sum() })
         for (plan in plans) {
             assertSame(plan, DetektCorpusCohort.selected(plan.name))
@@ -80,7 +87,11 @@ class DetektCorpusControlsTest {
             assertFailsWith<UnsupportedOperationException> { (plan.invocationsByKind as MutableMap<CorpusInvocationKind, Int>).clear() }
         }
         assertFailsWith<UnsupportedOperationException> { (DetektCorpusCohort.all as MutableList<DetektCorpusCohort>).clear() }
-        assertEquals(6, DetektCorpusCohort.all.size)
+        assertFailsWith<UnsupportedOperationException> { (DetektCorpusCohort.preProtocol as MutableList<DetektCorpusCohort>).clear() }
+        assertEquals(6, DetektCorpusCohort.preProtocol.size)
+        assertFailsWith<UnsupportedOperationException> { (DetektCorpusCohort.preObservability as MutableList<DetektCorpusCohort>).clear() }
+        assertEquals(7, DetektCorpusCohort.preObservability.size)
+        assertEquals(8, DetektCorpusCohort.all.size)
     }
 
     @Test fun `a rule from another authored cohort fails before reservation`() {
@@ -221,8 +232,8 @@ class DetektCorpusControlsTest {
                 val (selectedRule, count) = entry
                 repeat(count) { caseIndex ->
                     val case = listOf("positive", "negative", "configuration", "version", "suppression", "regression")
-                        .getOrNull(caseIndex) ?: if (selected.expansion)
-                            DetektCorpusExpansionPins.controlIds.getValue(selectedRule)[caseIndex - 6] else "control-$caseIndex"
+                        .getOrNull(caseIndex) ?: if (selected.expansion || selected.protocol || selected.observability)
+                            selected.independentControlIds.getValue(selectedRule)[caseIndex - 6] else "control-$caseIndex"
                     checkedNative(budget, CorpusInvocationKind.ANALYSIS, selectedRule, case)
                     if (case == "positive") {
                         val denied = budget.reserve(CorpusInvocationKind.AUTHORIZATION_DENIAL, selectedRule, "configuration-permit-replay")
@@ -254,7 +265,9 @@ class DetektCorpusControlsTest {
             assertEquals(2 + 3 * selected.plannedInvocations, events.size)
             sizes += events.size
         }
-        assertEquals(listOf(116, 116, 74, 77, 113, 113), sizes)
+        assertEquals(listOf(116, 116, 74, 77, 113, 113), sizes.take(6))
+        assertEquals(listOf(116, 116, 74, 77, 113, 113, 113), sizes.take(7))
+        assertEquals(listOf(116, 116, 74, 77, 113, 113, 113, 113), sizes)
     }
 
     @Test fun `incomplete run cannot finish and progress write failure stops before a call`() {
@@ -278,8 +291,12 @@ class DetektCorpusControlsTest {
         ), DetektCorpusCohort.baseline.map { Digests.sha256(it.planIdentity) })
         val added = DetektCorpusCohort.all.filter { it.expansion }
         assertEquals(listOf("performance-shapes-v1", "public-contract-policy-v1"), added.map { it.name })
-        assertEquals(16, DetektCorpusCohort.all.flatMap { it.analysesByRule.keys }.distinct().size)
-        assertEquals(145, DetektCorpusCohort.all.sumOf { it.analysesByRule.values.sum() })
+        assertEquals(16, DetektCorpusCohort.preProtocol.flatMap { it.analysesByRule.keys }.distinct().size)
+        assertEquals(145, DetektCorpusCohort.preProtocol.sumOf { it.analysesByRule.values.sum() })
+        assertEquals(19, DetektCorpusCohort.preObservability.flatMap { it.analysesByRule.keys }.distinct().size)
+        assertEquals(172, DetektCorpusCohort.preObservability.sumOf { it.analysesByRule.values.sum() })
+        assertEquals(22, DetektCorpusCohort.all.flatMap { it.analysesByRule.keys }.distinct().size)
+        assertEquals(199, DetektCorpusCohort.all.sumOf { it.analysesByRule.values.sum() })
         for (plan in added) {
             assertEquals(listOf(9, 9, 9), plan.analysesByRule.values.toList())
             assertEquals(37, plan.plannedInvocations)
@@ -294,7 +311,7 @@ class DetektCorpusControlsTest {
     }
 
     @Test fun `new schedules reject reordered analysis and fabricated control before reservation`() {
-        for (plan in DetektCorpusCohort.all.filter { it.expansion }) {
+        for (plan in DetektCorpusCohort.all.filter { it.expansion || it.protocol || it.observability }) {
             val events = mutableListOf<JsonObject>()
             val budget = DetektCorpusBudget(settings(plan), { events += it })
             val selectedRule = plan.analysesByRule.keys.first()

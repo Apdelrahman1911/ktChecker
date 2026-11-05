@@ -126,7 +126,7 @@ class KotlinJvmModelCompilerApplication private constructor(
                         result, observation, providerStartedNanos, checkpoint, permit.prepared.binding)
                     val preview = permit.prepared.binding.producedResolution?.preview
                     if (preview != null && observation.compilerCode() == 0 &&
-                        permit.prepared.binding.compilationId == preview.graph.producerCompilationId) {
+                        permit.prepared.binding.compilationId == preview.graphIdentity.producerCompilationId) {
                         producedCandidate = ModelSuccessfulJvmOutput(permit, materialized, result, observation,
                             entireDetachedResult, materialized.producedMembers())
                     }

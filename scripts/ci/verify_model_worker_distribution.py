@@ -5,6 +5,10 @@ No extraction, subprocess, network, JVM, provider or model execution. Only an
 explicit NEW report outside the installation may be written. Inputs must have
 link-free paths and independent regular files. Before/after stat checks detect
 observed drift; they are not an atomic snapshot or hostile-writer sandbox.
+Windows path and CRT-descriptor stat views are not assumed interchangeable:
+native, no-follow path/handle observations bind full 128-bit file identities
+and metadata, while each stat API retains its own exact before/after checks.
+Unavailable native facts fail closed; this is not Windows release qualification.
 Class-file headers are checked, not JVM bytecode validity or historical build
 provenance. Use the actual Gradle task output recorded in the dependency manifest.
 """
@@ -88,16 +92,138 @@ def checked_path(path: Path, *, directory: bool = False) -> tuple[Path, os.stat_
     return path, info
 
 
+def windows_observation_required() -> bool:
+    return os.name == "nt"
+
+
+def _windows_structures() -> tuple:
+    """Real ctypes layouts are Windows-only work, not a Linux mock seam."""
+    require(windows_observation_required(), "windows_observation_unavailable")
+    import ctypes
+
+    class BasicInfo(ctypes.Structure):
+        _fields_ = [("CreationTime", ctypes.c_int64), ("LastAccessTime", ctypes.c_int64),
+                    ("LastWriteTime", ctypes.c_int64), ("ChangeTime", ctypes.c_int64),
+                    ("FileAttributes", ctypes.c_uint32)]
+
+    class StandardInfo(ctypes.Structure):
+        _fields_ = [("AllocationSize", ctypes.c_int64), ("EndOfFile", ctypes.c_int64),
+                    ("NumberOfLinks", ctypes.c_uint32), ("DeletePending", ctypes.c_ubyte),
+                    ("Directory", ctypes.c_ubyte)]
+
+    class FileIdInfo(ctypes.Structure):
+        _fields_ = [("VolumeSerialNumber", ctypes.c_uint64), ("Identifier", ctypes.c_ubyte * 16)]
+
+    require(tuple(ctypes.sizeof(kind) for kind in (BasicInfo, StandardInfo, FileIdInfo)) == (40, 24, 24),
+            "windows_observation_unavailable")
+    return ctypes, BasicInfo, StandardInfo, FileIdInfo
+
+
+def _windows_api() -> object:
+    """Lazy documented Win32 metadata APIs only: no helper/process execution."""
+    require(windows_observation_required(), "windows_observation_unavailable")
+    import ctypes
+
+    api = ctypes.WinDLL("kernel32.dll", use_last_error=True, winmode=0x00000800)  # SEARCH_SYSTEM32
+    api.CreateFileW.argtypes = [ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p,
+                               ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p]
+    api.CreateFileW.restype = ctypes.c_void_p
+    api.GetFileInformationByHandleEx.argtypes = [ctypes.c_void_p, ctypes.c_int32, ctypes.c_void_p, ctypes.c_uint32]
+    api.GetFileInformationByHandleEx.restype = ctypes.c_int32
+    api.GetFileType.argtypes = [ctypes.c_void_p]
+    api.GetFileType.restype = ctypes.c_uint32
+    api.CloseHandle.argtypes = [ctypes.c_void_p]
+    api.CloseHandle.restype = ctypes.c_int32
+    return api
+
+
+def _windows_descriptor_handle(descriptor: int) -> int:
+    import msvcrt
+
+    return msvcrt.get_osfhandle(descriptor)
+
+
+def _windows_file_observation(*, path: Path | None = None, descriptor: int | None = None) -> tuple:
+    """Comparable native path/descriptor facts, never inferred from file bytes.
+
+    Path observations own a FILE_READ_ATTRIBUTES handle opened with
+    OPEN_REPARSE_POINT (do not follow the leaf) and BACKUP_SEMANTICS (inspect,
+    then reject, directories). Existing checked_path calls still reject every
+    reparse/symlink ancestor. This does not hold an atomic parent-handle chain.
+    Descriptor observations borrow the already-open CRT handle and never close
+    it. FileIdInfo must supply the full nonzero 128-bit identity: no fallback to
+    truncated IDs, zero inode values, timestamps alone, or equal content.
+    LastAccessTime is deliberately not compared: a read may update access time.
+    """
+    require((path is None) != (descriptor is None), "windows_observation_unavailable")
+    try:
+        ctypes, BasicInfo, StandardInfo, FileIdInfo = _windows_structures()
+        api = _windows_api()
+        owned = path is not None
+        if owned:
+            # FILE_READ_ATTRIBUTES; SHARE_READ|WRITE|DELETE; OPEN_EXISTING;
+            # FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS.
+            handle = api.CreateFileW(str(path), 0x80, 0x7, None, 3, 0x02200000, None)
+        else:
+            handle = _windows_descriptor_handle(descriptor)
+        require(type(handle) is int and handle > 0 and handle != ctypes.c_void_p(-1).value,
+                "windows_observation_unavailable")
+        try:
+            require(api.GetFileType(handle) == 1, "independent_regular_file_required")  # FILE_TYPE_DISK
+            basic, standard, identity = BasicInfo(), StandardInfo(), FileIdInfo()
+            for kind, value in ((0, basic), (1, standard), (18, identity)):
+                require(api.GetFileInformationByHandleEx(handle, kind, ctypes.byref(value), ctypes.sizeof(value)) != 0,
+                        "windows_observation_unavailable")
+            require(not basic.FileAttributes & 0x400, "linked_input_path")  # FILE_ATTRIBUTE_REPARSE_POINT
+            require(not basic.FileAttributes & (0x10 | 0x40) and not standard.Directory and
+                    standard.NumberOfLinks == 1 and standard.EndOfFile >= 0, "independent_regular_file_required")
+            require(not standard.DeletePending, "observed_input_drift")
+            physical = physical_identity((identity.VolumeSerialNumber, int.from_bytes(bytes(identity.Identifier), "little")))
+            # Include creation AND change time; unlike CRT ctime assumptions,
+            # these are distinct native fields. No time precision is rounded.
+            return (*physical, basic.FileAttributes, standard.NumberOfLinks, standard.EndOfFile,
+                    basic.LastWriteTime, basic.ChangeTime, basic.CreationTime)
+        finally:
+            if owned:
+                require(api.CloseHandle(handle) != 0, "windows_observation_unavailable")
+    except WorkerVerificationError:
+        raise
+    except Exception:
+        # Native ABI/API availability and conversion failures are fixed-code
+        # non-success, never a reason to fall back to weaker identity checks.
+        raise WorkerVerificationError("windows_observation_unavailable") from None
+
+
 def read_file(path: Path, limit: int) -> tuple[bytes, tuple]:
     path, initial = checked_path(path)
     require(0 < initial.st_size <= limit, "file_byte_limit")
+    windows = windows_observation_required()
+    if windows:
+        physical_identity(fingerprint(initial))
+    native = _windows_file_observation(path=path) if windows else None
+    if windows:
+        require(native[4] == initial.st_size and fingerprint(checked_path(path)[1]) == fingerprint(initial),
+                "observed_input_drift")
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     with os.fdopen(os.open(path, flags), "rb") as handle:
-        require(fingerprint(os.fstat(handle.fileno())) == fingerprint(initial), "observed_input_drift")
+        descriptor_initial = fingerprint(os.fstat(handle.fileno()))
+        if windows:
+            # These facts ARE common to both stat views. Native observations
+            # supplement identity/time/permission encodings, not size or type.
+            require(stat.S_ISREG(descriptor_initial[2]) and descriptor_initial[3] == 1 and
+                    descriptor_initial[4] == initial.st_size, "observed_input_drift")
+            require(_windows_file_observation(descriptor=handle.fileno()) == native, "observed_input_drift")
+        else:
+            require(descriptor_initial == fingerprint(initial), "observed_input_drift")
         raw = handle.read(limit + 1)
         require(len(raw) == initial.st_size and len(raw) <= limit, "file_byte_limit_or_drift")
-        require(fingerprint(os.fstat(handle.fileno())) == fingerprint(initial), "observed_input_drift")
+        require(fingerprint(os.fstat(handle.fileno())) == descriptor_initial, "observed_input_drift")
+        if windows:
+            require(_windows_file_observation(descriptor=handle.fileno()) == native, "observed_input_drift")
     require(fingerprint(checked_path(path)[1]) == fingerprint(initial), "observed_input_drift")
+    if windows:
+        require(_windows_file_observation(path=path) == native, "observed_input_drift")
+        require(fingerprint(checked_path(path)[1]) == fingerprint(initial), "observed_input_drift")
     return raw, fingerprint(initial)
 
 

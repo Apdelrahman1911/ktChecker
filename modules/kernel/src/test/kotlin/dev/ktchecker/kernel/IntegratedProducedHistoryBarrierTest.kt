@@ -49,7 +49,7 @@ class IntegratedProducedHistoryBarrierTest {
         fun barrier(limits: IntegratedCompletionLimits = IntegratedCompletionLimits()) = IntegratedCompletionBarrier(service, authority, limits)
     }
 
-    private fun withDeferredHistory(body: (Scenario) -> Unit) {
+    private fun withDeferredHistory(observed: Boolean = false, body: (Scenario) -> Unit) {
         val f = ProducedLaneFixture(temp.resolve("fixture")); val registry = Registry(f); val typed = f.Provider()
         val finalInputs = AtomicReference<List<AnalysisInput>>(emptyList())
         val provider = object : AnalysisProvider {
@@ -72,7 +72,8 @@ class IntegratedProducedHistoryBarrierTest {
             try {
                 val clients = listOf("a", "b").map { id -> service.registerClient(
                     ClientBinding("owner", "workspace", "tree", id, "lineage-$id", 1, "session-$id")) }
-                val declared = f.definition(clients.first().binding, "before-integration")
+                val declared = f.definition(clients.first().binding, "before-integration",
+                    observedInvocation = if (observed) "synthetic-observed-history-export" else null)
                 f.resolver[declared.request.planRef] = { request ->
                     entered.countDown(); assertTrue(release.await(10, TimeUnit.SECONDS))
                     ProducedSlotResolution.Ready(f.consumer(request))
@@ -87,7 +88,12 @@ class IntegratedProducedHistoryBarrierTest {
                 val snapshot = previous.snapshot.copy(snapshotId = Digests.sha256("synthetic-integrated-after-produced"),
                     parentSnapshotId = previous.snapshot.snapshotId)
                 val inputs = declared.slots.map { slot -> slot.input.copy(snapshot = snapshot, materializedRoot = source.toString(),
-                    context = slot.input.context.copy(fullProject = true)) }
+                    // Independent SYNTHETIC final-model authority, not a conversion of any
+                    // observed model to a verified capability. Its clean vector cannot erase D.
+                    context = if (observed) slot.input.context.copy(fullProject = true,
+                        modelDigest = Digests.sha256("synthetic-independent-final-model"),
+                        policies = slot.input.context.policies - OBSERVED_EXPORT_POLICY_KEYS)
+                    else slot.input.context.copy(fullProject = true)) }
                 finalInputs.set(inputs)
                 val plans = clients.map { client ->
                     val name = "final-${client.binding.clientId}"
@@ -161,6 +167,11 @@ class IntegratedProducedHistoryBarrierTest {
 
     private fun assertDeniedWholeHistory(s: Scenario, cut: IntegratedCompletionCut) {
         assertFalse(cut.ready); assertTrue("joint_produced_profile_unavailable:a" in cut.reasons)
+        if (s.declared.jvmProduced?.observedExport != null) {
+            s.history.slots.forEach { slot -> assertTrue("$OBSERVED_EXPORT_CONFIGURATION_GAP:a:${slot.reviewId}" in cut.reasons) }
+            assertTrue(s.finalPlans.all { plan -> plan.slots.all { observedExportReasons(it.input).isEmpty() } })
+            assertTrue(OBSERVED_EXPORT_CONFIGURATION_GAP in s.service.planStatus(s.origin, s.history.planId).reasons)
+        }
         assertTrue("joint_parent_incomplete:a:${s.history.planId}" in cut.reasons)
         assertTrue(cut.reasons.none { it.startsWith("joint_insertion_missing:") || it.startsWith("joint_model_observation_missing:") ||
             it.startsWith("joint_member_source_configuration_mismatch:") || it.startsWith("joint_final_scope_incomplete:") ||
@@ -229,6 +240,29 @@ class IntegratedProducedHistoryBarrierTest {
             assertEquals(6L, c.count("SELECT COUNT(*) FROM reviews")); assertEquals(3L, c.count("SELECT COUNT(*) FROM parent_plans"))
         }
     }
+
+    @Test fun independentCleanIntegratedFinalModelCannotEraseObservedExportGapBeforeOrAfterConsumerResolution() =
+        withDeferredHistory(observed = true) { s ->
+            s.clients.forEach { s.f.deliver(s.service, it) }
+            val consumerReview = s.history.slots.last().reviewId
+            assertNull(s.f.resolved(s.service, consumerReview))
+            val before = s.service.ledger.read { c -> obligations(c, "a") }
+            val deferred = s.barrier().prepare(s.origin, "completion")
+            assertTrue("joint_slot_deferred:a:$consumerReview" in deferred.reasons)
+            assertDeniedWholeHistory(s, deferred)
+
+            s.release.countDown(); s.f.finished(s.service, s.clients.first(), consumerReview)
+            s.clients.forEach { s.f.deliver(s.service, it) }
+            val resolved = s.barrier().prepare(s.origin, "completion")
+            assertFalse("joint_slot_deferred:a:$consumerReview" in resolved.reasons)
+            assertFalse("joint_publication_not_quiescent:a" in resolved.reasons)
+            assertDeniedWholeHistory(s, resolved)
+            assertEquals(before, s.service.ledger.read { c -> obligations(c, "a") })
+            assertEquals(2, s.f.typedAttempts.size)
+            assertTrue(s.f.typedAttempts.all { it.execution.certificate.observedExport == s.declared.jvmProduced?.observedExport })
+            assertEquals(1, s.f.resolutionCalls.getValue(s.declared.request.planRef).get())
+            assertEquals(0, s.effects.get())
+        }
 
     /** Independent row/cell UTF-8 accounting, not a copy of the production SQL SUM/COALESCE expression. */
     private fun metadataBytes(service: KernelService, deferredReview: String): Pair<Long, Long> = service.ledger.read { c ->

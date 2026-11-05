@@ -256,8 +256,10 @@ class SyntaxCorpusAuthoringTest(unittest.TestCase):
         self.assertEqual(EXPECTED_COHORTS, actual)
         match = re.search(r'val detektCorpusCohortNames = setOf\((.*?)\)', build, re.DOTALL)
         self.assertIsNotNone(match)
-        self.assertEqual(list(EXPECTED_COHORTS) + ["performance-shapes-v1", "public-contract-policy-v1"],
-                         re.findall(r'"([^"]+)"', match.group(1)))
+        selected_names = re.findall(r'"([^"]+)"', match.group(1))
+        self.assertEqual(list(EXPECTED_COHORTS) + ["performance-shapes-v1", "public-contract-policy-v1", "protocol-and-catch-boundaries-v1"], selected_names[:7])
+        self.assertEqual(list(EXPECTED_COHORTS) + ["performance-shapes-v1", "public-contract-policy-v1", "protocol-and-catch-boundaries-v1",
+                                                    "exception-observability-policy-v1"], selected_names)
         self.assertIn("internal class DetektCorpusCohort private constructor", controls)
         self.assertIn("Collections.unmodifiableMap", controls)
         self.assertIn("all.singleOrNull { it.name == name }", controls)

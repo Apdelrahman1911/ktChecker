@@ -390,6 +390,7 @@ class IntegratedCompletionBarrier(
             if (row.getLong("sequence") != obligations.size + 1L) reasons += "joint_review_history_incomplete:$client"
             // Historical obligations and captured policy ALWAYS identify D, never substituted P/K.
             val input = ContractJson.decodeFromString<AnalysisInput>(row.getString("input_json"))
+            if (observedExportReasons(input).isNotEmpty()) reasons += "$OBSERVED_EXPORT_CONFIGURATION_GAP:$client:${row.getString("review_id")}"
             requiredPairs += input.requiredRuleIds.size
             if (requiredPairs > limits.maxCoveragePairs) limit()
             val obligation = IntegratedPatchObligation(client, "review", row.getString("review_id"), row.getString("patch_id"),

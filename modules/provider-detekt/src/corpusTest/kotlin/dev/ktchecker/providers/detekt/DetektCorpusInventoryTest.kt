@@ -27,7 +27,7 @@ class DetektCorpusInventoryTest {
     /** Copies these small, fixed authored inputs only; never an engine, cache, installation or evidence. */
     private fun copyData(): Path {
         val root = Files.createDirectory(temporary.resolve("authored-${++copies}"))
-        for (relative in DetektCorpusExpansionPins.files.keys) {
+        for (relative in DetektCorpusInventory.filePins.keys) {
             val destination = root.resolve(relative)
             Files.createDirectories(destination.parent)
             Files.copy(repository.resolve(relative), destination)
@@ -38,11 +38,22 @@ class DetektCorpusInventoryTest {
     @Test fun `loader joins sixteen current exact syntax mappings while retaining ten and ninety one`() {
         val inventory = load()
         inventory.verify()
-        assertEquals(16, inventory.fixtures.size)
+        val previousIds = DetektCorpusCohort.preProtocol.flatMap { it.analysesByRule.keys }.toSet()
+        val previous = inventory.fixtures.filter { it.text("rule_id") in previousIds }
+        assertEquals(16, previous.size)
+        assertEquals(previousIds, previous.map { it.text("rule_id") }.toSet())
+        assertEquals(145, previous.sumOf { 6 + controls(it).size })
+        assertEquals(11, previous.count { it.text("default_activation") == "advisory" })
+        assertEquals(5, previous.count { it.text("default_activation") == "opt_in" })
+        val priorIds = DetektCorpusCohort.preObservability.flatMap { it.analysesByRule.keys }.toSet()
+        val prior = inventory.fixtures.filter { it.text("rule_id") in priorIds }
+        assertEquals(19, prior.size)
+        assertEquals(172, prior.sumOf { 6 + controls(it).size })
+        assertEquals(13, prior.count { it.text("default_activation") == "advisory" })
+        assertEquals(6, prior.count { it.text("default_activation") == "opt_in" })
+        assertEquals(22, inventory.fixtures.size)
         assertEquals(DetektCorpusCohort.authoredRuleIds, inventory.fixtures.map { it.text("rule_id") }.toSet())
-        assertEquals(145, inventory.fixtures.sumOf { 6 + controls(it).size })
-        assertEquals(11, inventory.fixtures.count { it.text("default_activation") == "advisory" })
-        assertEquals(5, inventory.fixtures.count { it.text("default_activation") == "opt_in" })
+        assertEquals(199, inventory.fixtures.sumOf { 6 + controls(it).size })
         val old = inventory.fixtures.filter { it.text("corpus_id") == "detekt-syntax-corpus-v1" }
         assertEquals(10, old.size)
         assertEquals(91, old.sumOf { 6 + controls(it).size })
@@ -284,7 +295,11 @@ class DetektCorpusInventoryTest {
         for (ids in DetektCorpusExpansionPins.controlIds.values)
             assertFailsWith<UnsupportedOperationException> { (ids as MutableList<String>).clear() }
         assertEquals(22, DetektCorpusExpansionPins.files.size)
-        assertEquals(16, inventory.fixtures.size)
+        val previousIds = DetektCorpusCohort.preProtocol.flatMap { it.analysesByRule.keys }.toSet()
+        val priorIds = DetektCorpusCohort.preObservability.flatMap { it.analysesByRule.keys }.toSet()
+        assertEquals(16, inventory.fixtures.count { it.text("rule_id") in previousIds })
+        assertEquals(19, inventory.fixtures.count { it.text("rule_id") in priorIds })
+        assertEquals(22, inventory.fixtures.size)
         inventory.verify()
     }
 

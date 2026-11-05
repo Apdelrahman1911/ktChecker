@@ -45,25 +45,31 @@ internal class ProducedLaneFixture(private val root: Path) : ReviewPlanAuthority
     val producerPreparations = AtomicInteger()
     val policyInputs = ConcurrentLinkedQueue<Pair<String, String>>()
 
-    fun definition(binding: ClientBinding, id: String, disposition: String = "open", parent: String? = null): RequiredReviewPlan {
-        val source = root.resolve("source-$id"); Files.createDirectories(source)
+    fun definition(binding: ClientBinding, id: String, disposition: String = "open", parent: String? = null,
+        observedInvocation: String? = null, sameSnapshotAs: RequiredReviewPlan? = null): RequiredReviewPlan {
+        val source = sameSnapshotAs?.slots?.first()?.input?.materializedRoot?.let(Path::of) ?: root.resolve("source-$id")
+        Files.createDirectories(source)
         val members = listOf("Main.kt" to "package fixture\nval main = 1\n", "Test.kt" to "package fixture\nval test = 2\n")
         val files = members.map { (path, text) ->
             Files.writeString(source.resolve(path), text)
             SnapshotFile(path, Digests.sha256(text), text.toByteArray().size.toLong())
         }
-        val snapshot = SnapshotManifest(Digests.sha256("synthetic-source:$id"), binding.workspaceId, binding.worktreeId,
+        val snapshot = sameSnapshotAs?.slots?.first()?.input?.snapshot ?: SnapshotManifest(Digests.sha256("synthetic-source:$id"), binding.workspaceId, binding.worktreeId,
             files, binding.ownerId, parentSnapshotId = parent, declaredRoots = listOf("."))
+        assertEquals(files, snapshot.files)
+        val observed = observedInvocation?.let { ObservedExportPlanEvidence(binding, it, Digests.sha256("synthetic-observed-export:$it")) }
         val catalogDigest = Digests.sha256(canonical(rules))
         val raw = listOf("main", "test").mapIndexed { index, compilation -> AnalysisContext(
             scope = RuleContext(target = "", sourceSet = compilation, module = ":fixture", compilation = compilation),
             compilerVersion = "2.4.21", compilerArguments = listOf("-module-name", "fixture-$compilation"),
-            libraries = mapOf("kotlin" to "2.4.21"), policies = mapOf("fixture-disposition" to disposition),
+            libraries = mapOf("kotlin" to "2.4.21"), policies = mapOf("fixture-disposition" to disposition) +
+                observed?.policies().orEmpty().filterKeys { it != "ktchecker.observed-export-evidence" },
             modelDigest = Digests.sha256("synthetic-model"), dependencyDigest = Digests.sha256("unresolved:$compilation"),
             toolchainDigest = Digests.sha256("synthetic-toolchain"), configurationDigest = Digests.sha256("capture:$id:$disposition"),
             fullProject = false, compilationFiles = listOf(files[index].path)) }
         val inputs = raw.map { context -> AnalysisInput(snapshot, source.toString(), context.copy(policies = context.policies + mapOf(
-            "ktchecker.catalog-inventory" to catalogDigest, "ktchecker.activation-plan" to Digests.sha256("activation:$id"))), rules) }
+            "ktchecker.catalog-inventory" to catalogDigest, "ktchecker.activation-plan" to Digests.sha256("activation:$id")) +
+                observed?.policies().orEmpty()), rules) }
         val request = SubmitPlanRequest("patch-$id", "key-$id", "ref-$id")
         val clock = ProducedPlanClock(Any(), "original-budget-$id", System.nanoTime(), CONFIG.analysisTimeoutMillis)
         val declaration = JvmProducedPlanDeclaration(Digests.sha256("graph:$id"), Digests.sha256("import:$id"),
@@ -71,11 +77,12 @@ internal class ProducedLaneFixture(private val root: Path) : ReviewPlanAuthority
             ProducedCompilationDeclaration(PRODUCER, "fixture-main", Digests.sha256(canonical(raw[0])), Digests.sha256("main-layout")),
             ProducedCompilationDeclaration(CONSUMER, "fixture-test", Digests.sha256(canonical(raw[1])), Digests.sha256("test-layout")),
             Digests.sha256("main-to-test-friend"), 0, true, catalogDigest, Digests.sha256(canonical(rules)),
-            Digests.sha256("intent:$id"), clock.identity, clock.durationMillis)
+            Digests.sha256("intent:$id"), clock.identity, clock.durationMillis, observedExport = observed)
         return RequiredReviewPlan(binding, request, Digests.sha256(canonical(snapshot)), Digests.sha256(canonical(emptyList<SnapshotFile>())),
             Digests.sha256("synthetic-model-certificate"), Digests.sha256("synthetic-impact:$id"),
             listOf(PRODUCER, CONSUMER).mapIndexed { index, slot -> RequiredPlanSlot(slot, inputs[index], state = "declared",
-                reasons = listOf("verified_compilation_context_unavailable", "jvm_produced_output_deferred")) },
+                reasons = if (observed == null) listOf("verified_compilation_context_unavailable", "jvm_produced_output_deferred") else
+                    listOf("observed_compilation_context_unavailable", "jvm_produced_output_deferred", OBSERVED_EXPORT_CONFIGURATION_GAP)) },
             listOf(binding.clientId), declaration).also { plan ->
             assertNull(definitions.putIfAbsent(request.planRef, plan)); clocks[request.planRef] = clock
             resolutionCalls[request.planRef] = AtomicInteger()
@@ -205,7 +212,8 @@ internal class ProducedLaneFixture(private val root: Path) : ReviewPlanAuthority
             input.context.scope, evidence = listOf(Evidence("synthetic_fixture", "No compiler/model capability")),
             fixHint = "Synthetic fixture only")
         return ProviderResult(PROVIDER, "partial", listOf(finding), rules.map { rule -> Coverage(rule, input.context.scope,
-            "unknown", reason = "synthetic_catalog_execution_not_qualified") }, reasons = listOf("synthetic_full_catalog_unqualified"))
+            "unknown", reason = "synthetic_catalog_execution_not_qualified") },
+            reasons = listOf("synthetic_full_catalog_unqualified") + observedExportReasons(input))
     }
 
     private fun verifySources(input: AnalysisInput) = input.snapshot.files.forEach { file ->

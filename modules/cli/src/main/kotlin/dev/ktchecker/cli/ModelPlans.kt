@@ -7,6 +7,8 @@ import dev.ktchecker.config.*
 import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.*
 import dev.ktchecker.projectmodel.VerifiedProjectModel
+import dev.ktchecker.projectmodel.ObservedProjectModel
+import dev.ktchecker.projectmodel.CONFIGURATION_INPUT_CLOSURE_UNPROVEN
 import dev.ktchecker.providers.runtime.ExecutionAuthority
 import dev.ktchecker.providers.runtime.ExecutionPermit
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
@@ -78,9 +80,17 @@ internal class OwnerModelIntent internal constructor(
 internal class PreparedOwnerModelPlan internal constructor(
     val assembly: AssembledReviewPlan,
     preparationReasons: Map<String, String>,
+    internal val produced: OwnerProducedPlan? = null,
 ) {
     val request: SubmitPlanRequest get() = assembly.plan.request
     val preparationReasons: Map<String, String> = Collections.unmodifiableMap(preparationReasons.toSortedMap())
+}
+
+/** Whole attempted observed vector only; no accepted parent/patch or restorable live authority. */
+internal class ObservedModelPlanUnavailable(val attemptedPlan: RequiredReviewPlan, reasons: Collection<String>) :
+    RuntimeException("The whole observed parent could not be declared; no subset or scalar review was registered.") {
+    val code: String = "observed_model_complete_declaration_unavailable"
+    val reasons: List<String> = Collections.unmodifiableList((reasons + CONFIGURATION_INPUT_CLOSURE_UNPROVEN).distinct().sorted())
 }
 
 /**
@@ -176,6 +186,7 @@ internal class OwnerModelPlans(
     private val maxPlans: Int = 1024,
     private val maxInputs: Int = 4096,
     private val liveRuntime: OwnerLiveModelRuntime? = null,
+    private val parentProvider: AnalysisProvider? = null,
 ) : ReviewPlanAuthority {
     private val origin = Any()
     private val publicationLock = Any()
@@ -259,11 +270,15 @@ internal class OwnerModelPlans(
 
     fun prepare(intent: OwnerModelIntent, before: VerifiedProjectModel?, after: VerifiedProjectModel,
                 materialized: MaterializedSnapshot): PreparedOwnerModelPlan {
-        verifyCode()
         checkDeadline(intent.originalDeadline)
         if (intent.origin !== origin || intents[planKey(intent.binding, intent.request)] !== intent || !intent.used.compareAndSet(false, true)) {
             throw CliProblem("model_intent_invalid_or_replayed", "Use this owner's live, unused captured model intent.")
         }
+        // Reserve BEFORE any source/config/compiler preparation IO, including for an import
+        // which will remain unsupported. A slow old A cannot enroll after B's prepare reserved.
+        val imported = liveRuntime?.reserveImport(intent, after)
+        verifyCode()
+        checkDeadline(intent.originalDeadline)
         if (after.identity.configurationDigest != intent.configuration.policyDigest ||
             intent.configuration.binding != modelConfigBinding(intent.binding)) {
             throw CliProblem("model_captured_policy_mismatch", "Model ingress must use the exact configuration captured before import.")
@@ -336,8 +351,28 @@ internal class OwnerModelPlans(
                 }
             }
         }
-        val assembly = OwnerPlanAssembler(inventory, policyPreparer, executionPreparer).assemble(intent.binding, intent.request,
+        var assembly = OwnerPlanAssembler(inventory, policyPreparer, executionPreparer).assemble(intent.binding, intent.request,
             before, after, source, listOf(intent.binding.clientId))
+        var produced: OwnerProducedPlan? = null
+        if (imported != null && intent.evidence.executionAuthorized && parentProvider != null && after.jvmProducedGraph != null) {
+            try {
+                val runtime = requireNotNull(liveRuntime)
+                val selected = runtime.prepareProduced(imported)
+                val deadline = requireNotNull(intent.originalDeadline)
+                val declared = assembly.declareJvmProduced(modelDigest(ContractJson.encodeToJsonElement(intent.evidence)),
+                    deadline.identity, deadline.durationMillis) { verifyCode(); runtime.verifyProduced(selected) }
+                if (declared == null) {
+                    after.jvmProducedGraph!!.compilationIds.forEach { reasons.putIfAbsent(it, "owner_produced_complete_declaration_unavailable") }
+                } else {
+                    produced = OwnerProducedPlan(declared, runtime, selected, catalog, parentProvider, verifyCode)
+                    assembly = declared
+                }
+            } catch (_: Exception) {
+                // Keep the ENTIRE original unsupported vector; never retry as a smaller/scalar
+                // or ordinary cold plan. A partially enrolled preview is a retained tombstone.
+                after.jvmProducedGraph!!.compilationIds.forEach { reasons.putIfAbsent(it, "owner_produced_preparation_unavailable") }
+            }
+        }
         registry.register(assembly)
         val evidence = ModelPlanEvidence(assembly.plan, modelDigest(ContractJson.encodeToJsonElement(intent.evidence)),
             assembly.plan.slots.map { modelPolicyKey(intent.binding, it.input) }, reasons.toSortedMap())
@@ -355,7 +390,85 @@ internal class OwnerModelPlans(
         publishEvidence(evidence)
         liveInputs.putAll(preparedInputs)
         preparedLiveInputs.putAll(stagedLiveInputs)
-        return PreparedOwnerModelPlan(assembly, reasons).also { livePlans[key] = it }
+        return PreparedOwnerModelPlan(assembly, reasons, produced).also { livePlans[key] = it }
+    }
+
+    /** Explicit observed-only route. Prior model facts are documentary; only the fresh after
+     * token can enroll the original intent/generation and the whole two-slot declared parent. */
+    fun prepareObserved(intent: OwnerModelIntent, before: ObservedProjectModel?, after: ObservedProjectModel,
+        materialized: MaterializedSnapshot): PreparedOwnerModelPlan {
+        checkDeadline(intent.originalDeadline)
+        val runtime = liveRuntime ?: throw CliProblem("observed_model_live_route_required",
+            "Observed export diagnostics require the explicitly installed owner live-model route.")
+        if (intent.origin !== origin || intents[planKey(intent.binding, intent.request)] !== intent ||
+            intent.originalDeadline !== after.invocation.originalDeadline || !intent.used.compareAndSet(false, true)) {
+            throw CliProblem("model_intent_invalid_or_replayed", "Use this owner's live unused intent and the same pre-export clock.")
+        }
+        // Same prepare-time linearization boundary as verified imports. The namespace is fenced
+        // before any code/config/source preparation, even if this vector cannot be declared.
+        val imported = runtime.reserveObservedImport(intent, after)
+        verifyCode()
+        checkDeadline(intent.originalDeadline)
+        after.invocation.verifyLive()
+        if (after.identity.configurationDigest != intent.configuration.policyDigest ||
+            intent.configuration.binding != modelConfigBinding(intent.binding)) {
+            throw CliProblem("model_captured_policy_mismatch", "Observed import must retain the exact policy captured before export.")
+        }
+        val source = observedMaterialization(after, materialized, intent.binding)
+        val policyPreparer = OwnerPolicyPreparer { request ->
+            if (request.observedModel !== after) throw CliProblem("observed_model_policy_origin_mismatch",
+                "The captured policy callback must retain the exact observed model token.")
+            val activation = activationPlan(catalog, request.input.requiredRuleIds, false,
+                intent.configuration.ruleSettings.mapValues { it.value.enabled }, intent.configuration.policyDigest)
+            val identity = CapturedPolicyIdentity(request.binding, intent.configuration.policyDigest,
+                modelDigest(ContractJson.encodeToJsonElement(intent.configuration.revisionToken)))
+            CapturedPlanPolicy(request, identity, request.withActivation(PlanActivation(activation.policyDigest,
+                activation.decisions.map { PlanRuleActivation(it.ruleId, it.active, it.origin, it.reason) }))) { final ->
+                checkDeadline(intent.originalDeadline)
+                val evidence = ModelInputEvidence(request.binding, request.parentRequest,
+                    modelDigest(ContractJson.encodeToJsonElement(intent.evidence)), freezeModelInput(final),
+                    intent.evidence.configuration, intent.evidence.executionAuthorized, emptyMap(), emptyList())
+                retainProvisional(evidence, intent.configuration)
+                identity
+            }
+        }
+        val attempted = OwnerPlanAssembler(inventory, policyPreparer, OwnerExecutionPreparer.DENY).assembleObserved(
+            intent.binding, intent.request, before, after, source, listOf(intent.binding.clientId))
+        fun unavailable(reason: String): Nothing = throw ObservedModelPlanUnavailable(attempted.plan,
+            attempted.plan.slots.flatMap { it.reasons } + reason)
+        if (!intent.evidence.executionAuthorized || parentProvider == null || after.jvmProducedGraph == null) {
+            unavailable("owner_observed_complete_declaration_unavailable")
+        }
+        val assembly: AssembledReviewPlan
+        val produced: OwnerProducedPlan
+        try {
+            val selected = runtime.prepareProduced(imported)
+            val deadline = requireNotNull(intent.originalDeadline)
+            assembly = attempted.declareObservedJvmProduced(modelDigest(ContractJson.encodeToJsonElement(intent.evidence)),
+                deadline.identity, deadline.durationMillis) { verifyCode(); runtime.verifyProduced(selected) }
+                ?: unavailable("owner_observed_complete_declaration_unavailable")
+            produced = OwnerProducedPlan(assembly, runtime, selected, catalog, parentProvider, verifyCode)
+        } catch (failure: ObservedModelPlanUnavailable) { throw failure }
+          catch (_: Exception) { unavailable("owner_observed_preparation_unavailable") }
+        val reasons = after.compilationIds.associateWith { CONFIGURATION_INPUT_CLOSURE_UNPROVEN }
+        // Register and commit ONLY the complete declared vector. Unsupported observed vectors
+        // are diagnostic evidence above, never generic plans bearing reserved observed keys.
+        registry.register(assembly)
+        val evidence = ModelPlanEvidence(assembly.plan, modelDigest(ContractJson.encodeToJsonElement(intent.evidence)),
+            assembly.plan.slots.map { modelPolicyKey(intent.binding, it.input) }, reasons.toSortedMap())
+        val key = planKey(intent.binding, intent.request)
+        state.locked("model-plans") {
+            val file = state.keyFile("model-plans", key)
+            if (Files.exists(file, NOFOLLOW_LINKS)) {
+                if (state.read<ModelPlanEvidence>(file) != evidence) throw CliProblem("model_plan_conflict", "A committed whole parent cannot be replaced.")
+            } else {
+                boundedFiles("model-plans", maxPlans - 1)
+                state.write(file, evidence)
+            }
+        }
+        publishEvidence(evidence)
+        // No ordinary cold/live prepared-input registry is populated by the observed route.
+        return PreparedOwnerModelPlan(assembly, reasons, produced).also { livePlans[key] = it }
     }
 
     override fun resolve(binding: ClientBinding, request: SubmitPlanRequest): RequiredReviewPlan? {
@@ -366,6 +479,26 @@ internal class OwnerModelPlans(
         }
         verifyCode()
         return registry.resolve(binding, request)
+    }
+
+    override fun authorizeProduced(request: ProducedPlanAdmissionRequest): AuthorizedProducedPlan? {
+        val key = planKey(request.binding, request.request)
+        val plan = livePlans[key] ?: return null
+        if (plan.assembly.plan != request.definition || committed[key]?.plan != request.definition) return null
+        verifyCode()
+        return plan.produced?.authorize(request)
+    }
+
+    /** No lookup by P or model tag: the entire committed kernel parent tuple is mandatory. */
+    fun observeProduced(attempt: ProducedExecutionAttempt) {
+        val key = planKey(attempt.admission.binding, attempt.admission.request)
+        val plan = livePlans[key] ?: throw KernelException("model_live_authority_unavailable", "The live produced parent is unavailable.")
+        if (plan.assembly.plan != attempt.admission.definition || committed[key]?.plan != attempt.admission.definition) {
+            throw KernelException("model_produced_parent_mismatch", "A typed attempt belongs to another whole committed parent.")
+        }
+        val produced = plan.produced ?: throw KernelException("model_produced_authority_unavailable", "No live declared preparation exists.")
+        verifyCode()
+        produced.observe(attempt)
     }
 
     /** Kernel observer only. Source/dependency paths below are the archive, not old model inputs. */
@@ -497,6 +630,27 @@ internal class OwnerModelPlans(
             selected.add(path)
         } }
         return selected
+    }
+
+    private fun observedMaterialization(model: ObservedProjectModel, materialized: MaterializedSnapshot,
+        binding: ClientBinding): OwnerObservedPlanMaterialization {
+        val identity = SnapshotIdentity(binding.ownerId, binding.workspaceId, binding.worktreeId)
+        val root = materialized.root
+        val registered = snapshots.snapshot(identity, model.snapshot.snapshotId)
+        if (registered != materialized.manifest || registered.toContractManifest() != model.snapshot || !registered.capture.coherent ||
+            !root.isAbsolute || root.normalize() != root) {
+            throw CliProblem("model_materialization_mismatch", "Use the exact whole registered coherent SnapshotStore materialization.")
+        }
+        val key = rootIdentity(root)
+        val authority = modelDigest(buildJsonObject {
+            put("store", snapshots.root.toString()); put("root", root.toString()); put("rootIdentity", key)
+            put("registered", ContractJson.encodeToJsonElement(registered))
+        })
+        return OwnerObservedPlanMaterialization(model, root) {
+            if (snapshots.snapshot(identity, model.snapshot.snapshotId) != registered || rootIdentity(root) != key ||
+                !snapshots.verifyMaterialization(materialized).valid || rootIdentity(root) != key) null
+            else MaterializationVerification(model.snapshot, root.toString(), authority)
+        }
     }
 
     private fun materialization(model: VerifiedProjectModel, materialized: MaterializedSnapshot, binding: ClientBinding): OwnerPlanMaterialization {
