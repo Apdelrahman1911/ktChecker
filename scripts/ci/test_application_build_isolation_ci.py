@@ -8,6 +8,7 @@ application_build_isolation_ci.py gate is responsible for actual build-data chec
 """
 
 import ast
+import hashlib
 from pathlib import Path
 import re
 import unittest
@@ -15,6 +16,8 @@ import unittest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TAIL_MARKER = "// Persistent application bridge: JDK-only isolated sources, not the historical finite fixture."
+CURRENT445_MARKER = "// A separately explicit current445 observational route; never widen/reinterpret legacy443 tasks.\n"
+CURRENT445_SOURCE_SHA256 = "98f88d9ba6c0ff5a6608f5f6868355f14ac2c64a18d8986079eb72e4de487ef8"
 FAMILIES = (
     "dev/ktchecker/workerprotocol/ApplicationWire",
     "dev/ktchecker/workerprotocol/CompilerJobWire",
@@ -52,6 +55,13 @@ class ApplicationBuildIsolationSourceTests(unittest.TestCase):
         self.assertNotIn('kotlin(', protocol)
         self.assertNotIn('implementation(', protocol)
         self.assertNotIn('runtimeOnly(', protocol)
+        # The separately guarded observational task follows this JAR, not inside it.
+        # Pin its complete authored appendix rather than silently ignoring arbitrary
+        # later task reconfiguration. This is SOURCE validation, not execution credit.
+        self.assertEqual(1, compiler.count(CURRENT445_MARKER))
+        compiler, current445 = compiler.split(CURRENT445_MARKER, 1)
+        self.assertEqual(CURRENT445_SOURCE_SHA256,
+                         hashlib.sha256((CURRENT445_MARKER + current445).encode("utf-8")).hexdigest())
         self.assertEqual(1, compiler.count(TAIL_MARKER))
         tail = compiler.split(TAIL_MARKER, 1)[1]
         bridge = re.findall(r'^val applicationWireBridge by configurations\.creating \{\n([\s\S]*?)^\}',
@@ -137,6 +147,24 @@ class ApplicationBuildIsolationSourceTests(unittest.TestCase):
 
     def test_reviewed_jdk_only_source_contract(self):
         self.assert_source_contract(self.documents())
+
+    def test_current445_appendix_is_explicitly_scoped_and_cannot_hide_task_changes(self):
+        self.assert_mutations_fail((
+            ("compiler", CURRENT445_MARKER, ""),
+            ("compiler", CURRENT445_MARKER, CURRENT445_MARKER + CURRENT445_MARKER),
+            ("compiler", 'tasks.register<Test>("compilerCurrent445Fixtures") {',
+             'tasks.register<Test>("unselectedCompilerFixtures") {'),
+            ("compiler", '    useJUnitPlatform { excludeTags("compiler-current445-native-integration") }',
+             '    useJUnitPlatform { includeTags("compiler-current445-native-integration") }'),
+            ("compiler", CURRENT445_MARKER,
+             'tasks.named<Jar>("compilerApplicationWorkerJar") { onlyIf { false } }\n' + CURRENT445_MARKER),
+            ("compiler", '    archiveFileName.set("ktchecker-compiler-application-preview-1.jar")',
+             '    archiveFileName.set("ktchecker-compiler-application-preview-1.jar")\n    onlyIf { false }'),
+        ))
+        changed = self.documents()
+        changed["compiler"] += '\ntasks.named<Jar>("compilerApplicationWorkerJar") { outputs.cacheIf { true } }\n'
+        with self.assertRaises(AssertionError):
+            self.assert_source_contract(changed)
 
     def test_source_controls_reject_shared_kotlin_and_transitive_worker_classpaths(self):
         self.assert_mutations_fail((

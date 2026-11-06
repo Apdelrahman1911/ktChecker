@@ -34,6 +34,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PROTOCOL_MARKER = "// Additive model DTO profile. The original main JAR and its raw inventory stay unchanged."
 PROVIDER_MARKER = "// Additive model application profile. The persistent M0 block below remains byte-for-byte unchanged."
 M0_MARKER = "// Persistent application bridge: JDK-only isolated sources, not the historical finite fixture."
+CURRENT445_MARKER = "// A separately explicit current445 observational route; never widen/reinterpret legacy443 tasks.\n"
+CURRENT445_SOURCE_SHA256 = "98f88d9ba6c0ff5a6608f5f6868355f14ac2c64a18d8986079eb72e4de487ef8"
 HOST_DEPENDENCY = '    implementation(project(path = ":worker-protocol", configuration = "modelWireElements"))\n'
 MODEL_ZIP_IMPORT = 'import java.util.zip.ZipFile\n'
 PROTOCOL_PREIMAGE_SHA256 = "909c7750dd4f8fb367b24cfbc87d38062b746e04b902defecb9fe37ae5b02a29"
@@ -75,6 +77,12 @@ class CompilerModelBuildIsolationSourceTests(unittest.TestCase):
 
     def assert_source_contract(self, docs):
         protocol, provider = docs["protocol"], docs["provider"]
+        # Preserve the original M0/main/fixture preimage below. The later current445
+        # observation task is a separate, exact SOURCE appendix, not runtime or rule
+        # qualification and not an unchecked escape for arbitrary task changes.
+        self.assertEqual(1, provider.count(CURRENT445_MARKER))
+        provider, current445 = provider.split(CURRENT445_MARKER, 1)
+        self.assertEqual(CURRENT445_SOURCE_SHA256, sha256(CURRENT445_MARKER + current445))
         self.assertEqual(ROOT_BUILD_SHA256, sha256(docs["root"]), "Root build conventions changed")
         self.assertEqual(1, protocol.count(PROTOCOL_MARKER))
         protocol_before, protocol_model = protocol.split(PROTOCOL_MARKER, 1)
@@ -233,6 +241,24 @@ class CompilerModelBuildIsolationSourceTests(unittest.TestCase):
 
     def test_fixed_additive_source_contract_preserves_complete_preimages(self):
         self.assert_source_contract(self.documents())
+
+    def test_current445_appendix_is_scoped_without_repinning_original_preimages(self):
+        self.assert_mutations_fail((
+            ("provider", CURRENT445_MARKER, ""),
+            ("provider", CURRENT445_MARKER, CURRENT445_MARKER + CURRENT445_MARKER),
+            ("provider", 'tasks.register<Test>("compilerCurrent445Fixtures") {',
+             'tasks.register<Test>("unselectedCompilerFixtures") {'),
+            ("provider", '    useJUnitPlatform { excludeTags("compiler-current445-native-integration") }',
+             '    useJUnitPlatform { includeTags("compiler-current445-native-integration") }'),
+            ("provider", CURRENT445_MARKER,
+             'tasks.named<Jar>("compilerApplicationWorkerJar") { onlyIf { false } }\n' + CURRENT445_MARKER),
+            ("provider", '    archiveFileName.set("ktchecker-compiler-application-preview-1.jar")',
+             '    archiveFileName.set("ktchecker-compiler-application-preview-1.jar")\n    onlyIf { false }'),
+        ))
+        docs = self.documents()
+        docs["provider"] += '\ntasks.named<Jar>("compilerApplicationWorkerJar") { outputs.cacheIf { true } }\n'
+        with self.assertRaises(AssertionError):
+            self.assert_source_contract(docs)
 
     def test_rejects_transitive_main_kotlin_and_test_classpath_leaks(self):
         self.assert_mutations_fail((

@@ -948,12 +948,139 @@ def read_benchmark_scenario(path: Path, selected: str) -> benchmark.Scenario:
         raise ExampleError("benchmark_scenarios_unavailable") from None
 
 
+class OwnerCaptureSession:
+    """A lazy, private trusted-owner pipe. Never expose it to ordinary review clients.
+
+    Reuses only overlay/explicit compiler-subset preparation, not provider execution.
+    Per-frame consent and installation identity are mandatory. Any error poisons the
+    pipe; mutation may already have happened, so no reconnect, replay or fallback.
+    """
+
+    def __init__(self, command: list[str], root: PrivateDirectory, inspection: dict):
+        digest = inspection.get("toolchainDigest") if isinstance(inspection, dict) else None
+        require(type(digest) is str and DIGEST.fullmatch(digest) is not None, "invalid_provider_inspection")
+        self.command, self.root, self.inspection = tuple(command), root, inspection
+        self.toolchain_digest = digest
+        self.transport = self.rpc = None
+        self.poisoned = self.closed = False
+        self.startup = None
+        self.completed = 0
+        self.record = None
+
+    def _private_name(self, raw: str, *, must_be_new: bool = False) -> str:
+        require(type(raw) is str, "unsafe_private_filename")
+        name = Path(raw).name
+        selected = self.root.file_path(name, must_be_new=must_be_new)
+        require(raw == str(selected), "unsafe_output_path")
+        return name
+
+    def call(self, *args: str, deadline: float) -> tuple[dict, dict]:
+        require(not self.closed and not self.poisoned, "owner_capture_session_failed")
+        try:
+            require(type(deadline) in (int, float) and math.isfinite(deadline) and
+                    deadline > time.monotonic(), "invalid_timeout")
+            self.root.verify()
+            # Closed forms from this controller only. Never forward arbitrary CLI words.
+            if len(args) == 3 and args[:2] == ("overlay", "--request"):
+                method, consent, output_name = "owner.overlay", None, None
+            elif len(args) == 5 and args[:2] == ("prepare", "--request") and args[3] == "--out":
+                method, consent = "owner.prepare", False
+                output_name = self._private_name(args[4], must_be_new=True)
+            elif len(args) == 6 and args[:2] == ("prepare", "--request") and args[3:5] == ("--authorize-execution", "--out"):
+                method, consent = "owner.prepare", True
+                output_name = self._private_name(args[5], must_be_new=True)
+            else:
+                raise ExampleError("owner_capture_command_invalid")
+            document = self.root.read_json(self._private_name(args[2]))
+            params = {"document": document, "expectedToolchainDigest": self.toolchain_digest}
+            if method == "owner.prepare":
+                params["authorizeExecution"] = consent  # Required on EVERY frame, including explicit false.
+            # Preflight output and private inputs before startup/sending; this does not reserve output.
+            require(time.monotonic() < deadline, "transport_timeout")
+            if self.transport is None:
+                started = time.monotonic_ns()
+                self.startup = {"spawnStartedMonotonicNanos": started, "spawnObservedMillis": None,
+                                "firstSuccessfulCaptureReplyMillisFromSpawnStart": None,
+                                "startupIncludedInFirstCaptureLatency": True,
+                                "establishesCompilerExecutionOrWarmth": False}
+                self.transport = BoundedProcess([*self.command, "owner-capture-session", "--owner-action", "--workers", "0"])
+                self.startup["spawnObservedMillis"] = (time.monotonic_ns() - started) / 1e6
+                self.rpc = NdjsonClient(self.transport)
+            before = self.transport.statistics()
+            response = self.rpc.call(method, params, deadline=deadline)  # The same original absolute bound includes startup.
+            reply_observed = time.monotonic_ns()
+            self.root.verify()
+            if method == "owner.prepare":
+                require(isinstance(response, dict) and set(response) == {"prepared", "installedProviders"} and
+                        isinstance(response.get("prepared"), dict), "owner_capture_response_invalid")
+                prepared = response["prepared"]
+                value = prepared.get("input")
+                binding = prepared.get("binding")
+                require(prepared.get("contractVersion") == CONTRACT and prepared.get("executionAuthorized") is consent and
+                        isinstance(binding, dict) and binding.get("clientId") == document.get("clientId") and
+                        prepared.get("patchId") == document.get("patchId") and
+                        prepared.get("idempotencyKey") == document.get("idempotencyKey") and
+                        isinstance(value, dict) and isinstance(value.get("snapshot"), dict) and
+                        value["snapshot"].get("snapshotId") == document.get("snapshotId") and
+                        isinstance(value.get("context"), dict) and
+                        value["context"].get("toolchainDigest") == self.toolchain_digest and
+                        provider_inspection(response["installedProviders"]) == self.inspection,
+                        "owner_capture_response_invalid")
+                self.root.write_json(output_name, prepared)
+                response = {"contractVersion": CONTRACT, "state": "prepared", "executionAuthorized": consent,
+                            "installedProviders": response["installedProviders"], "releaseQualified": False}
+            else:
+                require(isinstance(response, dict), "owner_capture_response_invalid")
+            self.root.verify()
+            require(time.monotonic() < deadline, "transport_timeout")
+            after = self.transport.statistics()
+            statistics = dict(after)
+            for field in ("stdinBytes", "stdoutBytes", "stderrBytes"):
+                statistics[field] = after[field] - before[field]
+            statistics["byteMeasurementScope"] = "completed owner capture command delta; excludes session teardown"
+            self.completed += 1
+            if self.startup["firstSuccessfulCaptureReplyMillisFromSpawnStart"] is None:
+                self.startup["firstSuccessfulCaptureReplyMillisFromSpawnStart"] = (
+                    reply_observed - self.startup["spawnStartedMonotonicNanos"]) / 1e6
+            return response, statistics
+        except BaseException:
+            self.poisoned = True
+            raise
+
+    def close(self) -> None:
+        if self.closed:
+            return
+        self.closed = True
+        self.record = {"state": "not_started" if self.startup is None else
+                                "startup_attempted_no_retained_transport" if self.transport is None else "transport_returned",
+                       "startup": self.startup, "completedCaptureCommands": self.completed,
+                       "poisoned": self.poisoned, "workerCount": 0,
+                       "authorityScope": "explicit owner overlay and compiler preparation only; not ordinary review RPC",
+                       "transportTotalsOverlapOwnerCommandDeltas": True,
+                       "establishesCompilerExecutionOrWarmth": False,
+                       "transport": None, "cleanup": {"state": "unavailable"}}
+        if self.transport is None:
+            return
+        self.record["transport"] = self.transport.statistics()
+        try:
+            self.transport.close()  # Existing full cooperative-helper grace, final group signal and leader reap.
+            self.record["cleanup"] = dict(self.transport.cleanup_statistics(),
+                                          state="owned_group_signaled_leader_reaped_pipes_closed")
+        except BaseException:
+            self.poisoned = True
+            self.record["poisoned"] = True
+            self.record["cleanup"] = {"state": "failed", "forcedHelperLossGuaranteed": False}
+            raise
+
+
 class BenchmarkController(Controller):
     """The same owner commands and bounded RPC transport, with retained trial accounting.
 
     Warm scenarios retain ONE broker across real new capture/prepare/submit rounds.
     Fresh scenarios start a NEW broker per scheduled batch, never erase state or
-    cancel old accepted obligations. Neither schedule proves warm compiler state.
+    cancel old accepted obligations. Both schedules retain a separate zero-worker
+    capture owner; its startup stays inside the first patch's capture interval.
+    Neither schedule proves warm compiler state.
     """
 
     def __init__(self, home: Path, root: PrivateDirectory, compiler_java_home: Path, scenario: benchmark.Scenario):
@@ -970,6 +1097,7 @@ class BenchmarkController(Controller):
         self.transport = self.rpc = None
         self.sessions = []
         self.session_startup = None
+        self.owner_capture = None
         self.failure = None
 
     def deadline_ns(self) -> int:
@@ -989,13 +1117,21 @@ class BenchmarkController(Controller):
 
     def call(self, *args: str) -> dict:
         self.root.verify()
-        response, statistics = run_json_command(self.command + ["--workers", "0", *args],
-                                                contract_required=args[0] != "overlay",
-                                                deadline=self.deadline(OWNER_TIMEOUT_SECONDS))
+        deadline = self.deadline(OWNER_TIMEOUT_SECONDS)
+        if args and args[0] in {"overlay", "prepare"}:
+            if self.owner_capture is None:
+                self.owner_capture = OwnerCaptureSession(self.command, self.root, self.inspection)
+            response, statistics = self.owner_capture.call(*args, deadline=deadline)
+        else:
+            response, statistics = run_json_command(self.command + ["--workers", "0", *args], deadline=deadline)
         self.root.verify()
         self.owner_transport.append(statistics)
         require(time.monotonic_ns() < self.deadline_ns(), "benchmark_deadline")
         return response
+
+    def close_owner_capture(self) -> None:
+        if self.owner_capture is not None:
+            self.owner_capture.close()
 
     def setup(self) -> None:
         self.inspection = provider_inspection(self.call("providers"))
@@ -1218,16 +1354,20 @@ class BenchmarkController(Controller):
         except Exception:
             self.fail("preview_example_local_failure")
         finally:
-            try:
-                self.close_broker()
-            except (ExampleError, benchmark.BenchmarkError) as error:
-                self.fail(error.code)
-            except BaseException:
-                self.fail("preview_example_cleanup_failed")
+            # Teardown independently: a broker failure must not skip the retained owner's cleanup.
+            for close in (self.close_broker, self.close_owner_capture):
+                try:
+                    close()
+                except (ExampleError, benchmark.BenchmarkError) as error:
+                    self.fail(error.code)
+                except BaseException:
+                    self.fail("preview_example_cleanup_failed")
         report = self.ledger.report(time.monotonic_ns())
         report.update(collectionState="collected" if self.failure is None else "failed", collectorFailure=self.failure,
                       compilerInspection=self.inspection, initialOwnerSetupObservedMillis=self.preparation_ms,
                       brokerSessions=self.sessions,
+                      ownerCaptureSession=self.owner_capture.record if self.owner_capture is not None else
+                                          {"state": "not_started", "establishesCompilerExecutionOrWarmth": False},
                       ownerCommandTransportTotals={field: sum(value[field] for value in self.owner_transport)
                                                    for field in ("stdinBytes", "stdoutBytes", "stderrBytes")},
                       ownerTransportScope="completed owner commands only; no metrics inferred for a failed command",

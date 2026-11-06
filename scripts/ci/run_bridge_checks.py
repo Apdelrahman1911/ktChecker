@@ -30,7 +30,9 @@ TEST_SUMMARY = re.compile(r"^(?:#|ℹ)\s+(tests|suites|pass|fail|cancelled|skipp
 ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 PUBLIC_TEST = re.compile(r"(?m)^\s*test\(\s*(['\"])([^'\"\\\r\n]{1,512})\1\s*,")
 MAX_JUNIT_BYTES = 8 * 1024 * 1024
+MAX_TERMINAL_EVENTS = 10000
 MAX_FAILED_IDENTITIES = 64
+MAX_PARENT_IDENTITIES = 64
 FAILURE_CODES = {"private_state_platform_unqualified", "ERR_TEST_FAILURE", "ERR_ASSERTION", "ENOENT", "EACCES", "EPERM",
                  "private_path_unsupported", "private_path_alias_unsupported", "private_acl_unavailable", "unsafe_state_path",
                  "state_permissions", "private_parent_permissions", "state_directory_in_use", "private_operation_unsupported",
@@ -129,20 +131,152 @@ def public_test_cases(name: str) -> dict[str, str]:
 
 
 def test_report_environment(environment: dict[str, str], report: Path) -> dict[str, str]:
-    # Dual built-in reporters preserve the ordinary real npm-test summary and
-    # retain raw JUnit only below unuploaded raw/. Quoting is NODE_OPTIONS syntax,
+    # Retain the ordinary summary, JUnit leaves and actual terminal occurrences.
+    # JUnit drops a parent's own outcome when it has children. All raw reports
+    # stay below unuploaded raw/. Quoting is NODE_OPTIONS syntax,
     # not a shell command; npm and tsc processes do not enable Node's test mode.
     destination = report.resolve().as_posix()
     if re.search(r"[\x00-\x1f\x7f]", destination):
         raise ValueError("Unsupported Node reporter destination")
     options = "--test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit " \
-        "--test-reporter-destination=" + json.dumps(destination, ensure_ascii=False)
+        "--test-reporter-destination=" + json.dumps(destination, ensure_ascii=False) + \
+        " --test-reporter=" + json.dumps((REPO_ROOT / "scripts/ci/node_test_events.mjs").resolve().as_uri(), ensure_ascii=False) + \
+        " --test-reporter-destination=" + json.dumps(report.with_suffix(".events.jsonl").resolve().as_posix(), ensure_ascii=False)
     return {**environment, "NODE_OPTIONS": (environment.get("NODE_OPTIONS", "") + " " + options).strip()}
 
 
-def junit_failures(path: Path, public_cases: dict[str, str], node_counts: dict) -> tuple[dict, list[str]]:
+def _event_source(row: dict, public_cases: dict[str, str]) -> str | None:
+    source = public_cases.get(row["name"])
+    if source is None or row["file"] is None:
+        return None
+    source_path = Path(source)
+    compiled = REPO_ROOT / source_path.parent.parent / "dist/test" / source_path.with_suffix(".js").name
+    return source if Path(row["file"]) == compiled else None
+
+
+def terminal_event_report(path: Path, document: ET.Element, node_counts: dict, public_cases: dict[str, str]) -> tuple[dict, dict, list[str]]:
+    """Match ordered terminal occurrences to JUnit's tree, never infer parent success."""
+    if path.is_symlink() or path.stat().st_size > MAX_JUNIT_BYTES:
+        raise ValueError("Unsafe/oversized Node terminal-event report")
+    with path.open("rb") as handle:
+        raw = handle.read(MAX_JUNIT_BYTES + 1)
+    lines = raw[:-1].split(b"\n") if raw.endswith(b"\n") else []
+    if len(raw) > MAX_JUNIT_BYTES or not 2 <= len(lines) <= MAX_TERMINAL_EVENTS + 2 or any(len(line) + 1 > 65536 for line in lines):
+        raise ValueError("Incomplete/oversized Node terminal-event report")
+
+    def unique(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError("Ambiguous Node terminal-event JSON")
+            value[key] = item
+        return value
+
+    try:
+        values = [json.loads(line, object_pairs_hook=unique) for line in lines]
+    except RecursionError as error:
+        raise ValueError("Overnested Node terminal-event JSON") from error
+    rows = values[1:-1]
+    if values[0] != {"schema": "ktchecker-node-terminal-events/1", "node_version": NODE_VERSION} or \
+            not isinstance(values[-1], dict) or values[-1] != {"complete": True, "occurrences": len(rows)} or \
+            values[-1]["complete"] is not True or type(values[-1]["occurrences"]) is not int:
+        raise ValueError("Incomplete/incompatible Node terminal-event report")
+    fields = {"ordinal", "name", "file", "nesting", "test_type", "event", "skip", "todo", "junit_skip", "junit_todo", "failure_type", "reason_codes"}
+    for index, row in enumerate(rows, 1):
+        if not isinstance(row, dict) or set(row) != fields or type(row["ordinal"]) is not int or row["ordinal"] != index or \
+                not isinstance(row["name"], str) or len(row["name"].encode("utf-16-le", errors="surrogatepass")) > 4096 * 2 or \
+                (row["file"] is not None and (not isinstance(row["file"], str) or len(row["file"].encode("utf-16-le", errors="surrogatepass")) > 8192 * 2)) or \
+                type(row["nesting"]) is not int or not 0 <= row["nesting"] <= 128 or \
+                row["test_type"] not in ("test", "suite") or row["event"] not in ("pass", "fail") or \
+                any(type(row[key]) is not bool for key in ("skip", "todo", "junit_skip", "junit_todo")) or \
+                (row["skip"] and row["todo"]) or (row["junit_skip"] and not row["skip"]) or (row["junit_todo"] and not row["todo"]) or \
+                (row["failure_type"] is not None and (not isinstance(row["failure_type"], str) or row["failure_type"] not in FAILURE_TYPES)) or \
+                not isinstance(row["reason_codes"], list) or any(not isinstance(code, str) or code not in FAILURE_CODES for code in row["reason_codes"]) or \
+                row["reason_codes"] != sorted(set(row["reason_codes"])):
+            raise ValueError("Malformed Node terminal occurrence")
+
+    nodes = []
+
+    def visit(node: ET.Element, nesting: int):
+        if nesting > 128 or node.tag not in {"testcase", "testsuite"}:
+            raise ValueError("Unsupported Node JUnit tree")
+        children = [child for child in node if child.tag in {"testcase", "testsuite"}]
+        if node.tag == "testsuite":
+            if not children or len(children) != len(node):
+                raise ValueError("Unsupported Node JUnit parent")
+            failures = sum(bool(child.findall("failure")) or child.get("failures", "0") != "0" for child in children)
+            skipped = sum(bool(child.findall("skipped")) or child.get("skipped", "0") != "0" for child in children)
+            if any(node.get(key) != str(value) for key, value in {"tests": len(children), "failures": failures, "skipped": skipped, "errors": 0, "disabled": 0}.items()):
+                raise ValueError("Node JUnit child rollup differs from its actual children")
+            for child in children:
+                visit(child, nesting + 1)
+        elif any(child.tag not in {"skipped", "failure"} or len(child) for child in node):
+            raise ValueError("Unsupported Node JUnit leaf content")
+        nodes.append((node, nesting))
+        if len(nodes) > MAX_TERMINAL_EVENTS:
+            raise ValueError("Node JUnit occurrence bound exceeded")
+
+    if document.tag != "testsuites":
+        raise ValueError("Actual Node terminal matching requires its testsuites root")
+    for child in document:
+        visit(child, 0)
+    if len(nodes) != len(rows):
+        raise ValueError("Node terminal/JUnit occurrence identities differ")
+    counts = {"tests": 0, "suites": 0, "pass": 0, "fail_or_cancelled": 0, "skipped": 0, "todo": 0}
+    parents, by_node = [], {}
+    unknown_parents = omitted_parents = failed_suites = leaf_tests = parent_tests = leaf_suites = parent_suites = 0
+    for (node, nesting), row in zip(nodes, rows):
+        if node.get("name") != row["name"] or nesting != row["nesting"]:
+            raise ValueError("Node terminal/JUnit occurrence order or nesting differs")
+        parent = node.tag == "testsuite"
+        if not parent:
+            directives = [item.get("type") for item in node.findall("skipped")]
+            expected = (["skipped"] if row["junit_skip"] else []) + (["todo"] if row["junit_todo"] else [])
+            if node.get("file") != row["file"] or len(node.findall("failure")) != int(row["event"] == "fail") or node.findall("error") or directives != expected:
+                raise ValueError("Node terminal/JUnit leaf identity or outcome differs")
+        state = "skipped" if row["skip"] else "todo" if row["todo"] else "fail_or_cancelled" if row["event"] == "fail" else "pass"
+        if row["test_type"] == "suite":
+            counts["suites"] += 1
+            # Node's suite success check excludes TODO, but not SKIP. Its suite
+            # outcomes are not part of the ordinary test pass/fail counters.
+            failed_suites += int(row["event"] == "fail" and not row["todo"])
+            parent_suites += int(parent)
+            leaf_suites += int(not parent)
+        else:
+            counts["tests"] += 1
+            counts[state] += 1
+            parent_tests += int(parent)
+            leaf_tests += int(not parent)
+        by_node[id(node)] = row
+        if parent:
+            source = _event_source(row, public_cases)
+            if source is None:
+                unknown_parents += 1
+            elif len(parents) < MAX_PARENT_IDENTITIES:
+                parents.append({"occurrence": row["ordinal"], "nesting": nesting, "name": row["name"], "public_source_path": source,
+                                "test_type": row["test_type"], "state": state, "terminal_event": row["event"],
+                                "failure_types": [row["failure_type"]] if row["failure_type"] else [], "reason_codes": row["reason_codes"]})
+            else:
+                omitted_parents += 1
+    errors = []
+    if any(counts[key] != node_counts.get(key) for key in ("tests", "suites", "pass", "skipped", "todo")) or \
+            counts["fail_or_cancelled"] != node_counts.get("fail", 0) + node_counts.get("cancelled", 0):
+        errors.append("Actual Node terminal occurrences differ from the ordinary test summary")
+    if failed_suites:
+        errors.append("Actual Node terminal events contain failed suites")
+    return {"report_digest": digest_bytes(raw), "counts": counts, "terminal_occurrences": len(rows), "leaf_test_occurrences": leaf_tests,
+            "parent_test_occurrences": parent_tests, "leaf_suite_occurrences": leaf_suites, "parent_suite_occurrences": parent_suites,
+            "public_parent_occurrences": parents, "unknown_parent_occurrences": unknown_parents,
+            "bounded_omitted_public_parent_occurrences": omitted_parents,
+            "failed_suite_occurrences": failed_suites, "matching": "ordered_postorder_name_file_nesting_and_leaf_outcome; duplicate occurrences retained",
+            "parent_outcome_scope": "actual terminal event; JUnit parent attributes describe children only",
+            "failure_count_scope": "terminal fail events excluding test directives; fail/cancelled split remains the ordinary Node summary",
+            "raw_report_uploaded": False}, by_node, errors
+
+
+def junit_failures(path: Path, public_cases: dict[str, str], node_counts: dict, events: Path | None = None) -> tuple[dict, list[str]]:
     """Bounded case identities/codes only; never publish failure bodies or streams."""
-    if path.stat().st_size > MAX_JUNIT_BYTES:
+    if path.is_symlink() or path.stat().st_size > MAX_JUNIT_BYTES:
         raise ValueError("Unsafe/oversized Node JUnit report")
     with path.open("rb") as handle:
         raw = handle.read(MAX_JUNIT_BYTES + 1)
@@ -154,9 +288,10 @@ def junit_failures(path: Path, public_cases: dict[str, str], node_counts: dict) 
     cases = list(document.iter("testcase"))
     if len(cases) > 10000:
         raise ValueError("Node JUnit case occurrences exceed their bound")
+    terminal, by_node, errors = terminal_event_report(events, document, node_counts, public_cases) if events is not None else (None, {}, [])
     counts = {"tests": len(cases), "passed": 0, "failure": 0, "error": 0, "skipped": 0}
     failed = []
-    unknown = omitted = 0
+    unknown = 0
     for case in cases:
         problems = case.findall("failure") + case.findall("error")
         state = "failure" if case.find("failure") is not None else "error" if case.find("error") is not None \
@@ -165,11 +300,9 @@ def junit_failures(path: Path, public_cases: dict[str, str], node_counts: dict) 
         if not problems:
             continue
         label = case.get("name")
-        if label not in public_cases:
+        row = by_node.get(id(case))
+        if label not in public_cases or (row is not None and _event_source(row, public_cases) is None):
             unknown += 1
-            continue
-        if len(failed) >= MAX_FAILED_IDENTITIES:
-            omitted += 1
             continue
         # Known error codes help identify a fail-closed privacy guard. Neither
         # arbitrary messages nor unknown test/class names enter this projection.
@@ -177,16 +310,31 @@ def junit_failures(path: Path, public_cases: dict[str, str], node_counts: dict) 
         codes = sorted(code for code in FAILURE_CODES if re.search(r"(?<![A-Za-z0-9_])" + re.escape(code) + r"(?![A-Za-z0-9_])", detail))
         types = sorted({problem.get("type") for problem in problems if problem.get("type") in FAILURE_TYPES})
         failed.append({"name": label, "public_source_path": public_cases[label], "state": state,
-                       "failure_types": types, "reason_codes": codes})
-    errors = []
-    if counts["tests"] != node_counts.get("tests") or counts["passed"] != node_counts.get("pass") or \
+                       "failure_types": types, "reason_codes": codes,
+                       **({"occurrence": row["ordinal"], "nesting": row["nesting"], "test_type": row["test_type"], "terminal_event": row["event"]} if row is not None else {})})
+    if terminal is not None:
+        for node in document.iter("testsuite"):
+            row = by_node[id(node)]
+            if row["event"] != "fail":
+                continue
+            source = _event_source(row, public_cases)
+            if source is None:
+                unknown += 1
+            else:
+                failed.append({"name": row["name"], "public_source_path": source, "state": "failure", "occurrence": row["ordinal"],
+                               "nesting": row["nesting"], "test_type": row["test_type"], "terminal_event": row["event"],
+                               "failure_types": [row["failure_type"]] if row["failure_type"] else [], "reason_codes": row["reason_codes"]})
+        failed.sort(key=lambda case: case["occurrence"])
+    elif counts["tests"] != node_counts.get("tests") or counts["passed"] != node_counts.get("pass") or \
             counts["failure"] + counts["error"] != node_counts.get("fail", 0) + node_counts.get("cancelled", 0) or \
             counts["skipped"] != node_counts.get("skipped", 0) + node_counts.get("todo", 0):
         errors.append("Actual Node JUnit occurrences differ from the ordinary test summary")
+    omitted = max(0, len(failed) - MAX_FAILED_IDENTITIES)
+    failed = failed[:MAX_FAILED_IDENTITIES]
     return {"report_digest": digest_bytes(raw), "case_counts": counts, "failed_cases": failed,
             "unknown_failed_case_occurrences": unknown, "bounded_omitted_failed_case_occurrences": omitted,
             "failure_messages_stdout_stderr_and_unknown_names_omitted": True,
-            "raw_report_uploaded": False}, errors
+            "raw_report_uploaded": False, **({"terminal_events": terminal, "case_count_scope": "JUnit leaves, including empty suites; not all terminal test occurrences"} if terminal is not None else {})}, errors
 
 
 def audit_summary(output: str) -> tuple[dict, list[str]]:
@@ -296,14 +444,18 @@ def execute(args: argparse.Namespace) -> dict:
 
     def stage(name: str, argv: list[str], cwd: Path, mode: str | None = None) -> dict:
         stage_environment = environment
+        timeout = args.reference_host_test_timeout if name == "reference-host-test" and mode == "test" else args.timeout
         if mode == "test":
             report = args.output.parent / "raw" / (name + ".junit.xml")
+            events = report.with_suffix(".events.jsonl")
             report.parent.mkdir(parents=True, exist_ok=True)
             report.unlink(missing_ok=True)
+            events.unlink(missing_ok=True)
             stage_environment = test_report_environment(environment, report)
         value, stdout, _ = run_logged(argv, cwd=cwd, log_base=args.output.parent / "raw" / name,
-                                     timeout=args.timeout, env=stage_environment, separate_stderr=True,
-                                     additional_output_paths=(report,) if mode == "test" else ())
+                                     timeout=timeout, env=stage_environment, separate_stderr=True,
+                                     additional_output_paths=(report, events) if mode == "test" else ())
+        value["timeout_seconds"] = timeout
         errors = []
         if value["state"] != "completed" or value["return_code"] != 0:
             errors.append("Actual npm/Node command did not complete successfully")
@@ -312,11 +464,11 @@ def execute(args: argparse.Namespace) -> dict:
             errors.extend(test_errors)
             try:
                 value["test_failures"], report_errors = junit_failures(
-                    report, public_test_cases(name.removesuffix("-test")), value["test_counts"])
+                    report, public_test_cases(name.removesuffix("-test")), value["test_counts"], events)
                 errors.extend(report_errors)
             except (OSError, ValueError, ET.ParseError):
-                errors.append("Actual Node JUnit report is absent/unsafe/malformed")
-            value["test_count_scope"] = "Actual Node test-case occurrences; not qualified rules or authenticated model observations"
+                errors.append("Actual Node JUnit/terminal-event reports are absent/unsafe/malformed")
+            value["test_count_scope"] = "Actual Node terminal test occurrences, including parents; JUnit leaves reported separately; not qualified rules or authenticated model observations"
         elif mode == "audit":
             try:
                 value["audit"], audit_errors = audit_summary(stdout)
@@ -420,11 +572,15 @@ def finalize(path: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--timeout", type=int, default=300)
+    parser.add_argument("--timeout", type=int, default=300, help="Bound for commands other than the reference-host test suite")
+    parser.add_argument("--reference-host-test-timeout", type=int, default=600,
+                        help="Narrow bound for the full reference-host suite; all other command bounds are unchanged")
     parser.add_argument("--finalize", action="store_true")
     args = parser.parse_args()
     if not 1 <= args.timeout <= 1200:
         parser.error("timeout must be 1..1200 seconds per bounded npm command")
+    if not 1 <= args.reference_host_test_timeout <= 1200:
+        parser.error("reference-host-test-timeout must be 1..1200 seconds")
     try:
         result = finalize(args.output) if args.finalize else execute(args)
     except (OSError, ValueError, TypeError) as error:

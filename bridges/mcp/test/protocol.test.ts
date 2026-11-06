@@ -1,40 +1,34 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY, PROTOCOL_VERSION_META_KEY, Client } from '@modelcontextprotocol/client';
-import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
-import { bridgeConfigSchema, FINDING_WIRE_CAPABILITY, MCP_PROFILE } from '../src/server.js';
-import { FINDING_WIRE_PROFILE, PREVIEW_CONTRACT } from '../src/rpc.js';
+import { CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY, PROTOCOL_VERSION_META_KEY, Client, InMemoryTransport } from '@modelcontextprotocol/client';
+import { bridgeConfigSchema, serveBridge, FINDING_WIRE_CAPABILITY, MCP_PROFILE } from '../src/server.js';
+import { FINDING_WIRE_PROFILE, PREVIEW_CONTRACT, type BrokerPort, type JsonObject } from '../src/rpc.js';
 
 const compatibleCapabilities={experimental:{[FINDING_WIRE_CAPABILITY]:{profile:FINDING_WIRE_PROFILE}}};
 type Capabilities=NonNullable<ConstructorParameters<typeof Client>[1]>['capabilities'];
 const attachment={kind:'upstream_sarif',digest:'sha256:'+'c'.repeat(64),artifactRef:'  /outputs/attempt-1/provider-a/detekt.sarif  '};
-const brokerFixture=`
-import readline from 'node:readline';let dispatchCount=0;
-readline.createInterface({input:process.stdin}).on('line',line=>{
-  const r=JSON.parse(line);
-  if(r.findingWireProfile!=='${FINDING_WIRE_PROFILE}')return process.stdout.write(JSON.stringify({id:r.id,contractVersion:'${PREVIEW_CONTRACT}',error:{code:'incompatible_finding_wire_profile',message:'Profile required'}})+'\\n');
-  const {credential,...params}=r.params;
-  const result={contractVersion:'${PREVIEW_CONTRACT}',method:r.method,clientId:credential.clientId,params,state:'pending',outcome:'unknown',dispatchCount:++dispatchCount,
-    ...(params.reviewId==='large'?{large:'x'.repeat(40000)}:{}),
-    ...(params.reviewId==='attachments'?{findings:[{ruleId:'fixture.rule',evidence:[{kind:'upstream_sarif',summary:'Complete report',digest:'${attachment.digest}',artifactRef:null}],retrievalAttachments:[${JSON.stringify(attachment)}]}]}:{})};
-  process.stdout.write(JSON.stringify({id:r.id,contractVersion:'${PREVIEW_CONTRACT}',findingWireProfile:'${FINDING_WIRE_PROFILE}',result})+'\\n');
-});`;
-async function fixtureTransport(){
-  const dir=await mkdtemp(join(tmpdir(),'ktchecker-mcp-test-'));
-  const path=join(dir,'config.json');
-  await writeFile(path,JSON.stringify({broker:{command:process.execPath,args:['--input-type=module','-e',brokerFixture]},credential:{clientId:'client-a',token:'fixture-private-client-capability'},submissions:{prepared:{patchId:'p1',idempotencyKey:'key-p1',input:{snapshot:{snapshotId:'fixture-only'},materializedRoot:'/owner/prepared/fixture'}}}}),{mode:0o600});
-  const transport=new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL('../src/main.js',import.meta.url)),'--config',path],stderr:'pipe'});
-  return {dir,transport};
+// These are actual SDK/production dispatcher controls, not config-file privacy or
+// native storage qualification. Keep those guards in main.ts and their own tests;
+// an unsupported OS must not prevent this independent in-memory MCP coverage.
+function fixtureTransport(){
+  let dispatchCount=0;
+  const broker:BrokerPort={async request<T=JsonObject>(method:string,parameters:JsonObject):Promise<T>{
+    const {credential,...params}=structuredClone(parameters);
+    assert.deepEqual(credential,{clientId:'client-a',token:'fixture-private-client-capability'});
+    return {contractVersion:PREVIEW_CONTRACT,method,clientId:'client-a',params,state:'pending',outcome:'unknown',dispatchCount:++dispatchCount,
+      ...(params.reviewId==='large'?{large:'x'.repeat(40000)}:{}),
+      ...(params.reviewId==='attachments'?{findings:[{ruleId:'fixture.rule',evidence:[{kind:'upstream_sarif',summary:'Complete report',digest:attachment.digest,artifactRef:null}],retrievalAttachments:[structuredClone(attachment)]}]}:{})} as T;
+  }};
+  const [transport,serverTransport]=InMemoryTransport.createLinkedPair();
+  const config=bridgeConfigSchema.parse({broker:{command:'unused-in-memory',args:[]},credential:{clientId:'client-a',token:'fixture-private-client-capability'},submissions:{prepared:{patchId:'p1',idempotencyKey:'key-p1',input:{snapshot:{snapshotId:'fixture-only'},materializedRoot:'/owner/prepared/fixture'}}}});
+  const server=serveBridge(broker,config,{transport:serverTransport});
+  return {server,transport};
 }
 async function setup(t: {after(fn:()=>Promise<unknown>):void}, mode: 'legacy'|{pin:string}={pin:MCP_PROFILE}, capabilities:Capabilities=compatibleCapabilities) {
-  const {dir,transport}=await fixtureTransport();
+  const {server,transport}=fixtureTransport();
   const client=new Client({name:'ktchecker-sdk-protocol-test',version:'0.1.0'},
     {versionNegotiation:{mode},...(capabilities===undefined?{}:{capabilities})});
-  t.after(async()=>{await client.close();await rm(dir,{recursive:true,force:true});});
+  t.after(async()=>{try{await server.close();}finally{await client.close();}});
   await client.connect(transport);
   return client;
 }
@@ -42,8 +36,8 @@ async function setup(t: {after(fn:()=>Promise<unknown>):void}, mode: 'legacy'|{p
 // Low-level SDK transport deliberately varies per-request metadata, including invalid data.
 // No SDK client capability cache or model tool argument is used as a replacement grant.
 async function rawPeer(t:{after(fn:()=>Promise<unknown>):void}){
-  const {dir,transport}=await fixtureTransport();let nextId=0;
-  t.after(async()=>{await transport.close();await rm(dir,{recursive:true,force:true});});
+  const {server,transport}=fixtureTransport();let nextId=0;
+  t.after(async()=>{try{await server.close();}finally{await transport.close();}});
   await transport.start();
   return {close:()=>transport.close(),request:(method:string,params:Record<string,unknown>,capabilities:unknown=compatibleCapabilities,protocol:string=MCP_PROFILE)=>{
     const id=++nextId;

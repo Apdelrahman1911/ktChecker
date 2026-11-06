@@ -53,7 +53,7 @@ object SemanticFixtureRunner {
     /** Caller supplies a fresh owner-private result directory. Do not reopen/overwrite an old
      * attempt. The record is private data, never a constructor for ProcessOutcome or authority. */
     internal fun writePrivateExecutionEvidence(directory: Path, evidence: ExecutionEvidence): Path {
-        require(evidence.label in setOf("dependency", "positive", "unresolved", "malformed", "missing-dependency", NATIVE_EXPECT_ACTUAL_CASE))
+        require(evidence.label in setOf("dependency", "positive", "unresolved", "malformed", "missing-dependency", NATIVE_EXPECT_ACTUAL_CASE, "empty-assertion"))
         requireNotNull(evidence.originalOutcome) { "Original process outcome is required for a new private record" }
         val path = directory.resolve("${evidence.label}-execution.json")
         Files.writeString(path, ContractJson.encodeToString(evidence) + "\n", CREATE_NEW)
@@ -82,6 +82,7 @@ object SemanticFixtureRunner {
     private lateinit var target: String
     private var observeJvmBinaryOrigins: Boolean = false
     private var directIntLiteralArgumentVersion: Int? = null
+    private var emptyAssertionFixtureVersion: Int? = null
     private lateinit var resultPath: Path
     private lateinit var resultDirectory: Path
     private lateinit var frozen: FixtureMaterialization
@@ -102,14 +103,18 @@ object SemanticFixtureRunner {
         run(args)
     }
 
-    /** The separate literal fixture entrypoint opts in; the original entrypoint stays absent. */
-    internal fun run(args: Array<String>, directIntLiteralArgumentVersion: Int? = null) {
+    /** Separate closed fixture entrypoints opt in; both versions stay absent for the original entrypoint. */
+    internal fun run(args: Array<String>, directIntLiteralArgumentVersion: Int? = null,
+                     emptyAssertionFixtureVersion: Int? = null) {
         val options = parseFixtureArguments(args)
         mode = options["mode"] ?: "jvm"
         target = options["target"] ?: "jvm"
         require(mode in setOf("jvm", "native"))
         require(if (mode == "jvm") target == "jvm" else target in setOf("iosArm64", "iosSimulatorArm64", "linuxX64"))
-        observeJvmBinaryOrigins = semanticFixtureJvmOriginsRequested(mode, options["jvm-binary-origins"])
+        val emptyAssertions = emptyAssertionFixtureEnabled(emptyAssertionFixtureVersion, mode, target, options["jvm-binary-origins"])
+        require(!emptyAssertions || directIntLiteralArgumentVersion == null) { "Closed fixture vocabularies cannot be combined" }
+        this.emptyAssertionFixtureVersion = emptyAssertionFixtureVersion
+        observeJvmBinaryOrigins = semanticFixtureJvmOriginsRequested(mode, options["jvm-binary-origins"]) || emptyAssertions
         this.directIntLiteralArgumentVersion = semanticFixtureDirectIntLiteralArgumentVersion(mode, directIntLiteralArgumentVersion)
         val fixtureRoot = Path.of(requireNotNull(options["fixtures"])).toAbsolutePath().normalize()
         resultPath = Path.of(requireNotNull(options["result"])).toAbsolutePath().normalize()
@@ -128,12 +133,13 @@ object SemanticFixtureRunner {
             negative("malformed", listOf("negative/Malformed.kt"), dependencies)
             negative("missing-dependency", positiveSources(), dependencies.filterNot { it.coordinate.startsWith("fixture-dependency:") })
             if (mode == "native") incompatibleActual(dependencies)
+            if (emptyAssertions) emptyAssertionCase()
         } catch (e: Exception) {
             problems += problemCode(e, "semantic_fixture_driver_failed")
             // Only a bounded class/message summary from this trusted fixture; no terminal dump.
             System.err.println("Semantic fixture: ${problems.last()}: ${e.message?.take(400)}")
         }
-        val successful = problems.isEmpty() && cases.size == (if (mode == "native") 5 else 4) && cases.all { it.passed }
+        val successful = problems.isEmpty() && cases.size == (if (mode == "native" || emptyAssertions) 5 else 4) && cases.all { it.passed }
         val report = SuiteEvidence(state = if (successful) "passed" else if (executions.isEmpty()) "unavailable" else "failed",
             mode = mode, target = target, observedAt = Instant.now().toString(),
             testedCommit = gitCommit(fixtureRoot.parent.parent), runner = runnerEvidence(), artifacts = artifacts.distinct(),
@@ -346,6 +352,27 @@ object SemanticFixtureRunner {
         recordCase(NATIVE_EXPECT_ACTUAL_CASE, assertions, bundle, listOfNotNull(diagnostic))
     }
 
+    /** Fixture-only source affiliation and selected compile libraries; no production test enrollment or owner receipt. */
+    private fun emptyAssertionCase() {
+        require(mode == "jvm" && target == "jvm" && emptyAssertionFixtureVersion == EMPTY_ASSERTION_FIXTURE_VERSION &&
+            observeJvmBinaryOrigins)
+        val dependencies = emptyAssertionFixtureLibraries(System.getProperty(EMPTY_ASSERTION_LIBRARY_PROPERTY)).map { library ->
+            val selected = Path.of(library.path)
+            val path = selected.toRealPath()
+            require(path == selected && Files.isRegularFile(path, NOFOLLOW_LINKS)) { "Selected empty-assertion library must be a canonical regular file" }
+            ArtifactIdentity(library.coordinate, fileDigest(path), path.toString())
+        }
+        artifacts += dependencies
+        val paths = EMPTY_ASSERTION_FIXTURE_INPUTS.map { it.path }
+        val request = request("empty-assertion", paths, dependencies)
+        val outcome = execute("empty-assertion", paths, dependencies, fragmentArguments(request), request)
+        val bundle = bundle(request, outcome)
+        // Pass the ORIGINAL returned ProcessOutcome; neither serialized evidence nor a synthetic success handle.
+        recordCase("empty-assertion", emptyAssertionFixtureAssertions(request, bundle, outcome) {
+            Files.readAllBytes(frozen.root.resolve(it.path))
+        }, bundle)
+    }
+
     private fun recordCase(label: String, assertions: Map<String, Boolean>, bundle: SemanticFactBundle,
                            locatedDiagnostics: List<NativeExpectActualDiagnosticEvidence> = emptyList()) {
         val evidence = CaseEvidence(label, assertions.values.all { it }, assertions, bundle, locatedDiagnostics)
@@ -357,16 +384,22 @@ object SemanticFixtureRunner {
         val leaf = if (mode == "jvm") "jvmMain" else "nativeMain"
         val positive = label in setOf("positive", "missing-dependency")
         val incompatibleActual = label == NATIVE_EXPECT_ACTUAL_CASE
+        val emptyAssertion = label == "empty-assertion"
         require(!incompatibleActual || mode == "native")
+        require(!emptyAssertion || (mode == "jvm" && target == "jvm" &&
+            emptyAssertionFixtureVersion == EMPTY_ASSERTION_FIXTURE_VERSION &&
+            paths == EMPTY_ASSERTION_FIXTURE_INPUTS.map { it.path }))
         val sets = when {
             positive -> listOf(SemanticSourceSet("commonMain"), SemanticSourceSet("intermediateMain", listOf("commonMain")),
                 SemanticSourceSet(leaf, listOf("intermediateMain")))
             incompatibleActual -> listOf(SemanticSourceSet("commonMain"), SemanticSourceSet("nativeMain", listOf("commonMain")))
+            emptyAssertion -> listOf(SemanticSourceSet(EMPTY_ASSERTION_FIXTURE_SOURCE_SET))
             else -> listOf(SemanticSourceSet("negative"))
         }
         val sourceSets = when {
             positive -> mapOf("sources/commonMain/" to "commonMain", "sources/intermediateMain/" to "intermediateMain", "sources/$leaf/" to leaf)
             incompatibleActual -> mapOf("negative/expectActual/commonMain/" to "commonMain", "negative/expectActual/nativeMain/" to "nativeMain")
+            emptyAssertion -> mapOf("empty-assertion/" to EMPTY_ASSERTION_FIXTURE_SOURCE_SET)
             else -> mapOf("negative/" to "negative")
         }
         val inputs = paths.map { path ->
@@ -375,10 +408,12 @@ object SemanticFixtureRunner {
         }
         val toolchainId = Digests.sha256(ContractJson.encodeToString(compilerArtifacts + javaArtifacts + plugin))
         val literalBinding = directIntLiteralArgumentVersion?.let { "|direct-int-literal-arguments-v$it" }.orEmpty()
+        val emptyAssertionBinding = emptyAssertionFixtureVersion?.let { "|empty-assertion-fixture-v$it" }.orEmpty()
         val planId = Digests.sha256("$SEMANTIC_ADAPTER_ID|$target|$label|${frozen.manifest.snapshotId}|$toolchainId|" +
-            ContractJson.encodeToString(sets) + ContractJson.encodeToString(dependencies) + commonArguments().joinToString("\u0000") + literalBinding)
+            ContractJson.encodeToString(sets) + ContractJson.encodeToString(dependencies) + commonArguments().joinToString("\u0000") + literalBinding + emptyAssertionBinding)
+        val requestedLeaf = if (emptyAssertion) EMPTY_ASSERTION_FIXTURE_SOURCE_SET else if (positive || incompatibleActual) leaf else "negative"
         return SemanticFactsRequest(frozen.manifest.snapshotId, planId, toolchainId, compilerArtifacts, plugin,
-            frozen.root.toString(), inputs, sets, if (positive || incompatibleActual) leaf else "negative", target, "semantic-fixture-$label",
+            frozen.root.toString(), inputs, sets, requestedLeaf, target, "semantic-fixture-$label",
             compilerArguments = commonArguments(), dependencyArtifacts = dependencies,
             observeJvmBinaryOrigins = observeJvmBinaryOrigins,
             directIntLiteralArgumentVersion = directIntLiteralArgumentVersion)
@@ -485,7 +520,7 @@ object SemanticFixtureRunner {
     }.getOrNull()
 }
 
-/** Data-only opt-in parsing. It neither starts a compiler nor broadens this driver's five JVM jobs. */
+/** Data-only opt-in parsing. This parser neither starts a compiler nor enables an additional fixture job. */
 internal fun semanticFixtureJvmOriginsRequested(mode: String, value: String?): Boolean {
     val requested = when (value) {
         null, "false" -> false

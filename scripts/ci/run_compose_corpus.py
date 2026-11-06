@@ -283,11 +283,29 @@ def stable_key(info: os.stat_result) -> tuple:
     return info.st_dev, info.st_ino, info.st_mode, info.st_size, info.st_mtime_ns, info.st_ctime_ns
 
 
-def open_leaf(path: Path, flags: int) -> int:
+def nofollow_io_available() -> bool:
+    """The collector needs POSIX anchored I/O, not a weaker portable open.
+
+    Nonblocking reads are required too: a leaf replaced by a FIFO must not block
+    before fstat can reject it. Neither missing security flags nor dir_fd support
+    may be replaced with zero flags or a path-based fallback.
+    """
+    flags = [getattr(os, name, None) for name in ("O_NOFOLLOW", "O_DIRECTORY", "O_NONBLOCK")]
+    supported = getattr(os, "supports_dir_fd", ())
+    return (os.name == "posix" and all(type(flag) is int and flag > 0 for flag in flags)
+            and isinstance(supported, (set, frozenset)) and os.open in supported and os.mkdir in supported)
+
+
+def require_nofollow_io() -> None:
+    need(nofollow_io_available(), "compose_ci_nofollow_io_unavailable")
+
+
+def open_leaf(path: Path, flags: int, *, nonblocking: bool = False) -> int:
     """Anchor each component without following aliases; no immutable-custody claim."""
+    require_nofollow_io()
     exact_path(path)
-    need(hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_DIRECTORY"),
-         "compose_ci_nofollow_io_unavailable")
+    if nonblocking:
+        flags |= os.O_NONBLOCK
     current = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         for component in path.parts[1:-1]:
@@ -301,7 +319,7 @@ def open_leaf(path: Path, flags: int) -> int:
 
 def read_regular(path: Path, limit: int) -> bytes:
     exact_path(path, directory=False)
-    fd = open_leaf(path, os.O_RDONLY | os.O_NONBLOCK)
+    fd = open_leaf(path, os.O_RDONLY, nonblocking=True)
     try:
         before = os.fstat(fd)
         need(stat.S_ISREG(before.st_mode) and 0 <= before.st_size <= limit, "compose_ci_file_bound")
@@ -317,7 +335,7 @@ def read_regular(path: Path, limit: int) -> bytes:
 
 def file_identity(path: Path, maximum: int = MAX_ARTIFACT) -> dict:
     exact_path(path, directory=False)
-    fd = open_leaf(path, os.O_RDONLY | os.O_NONBLOCK)
+    fd = open_leaf(path, os.O_RDONLY, nonblocking=True)
     digest = hashlib.sha256()
     try:
         before = os.fstat(fd)
@@ -336,9 +354,8 @@ def file_identity(path: Path, maximum: int = MAX_ARTIFACT) -> dict:
 
 
 def make_directory(path: Path) -> None:
+    require_nofollow_io()
     exact_path(path)
-    need(hasattr(os, "O_NOFOLLOW") and hasattr(os, "O_DIRECTORY"),
-         "compose_ci_nofollow_io_unavailable")
     current = os.open("/", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         for component in path.parts[1:]:
@@ -1137,11 +1154,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--download", action="store_true")
     args = parser.parse_args(argv)
     root = Path(REPO_ROOT)
-    os.umask(0o077)
     result = public_base(args.phase, args.rule)
     try:
         need(args.rule in RULES, "compose_ci_rule_not_supported_for_native_matrix")
         need(not args.download or args.phase == "provision", "compose_ci_download_wrong_phase")
+        require_nofollow_io()
+        os.umask(0o077)
         phases = {"gate": gate, "wrapper": wrapper, "execute": execute, "collect": collect}
         result = provision(root, args.rule, args.owner_lock_sha256, args.download) if args.phase == "provision" else phases[args.phase](root, args.rule, args.owner_lock_sha256)
     except Problem as failure:
@@ -1158,7 +1176,9 @@ def main(argv: list[str] | None = None) -> int:
         write_new(output, encoded(result))
     except Exception:
         result["state"] = "unavailable"
-        result["errors"] = ["compose_ci_evidence_output_unavailable"]
+        # Keep the sanitized primary refusal (including unavailable secure I/O)
+        # visible even when that same limitation prevents retaining an artifact.
+        result["errors"] = result["errors"] + ["compose_ci_evidence_output_unavailable"]
     code = 0 if result["state"] == "passed" else 1
     print("Compose CI " + args.phase + ": " + result["state"] +
           ("" if code == 0 else " (" + result["errors"][0] + ")") + "; not release qualification")

@@ -36,6 +36,11 @@ def synthetic_worker(path, *, extra=None, omit=(), manifest=MANIFEST, compressio
         for name, raw in entries.items():
             if name not in omit:
                 entry = zipfile.ZipInfo(name)
+                # The fixture must retain intentionally unsafe spellings. ZipInfo
+                # normalizes native separators on Windows before writestr sees
+                # them; otherwise that host tests a different, harmless archive.
+                entry.filename = name
+                entry.orig_filename = name
                 entry.compress_type = compression
                 archive.writestr(entry, raw)
 
@@ -202,6 +207,41 @@ class ModelWorkerDistributionTests(unittest.TestCase):
         self.built.write_bytes(self.built.read_bytes().replace(b"nulXalias.class", b"nul\0alias.class"))
         self.copy_worker()
         self.reject("unsafe_worker_entry")
+
+    def test_zip_fixture_keeps_literal_names_in_local_and_central_headers(self):
+        name = "dev\\backslash.class"
+        actual_zip_info = zipfile.ZipInfo
+
+        class NormalizingZipInfo(actual_zip_info):
+            def __init__(self, filename="NoName", *args, **kwargs):
+                # Model the Windows constructor on every test host. This is a
+                # fixture-construction control, not Windows filesystem evidence.
+                super().__init__(filename.replace("\\", "/"), *args, **kwargs)
+
+        for implementation in (actual_zip_info, NormalizingZipInfo):
+            with self.subTest(constructor=implementation.__name__):
+                with patch.object(zipfile, "ZipInfo", implementation):
+                    synthetic_worker(self.built, extra={name: JAVA21})
+                raw = self.built.read_bytes()
+                with zipfile.ZipFile(self.built) as archive:
+                    local_names = []
+                    for entry in archive.infolist():
+                        offset = entry.header_offset
+                        self.assertEqual(b"PK\x03\x04", raw[offset:offset + 4])
+                        size = struct.unpack_from("<H", raw, offset + 26)[0]
+                        local_names.append(raw[offset + 30:offset + 30 + size])
+                    offset = archive.start_dir
+                    central_names = []
+                    for _ in archive.infolist():
+                        self.assertEqual(b"PK\x01\x02", raw[offset:offset + 4])
+                        size, extra, comment = struct.unpack_from("<HHH", raw, offset + 28)
+                        central_names.append(raw[offset + 46:offset + 46 + size])
+                        offset += 46 + size + extra + comment
+                self.assertEqual(local_names, central_names)
+                self.assertEqual(1, local_names.count(name.encode("ascii")))
+                self.assertNotIn(name.replace("\\", "/").encode("ascii"), local_names)
+                self.copy_worker()
+                self.reject("unsafe_worker_entry")
 
     def test_duplicate_class_entries_are_rejected(self):
         with warnings.catch_warnings():

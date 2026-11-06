@@ -825,6 +825,34 @@ class StructuredJsonProbeTests(unittest.TestCase):
 class FixtureDslSourceTests(unittest.TestCase):
     """Authored source guards only, not Kotlin compilation or AGP execution."""
 
+    def test_ios_negative_source_sets_are_configured_lazily_for_exact_ios_main_only(self):
+        source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
+        for label, replacement in (
+            ("missing-actual", "emptyList<String>()"),
+            ("wrong-actual", 'listOf("negative/wrong-actual/iosMain")'),
+        ):
+            with self.subTest(label=label):
+                self.assertIn(
+                    f'"{label}" -> matching {{ sourceSet -> sourceSet.name == "iosMain" }}.configureEach {{\n'
+                    f'                kotlin.setSrcDirs({replacement})\n'
+                    '            }', source,
+                )
+        self.assertEqual(2, source.count('sourceSet.name == "iosMain"'))
+        for eager in ('getByName("iosMain")', 'named("iosMain")', 'create("iosMain")', 'maybeCreate("iosMain")'):
+            self.assertNotIn(eager, source)
+        self.assertIn('"new-api" -> getByName("androidMain").kotlin.srcDir("negative/new-api/androidMain")', source)
+        self.assertEqual(2, source.count("kotlin.setSrcDirs("))
+
+    def test_ios_negative_inputs_still_remove_or_incompatibly_replace_the_actual(self):
+        root = ci_common.REPO_ROOT / "fixtures/kmp"
+        common = (root / "src/commonMain/kotlin/dev/ktchecker/fixture/Envelope.kt").read_text(encoding="utf-8")
+        actual = (root / "src/iosMain/kotlin/dev/ktchecker/fixture/Platform.kt").read_text(encoding="utf-8")
+        wrong = (root / "negative/wrong-actual/iosMain/dev/ktchecker/fixture/Platform.kt").read_text(encoding="utf-8")
+        self.assertIn("expect fun platformFamily(): String", common)
+        self.assertIn('actual fun platformFamily(): String = "ios"', actual)
+        self.assertIn("actual fun platformFamily(): Int = 1", wrong)
+        self.assertNotIn("actual fun platformFamily(): String", wrong)
+
     def test_fixture_uses_supported_compiler_receiver_and_named_custom_source_set(self):
         source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
         self.assertIn("compilerOptions.jvmTarget.set(JvmTarget.JVM_17)", source)

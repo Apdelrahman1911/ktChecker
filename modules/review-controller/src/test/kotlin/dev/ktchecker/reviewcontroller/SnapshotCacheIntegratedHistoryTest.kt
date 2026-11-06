@@ -62,6 +62,187 @@ class SnapshotCacheIntegratedHistoryTest {
     @Test @Timeout(value = 90, unit = TimeUnit.SECONDS)
     fun cleanCombinedControlRequiresFreshWholeVectorsAndPeersOwnObservationBeforeOneEffect() = runHistory(defect = false)
 
+    /**
+     * Real rename/delete commits and reimported membership, not a fabricated removed-path hint.
+     * Kotlin-looking expect/actual bytes are ONLY a synthetic cross-input oracle: no compiler,
+     * KMP semantics, incremental compiler cache, qualification or final-action success is claimed.
+     */
+    @Test @Timeout(value = 90, unit = TimeUnit.SECONDS)
+    fun renamedThenDeletedActualCannotReuseWarmCleanInputsOrDropUnchangedConsumers() {
+        val f = ControllerFixtures(temp.resolve("membership-owner"))
+        val actualPath = "lib/src/jvmMain/kotlin/Jvm.kt"
+        val renamedPath = "lib/src/jvmMain/kotlin/RenamedJvm.kt"
+        val baseFiles = f.files() + mapOf(COMMON to "expect fun commonValue(): Int\n",
+            actualPath to "actual fun commonValue(): Int = 1\nfun jvmValue() = commonValue()\n",
+            "lib/src/desktopMain/kotlin/Desktop.kt" to "actual fun commonValue(): Int = 1\nfun desktopValue() = commonValue()\n")
+        val base = f.capture(baseFiles)
+        val baseModel = f.import(base)
+        val prep = SyntheticPreparations()
+        val assembler = prep.assembler(f)
+        val provider = WholeArchiveProvider(f.inventory.ruleIds,
+            findingTitle = "Synthetic missing-actual consumer defect",
+            findingDiagnosis = "Neither prescribed JVM actual path exists in the whole current snapshot") { files ->
+            actualPath !in files && renamedPath !in files
+        }
+        val routes = OwnerReviewRouteRegistry(f.namespace.ownerId)
+        val database = f.work.resolve("kernel")
+        val readback = Readback(database)
+        val batches = mutableListOf<Batch>()
+        KernelService.open(database, provider, config, planAuthority = routes, routingAuthority = routes,
+            preparedInputObserver = provider.observer, resultPolicy = prep.policy).use { service ->
+            val clients = listOf("a", "b").map { service.registerClient(f.binding(it)) }
+            fun assemble(label: String, capture: ControllerFixtures.Capture, model: VerifiedProjectModel,
+                         baseline: VerifiedProjectModel? = null) = clients.mapIndexed { index, client ->
+                assembler.assemble(client.binding, f.request("$label-${client.binding.clientId}"),
+                    if (index == 0) null else baseline, model, capture.materialization(model), listOf(client.binding.clientId))
+            }
+            fun admit(assemblies: List<AssembledReviewPlan>, files: Map<String, String>, expectFinding: Boolean): Batch {
+                provider.expect(assemblies, files)
+                val batch = route(service, routes, clients, assemblies, batches)
+                batches += batch
+                awaitBatch(service, clients, batch, expectFinding)
+                return batch
+            }
+            val initial = admit(assemble("initial", base, baseModel), baseFiles, false)
+            assertEquals(initial.members[0].assembly.plan.slots.map { it.input }, initial.members[1].assembly.plan.slots.map { it.input })
+            assertEquals(5, provider.calls.get())
+            val cached = admit(assemble("cached", base, baseModel), baseFiles, false)
+            assertEquals(initial.members.map { it.assembly.plan.slots.map { slot -> slot.input } },
+                cached.members.map { it.assembly.plan.slots.map { slot -> slot.input } })
+            assertTrue(cached.parents.all { it.state == "complete" })
+            assertEquals(5, provider.calls.get()); assertEquals(5, provider.attempts.size)
+            assertEquals(5L, readback.counts().getValue("work"))
+            clients.forEach { deliver(service, it, events(service, it), observe = true) }
+
+            data class Mutation(val label: String, val change: SnapshotChange, val files: Map<String, String>, val changed: List<String>)
+            val renamedFiles = (baseFiles - actualPath) + (renamedPath to baseFiles.getValue(actualPath))
+            val mutations = listOf(
+                Mutation("renamed", SnapshotChange.Rename(SnapshotPath(path = actualPath), SnapshotPath(path = renamedPath)),
+                    renamedFiles, listOf(actualPath, renamedPath).sorted()),
+                Mutation("deleted", SnapshotChange.Delete(SnapshotPath(path = renamedPath)),
+                    renamedFiles - renamedPath, listOf(renamedPath)))
+            var previous = base
+            var previousModel = baseModel
+            for ((index, mutation) in mutations.withIndex()) {
+                val historical = batches.flatMap { it.children }.associate { child ->
+                    child.reviewId to service.status(clients[child.client].client, child.reviewId)
+                }
+                val oldEvents = clients.map { events(service, it) }
+                val oldKeys = batches.flatMap { it.children }.map { it.input.analysisKey() }.toSet()
+                val head = f.store.currentHead(f.identity)
+                assertEquals(previous.snapshot.snapshotId, head.headSnapshotId)
+                val commit = f.store.sealOverlay(OverlayRequest(f.identity, "membership-producer", "membership-session", mutation.label,
+                    previous.snapshot.snapshotId, head.headRevision, listOf(mutation.change), mode = CommitMode.STRICT_HEAD))
+                assertEquals(previous.snapshot.snapshotId, commit.manifest.parentSnapshotId)
+                assertEquals(head.headRevision + 1, commit.headRevision)
+                assertEquals(mutation.changed, commit.manifest.delta.map { it.path }.sorted())
+                val capture = materialize(f, commit, mutation.label, mutation.files)
+                val model = f.import(capture) // Real importer, freshly derived current source membership; synthetic owner authority.
+                assertEquals(baseModel.compilationIds, model.compilationIds)
+                for (path in listOf(COMMON, APP)) {
+                    assertEquals(base.snapshot.files.single { it.path == path }, capture.snapshot.files.single { it.path == path })
+                    assertFalse(path in mutation.changed)
+                }
+                if (index == 0) assertEquals(base.snapshot.files.single { it.path == actualPath }.copy(path = renamedPath),
+                    capture.snapshot.files.single { it.path == renamedPath })
+                assertFalse(capture.snapshot.files.any { it.path == actualPath })
+                val assemblies = assemble(mutation.label, capture, model, previousModel)
+                val full = assemblies[0]
+                val incremental = assemblies[1]
+                assertEquals(5, full.plan.slots.size); assertEquals(full.plan.slots.map { it.identity }, incremental.plan.slots.map { it.identity })
+                assertTrue(assemblies.all { it.plan.slots.all { slot -> slot.state == "pending" } })
+                assertEquals(mutation.changed, incremental.provenance.impact.changedFiles)
+                assertEquals(model.compilationIds.sorted(), incremental.provenance.impact.obligations.map { it.compilationId }.distinct().sorted(),
+                    "Membership change conservatively rechecks the whole graph, including independent/test contexts")
+                full.plan.slots.zip(incremental.plan.slots).forEach { (a, b) ->
+                    assertEquals(capture.snapshot.files.map { it.path }.sorted(), a.input.changedPaths); assertNull(a.input.baselineSnapshotId)
+                    assertEquals(previous.snapshot.snapshotId, b.input.baselineSnapshotId); assertEquals(mutation.changed, b.input.changedPaths)
+                    assertEquals(a.input, b.input.copy(changedPaths = a.input.changedPaths, baselineSnapshotId = null))
+                    assertEquals(f.inventory.ruleIds, b.input.requiredRuleIds); assertTrue(b.input.context.fullProject)
+                    assertTrue(assertNotNull(b.input.context.compilationFiles).all { it in mutation.files })
+                    assertNotEquals(a.input.analysisKey(), b.input.analysisKey())
+                }
+                val app = incremental.plan.slots.single { it.input.context.scope.module == ":app" }
+                assertEquals(listOf(APP), app.input.context.compilationFiles); assertFalse(APP in app.input.changedPaths)
+                val jvm = incremental.plan.slots.single { it.input.context.scope.module == ":lib" &&
+                    it.input.context.scope.target == "jvm" && it.input.context.scope.compilation == "main" }
+                assertEquals((listOf(COMMON) + if (index == 0) listOf(renamedPath) else emptyList()).sorted(), jvm.input.context.compilationFiles)
+                if (index == 1) assertTrue(incremental.plan.slots.all { slot ->
+                    slot.input.changedPaths.none { path -> slot.input.snapshot.files.any { it.path == path } }
+                }, "An actually deleted member stays in changedPaths without being resurrected as current input")
+                assertTrue(assemblies.flatMap { it.plan.slots }.none { it.input.analysisKey() in oldKeys })
+                val batch = admit(assemblies, mutation.files, expectFinding = index == 1)
+                assertEquals(15 + index * 10, provider.calls.get())
+                val attempts = provider.attempts.filter { it.original.snapshot.snapshotId == capture.snapshot.snapshotId }
+                assertEquals(10, attempts.size)
+                attempts.forEach { attempt ->
+                    assertEquals(capture.snapshot, attempt.effective.snapshot)
+                    val root = Path.of(attempt.effective.materializedRoot)
+                    assertTrue(Files.notExists(root.resolve(actualPath), java.nio.file.LinkOption.NOFOLLOW_LINKS))
+                    if (index == 1) assertTrue(Files.notExists(root.resolve(renamedPath), java.nio.file.LinkOption.NOFOLLOW_LINKS))
+                }
+                batch.children.filter { it.client == 0 }.forEach { a ->
+                    val b = batch.children.single { it.client == 1 && it.slotId == a.slotId }
+                    val ar = assertNotNull(service.status(clients[0].client, a.reviewId).result)
+                    val br = assertNotNull(service.status(clients[1].client, b.reviewId).result)
+                    assertEquals(ar.copy(coverage = ar.coverage.map { it.copy(certificateId = null) }),
+                        br.copy(coverage = br.coverage.map { it.copy(certificateId = null) }))
+                    assertTrue(ar.coverage.map { it.certificateId }.toSet().intersect(br.coverage.map { it.certificateId }.toSet()).isEmpty(),
+                        "Equivalent synthetic outcomes do not borrow another full/incremental execution certificate")
+                }
+                historical.forEach { (id, status) -> assertEquals(status, service.status(clients.single { it.binding.clientId == status.clientId }.client, id)) }
+                clients.forEachIndexed { clientIndex, client -> assertEquals(oldEvents[clientIndex], events(service, client).take(oldEvents[clientIndex].size)) }
+                if (index == 0) clients.forEach { deliver(service, it, events(service, it), observe = true) }
+                previous = capture; previousModel = model
+            }
+            val streams = clients.map { events(service, it) }
+            assertEvents(service, clients, batches, streams) // Four complete whole-vector batches, 44 distinct events per client.
+            assertEquals(25, provider.attempts.size)
+            assertEquals(batches.flatMap { it.children }.map { it.input.analysisKey() }.toSet(),
+                provider.attempts.map { it.original.analysisKey() }.toSet())
+            assertEquals(40, prep.policyCalls.size)
+            clients.forEach { client -> assertEquals(20, prep.policyCalls.count { it.first == client.binding }) }
+            fun deliveryReasons(cut: GateCut) = cut.reasons.filter {
+                it.startsWith("insertion_missing:") || it.startsWith("model_observation_missing:")
+            }.toSet()
+            val peerFinal = streams[1].filter { it.sourceSnapshotId == previous.snapshot.snapshotId }
+            assertEquals(11, peerFinal.size)
+            deliver(service, clients[0], streams[0], observe = true)
+            assertTrue(deliveryReasons(service.prepareGate(clients[0].client)).isEmpty())
+            assertEquals(peerFinal.flatMap { listOf("insertion_missing:${it.eventId}", "model_observation_missing:${it.eventId}") }.toSet(),
+                deliveryReasons(service.prepareGate(clients[1].client)), "A's full review/receipts never deliver B's incremental obligations")
+            deliver(service, clients[1], streams[1], observe = false)
+            assertEquals(peerFinal.map { "model_observation_missing:${it.eventId}" }.toSet(), deliveryReasons(service.prepareGate(clients[1].client)))
+            val receipts = readback.deliveryRows()
+            val counts = readback.counts()
+            val foreign = streams[0].last()
+            assertEquals("event_not_found", assertFailsWith<KernelException> {
+                service.acknowledge(clients[1].adapter, listOf(foreign.eventId), ContextReceipt("foreign-membership-ack",
+                    Digests.sha256("foreign-membership-insertion"), "foreign-item", Instant.EPOCH.toString()))
+            }.code)
+            assertEquals("event_not_found", assertFailsWith<KernelException> {
+                service.observe(clients[1].adapter, listOf(foreign.eventId), ObservationReceipt("foreign-membership-observation",
+                    "foreign-model-request", listOf(Digests.sha256("foreign-membership-insertion"))))
+            }.code)
+            assertEquals(receipts, readback.deliveryRows()); assertEquals(counts, readback.counts())
+            deliver(service, clients[1], peerFinal, observe = true)
+            var effects = 0
+            val fingerprint = Digests.sha256("synthetic-combined-unchanged-consumer:${base.snapshot.files.single { it.path == APP }.digest}")
+            clients.forEach { client ->
+                val cut = service.prepareGate(client.client)
+                assertTrue(deliveryReasons(cut).isEmpty()); assertFalse(cut.ready)
+                assertContains(cut.reasons, "open_finding:$fingerprint")
+                assertContains(cut.reasons, "cross_client_finalization_unavailable")
+                val denied = service.completeGate(client.client, cut.cutId) { effects++ }
+                assertFalse(denied.allowed); assertFalse(denied.actionPerformed)
+            }
+            assertEquals(0, effects, "No local gate downcasts these routed whole-project obligations to a final action")
+            assertEquals(mapOf("reviews" to 40L, "work" to 25L, "work_certificates" to 25L, "parent_plans" to 8L,
+                "routing_batches" to 4L, "events" to 88L, "receipts" to 176L, "acknowledgements" to 88L, "observations" to 88L), readback.counts())
+            assertEquals(streams, clients.map { events(service, it) })
+        }
+    }
+
     private fun runHistory(defect: Boolean) {
         val f = ControllerFixtures(temp.resolve("owner"))
         val baseFiles = f.files()
@@ -390,7 +571,12 @@ class SnapshotCacheIntegratedHistoryTest {
 
     private class ExpectedInput(val input: AnalysisInput, val files: Map<String, String>)
     private class Attempt(val original: AnalysisInput, val effective: AnalysisInput, val files: Map<String, String>, val verify: () -> Unit)
-    private class WholeArchiveProvider(private val rules: List<String>) : AnalysisProvider {
+    private class WholeArchiveProvider(private val rules: List<String>,
+        private val findingTitle: String = "Synthetic combined-only consumer defect",
+        private val findingDiagnosis: String = "Two producer inputs disagree in the combined fixture",
+        private val hasConsumerDefect: (Map<String, String>) -> Boolean = { files ->
+            files.getValue(COMMON) == NEW_COMMON && files.getValue(RESOURCE) == REQUIRE_ONE
+        }) : AnalysisProvider {
         override val id = "unit-provider"
         override val supportedRuleIds = rules.toSet()
         private val originals = ConcurrentHashMap<String, ExpectedInput>()
@@ -439,12 +625,11 @@ class SnapshotCacheIntegratedHistoryTest {
             assertTrue(input.snapshot.files.size > assertNotNull(input.context.compilationFiles).size)
             input.context.classpath.forEach { assertEquals(it.digest, Digests.sha256(Files.readAllBytes(Path.of(it.path)))) }
             cancellation.throwIfCancelled(); attempt.verify()
-            // Intentionally tiny synthetic interaction, not Kotlin semantics or a compiler cache:
-            // neither old clean snapshot has both bytes, and the reported consumer is UNCHANGED.
-            val findings = if (actual.getValue(COMMON) == NEW_COMMON && actual.getValue(RESOURCE) == REQUIRE_ONE &&
-                input.context.scope.module == ":app") {
+            // Intentionally tiny explicit synthetic oracle, not Kotlin semantics or a compiler cache.
+            // Both histories report only the UNCHANGED consumer; the default preserves the combined-byte control.
+            val findings = if (hasConsumerDefect(actual) && input.context.scope.module == ":app") {
                 val digest = input.snapshot.files.single { it.path == APP }.digest
-                listOf(Finding(rules.first(), "Synthetic combined-only consumer defect", "Two producer inputs disagree in the combined fixture",
+                listOf(Finding(rules.first(), findingTitle, findingDiagnosis,
                     "Synthetic seam oracle only", SourceLocation(APP, digest), Digests.sha256("synthetic-combined-unchanged-consumer:$digest"),
                     id, context = input.context.scope, severity = "error"))
             } else emptyList()
@@ -568,6 +753,14 @@ class SnapshotCacheIntegratedHistoryTest {
         fun counts(): Map<String, Long> = read { c ->
             listOf("reviews", "work", "work_certificates", "parent_plans", "routing_batches", "events", "receipts", "acknowledgements", "observations")
                 .associateWith { table -> c.createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM $table").use { r -> check(r.next()); r.getLong(1) } } }
+        }
+        fun deliveryRows(): Map<String, List<List<String?>>> = read { c ->
+            mapOf("receipts" to "client_id,kind,receipt_id", "acknowledgements" to "event_id", "observations" to "event_id,observation_id")
+                .mapValues { (table, order) -> c.createStatement().use { s ->
+                    s.executeQuery("SELECT * FROM $table ORDER BY $order").use { r ->
+                        buildList { while (r.next()) add((1..r.metaData.columnCount).map { r.getString(it) }) }
+                    }
+                } }
         }
         fun gates(): List<String> = read { c -> c.createStatement().use { s ->
             s.executeQuery("SELECT gate_state FROM clients ORDER BY client_id").use { r -> buildList { while (r.next()) add(r.getString(1)) } }

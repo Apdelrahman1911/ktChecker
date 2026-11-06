@@ -110,7 +110,18 @@ test('owner configuration forbids model settings and insecure files; generation 
   const dir=await mkdtemp(join(tmpdir(),'ktchecker-private-config-'));t.after(()=>rm(dir,{recursive:true,force:true}));
   const path=join(dir,'config.json');await writeFile(path,JSON.stringify(config),{mode:0o644});
   await chmod(path,0o644);
-  await assert.rejects(readHostConfig(path),process.platform==='win32'?/private_state_platform_unqualified/:/host_configuration_permissions/);
+  // Default unsupported-platform refusal is not proof that mode bits implement
+  // that platform's native privacy boundary. Genuine storage coverage stays required.
+  const previous=process.env.KTC_DARWIN_PRIVATE_STATE_EXPERIMENTAL;
+  if(process.platform==='darwin')delete process.env.KTC_DARWIN_PRIVATE_STATE_EXPERIMENTAL;
+  try{
+    await assert.rejects(readHostConfig(path),process.platform==='win32'||process.platform==='darwin'?/private_state_platform_unqualified/:/host_configuration_permissions/);
+  }finally{
+    if(process.platform==='darwin'){
+      if(previous===undefined)delete process.env.KTC_DARWIN_PRIVATE_STATE_EXPERIMENTAL;
+      else process.env.KTC_DARWIN_PRIVATE_STATE_EXPERIMENTAL=previous;
+    }
+  }
 });
 
 

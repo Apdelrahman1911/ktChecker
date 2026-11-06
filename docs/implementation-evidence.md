@@ -7,6 +7,261 @@ catalog mapping, mocked diagnostic, or successful prerequisite probe does not
 establish the next category. Release gates in [validation-ci.md](validation-ci.md)
 and [PLAN.md](PLAN.md) remain unchanged.
 
+## Integration validation — 2026-11-06
+
+### Later local rounds15–17 — scoped results and retained failures
+
+These separately recorded local observations are **not** a combined current
+all-project or hosted-CI pass. Retries do not erase earlier failures or skips.
+Receipt paths below are relative to `build/evidence/integration-20261106/`.
+
+| Lane | Actual result and limit | Source binding reported by the receipt |
+| --- | --- | --- |
+| Round15 CLI / semantic attempt | `round15-cli-semantic-result.json`: CLI **389/389**, zero failures/errors/skips, but combined command exit **1**. Semantic main sources compiled; test compilation **failed**, so **no semantic tests executed**. A missing `flatMap` closing brace in `ObservedSemanticFactsTest.kt` required the owner's one-brace retry repair; prior XML is not current semantic test credit. | `source-snapshot-round15-cli-semantic.json`, snapshot-file SHA-256 `4358f468af6b1a53d8095bdc655af414005c594adabc12466049f1f3611757fa`, `sourceStillMatches:true`. This SHA is of snapshot JSON bytes, **not** a source aggregate. |
+| Round15 JVM runtime | `round15-runtime-result.json`: **252 total / 251 passed / one skipped**, zero failures/errors, exit **0**. Included `ProcessOutcomeReportsTest` **29/29** is not additional; `OwnedProcessSessionIntegrationTest` remains skipped. No model producer, library activation or hostile same-user freeze is established. | `source-snapshot-round15-runtime.json`; recorded aggregate `e2bde441d1bfc5f5c9a9de09e318fd309e0bfa31587d8fd80641290ed6638dd6`; source reported unchanged through the test. |
+| Round15 iOS fixture / Python controls | `round15-ios-python-tests.json` plus both selected 150-byte summaries: the **same 51 controls** separately under normal Python and **`-O`**, each **OK / exit 0**. Not 102 distinct controls, real iOS compilation or a hosted pass. | The result has no full Python execution-source snapshot. Exactly four adopted pins are corroborated by the **later runtime snapshot**, as listed below; not a full execution closure. |
+| Round16 semantic retry / Lint attempt | `round16-lint-semantic-result.json`: semantic **123/123**, including **17** synthetic `ObservedSemanticFactsTest` controls, zero failures/errors/skips. Lint **36 total / 35 passed / one failure / zero errors/skips**: invalid POSIX permission-fixture text, not a passing suite. Combined exit **1**. Semantic controls are not a real observed producer or Native qualification. | `source-snapshot-round16-lint-semantic.json`: file SHA-256 `743927f9883ff5495f25042cf1c607aa4fc6bf5734c5ceab94546c2e3d150568`, aggregate `c46f80dd7714f6e5ecc616099a1b183b34e3536e0a39f2826e5996597f847148`; source reported unchanged. |
+| Round17 compiler controls / Lint retry | `round17-ordinary-lint-result.json`: compiler contract **13** + oracle **18** = **31/31** pure controls, **zero ordinary compiler cohorts executed**. Lint **36/36**, including private-attempt writer **12** and `RealLintFixtureTest` **four**; zero failures/errors/skips, command exit **0**. Standalone Lint fixtures/driver controls do **not** establish KMP provider execution. | `source-snapshot-round17-ordinary-lint.json`: file SHA-256 `477ee71d03087ceb44f448977631e012e8c3b7e4b059d66ecac89b901989bdfe`, aggregate `1b5bfb4163e22b5f880d9c28dc7603ff7822299f1beff1d1b1fb52cbb5f69004`; source reported unchanged. |
+| Round17 portable source-linkage controls | `round17-linkage-tests.json` and both pinned logs: **35/35** separately normal and **`-O`**, all lines OK, both exit **0**. The source-only filesystem mirror is not an independently verified tracked clean-worktree run; no such verification is claimed here. All coverage stages stay **null**. | Named R3 adoption receipt `integration-round17-linkage-r3-adoption.json`, **1,029 B**, SHA-256 `e4bde221ae84e743f42b5e9113ed1055af55b98cfe06f0dda1888dc89c612d1d`, pins reporter/test/selection/public subset. Its earlier “tests pending” status is historical; the later result supplies execution. The **254-file** public subset is not a current whole-tree snapshot. |
+| Bounded round16 Linux bridge validation | `bridge-round16-validation-erdjky2k/RESULT.json`: corrected Python **34** separately normal/`-O`; standalone Node-reporter **35 synthetic controls**; targeted Linux **32/32**, zero failure/cancellation/skip/todo; both selected TypeScript builds exit **0**. The deliberate Node fixture's outer exit **1** with checker **0** is an expected negative control, **not application success**. | Result reports **seven** bridge postimages and **four** compiled targets matching before/after. The same pinned round16 source snapshot is a **context identifier only**: unrelated source later changed and **no whole-tree-unchanged claim** is made. Final seal pins the result. No full reference-host rerun, native Windows/macOS or authenticated-model qualification. |
+
+The bridge's original **4 MiB** harness bound blocked a deliberate **8 MiB + one
+byte** negative XML write (34 tests, one harness error, exit **1**); that attempt
+is retained, not replaced by the corrected passes. The recorded Node
+`MaxListenersExceededWarning` remains in the evidence; it was not suppressed.
+
+For the limited iOS source join, `integration-round15-ios-adoption.json`
+(**1,779 B**, SHA-256 `fdc48c2274ca537b06ac83979702c3ef2bf23d2e2e97f84622d3c31ad401bbf8`)
+contains these four postimage pins, matched to the later runtime snapshot
+(**1,256,490 B**, file SHA-256
+`423bf17c8c927c9c50f914260cdfb9ae7d381b939599cc57186f06ebf46acfa9`).
+Only these four entries were used; no source payload or full Python execution
+closure was verified in this join.
+
+| Adopted iOS source path | Bytes | SHA-256 corroborated by later snapshot |
+| --- | ---: | --- |
+| `fixtures/kmp/build.gradle.kts` | 7278 | `0b2360d4a30e7193264d848d4ba0313d386fe6b8788a493f8d7afaccb43ed889` |
+| `scripts/ci/run_semantic_checks.py` | 43419 | `fc3b81a4e0a7af9970fbaab5270d43a680edde4b231496931184fcfec1d9d453` |
+| `scripts/ci/test_ci.py` | 81673 | `29c68f32588a25f008ae8d00ea17c65c90bc100375794ecb203a0f741f331582` |
+| `scripts/ci/test_semantic_ci.py` | 131016 | `a47f8def9e03d589a3bc2253aa37c1474719749464cc7da469a5c37e6de03648` |
+
+Exact result JSON byte pins (not newly recomputed source aggregates):
+
+| Result | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `round15-cli-semantic-result.json` | 15620 | `306e4bbd8fe319e90c08f83bae40d5fce876c02913c3f68af8c2e129784c5f6a` |
+| `round15-runtime-result.json` | 3716 | `32fa2ebf3cd2017748a7c5df5f3846d9ddb26f4657bb3afcd1a45aa2f87d09d2` |
+| `round15-ios-python-tests.json` | 1006 | `1417c206625f174d4f74c1629e9a855067fa1e06cd7b87e7894c2bae6fb1e5c8` |
+| `round16-lint-semantic-result.json` | 4815 | `e3f115c96210902f62c78065d7ce0994412d25d81d85b6b790c220a6848c6385` |
+| `round17-ordinary-lint-result.json` | 2783 | `9dfb6ee8b00e365e97e5fcb8bc5bb9b71d4e36ac4eb2ca7db7d70578c6a23663` |
+| `round17-linkage-tests.json` | 1013 | `05043baa6d8470a2ff25120a488659c697653ede9a281023ab4ec82ab11b517a` |
+| `bridge-round16-validation-erdjky2k/RESULT.json` | 31357 | `1b19ec716262fc95e4518d6c62a6a8023ed5ff4f54fc52f037eb5d867ab10f00` |
+| `bridge-round16-validation-erdjky2k/FINAL-SEAL.json` | 1714 | `b6863b5133e4d58b3e3d36382f34e2d9721e2069d8947ac8989bbe6e6cc7ce8f` |
+
+No rule or platform scope changes follow. All **1,665 × eight** obligations,
+including **46 excluded rules**, and unknown implemented/tested/qualified stages
+remain unchanged. Source linkage, fixture authorship and infrastructure totals
+are not per-rule evidence; release, NOTICE/license/provenance and authenticated
+host-model holds remain in force.
+
+### Later local round14 receipts and initial PR #2 final workflow states
+
+**Scoped local successors, not a combined current all-project or hosted-CI pass.**
+Round14 JVM receipts bind `source-snapshot-round14.json`: dirty HEAD
+`a14cab05a330dc785c15239d77d9364b509c72eb`, **4,788 source files**, aggregate
+`f361130736f4dbfb1c5b5f8e0a7f7c7e4e4d5149c95cf49ec618c68f0c3b06a7`.
+The Gradle receipt reports unchanged source across its invocation. These local
+adoptions are not the clean pushed head. The earlier checklist and **12:46:21 UTC**
+cutoff below remain historical; newer evidence does not rewrite those outcomes.
+
+| Separate later lane | Actual receipt and limit |
+| --- | --- |
+| Full local CLI and library-provider unit rosters | `round14-jvm-tests-result.json`: CLI **377/377**, provider-library **154/154**, zero failures/errors/skips; Gradle exit **0**. Included rosters are `OwnerCaptureSessionTest` **11** and `LibrarySemanticProviderFactoryTest` **25**, not additional totals. The round12 controller/semantic results below retain their own source binding. No all-module or rule-delivery claim follows. |
+| Python infrastructure controls | `round14-python-r1-results.json` plus each log's final summary: **214/214** separately under normal Python and **`-O`**, both exit **0**; process wall **17.316 / 17.526 s** (unittest **17.083 / 17.332 s**). This is the same four-module control roster in two modes, not 428 distinct controls, genuine Windows execution or a hosted-CI rerun. |
+| Fresh local archive inventory | `round14-distribution-archives.json` verifies **44 regular files**, **90,982,595 payload bytes**, in each new ZIP/TAR against the selected installation. ZIP **84,210,381 B**, SHA-256 `76db0dcb3d73b009cbfa71f0e7916d10bbc82eefe3cc53d87a375752c3841fae`; TAR **91,022,336 B**, SHA-256 `90d70cc279ec38c8b903fbe749fd45feff2a43d7e27a33851c8107790036a084`. This POSIX input-verification receipt does not establish source/build provenance, executable correctness, Windows qualification, signing or license clearance. |
+| Installed compiler-model worker packaging | `round14-model-worker-distribution-r1.json`: installed/task-output equality and ordinary-JAR isolation verified; **154,413 B**, SHA-256 `d9e58229842a8d10b484d3d32dae8c83a30807fb824d104f3693ea070adaf281`, Java **21** class headers, **34** ordinary JARs checked. Header inspection is not JVM verification or worker/provider execution. |
+| Separate actual empty-assertion fact prerequisites | `empty-assertion-fixture-r0/run-summary.json`: Kotlin **2.4.21/JVM**, **5/5 cases / six compiler attempts**, exit **0**; the empty-assertion case checks **37 assertions**. This receipt is explicitly **round12-bound**, not a round14 rerun. It does not invoke the production library provider, execute the represented tests, or qualify a rule/tuple. The earlier **14** unit controls are a different denominator. |
+| Android R1 inner-command observation | The separately verified R1 command exited **0** in **68.027 s**, with source membership unchanged. Its Lint XML is **86 B**, contains **no issues**, SHA-256 `671ddae6efb72a95ab3443c40b2e13f8e5b48761d7acf11b831d2896465887e7`; the `androidMain` report has the same recorded bytes/hash. An empty inner report is not a passing normalized positive/NewApi provider case, an output certificate or Android qualification. The original hosted harness failures remain. |
+
+The prior **46-file / roughly 266 MB** distribution evidence remains preserved
+separately; it is not overwritten or relabelled as the new 44-file inventory.
+Archive and worker receipts were inspected as JSON metadata here, not by opening
+or executing their binary contents. Local receipt paths above are relative to
+`build/evidence/integration-20261106/`; the Android R1 is a separately retained
+inner-command result, not an initial hosted workflow success.
+
+**Initial PR #2 workflows are now final failures.** At
+**2026-11-06 13:54:16.596850 UTC**, `pr2-initial-workflow-finals-round14.json`
+records all four original workflows **completed / failure**: Implementation
+**42219264829**, Planning **42219264832**, Bridges **42219264836**, and Platform
+**42219264898**. Their final update times were **12:49:08**, **12:53:35**,
+**12:44:21**, and **12:45:39 UTC**, respectively. API head metadata is
+`a14cab05a330dc785c15239d77d9364b509c72eb`; it is not a checked-out-merge assertion.
+The inspected hosted artifacts' separate actual merge binding
+`7b8032973d7d74ca151f8bcab8a99e8747f21e20` below remains unchanged. Local corrections
+and passing local unit rosters do not turn these initial workflows into passes;
+fresh exact-source hosted successors are still required.
+
+**Bounded benchmark R1 completed; required reviews did not.** The corrected
+original link-free-JDK successor retained **two baseline** and **four measured**
+trials. All **4/4 measured submissions** had durable admissions, but **all four
+reviews remained incomplete; zero required-complete**. The two finding-bearing
+trials observed useful findings at **5.741 / 6.424 s**, versus the earlier
+**19.05 / 19.18 s** smoke below. Their coverage state was **failed**. Both
+zero-finding controls had **unknown** coverage and no useful-clean observation.
+Measured patch-to-durable-ACK was **1.907–2.429 s**; submit-only ACK round trips
+were **53.209–58.721 ms**. This descriptive improvement spans different source
+snapshots and is not a controlled comparison, percentile, throughput/fairness
+claim or a successful **1–3 second warm target**. Compiler warmth remains
+**unknown**, and no required-complete full-project baseline was established.
+
+`benchmark-owner-session-r1-filtered-summary.json` preserves the selected fields
+from `benchmark-owner-session-warm-history-sequential-r1/benchmark-observations.json`,
+SHA-256 `38aa8da86548e3b854f410de4e342760541d8d8420abadf9194481d91bc15fe1`.
+The separate `.process-metrics.json` receipt records exit **0**, elapsed
+**75.360661 s**, CPU **106.322910 s user / 11.227854 s system**, peak
+**622,380 KiB**. This is Linux wait accounting for the controller and its waited
+children, **not summed concurrent process-tree RSS**. Model-context delivery was
+**not attempted**; `T_context` and token counts are unavailable. The original R0
+**zero-admission selected-system-JDK refusal** remains preserved and receives no
+performance credit; it is not overwritten by the completed R1 smoke.
+
+**Gates remain open.** The complete **1,665 × eight-context** declared obligation,
+including **46 excluded IDs**, is unchanged. Current implementation/test/
+qualification stages remain unknown; default/advisory/opt-in or disabled rules
+are not delivered rules. No model-context delivery, broad rule/tuple or platform
+qualification, 1–3 second warm target, owner-license/required-NOTICE/shaded review,
+release clearance or current full-CI pass is established by these scoped receipts.
+Source-linkage reporting remains selected-source evidence, not standalone release
+coverage; local receipts do not substitute for clean-checkout verification. No
+held historical execution is authorized or qualified by this update.
+
+### Earlier PR #2 follow-up checklist (12:46:21 UTC observation)
+
+These later receipts do not rewrite the earlier local snapshot below. Public
+[draft PR #2](https://github.com/Apdelrahman1911/ktChecker/pull/2) was pushed at head
+**`a14cab05a330dc785c15239d77d9364b509c72eb`**. Inspected hosted bridge,
+Android, Desktop and iOS artifacts instead bind actual tested merge
+**`7b8032973d7d74ca151f8bcab8a99e8747f21e20`**; CI environment records identify
+`refs/pull/2/merge`. An API head SHA is not the tested merge. Hosted job statuses
+below are the **2026-11-06 12:46:21 UTC** observation, not later final outcomes.
+
+- [x] **Publish the source checkpoint:** PR #2 is public and draft. Source
+  publication is not release publication, license clearance or qualification.
+- [x] **Rerun three complete local test modules:** fresh round12 passed CLI
+  **366/366**, review-controller **55/55**, semantic-facts **106/106**, all with zero
+  failures/errors/skips; exit 0, **4 min 55 s**. This includes output-preflight
+  **6**, corrected reassessment **12**, integrated cache-history **3**, and
+  empty-assertion runner **14** tests. `round12-tests-result.json` pins
+  `source-snapshot-round12.json`: base `a14cab0`, source aggregate
+  `9a1344f9319677df24fc983133726e9e003c57ab565bda3f3886a32218ac4989`.
+  This later source snapshot is not the clean pushed head or a whole-project pass;
+  earlier full round9 **359/360** remains a failed historical run, not the current rerun.
+- [x] **Retain separate actual Linux Native feasibility:** Kotlin/Native **2.4.21**,
+  **`linuxX64`**, core-vocabulary library route, **5/5 cases / six compiler attempts**.
+  Four negative cases exited 1, including incompatible expect/actual return types;
+  `matched_candidate` is not compatibility. Receipt:
+  `native-expect-actual-r0/native-run-summary.json`. Neither unit counts nor this
+  library-only run establish framework/link/runtime, custom-rule or tuple qualification.
+- [x] **Retain the hosted Desktop result:** [platform run 42219264898](https://github.com/Apdelrahman1911/ktChecker/actions/runs/42219264898)
+  records Desktop **8/8**, zero skips, with a successful Desktop job. This small
+  target-control result does not make the whole platform workflow pass.
+- [x] **Record the actual iOS positive stage, without passing the iOS job:**
+  `iosArm64` and `iosSimulatorArm64` compilation/framework linking executed;
+  simulator tests passed **8/8**, zero skips, on Kotlin/Native **2.4.21**,
+  Xcode **26.4.1** / SDK **26.4**. A separate inventory passed after the generic
+  environment probe timed out. Failed negative/semantic gates remain separate below.
+- [ ] **Repair and rerun all three hosted bridge jobs without relaxing fail-closed
+  gates.** [Bridges run 42219264836](https://github.com/Apdelrahman1911/ktChecker/actions/runs/42219264836)
+  failed. Node-reported **pass/fail/skip**: macOS MCP **37/9/3 of 49**, reference
+  host **456/88/223 of 767**; Windows MCP **38/19/3 of 60**, reference host
+  **403/91/192 of 686**. Linux MCP was **46/0/3 of 49**; its reference-host command
+  timed out at **300.078 s**, with no completed test denominator. Keep Node counts
+  separate from JUnit; some failure names remain unavailable. Genuine OS execution
+  still used synthetic broker/model servers, not actual model-context delivery.
+- [ ] **Repair and rerun both Android Lint harness cases.** Direct Android
+  compile/host controls passed **8/8**, but `positive` and `new-api` provider cases
+  failed with `lint_output_unreliable`, incomplete coverage and no output
+  certificate; the expected NewApi finding was not normalized. Direct compilation
+  is not passing provider evidence or a successful Android job.
+- [ ] **Repair the iOS negative and independent semantic harnesses.** Four
+  missing/wrong-actual stages exited 1 with no compiler tasks recorded: this is
+  neither expected diagnostic evidence nor proof that invalid code compiled.
+  The semantic dependency compiled, but all **five** semantic-plugin cases exited
+  **2**, with **zero source visits**; no FIR extraction or iOS job pass is established.
+- [ ] **Close remaining hosted evidence gaps:** at the recorded cutoff,
+  Implementation/Planning Linux/macOS jobs had failed and Windows jobs were still
+  running. The Darwin-consent lane was skipped, not passed. Collect exact-source
+  successor results; local corrections do not inherit earlier hosted results.
+- [ ] **Keep wider gates open:** unit success is not actual empty-assertion compiler
+  execution or rule/tuple qualification; collect that separate execution receipt.
+  Later unrun source additions receive no pass credit. Owner-license, required-NOTICE
+  and shaded-dependency review remain unresolved; no release clearance is claimed.
+
+Local receipt paths above are relative to `build/evidence/integration-20261106/`.
+Hosted sanitized JSON binds bridge artifacts **13502582932 / 13502443043 /
+13503225985**, Android/Desktop **13502359211 / 13502767156**, and iOS
+**13503126632**; archive/member pins are retained separately. No raw hosted logs
+or archives were read by this documentation reviewer.
+
+### Earlier local snapshot (before the PR #2 follow-up)
+
+**Local integration evidence, not a qualified release or a combined final-source
+pass.** Named integration receipts are retained locally under
+`build/evidence/integration-20261106/` in the isolated integration checkout. Runs span successive reviewed source
+adoptions (`integration-round*.json`); the initial `source-snapshot.json` predates
+later corrections. `source-snapshot-round7.json` records a later dirty tree, not
+retroactive source identity for earlier commands or authenticated hosted CI.
+
+| Separate local lane | Observed result and limit |
+| --- | --- |
+| JVM unit/infrastructure controls | Initial contracts **9/9**, config **102/102**, snapshot **47/47**; later semantic facts **80/80** and provider-library **129/129**, zero failures/errors/skips in those rosters. The initial command still exited 1 after host OOM; kernel had no completed XML and CLI was not reached (`core-first-result.json`). The semantic successor has passing XML and `BUILD SUCCESSFUL` at 63 s, but its final parent-shell exit was unavailable after continuation (`semantic-boxing-r2-result.json`). These are separate lanes, not a full current all-module result. |
+| Provider/model/audit controls | `providers-current-result.json`: **1,611 default tests: 1,588 passed, 23 explicitly skipped, zero failures/errors**, across 12 modules; Gradle exit 0. Separately executed compiler worker supplement **58/58**, zero skips (`providers-worker-current-result.json`). Skipped and synthetic controls are not target execution or qualification. |
+| Kernel/CLI follow-up | Latest full kernel **256/256**, zero skips, including the concurrent-policy regression; full CLI still **359/360**, one policy/input-pair expectation failure and no skips (`kernel-cli-round9-result.json`). The combined command exited 1. A test-only successor uses the checked ConfigStore reassessment pair on the same raw result; no passing successor/full-CLI result is credited here. MagicNumber remains unqualified and kernel completion/refusal gates are unchanged. Earlier kernel **253/254**, **254/255** and the original CLI failure remain retained; synthetic qualified-fixture kernel reassessment success is separately covered. |
+| Actual FIR Int-literal fixture | Kotlin **2.4.21/JVM** successor **4/4 cases**, **five actual compiler attempts**, including positive 0/1/Int.MAX_VALUE and signed-boundary guards (`direct-int-literal-r2/summary.json`). Three expected compiler-rejection cases remain rejected/incomplete, not successful compilations. The original **3/4** failed fixture is retained separately in `direct-int-literal/`. **Zero rule/tuple qualification** from either fixture. |
+| Python controls | Wire profile **7/7**, Compose reporter **52/52**, junction reporter **79/79**, prepare-only consent **57/57**, benchmark controls **42/42**, each under normal Python and `-O`. These are separate, potentially overlapping control rosters, not additive rule/corpus/OS qualification. See `python-*.log`, `test_run_preview_example-consent-r0*.log`, and `test_preview_benchmark-consent-r0*.log`. |
+| TypeScript synthetic controls | MCP corrected **46/46** after retained **35/46**; reference-host focus **55/55**. Corrected full reference-host suite **897/897**, zero skips, exit 0 (**350 s**, `reference-host-ack-r1-full.log`), after the retained **886/893** failure and separate **38/38** ACK-diagnostic focus. These synthetic controls are not authenticated model-host delivery. |
+| Workflow source controls | Root reports the separately author-executed corrected controls **92/92**, normal Python and `-O`; reviewed source adoption is recorded in `integration-round10.json`. The original `workflow-ci-round6.log` remains **89/92**, three exact source/action-roster failures. Author control execution and workflow source adoption are not a hosted-CI pass. |
+| Fresh local distribution and real broker | `:cli:installDist :cli:distZip :cli:distTar` succeeded (**34 s**); explicit freshly installed-path JVM↔TypeScript broker checks passed **3/3**, zero skips (**11.22 s**, `mcp-real-broker-test.log`). `distribution-archives.json` verifies **44 files in each ZIP/TAR** against that installation. This is local interoperability/archive equality, not model delivery, final-source reproducibility or platform/release qualification. |
+
+**Bounded benchmark, not the warm 1–3 second target.**
+`benchmark-warm-history-sequential/benchmark-observations.json` retains two baseline
+and **four measured one-file patches**, two clients, one worker, sequential
+persistent-broker history, one selected build-depth rule and partial compilations.
+All four measured reviews remained **incomplete; zero required-complete**. Two
+finding cases produced useful findings at **19.05/19.18 s**; both zero-finding
+cases had unknown coverage, not successful clean assessments. Submit ACK round
+trips were **55.49–64.51 ms**, whereas patch-to-ACK was **14.32–14.81 s**.
+The whole command exited 0 in **144.62 s**, with **160.84 s user / 19.34 s system**
+and reported peak **602,272 KiB** (`benchmark-warm-history-sequential.process-metrics.json`);
+this waited-process accounting is not summed concurrent process-tree RSS.
+Compiler warmth is unknown, full-project warmth is not established, and
+**model-context delivery was not attempted**. Consent controls above postdate this
+measurement and do not retroactively bind it to their changed source.
+
+**Declared inventory is not known current coverage.** The root-executed declared
+ledger at `build/declared-coverage-1665-v1/inventory-20261106-round7.json` records
+**1,665 records × eight contexts = 13,320 rows**, with **46 explicit exclusions**.
+Root reports a **valid declared ledger but invalid current-coverage inventory**:
+current coverage and implementation/test/qualification stages are **unknown,
+not zero**. Command exit 0 is not coverage qualification; the earlier
+1,663-record strict inventories below retain only their historical source scope.
+
+**Packaging is not license clearance.** The actual dependency manifest,
+`package-report.json`, CycloneDX `distribution.cdx.json` and dependency NOTICE
+report were produced; inventory passed, but declared-license/required-NOTICE and
+shaded-dependency review remain unresolved, as does the owner's original-code
+license choice. Report-generation exit 0 does not clear those blockers.
+`doctor.json` still reports **preview / `releaseQualified=false`**. No signing,
+release publication, current-host model acceptance, current hosted-CI success,
+broad rule/context qualification, or Android/iOS/Desktop/Native target
+qualification is claimed by this update. These checks do not promote coverage
+stages or relax any runtime, policy, delivery or release gate.
+
+**Earlier dated sections below remain historical checkpoints**, with their
+original source bindings, failures and qualification limits; their results are
+not transferred to this integration tree.
+
 ## Original default35 compiler breadth execution — 2026-11-05 (incomplete)
 
 **Independent readback is complete; the actual cohort is not: outer/host exit 1,

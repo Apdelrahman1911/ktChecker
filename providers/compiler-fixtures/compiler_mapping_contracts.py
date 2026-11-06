@@ -806,7 +806,7 @@ CURRENT_SOURCE_PINS = {'data/rules-core.json': '28860cb987390ff1f604488aba023fab
  'providers/compiler-fixtures/planned-kmp-cases/supertype_initialized_in_expected_class/positive/jvm.kt': 'eaac8f47c8d8b618ff0965f00f349616f5abf6b6ba9d1d5d02140c6ca295bfed',
  'providers/compiler-fixtures/planned-kmp-manifest.json': '804c242c62707457ff143d16fb03bcd1bddd2ca84b3f9aef2085dc5af800b128',
  'providers/compiler-fixtures/test_checker_activation.py': '1c3839e950a30ee75d5fd3b8264345e035d003db8905ae46d2d4e24edcda417f',
- 'providers/compiler-fixtures/test_compiler_mapping_contracts.py': '3b52e5967301b4e8344f2a5350610ea058d693becd5e8f6140d1e2f0815eec47',
+ 'providers/compiler-fixtures/test_compiler_mapping_contracts.py': 'db6a4335b24b4ccfd3effeead0b08a8dd2d718081e82600ca7c03ab0e80a4bd1',
  'providers/compiler-fixtures/test_diagnostic_breadth.py': '28e39186913a5cf34669d580bba563300991bcab616e8792bff8adc492ec6366',
  'providers/compiler-fixtures/test_diagnostic_breadth_hookup.py': 'dfb778571011d888848a734a4e18d82d1fb61b58b0a2ce8cf4895f7c4732b1ab',
  'providers/compiler-fixtures/test_nullability_protocols.py': 'f84ea747138b77516f8283dc4ca80ac40077cac9c7336f59e93167d61cf488d6',
@@ -914,6 +914,71 @@ def diagnostics_predecessor_bytes(relative, data):
         prior = prior.replace(successor, predecessor, 1)
     require((len(prior), digest(prior)) == (pin['preimage_bytes'], pin['preimage_sha256']),
             'Diagnostics SOURCE preimage drift')
+    return prior
+
+
+# One later Workbench SOURCE-only stage: policy reassessment and client-binding
+# preflight. Restore the exact observation successor before its unchanged inverse;
+# neither this stage nor Workbench becomes a historical SOURCE join or execution proof.
+POLICY_REASSESSMENT_SOURCE_TRANSITIONS = {
+    'modules/cli/src/main/kotlin/dev/ktchecker/cli/Workbench.kt': {
+        'preimage_bytes': 42659,
+        'preimage_sha256': 'f37d4784f760379b386e195c1f1d3115201578caf707b04e43b5da65829f16ab',
+        'successor_bytes': 44876,
+        'successor_sha256': 'e7f3ac1097cf09f0ebbf561cf5869672dbd8edc1d09a24104c5e6e0b5d59c7e4',
+        'reverse_changes': (
+            # Retained owner policy admissions.
+            (
+                b'        modelGrants, codeImage::verify, liveRuntime = liveModelRuntime, parentProvider = coordinator)\n    private val loadedPolicies = ConcurrentHashMap<String, ConfigSnapshot>()\n    private val records = ConcurrentHashMap<String, PreparedReview>()\n    private val policyAdmissions = WorkbenchPolicyAdmissions(state)\n    /** The exact trusted policy object used by this composition, including lazy restart recovery. */\n    internal val capturedResultPolicy: ResultPolicy = ResultPolicy.versioned("ktchecker/workbench-policy/1:${codeImage.digest}", object : ResultPolicy {\n        override fun isReady(binding: ClientBinding, input: AnalysisInput): Boolean =\n',
+                b'        modelGrants, codeImage::verify, liveRuntime = liveModelRuntime, parentProvider = coordinator)\n    private val loadedPolicies = ConcurrentHashMap<String, ConfigSnapshot>()\n    private val records = ConcurrentHashMap<String, PreparedReview>()\n    /** The exact trusted policy object used by this composition, including lazy restart recovery. */\n    internal val capturedResultPolicy: ResultPolicy = ResultPolicy.versioned("ktchecker/workbench-policy/1:${codeImage.digest}", object : ResultPolicy {\n        override fun isReady(binding: ClientBinding, input: AnalysisInput): Boolean =\n',
+            ),
+            # Exact policy-reassessment authority composition.
+            (
+                b'            return configs.apply(policy, input, raw)\n        }\n    })\n    internal val policyReassessmentAuthority: PolicyReassessmentAuthority = WorkbenchPolicyReassessments(\n        state, configs, snapshots, codeImage.digest, codeImage::verify, ::prepared, ::retainedPolicyAdmission,\n        coordinator.id, coordinator.version)\n    val kernel: KernelService = KernelService.open(state.namespace("broker"), coordinator,\n        config = KernelConfig(workerCount = options.workerCount, globalParallelism = 2, perWorktreeParallelism = 1),\n        snapshotGate = sourceGate(),\n',
+                b'            return configs.apply(policy, input, raw)\n        }\n    })\n    val kernel: KernelService = KernelService.open(state.namespace("broker"), coordinator,\n        config = KernelConfig(workerCount = options.workerCount, globalParallelism = 2, perWorktreeParallelism = 1),\n        snapshotGate = sourceGate(),\n',
+            ),
+            # Kernel policy-reassessment authority binding.
+            (
+                b'        },\n        planAuthority = modelPlans,\n        findingProviders = coordinator.findingProviders,\n        resultPolicy = capturedResultPolicy,\n        policyReassessmentAuthority = policyReassessmentAuthority)\n\n    override fun close() = kernel.close()\n\n',
+                b'        },\n        planAuthority = modelPlans,\n        findingProviders = coordinator.findingProviders,\n        resultPolicy = capturedResultPolicy)\n\n    override fun close() = kernel.close()\n\n',
+            ),
+            # Client-binding validation before durable enrollment intent.
+            (
+                b'    fun register(workspaceId: String, worktreeId: String, clientId: String, sessionId: String, lineageId: String): ClientRegistration =\n        register(ClientBinding(state.ownerId, workspaceId, worktreeId, clientId, lineageId, sessionId = sessionId))\n\n    private fun register(binding: ClientBinding): ClientRegistration {\n        if (binding.ownerId != state.ownerId) throw CliProblem("permission_denied", "Client belongs to another user namespace.")\n        // Match the kernel\'s binding preflight BEFORE even creating a client lock or intent.\n        // Otherwise a rejected workspace/session typo durably occupies this state-global client\n        // ID, and a corrected retry conflicts with an enrollment the broker never accepted.\n        listOf(binding.ownerId, binding.workspaceId, binding.worktreeId, binding.clientId, binding.lineageId, binding.sessionId)\n            .forEach { value ->\n                if (value.isBlank() || value.length > 512 || value.any { it == \'\\u0000\' || it.isISOControl() }) {\n                    throw CliProblem("invalid_identifier", "binding identity is empty or invalid")\n                }\n            }\n        if (binding.generation !in 1..9_007_199_254_740_991L) {\n            throw CliProblem("invalid_binding", "Generation must be a positive interoperable integer")\n        }\n        return state.locked("client:${binding.clientId}") {\n            val file = state.keyFile("clients", binding.clientId)\n            if (Files.exists(file, NOFOLLOW_LINKS)) {\n                val current = state.read<ClientRegistration>(file)\n                if (current.binding != binding) throw CliProblem("client_binding_conflict",\n                    "Client ID is already bound to a different workspace, worktree, session or lineage; use a distinct client ID or replay its exact binding.")\n                kernel.registerClient(current)\n            } else {\n                fun token() = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })\n                val registration = ClientRegistration(binding, ClientCredential(binding.clientId, token()), AdapterCredential(binding.clientId, token()))\n                // Durable private enrollment intent precedes broker admission. A crash at either side\n                // can replay the same exact binding and token hashes, never replace another client.\n                state.write(file, registration)\n                kernel.registerClient(registration)\n            }\n        }\n    }\n\n',
+                b'    fun register(workspaceId: String, worktreeId: String, clientId: String, sessionId: String, lineageId: String): ClientRegistration =\n        register(ClientBinding(state.ownerId, workspaceId, worktreeId, clientId, lineageId, sessionId = sessionId))\n\n    private fun register(binding: ClientBinding): ClientRegistration = state.locked("client:${binding.clientId}") {\n        if (binding.ownerId != state.ownerId) throw CliProblem("permission_denied", "Client belongs to another user namespace.")\n        val file = state.keyFile("clients", binding.clientId)\n        if (Files.exists(file, NOFOLLOW_LINKS)) {\n            val current = state.read<ClientRegistration>(file)\n            if (current.binding != binding) throw CliProblem("client_binding_conflict", "Client is already registered to a different session or lineage.")\n            kernel.registerClient(current)\n        } else {\n            fun token() = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })\n            val registration = ClientRegistration(binding, ClientCredential(binding.clientId, token()), AdapterCredential(binding.clientId, token()))\n            // Durable private enrollment intent precedes broker admission. A crash at either side\n            // can replay the same exact binding and token hashes, never replace another client.\n            state.write(file, registration)\n            kernel.registerClient(registration)\n        }\n    }\n\n',
+            ),
+            # Policy admission publication replacing the prior prepared-record write.
+            (
+                b'            ("ktchecker.execution-plan" to Digests.sha256(Digests.canonical(ContractJson.encodeToJsonElement(profiles))))))\n        val prepared = PreparedReview(binding, spec.patchId, spec.idempotencyKey, input, configs.exportSnapshot(policy), profiles,\n            authorizeExecution, if (spec.requiredRuleIds == null) "all-catalog-candidates-for-declared-target" else "explicit-rule-subset-not-full-release")\n        val admission = describePolicyAdmission(prepared, policy, spec.requiredRuleIds != null,\n            codeImage.digest, catalog, coordinator.routes)\n        codeImage.verify()\n        policyAdmissions.publishNew(prepared, admission)\n        records[input.analysisKey()] = prepared\n        loadedPolicies[policyKey(binding, input)] = policy\n        return prepared\n',
+                b'            ("ktchecker.execution-plan" to Digests.sha256(Digests.canonical(ContractJson.encodeToJsonElement(profiles))))))\n        val prepared = PreparedReview(binding, spec.patchId, spec.idempotencyKey, input, configs.exportSnapshot(policy), profiles,\n            authorizeExecution, if (spec.requiredRuleIds == null) "all-catalog-candidates-for-declared-target" else "explicit-rule-subset-not-full-release")\n        codeImage.verify()\n        state.locked("prepared:${input.analysisKey()}") {\n            val file = state.keyFile("prepared", input.analysisKey())\n            // Work sharing must never overwrite a different consumer\'s owner policy, patch or\n            // execution consent. A general shared-work authorization registry is still separate\n            // release work; this single-compilation controller rejects collisions instead.\n            if (Files.exists(file, NOFOLLOW_LINKS) && state.read<PreparedReview>(file) != prepared) {\n                throw CliProblem("prepared_binding_conflict", "Input already has a different immutable consumer/authorization binding.")\n            }\n            state.write(file, prepared)\n        }\n        records[input.analysisKey()] = prepared\n        loadedPolicies[policyKey(binding, input)] = policy\n        return prepared\n',
+            ),
+            # Retained preparation revalidation, not execution certification.
+            (
+                b'        state.read<PreparedReview>(file).also {\n            if (it.input != input || it.binding.ownerId != state.ownerId) throw CliProblem("prepared_identity_mismatch", "Prepared input identity differs.")\n        }\n    }\n\n    /** Original owner preparation only; this does not certify a raw execution or current policy. */\n    internal fun retainedPolicyAdmission(record: PreparedReview): WorkbenchPolicyAdmission {\n        codeImage.verify()\n        val retained = policyAdmissions.requireRetained(record)\n        val original = configs.restoreSnapshot(record.configuration, record.configuration.revisionToken)\n        val expected = describePolicyAdmission(record, original, retained.activation.explicitOwnerSubset,\n            codeImage.digest, catalog, coordinator.routes)\n        if (retained != expected) {\n            throw CliProblem("policy_admission_authority_changed", "Current code, routes or typed activation differ from the retained owner preparation.")\n        }\n        codeImage.verify()\n        return retained\n    }\n\n    private fun validateSnapshot(record: PreparedReview) {\n',
+                b'        state.read<PreparedReview>(file).also {\n            if (it.input != input || it.binding.ownerId != state.ownerId) throw CliProblem("prepared_identity_mismatch", "Prepared input identity differs.")\n        }\n    }\n\n    private fun validateSnapshot(record: PreparedReview) {\n',
+            ),
+            # The two policy-reassessment RPC cases.
+            (
+                b'                result(submit(params.decode("credential"), params.decode("patchId"), params.decode("idempotencyKey"), params.decode("input")))\n            }\n            "review.status" -> { requireKeys(params, setOf("credential", "reviewId")); result(kernel.status(params.decode("credential"), params.decode("reviewId"))) }\n            "review.policy.reassess" -> {\n                requireKeys(params, setOf("credential", "request"))\n                result(kernel.reassessPolicy(params.decode("credential"), params.decode("request")))\n            }\n            "review.policy.status" -> {\n                requireKeys(params, setOf("credential", "idempotencyKey"))\n                result(kernel.policyReassessmentStatus(params.decode("credential"), params.decode("idempotencyKey")))\n            }\n            "review.cancel" -> { requireKeys(params, setOf("credential", "reviewId")); result(kernel.cancel(params.decode("credential"), params.decode("reviewId"))) }\n            "review.events" -> {\n                requireKeys(params, setOf("credential", "cursor", "limit"))\n',
+                b'                result(submit(params.decode("credential"), params.decode("patchId"), params.decode("idempotencyKey"), params.decode("input")))\n            }\n            "review.status" -> { requireKeys(params, setOf("credential", "reviewId")); result(kernel.status(params.decode("credential"), params.decode("reviewId"))) }\n            "review.cancel" -> { requireKeys(params, setOf("credential", "reviewId")); result(kernel.cancel(params.decode("credential"), params.decode("reviewId"))) }\n            "review.events" -> {\n                requireKeys(params, setOf("credential", "cursor", "limit"))\n',
+            ),
+        ),
+    },
+}
+
+
+def policy_reassessment_predecessor_bytes(relative, data):
+    """One exact Workbench SOURCE inverse; never accepts an old stage as current."""
+    pin = POLICY_REASSESSMENT_SOURCE_TRANSITIONS.get(relative)
+    require(pin is not None, 'Not a closed policy reassessment SOURCE transition')
+    require((len(data), digest(data)) == (pin['successor_bytes'], pin['successor_sha256']),
+            'Policy reassessment SOURCE successor drift')
+    prior = data
+    for successor, predecessor in pin['reverse_changes']:
+        require(prior.count(successor) == 1, 'Ambiguous policy reassessment SOURCE inverse')
+        prior = prior.replace(successor, predecessor, 1)
+    require((len(prior), digest(prior)) == (pin['preimage_bytes'], pin['preimage_sha256']),
+            'Policy reassessment SOURCE preimage drift')
     return prior
 
 
@@ -1163,8 +1228,13 @@ def current_implementation_references(root):
 def require_observation_source_pins(root):
     """Five selected authored SOURCE payloads, never a current-inputs or evidence selector."""
     require(len(OBSERVATION_SOURCE_PINS) == 5, 'Missing closed observation SOURCE pins')
+    require(set(POLICY_REASSESSMENT_SOURCE_TRANSITIONS) == {
+        'modules/cli/src/main/kotlin/dev/ktchecker/cli/Workbench.kt'},
+        'Missing closed policy reassessment SOURCE transition')
     for relative, pin in OBSERVATION_SOURCE_PINS.items():
         data = read_source(root, relative)
+        if relative in POLICY_REASSESSMENT_SOURCE_TRANSITIONS:
+            data = policy_reassessment_predecessor_bytes(relative, data)
         require((len(data), digest(data)) == (pin['bytes'], pin['sha256']),
                 'Observation selected SOURCE drift: ' + relative)
         if relative in OBSERVATION_SOURCE_TRANSITIONS:

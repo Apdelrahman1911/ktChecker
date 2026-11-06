@@ -6,6 +6,10 @@ real owner resolution nor run Gradle, Java, Detekt, a native helper or downloads
 All would-be external launch/acquisition seams fail unless explicitly mocked.
 The fabricated unit-only metadata/bytes below are NOT a supplied runtime lock,
 real SARIF, process evidence, a detector oracle, custody or qualification.
+On hosts without the production POSIX I/O capabilities, metadata controls use an
+explicit temporary-fixture-only descriptor model; separate controls require the
+real production entry points to refuse. That model is not Windows secure I/O,
+native execution, privacy enforcement or host qualification.
 """
 from __future__ import annotations
 
@@ -19,6 +23,7 @@ from pathlib import Path
 import re
 import tempfile
 import time
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -93,13 +98,58 @@ class FakeOpener:
         return self.response
 
 
+class _FixtureOnlyIO:
+    """Portable inert fixture storage, NEVER a production/security fallback.
+
+    Only private unit-created files below one temporary root may reach this seam.
+    Production read bounds, hashes, stable-read checks and all metadata joins stay
+    in use; anchored/no-follow/nonblocking OS behavior is tested separately.
+    """
+    def __init__(self, root: Path):
+        self.root = root
+
+    def path(self, path: Path, *, directory: bool | None = None) -> Path:
+        if not path.is_relative_to(self.root):
+            raise AssertionError("unit-only I/O outside the isolated fixture root")
+        path = ci.exact_path(path, directory=directory)
+        if not path.resolve().is_relative_to(self.root):
+            raise AssertionError("unit-only I/O outside the isolated fixture root")
+        return path
+
+    def open_leaf(self, path: Path, flags: int, *, nonblocking: bool = False) -> int:
+        path = self.path(path)
+        if flags == os.O_RDONLY:
+            if nonblocking is not True:
+                raise AssertionError("unit reader omitted its required nonblocking request")
+            self.path(path, directory=False)
+        elif flags != (os.O_WRONLY | os.O_CREAT | os.O_EXCL) or nonblocking:
+            raise AssertionError("unit-only I/O expected read or exclusive new write")
+        # Binary transport on Windows, not fabricated security-flag support.
+        if os.name == "nt":
+            flags |= os.O_BINARY
+        return os.open(path, flags, 0o600)
+
+    def make_directory(self, path: Path) -> None:
+        path = self.path(path)
+        path.mkdir(mode=0o700, parents=True, exist_ok=True)
+        self.path(path, directory=True)
+
+
 class _IsolatedControls(unittest.TestCase):
+    allow_fixture_io = True
+
     def setUp(self):
         self.stack = ExitStack()
         self.addCleanup(self.stack.close)
         temporary = self.stack.enter_context(tempfile.TemporaryDirectory(prefix="ktc-compose-ci-unit-only-"))
         self.root = Path(temporary).resolve()
         self.stack.enter_context(mock.patch.object(ci, "REPO_ROOT", self.root))
+        # These fixtures model a Linux owner workflow, not host wrapper discovery.
+        # In particular they must not probe for or require installed Git Bash.
+        self.stack.enter_context(mock.patch.object(ci, "wrapper_argv", side_effect=lambda root: [str(root / "gradlew")]))
+        self.fixture_io = None
+        if self.allow_fixture_io and not ci.nofollow_io_available():
+            self.install_fixture_io()
         self.external = {}
         for name in ("source_identity", "run_logged", "gradle_result"):
             self.external[name] = self.stack.enter_context(
@@ -133,6 +183,13 @@ class _IsolatedControls(unittest.TestCase):
         self.context = ci.dispatch_context(self.source)
         self.lock_digest = digest(b"synthetic expected lock only")
         self.next_fixture = 0
+
+    def install_fixture_io(self):
+        self.fixture_io = _FixtureOnlyIO(self.root)
+        for name in ("open_leaf", "make_directory"):
+            self.stack.enter_context(mock.patch.object(ci, name, side_effect=getattr(self.fixture_io, name)))
+        # Only synthetic orchestration in this test scope bypasses the real gate.
+        self.stack.enter_context(mock.patch.object(ci, "require_nofollow_io", return_value=None))
 
     def put(self, relative: str | Path, raw: bytes, root: Path | None = None) -> Path:
         path = (self.root if root is None else root) / relative
@@ -351,6 +408,144 @@ class _IsolatedControls(unittest.TestCase):
         })
         self.index(run, data)
         return root, enrollment, run, data
+
+
+class FilesystemCapabilityControls(_IsolatedControls):
+    allow_fixture_io = False
+
+    def capability_model(self):
+        # Never mutate the process-wide os.name or invent usable host flags.
+        # Synthetic flags reach only the predicate and mocked descriptor calls.
+        model = SimpleNamespace(**vars(os))
+        model.name = "posix"
+        model.O_NOFOLLOW, model.O_DIRECTORY, model.O_NONBLOCK = 1, 2, 4
+        model.open = mock.Mock(side_effect=AssertionError("unexpected descriptor open"))
+        model.mkdir = mock.Mock(side_effect=AssertionError("unexpected directory creation"))
+        model.umask = mock.Mock(side_effect=AssertionError("unexpected process mutation"))
+        model.supports_dir_fd = {model.open, model.mkdir}
+        return model
+
+    def test_each_required_capability_is_checked_before_native_flags_or_io(self):
+        target = self.put("capability-input.json", b"{}")
+        supported = self.capability_model()
+        with mock.patch.object(ci, "os", supported):
+            self.assertTrue(ci.nofollow_io_available())
+            ci.require_nofollow_io()
+        supported.open.assert_not_called()
+        supported.mkdir.assert_not_called()
+        variants = ("windows", "O_NOFOLLOW", "O_DIRECTORY", "O_NONBLOCK",
+                    "zero-nofollow", "zero-directory", "zero-nonblock", "boolean-flag",
+                    "open-dirfd", "mkdir-dirfd", "missing-dirfd-set")
+        for variant in variants:
+            model = self.capability_model()
+            if variant == "windows":
+                model.name = "nt"
+            elif variant.startswith("O_"):
+                delattr(model, variant)
+            elif variant.startswith("zero-"):
+                setattr(model, {"zero-nofollow": "O_NOFOLLOW", "zero-directory": "O_DIRECTORY",
+                                "zero-nonblock": "O_NONBLOCK"}[variant], 0)
+            elif variant == "boolean-flag":
+                model.O_NOFOLLOW = True
+            elif variant == "missing-dirfd-set":
+                del model.supports_dir_fd
+            else:
+                model.supports_dir_fd.remove(model.open if variant == "open-dirfd" else model.mkdir)
+            with self.subTest(capability=variant), mock.patch.object(ci, "os", model):
+                self.assertFalse(ci.nofollow_io_available())
+                for function, arguments in ((ci.read_regular, (target, 2)), (ci.file_identity, (target,)),
+                                            (ci.open_leaf, (target, os.O_RDONLY)),
+                                            (ci.make_directory, (self.root / "not-created",)),
+                                            (ci.write_new, (self.root / "not-written.json", b"{}"))):
+                    self.problem("compose_ci_nofollow_io_unavailable", function, *arguments)
+            model.open.assert_not_called()
+            model.mkdir.assert_not_called()
+            model.umask.assert_not_called()
+        self.assertEqual(b"{}", target.read_bytes())
+        self.assertFalse((self.root / "not-created").exists())
+        self.assertFalse((self.root / "not-written.json").exists())
+        self.no_external_calls()
+
+    def test_capable_descriptor_model_keeps_all_required_native_flags(self):
+        # Descriptor numbers are inert model values; no host descriptor is opened.
+        target = self.put("descriptor-model-input.json", b"{}")
+        model = self.capability_model()
+        descriptors = list(range(1000, 1000 + len(target.parts)))
+        model.open.side_effect = descriptors
+        model.close = mock.Mock()
+        directory_flags = os.O_RDONLY | model.O_DIRECTORY | model.O_NOFOLLOW
+        expected = [mock.call("/", directory_flags)]
+        current = descriptors[0]
+        closed = []
+        for index, component in enumerate(target.parts[1:-1], 1):
+            expected.append(mock.call(component, directory_flags, dir_fd=current))
+            closed.append(mock.call(current))
+            current = descriptors[index]
+        expected.append(mock.call(target.name, os.O_RDONLY | model.O_NOFOLLOW | model.O_NONBLOCK,
+                                  0o600, dir_fd=current))
+        closed.append(mock.call(current))
+        with mock.patch.object(ci, "os", model):
+            result = ci.open_leaf(target, os.O_RDONLY, nonblocking=True)
+        self.assertEqual(descriptors[len(expected) - 1], result)
+        self.assertEqual(expected, model.open.call_args_list)
+        self.assertEqual(closed, model.close.call_args_list)
+        model.mkdir.assert_not_called()
+        model.umask.assert_not_called()
+        self.no_external_calls()
+
+    def test_unsupported_cli_phases_remain_unavailable_without_launch_or_evidence_fallback(self):
+        for phase in ("gate", "wrapper", "provision", "execute", "collect"):
+            model = self.capability_model()
+            model.name = "nt"
+            del model.O_NONBLOCK
+            output = io.StringIO()
+            functions = {name: mock.Mock(side_effect=AssertionError("phase must not be dispatched"))
+                         for name in ("gate", "wrapper", "provision", "execute", "collect")}
+            with self.subTest(phase=phase), mock.patch.object(ci, "os", model), \
+                    mock.patch.multiple(ci, **functions), redirect_stdout(output):
+                code = ci.main(["--phase", phase, "--rule", RULE, "--owner-lock-sha256", self.lock_digest])
+            self.assertEqual(1, code)
+            self.assertIn("unavailable (compose_ci_nofollow_io_unavailable)", output.getvalue())
+            self.assertNotIn(str(self.root), output.getvalue())
+            self.assertFalse((self.root / "build").exists())
+            for function in functions.values():
+                function.assert_not_called()
+            model.open.assert_not_called()
+            model.mkdir.assert_not_called()
+            model.umask.assert_not_called()
+        self.no_external_calls()
+
+    def test_real_host_reader_or_explicit_unsupported_result_is_not_silently_skipped(self):
+        target = self.put("real-host-input.json", b"{}")
+        self.assertIsNone(self.fixture_io)
+        if ci.nofollow_io_available():
+            self.assertEqual(b"{}", ci.read_regular(target, 2))
+            self.assertEqual({"size": 2, "digest": digest(b"{}")}, ci.file_identity(target))
+            self.problem("compose_ci_file_bound", ci.read_regular, target, 1)
+        else:
+            for function, arguments in ((ci.read_regular, (target, 2)), (ci.file_identity, (target,)),
+                                        (ci.write_new, (self.root / "unsupported-output.json", b"{}"))):
+                self.problem("compose_ci_nofollow_io_unavailable", function, *arguments)
+            self.assertFalse((self.root / "unsupported-output.json").exists())
+        self.assertEqual(b"{}", target.read_bytes())
+        self.no_external_calls()
+
+    def test_portable_fixture_model_keeps_real_byte_bounds_hashes_and_exclusive_writes(self):
+        # Exercise the model on supported hosts too, without claiming OS safety.
+        self.install_fixture_io()
+        target = self.root / "fixture-model/value.json"
+        ci.write_new(target, b"{}")
+        self.assertEqual(b"{}", ci.read_regular(target, 2))
+        self.assertEqual({"size": 2, "digest": digest(b"{}")}, ci.file_identity(target))
+        self.problem("compose_ci_file_bound", ci.read_regular, target, 1)
+        with self.assertRaises(FileExistsError):
+            ci.write_new(target, b"overwrite forbidden")
+        with self.assertRaises(AssertionError):
+            self.fixture_io.open_leaf(target, os.O_RDONLY)
+        with self.assertRaises(AssertionError):
+            self.fixture_io.make_directory(self.root.parent / "outside-unit-root")
+        self.assertEqual(b"{}", target.read_bytes())
+        self.no_external_calls()
 
 
 class OwnerInputControls(_IsolatedControls):

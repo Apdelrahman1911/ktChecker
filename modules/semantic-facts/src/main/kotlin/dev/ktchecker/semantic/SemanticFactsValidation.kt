@@ -5,7 +5,15 @@ import java.nio.file.Path
 
 /** No project code, compiler, or plugin is loaded here; only supplied immutable source bytes. */
 object SemanticFactsValidation {
-    fun requestProblems(request: SemanticFactsRequest): List<String> {
+    fun requestProblems(request: SemanticFactsRequest): List<String> = extractionRequestProblems(SemanticRequestData.of(request))
+
+    fun observedRequestProblems(request: ObservedSemanticFactsRequest): List<String> {
+        try { observedSemanticRequestBounds(request) }
+        catch (_: SemanticFactException) { return listOf("observed_semantic_request_bound") }
+        return extractionRequestProblems(SemanticRequestData.of(request))
+    }
+
+    internal fun extractionRequestProblems(request: SemanticRequestData): List<String> {
         val problems = mutableListOf<String>()
         if (request.schemaVersion != 1 || request.adapterId != SEMANTIC_ADAPTER_ID ||
             request.compilerVersion != SEMANTIC_COMPILER_VERSION) problems += "semantic_tuple_unavailable"
@@ -27,7 +35,17 @@ object SemanticFactsValidation {
         if (request.sources.sumOf { it.size.coerceIn(0, 4_194_305) } > 268_435_456) problems += "semantic_input_limit"
         if (request.compilerArtifacts.isEmpty() || request.compilerArtifacts.any { !Digests.valid(it.digest) } ||
             !Digests.valid(request.pluginArtifact.digest)) problems += "semantic_artifact_identity_invalid"
-        if (request.target.isBlank() || request.compilationId.isBlank()) problems += "semantic_context_missing"
+        if ((request.observed == null && request.target.isBlank()) || request.compilationId.isBlank()) problems += "semantic_context_missing"
+        request.observed?.let { observed ->
+            if (observed.profile != OBSERVED_SEMANTIC_REQUEST_PROFILE || observed.platform != "jvm" ||
+                observed.target.any { it.isISOControl() } || observed.target.isNotEmpty() && observed.target.isBlank()) {
+                problems += "observed_semantic_context_unsupported"
+            }
+            if (!Digests.valid(observed.modelEvidenceIdentity) ||
+                !Regex("[a-f0-9]{32}").matches(observed.observedInvocationIdentity) ||
+                !Regex("[a-f0-9]{32}").matches(observed.originalDeadlineIdentity) ||
+                observed.originalDeadlineMillis !in 1..3_600_000) problems += "observed_semantic_origin_labels_invalid"
+        }
         if (request.compilerArguments.isEmpty() || request.compilerArguments.size > 4096 ||
             request.compilerArguments.any { it.length > 16_384 || '\u0000' in it }) problems += "semantic_compiler_options_unknown"
         if (request.dependencyArtifacts.any { !Digests.valid(it.digest) }) problems += "semantic_dependency_identity_invalid"
@@ -79,14 +97,32 @@ object SemanticFactsValidation {
                 frozenRequest.target, frozenRequest.compilationId, "failed", compilerExitCode,
                 SemanticFactsFreeze.list(listOf(e.code)), emptyList(), false)
         }
-        return assembleFrozen(frozenRequest, frozenShards, compilerExitCode, executedSuccessfully,
+        return assembleFrozen(SemanticRequestData.of(frozenRequest), frozenShards, compilerExitCode, executedSuccessfully,
             SemanticFactsFreeze.list(executionReasons), sourceBytes)
     }
 
-    private fun assembleFrozen(request: SemanticFactsRequest, shards: List<SemanticFactShard>, compilerExitCode: Int?,
+    /** Separate nominal observed route. Execution booleans remain DATA, never an owner receipt. */
+    fun assembleObserved(request: ObservedSemanticFactsRequest, shards: List<SemanticFactShard>, compilerExitCode: Int?,
+                         executedSuccessfully: Boolean, executionReasons: List<String> = emptyList(),
+                         sourceBytes: ((SemanticSource) -> ByteArray)? = null): ObservedSemanticFactBundle {
+        val frozenRequest = SemanticFactsFreeze.observedRequest(request)
+        val frozenShards = try {
+            SemanticFactsFreeze.shards(shards, (frozenRequest.sources.size.toLong() * 4).coerceAtMost(4096).toInt(),
+                directIntLiteralArgumentsRequested = frozenRequest.directIntLiteralArgumentVersion != null)
+        } catch (e: SemanticFactException) {
+            return ObservedSemanticFactBundle(frozenRequest, SemanticFactBundle(frozenRequest.digest(),
+                frozenRequest.snapshotId, frozenRequest.analysisId, frozenRequest.target, frozenRequest.compilationId,
+                "failed", compilerExitCode, SemanticFactsFreeze.list(listOf(e.code)), emptyList(), false))
+        }
+        val facts = assembleFrozen(SemanticRequestData.of(frozenRequest), frozenShards, compilerExitCode,
+            executedSuccessfully, SemanticFactsFreeze.list(executionReasons), sourceBytes)
+        return ObservedSemanticFactBundle(frozenRequest, facts)
+    }
+
+    private fun assembleFrozen(request: SemanticRequestData, shards: List<SemanticFactShard>, compilerExitCode: Int?,
                                executedSuccessfully: Boolean, executionReasons: List<String>,
                                sourceBytes: ((SemanticSource) -> ByteArray)?): SemanticFactBundle {
-        val requestProblems = requestProblems(request)
+        val requestProblems = extractionRequestProblems(request)
         val reasons = requestProblems.toMutableList()
         reasons += executionReasons
         if (!executedSuccessfully) reasons += "semantic_execution_unavailable"
@@ -211,7 +247,7 @@ object SemanticFactsValidation {
     }
 
     /** Shape/binding validation only. A well-formed DTO never authenticates its FIR producer. */
-    private fun directIntLiteralProblems(request: SemanticFactsRequest, shard: SemanticFactShard): List<String> {
+    private fun directIntLiteralProblems(request: SemanticRequestData, shard: SemanticFactShard): List<String> {
         val problems = mutableSetOf<String>()
         shard.calls.forEach { call ->
             call.arguments.forEach argumentLoop@ { argument ->
@@ -256,7 +292,7 @@ object SemanticFactsValidation {
     }
 
     /** Compare actual FIR module refinement to the supplied graph, without name heuristics. */
-    private fun observedGraphProblems(request: SemanticFactsRequest, shards: List<SemanticFactShard>): List<String> {
+    private fun observedGraphProblems(request: SemanticRequestData, shards: List<SemanticFactShard>): List<String> {
         val modules = shards.groupBy { it.input.sourceSet }.mapValues { (_, rows) -> rows.map { it.compilerContext.moduleName }.toSet() }
         if (modules.values.any { it.size != 1 }) return listOf("semantic_source_set_context_ambiguous")
         val moduleToSet = modules.map { (set, names) -> names.single() to set }.toMap()

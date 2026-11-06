@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import stat
 import sys
 import zipfile
 
@@ -97,6 +98,7 @@ LIMITATIONS = [
     "Selected Native/JDK/component hashes do not attest the entire external LLVM/libffi/sysroot/cache closure.",
     "No raw results, compiler commands, symbols, source paths/text, streams, machine paths, or private host state are uploaded.",
     "The private evidence digest binds a retained local artifact; it is not publicly inspectable fact evidence.",
+    "Failure markers are fixed observations of bounded digest-bound fresh streams, not root-cause attribution.",
 ]
 SUMMARY_KEYS = {"schemaVersion", "evidenceKind", "metadataProjection", "adapterId", "state", "mode", "target",
                 "observedAt", "testedCommit", "runner", "artifacts", "cases", "executions", "reasons",
@@ -104,6 +106,50 @@ SUMMARY_KEYS = {"schemaVersion", "evidenceKind", "metadataProjection", "adapterI
 CASE_KEYS = {"name", "passed", "assertions", "snapshotId", "requestDigest", "analysisId", "state", "compilerExitCode",
              "reasons", "completeForSupportedVocabulary", "observedCompilerVersions", "counts", "unknownReasonCounts"}
 EXECUTION_KEYS = {"label", "snapshotId", "analysisKey", "status", "exitCode", "reasons", "metrics", "stdoutDigest", "stderrDigest"}
+FAILURE_STREAM_BYTE_LIMIT = 65_536
+SECURE_FAILURE_STREAM_IO = os.open in os.supports_dir_fd and all(
+    hasattr(os, flag) for flag in ("O_DIRECTORY", "O_NOFOLLOW", "O_NONBLOCK"))
+COMPILER_EXCEPTION_HEADER = re.compile(
+    r'(?:exception: |Caused by: |Exception in thread "[^"\r\n]{1,80}" )?'
+    r'([A-Za-z_$][A-Za-z0-9_.$]{0,199})(?:: ?([^\r\n]*))?')
+# Fixed type markers only. Neither an arbitrary exception name nor its message,
+# stack, compiler arguments, source text, or source locations may be projected.
+COMPILER_EXCEPTION_MARKERS = {
+    "java.lang.NoSuchMethodError": "jvm_no_such_method_error",
+    "java.lang.NoSuchFieldError": "jvm_no_such_field_error",
+    "java.lang.AbstractMethodError": "jvm_abstract_method_error",
+    "java.lang.IncompatibleClassChangeError": "jvm_incompatible_class_change_error",
+    "java.lang.NoClassDefFoundError": "jvm_no_class_def_found_error",
+    "java.lang.ClassNotFoundException": "jvm_class_not_found_exception",
+    "java.lang.ExceptionInInitializerError": "jvm_exception_in_initializer_error",
+    "java.lang.UnsupportedClassVersionError": "jvm_unsupported_class_version_error",
+    "java.lang.IllegalAccessError": "jvm_illegal_access_error",
+    "java.lang.LinkageError": "jvm_linkage_error",
+    "java.util.ServiceConfigurationError": "jvm_service_configuration_error",
+    "java.lang.OutOfMemoryError": "jvm_out_of_memory_error",
+    "java.lang.StackOverflowError": "jvm_stack_overflow_error",
+    "java.lang.AssertionError": "jvm_assertion_error",
+    "java.lang.ClassCastException": "jvm_class_cast_exception",
+    "java.lang.IllegalArgumentException": "jvm_illegal_argument_exception",
+    "java.lang.IllegalStateException": "jvm_illegal_state_exception",
+    "org.jetbrains.kotlin.util.FileAnalysisException": "kotlin_file_analysis_exception",
+    "org.jetbrains.kotlin.backend.common.BackendException": "kotlin_backend_exception",
+    "dev.ktchecker.semantic.SemanticFactException": "semantic_fact_exception",
+}
+# SemanticFactException.code is NOT included in Throwable.toString(). Compare
+# only exact authored fixed messages from SemanticPlugin.kt; never infer codes
+# from arbitrary messages, request-problem lists, or a substring in a source line.
+SEMANTIC_EXCEPTION_MESSAGES = {
+    "Unknown semantic plugin option": "semantic_plugin_option_unknown",
+    "Semantic request is required": "semantic_request_missing",
+    "Semantic request must be a bounded regular file": "semantic_request_unsafe",
+    "Semantic request changed after authorization": "semantic_request_digest_mismatch",
+    "This adapter requires exact Kotlin 2.4.21": "semantic_compiler_version_mismatch",
+    "Executing compiler implementation was not selected": "semantic_compiler_artifact_unselected",
+    "A separate output directory is required": "semantic_output_missing",
+    "Executing artifact changed after selection": "semantic_artifact_digest_mismatch",
+    "Selected artifact is not a regular file": "semantic_artifact_unsafe",
+}
 
 
 def valid_digest(value: object) -> bool:
@@ -348,6 +394,97 @@ def validate_summary(value: object, mode: str, target: str, commit: str, project
     return sorted(set(errors))
 
 
+def compiler_failure_markers(text: str) -> list[str]:
+    markers = set()
+    for line in text.split("\n"):
+        header = COMPILER_EXCEPTION_HEADER.fullmatch(line.removesuffix("\r"))
+        if header is None:
+            continue
+        exception, message = header.groups()
+        marker = COMPILER_EXCEPTION_MARKERS.get(exception)
+        if marker is not None:
+            markers.add(marker)
+        if exception == "dev.ktchecker.semantic.SemanticFactException":
+            reason = SEMANTIC_EXCEPTION_MESSAGES.get(message)
+            if reason is not None:
+                markers.add(reason)
+    return sorted(markers)
+
+
+def failure_stream_metadata(private: Path, root: Path, label: str, stream: str, expected_digest: str) -> dict:
+    """Read only a closed fresh-driver filename, below no-follow directory FDs."""
+    if label not in NATIVE_LABELS or stream not in {"stdout", "stderr"} or not valid_digest(expected_digest):
+        raise ValueError("invalid closed compiler stream selection")
+    result = {"stream": stream, "digest": expected_digest, "digest_verified": False,
+              "status": "unsafe_or_unavailable", "markers": []}
+    try:
+        relative = root_relative(private / f"{label}-{stream}.txt", root)
+        if relative.parts[:1] != ("build",) or relative.parts[-3:-1] != ("raw", "native-semantic-driver"):
+            return result
+        if not SECURE_FAILURE_STREAM_IO:
+            result["status"] = "secure_read_unavailable"
+            return result
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        directory = os.open(root.resolve(strict=True), flags)
+        try:
+            for part in relative.parts[:-1]:
+                child = os.open(part, flags, dir_fd=directory)
+                os.close(directory)
+                directory = child
+            descriptor = os.open(relative.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+            try:
+                info = os.fstat(descriptor)
+                if not stat.S_ISREG(info.st_mode):
+                    return result
+                if info.st_size > FAILURE_STREAM_BYTE_LIMIT:
+                    result["status"] = "oversized"
+                    return result
+                remaining, chunks = FAILURE_STREAM_BYTE_LIMIT + 1, []
+                while remaining:
+                    chunk = os.read(descriptor, remaining)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+                    remaining -= len(chunk)
+                raw = b"".join(chunks)
+            finally:
+                os.close(descriptor)
+        finally:
+            os.close(directory)
+    except (OSError, ValueError):
+        return result
+    if len(raw) > FAILURE_STREAM_BYTE_LIMIT:
+        result["status"] = "oversized"
+    elif digest_bytes(raw) != expected_digest:
+        result["status"] = "digest_mismatch"
+    else:
+        result["digest_verified"] = True
+        try:
+            result["markers"] = compiler_failure_markers(raw.decode("utf-8"))
+            result["status"] = "markers_retained" if result["markers"] else "no_allowlisted_marker" if raw else "empty"
+        except UnicodeDecodeError:
+            result["status"] = "invalid_utf8"
+    return result
+
+
+def compiler_failure_diagnostics(summary: dict, private: Path, root: Path) -> dict:
+    """Supplement validated failed metadata, without changing any execution gate."""
+    result = {"schema_version": 1, "projection": "fixed-exception-markers-v1",
+              "stream_byte_limit": FAILURE_STREAM_BYTE_LIMIT, "raw_logs_uploaded": False,
+              "root_cause_identified": False, "executions": []}
+    if summary["state"] == "passed":
+        return result
+    passed_cases = {row["name"] for row in summary["cases"] if row["passed"]}
+    for row in sorted(summary["executions"], key=lambda item: item["label"]):
+        failed = row["status"] in {"failed", "cancelled", "timeout"} or (
+            row["status"] == "executed" and type(row["exitCode"]) is int and row["exitCode"] != 0)
+        if failed and row["label"] not in passed_cases:
+            result["executions"].append({"label": row["label"], "streams": [
+                failure_stream_metadata(private, root, row["label"], stream, row[f"{stream}Digest"])
+                for stream in ("stdout", "stderr")]})
+    return result
+
+
 def dependency_inventory(home: Path, data_dir: Path, target: str, host_build: str) -> dict:
     path = selected_file(home, "konan/konan.properties")
     if path.stat().st_size > 1024 * 1024:
@@ -475,6 +612,8 @@ def run(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
                 result["state"] = "unavailable"
         verify_selected_artifacts(summary, home, java_home, root)
         native.consume_selection(args.native_selection, args.native_provisioning, args.target, root, source, java_home, selected_xcode)
+        if result["driver_summary_metadata_valid"]:
+            result["compiler_failure_diagnostics"] = compiler_failure_diagnostics(summary, private, root)
     except native.NativePrerequisiteError as error:
         result["errors"].append(error.code)
     except (OSError, ValueError, KeyError, TypeError, AttributeError):

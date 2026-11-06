@@ -35,6 +35,18 @@ EXPECTED_OBSERVATION_SOURCE_PINS = {'modules/cli/src/main/kotlin/dev/ktchecker/c
                                                                                                      'sha256': '2fbcff9e7b85ff94f6d946ee25134bf8da270a600768814131598fb63632b3cd'}}
 EXPECTED_IMPLEMENTATION_REFS_SHA256 = '4e7c4b747d27e0b04d97df1574846a79b75fa7599faad031f7a41073ce594521'
 
+# Independent later Workbench SOURCE stage; the five original observation pins
+# above and their two inverses stay frozen, including the exact intermediate bytes.
+EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS = {
+    'modules/cli/src/main/kotlin/dev/ktchecker/cli/Workbench.kt': {
+        'preimage_bytes': 42659,
+        'preimage_sha256': 'f37d4784f760379b386e195c1f1d3115201578caf707b04e43b5da65829f16ab',
+        'successor_bytes': 44876,
+        'successor_sha256': 'e7f3ac1097cf09f0ebbf561cf5869672dbd8edc1d09a24104c5e6e0b5d59c7e4',
+    },
+}
+EXPECTED_POLICY_REASSESSMENT_REVERSE_REFS_SHA256 = '74c54157809d553522bab7bccb09e0048062ff97f701b72bde5c860fa085fc0a'
+
 
 # Independent parser/test SOURCE anchors; do not rewrite the unchanged facade5
 # or either earlier inverse domain when composing this later parser-only successor.
@@ -45,9 +57,27 @@ EXPECTED_PARSER_AMBIGUITY_SOURCE_PINS = {'modules/provider-compiler/src/main/kot
 PRE_AMBIGUITY_IMPLEMENTATION_REFS_SHA256 = 'a18f7fc2a99bbf65efc8a387841adf4c14b23e92cc156e9eea0b2a33310a2446'
 
 
+def require_fixed_policy_reassessment_transition():
+    contracts.require(set(contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS) ==
+                      set(EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS),
+                      'Policy reassessment SOURCE transition selector drift')
+    for path, fixed in EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS.items():
+        pin = contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS[path]
+        contracts.require(set(pin) == set(fixed) | {'reverse_changes'} and
+                          {key: pin[key] for key in fixed} == fixed,
+                          'Policy reassessment SOURCE transition metadata drift')
+        references = [{'successor_sha256': contracts.digest(successor),
+                       'preimage_sha256': contracts.digest(predecessor)}
+                      for successor, predecessor in pin['reverse_changes']]
+        contracts.require(len(references) == 7 and contracts.digest(json.dumps(
+            references, separators=(',', ':')).encode()) == EXPECTED_POLICY_REASSESSMENT_REVERSE_REFS_SHA256,
+            'Policy reassessment SOURCE inverse selector drift')
+
+
 def require_fixed_observation_source_inputs(root):
     contracts.require(contracts.OBSERVATION_SOURCE_PINS == EXPECTED_OBSERVATION_SOURCE_PINS,
                       'Observation selected SOURCE selector drift')
+    require_fixed_policy_reassessment_transition()
     references = [{'path': path, 'sha256': digest} for path, digest in contracts.CURRENT_IMPLEMENTATION_SOURCE_PINS.items()]
     contracts.require(contracts.digest(json.dumps(references, separators=(',', ':'), ensure_ascii=False).encode()) ==
                       EXPECTED_IMPLEMENTATION_REFS_SHA256, 'Observation implementation SOURCE selector drift')
@@ -596,8 +626,17 @@ class CompilerMappingContractSourceTest(unittest.TestCase):
         self.assertNotIn(contracts.SELECTION_REL, contracts.OBSERVATION_SOURCE_PINS)
         self.assertNotIn(contracts.MAP_REL, contracts.OBSERVATION_SOURCE_PINS)
         require_fixed_observation_source_inputs(ROOT)
+        self.assertEqual({'modules/cli/src/main/kotlin/dev/ktchecker/cli/Workbench.kt'},
+                         set(contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS))
+        self.assertFalse(set(contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS) & set(contracts.CURRENT_SOURCE_PINS))
+        self.assertFalse(set(contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS) & set(contracts.LEGACY_DATA_PINS))
         for path, pin in EXPECTED_OBSERVATION_SOURCE_PINS.items():
             data = contracts.read_source(ROOT, path)
+            if path in EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS:
+                fixed = EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS[path]
+                self.assertEqual((fixed['successor_bytes'], fixed['successor_sha256']),
+                                 (len(data), contracts.digest(data)))
+                data = contracts.policy_reassessment_predecessor_bytes(path, data)
             self.assertEqual((pin['bytes'], pin['sha256']), (len(data), contracts.digest(data)))
             if path in contracts.CURRENT_IMPLEMENTATION_SOURCE_PINS:
                 self.assertEqual(pin['sha256'], contracts.CURRENT_IMPLEMENTATION_SOURCE_PINS[path])
@@ -667,18 +706,32 @@ class CompilerMappingContractSourceTest(unittest.TestCase):
                 elif path == 'modules/cli/src/main/kotlin/dev/ktchecker/cli/Workbench.kt':
                     mutations.append(data.replace(b'if (observation == null) provider else',
                         b'if (observation == null) CompilerCallObservation().observedProvider(provider, ownerCodeDigest) else', 1))
+                    intermediate = contracts.policy_reassessment_predecessor_bytes(path, data)
+                    mutations.extend([intermediate, contracts.observation_predecessor_bytes(path, intermediate),
+                        data.replace(b'value.length > 512', b'value.length > 1024', 1),
+                        data.replace(b'policyAdmissions.publishNew(prepared, admission)',
+                                     b'policyAdmissions.publishNew(prepared, admission.copy())', 1)])
                 else:
                     mutations.append(data.replace(b'@Test ', b'@Disabled @Test ', 1))
                 for index, mutation in enumerate(mutations):
                     with self.subTest(path=path, mutation=index):
                         self.assertNotEqual(data, mutation)
                         target.write_bytes(mutation)
-                        with self.assertRaisesRegex(ValueError, 'Observation selected SOURCE drift'):
+                        rejection = ('Policy reassessment SOURCE successor drift'
+                                     if path in EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS
+                                     else 'Observation selected SOURCE drift')
+                        with self.assertRaisesRegex(ValueError, rejection):
                             require_fixed_observation_source_inputs(base)
                         # Rewriting prospective selection metadata cannot rewrite the fixed r3 anchor.
                         repin = {'bytes': len(mutation), 'sha256': contracts.digest(mutation)}
                         with patch.dict(contracts.OBSERVATION_SOURCE_PINS, {path: repin}):
-                            with self.assertRaisesRegex(ValueError, 'Observation selected SOURCE selector drift'):
+                            repin_rejection = 'Observation selected SOURCE selector drift'
+                            if repin == EXPECTED_OBSERVATION_SOURCE_PINS[path]:
+                                # Exact old observation bytes do not change that frozen pin,
+                                # but still cannot pass the mandatory latest Workbench stage.
+                                self.assertIn(path, EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS)
+                                repin_rejection = 'Policy reassessment SOURCE successor drift'
+                            with self.assertRaisesRegex(ValueError, repin_rejection):
                                 require_fixed_observation_source_inputs(base)
                     target.write_bytes(data)
                 target.unlink()
@@ -695,6 +748,23 @@ class CompilerMappingContractSourceTest(unittest.TestCase):
                     require_fixed_observation_source_inputs(base)
             with patch.dict(contracts.OBSERVATION_SOURCE_PINS, {'unreviewed.kt': {'bytes': 0, 'sha256': '0' * 64}}):
                 with self.assertRaisesRegex(ValueError, 'Observation selected SOURCE selector drift'):
+                    require_fixed_observation_source_inputs(base)
+            workbench = 'modules/cli/src/main/kotlin/dev/ktchecker/cli/Workbench.kt'
+            transition = contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS[workbench]
+            for selectors in ({}, {**contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS, 'unreviewed.kt': transition}):
+                with self.subTest(policy_selectors=tuple(selectors)), patch.dict(
+                        contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS, selectors, clear=True):
+                    with self.assertRaisesRegex(ValueError, 'Policy reassessment SOURCE transition selector drift'):
+                        require_fixed_observation_source_inputs(base)
+                    with self.assertRaisesRegex(ValueError, 'Missing closed policy reassessment SOURCE transition'):
+                        contracts.require_observation_source_pins(base)
+            for field in ('preimage_bytes', 'preimage_sha256', 'successor_bytes', 'successor_sha256'):
+                changed = 0 if field.endswith('_bytes') else '0' * 64
+                with self.subTest(policy_pin=field), patch.dict(transition, {field: changed}):
+                    with self.assertRaisesRegex(ValueError, 'Policy reassessment SOURCE transition metadata drift'):
+                        require_fixed_observation_source_inputs(base)
+            with patch.dict(transition, {'reverse_changes': transition['reverse_changes'][:-1]}):
+                with self.assertRaisesRegex(ValueError, 'Policy reassessment SOURCE inverse selector drift'):
                     require_fixed_observation_source_inputs(base)
 
     def test_observation_inverses_restore_exact_core_and_workbench_without_broadening_history(self):
@@ -723,6 +793,10 @@ class CompilerMappingContractSourceTest(unittest.TestCase):
                 self.assertEqual(fixed, {key: pin[key] for key in fixed})
                 self.assertEqual(4, len(pin['reverse_changes']))
                 data = contracts.read_source(ROOT, path)
+                if path in EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS:
+                    with self.assertRaisesRegex(ValueError, 'Observation SOURCE successor drift'):
+                        contracts.observation_predecessor_bytes(path, data)
+                    data = contracts.policy_reassessment_predecessor_bytes(path, data)
                 prior = contracts.observation_predecessor_bytes(path, data)
                 self.assertEqual((fixed['preimage_bytes'], fixed['preimage_sha256']), (len(prior), contracts.digest(prior)))
                 if path == MAIN_REL + 'KotlinJvmCompilerProvider.kt':
@@ -769,6 +843,66 @@ class CompilerMappingContractSourceTest(unittest.TestCase):
                          FIXTURE_REL + 'generate_fixtures.py'):
                 with self.assertRaisesRegex(ValueError, 'closed observation SOURCE transition'):
                     contracts.observation_predecessor_bytes(path, b'not a source successor')
+
+        # The later Workbench stage is closed independently: all seven exact inverse
+        # spans must restore the frozen observation input, never merely a familiar token.
+        require_fixed_policy_reassessment_transition()
+        with tempfile.TemporaryDirectory(prefix='policy-reassessment-source-inverse-unit-') as directory:
+            base = Path(directory)
+            for path, fixed in EXPECTED_POLICY_REASSESSMENT_SOURCE_TRANSITIONS.items():
+                pin = contracts.POLICY_REASSESSMENT_SOURCE_TRANSITIONS[path]
+                data = contracts.read_source(ROOT, path)
+                prior = contracts.policy_reassessment_predecessor_bytes(path, data)
+                self.assertEqual((fixed['preimage_bytes'], fixed['preimage_sha256']), (len(prior), contracts.digest(prior)))
+                original = contracts.observation_predecessor_bytes(path, prior)
+                self.assertEqual((41976, '011a88a770055032d7ce07513d8c05c5aa4fa3f6a5fd743385a44bf25bd38209'),
+                                 (len(original), contracts.digest(original)))
+                target = base / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                # No stage, including either exact predecessor, broadens historical joins.
+                for stage in (data, prior, original):
+                    target.write_bytes(stage)
+                    with self.assertRaisesRegex(ValueError, 'closed unchanged SOURCE join'):
+                        contracts.historical_source_bytes(base, path)
+                target.write_bytes(data)
+                self.assertEqual(prior, contracts.policy_reassessment_predecessor_bytes(path, contracts.read_source(base, path)))
+                mutations = [prior, original, data + b'\n',
+                             data.replace(b'package dev.ktchecker.cli', b'package dev.ktchecker.cli_changed', 1)]
+                for successor, predecessor in pin['reverse_changes']:
+                    self.assertTrue(successor)
+                    self.assertEqual(1, data.count(successor))
+                    mutations.extend([data.replace(successor, b'', 1), data + successor])
+                for index, mutation in enumerate(mutations):
+                    with self.subTest(path=path, policy_mutation=index):
+                        self.assertNotEqual(data, mutation)
+                        target.write_bytes(mutation)
+                        with self.assertRaisesRegex(ValueError, 'Policy reassessment SOURCE successor drift'):
+                            contracts.policy_reassessment_predecessor_bytes(path, contracts.read_source(base, path))
+                        repin = {'successor_bytes': len(mutation), 'successor_sha256': contracts.digest(mutation)}
+                        with patch.dict(pin, repin):
+                            with self.assertRaises(ValueError):
+                                contracts.policy_reassessment_predecessor_bytes(path, contracts.read_source(base, path))
+                            with self.assertRaisesRegex(ValueError, 'Policy reassessment SOURCE transition metadata drift'):
+                                require_fixed_policy_reassessment_transition()
+                reverse = pin['reverse_changes']
+                changed = ((reverse[0][0], reverse[0][1] + b'\n// unrelated inverse change\n'),) + reverse[1:]
+                with patch.dict(pin, {'reverse_changes': changed}):
+                    with self.assertRaisesRegex(ValueError, 'Policy reassessment SOURCE preimage drift'):
+                        contracts.policy_reassessment_predecessor_bytes(path, data)
+                    with self.assertRaisesRegex(ValueError, 'Policy reassessment SOURCE inverse selector drift'):
+                        require_fixed_policy_reassessment_transition()
+                target.unlink()
+                with self.assertRaises(ValueError):
+                    contracts.policy_reassessment_predecessor_bytes(path, contracts.read_source(base, path))
+                target.symlink_to(ROOT / path)
+                with self.assertRaisesRegex(ValueError, 'Symlink SOURCE input'):
+                    contracts.policy_reassessment_predecessor_bytes(path, contracts.read_source(base, path))
+                target.unlink()
+            for path in ('unreviewed.kt', 'modules/cli/src/main/kotlin/dev/ktchecker/cli/../cli/Workbench.kt',
+                         MAIN_REL + 'KotlinJvmCompilerProvider.kt', MAIN_REL + 'CompilerCallObservation.kt',
+                         MAIN_REL + 'CompilerDiagnosticParser.kt', FIXTURE_REL + 'generate_fixtures.py'):
+                with self.assertRaisesRegex(ValueError, 'closed policy reassessment SOURCE transition'):
+                    contracts.policy_reassessment_predecessor_bytes(path, b'not a source successor')
 
 
 

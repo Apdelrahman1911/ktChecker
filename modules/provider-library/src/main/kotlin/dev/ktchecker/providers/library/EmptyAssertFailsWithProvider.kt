@@ -28,6 +28,14 @@ class EmptyAssertFailsWithProvider(
     /** Frozen owner-review request only, never an extraction/policy approval. */
     fun authorizationRequest(input: AnalysisInput): EmptyAssertionAuthorizationRequest = prepare(input).request
 
+    /** Structural freeze for live owner dispatch, not an approval or replacement authority. */
+    internal fun freezeForRuntime(input: AnalysisInput): Pair<AnalysisInput, AnalysisProvider> {
+        val prepared = prepare(input)
+        val bound = prepared.request
+        return bound.input to EmptyAssertFailsWithProvider(model, EmptyAssertionFactSelection(bound.semanticRequest,
+            prepared.shards, bound.compilerExitCode, bound.applicability), authority)
+    }
+
     override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
         if (input.requiredRuleIds.size > 4096 || input.requiredRuleIds.any { it.length !in 1..4096 } ||
             with(input.context.scope) { listOf(target, sourceSet, module, compilation).any { it.length > 4096 } }) {

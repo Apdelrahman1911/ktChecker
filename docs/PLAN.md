@@ -7,7 +7,7 @@ the normative [implementation acceptance contract](implementation-contract.md).
 Executable progress and test evidence must be reported separately from this plan;
 catalog requirements are not evidence of implemented or qualified coverage.
 
-The [current checkpoint](implementation-evidence.md#parallel-implementation-checkpoint--2026-11-05) records source-bound kernel/host controls, two real Detekt cohorts and prior-commit hosted failures, not broad rule, platform, or release qualification.
+The [current checkpoint](implementation-evidence.md#integration-validation--2026-11-06) records separate local integration controls, a real JVM/TypeScript broker check, and bounded unqualified compiler, packaging and benchmark evidence. Earlier hosted results remain historical; no current-host, broad rule, platform or release qualification is implied.
 
 This plan preserves three simultaneous launch requirements: **broad relevant rules,
 low false positives, and fast useful feedback after every patch**. None can be

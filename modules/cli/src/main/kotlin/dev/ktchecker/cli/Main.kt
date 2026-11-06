@@ -24,6 +24,7 @@ ktchecker prepare --request compilation.json [--authorize-execution] --out prepa
 ktchecker submit --prepared prepared.json [--wait-ms 10000]
 ktchecker model-plan --request PRIVATE.json --authorize-execution --compiler-java-home LINK_FREE_JDK --state NEW_DIR [--out result.json]
 ktchecker owner-model-session --request PRIVATE_TRANSPORT.json --selection-digest SHA256 --owner-action --authorize-execution
+ktchecker owner-capture-session --state PRIVATE_DIR --compiler-dir DIR --compiler-java-home LINK_FREE_JDK --owner-action [--workers 0]
 ktchecker status|events|cancel --client ID [--review ID] [--cursor CURSOR] [--limit 20]
 ktchecker reassess --client ID --request policy-review.json [--out result.json]
 ktchecker policy-status --client ID --id REQUEST_ID [--out result.json]
@@ -42,6 +43,8 @@ Review commands never edit project source or grant execution/suppression permiss
 Only explicit owner prepare with --authorize-execution permits the pinned provider profiles.
 model-plan requires separate explicit owner policy setup; use the owner-only framed session for the trusted host.
 owner-model-session retains one actual owner; configureCompilerPolicy is a separate explicit private operation.
+owner-capture-session is a separate trusted owner pipe for overlays and explicit JVM compiler-rule-subset preparation only.
+Every owner.prepare frame requires its own authorizeExecution Boolean; this pipe never submits or runs providers.
 Neither route grants release/final-answer success.
 Compiler execution requires a complete link-free JDK 21 image. A rejected image is unavailable, not a launcher-only fallback.
 RPC accepts private NDJSON; use bridges/mcp for actual MCP. Do not send owner/adapter credentials to a model.
@@ -93,10 +96,13 @@ internal fun runCli(args: Array<String>): Int {
         val options = Arguments(args)
         val command = options.words.firstOrNull()
         if (options.has("help") || command in setOf(null, "help", "--help")) { println(HELP); return 0 }
+        // Read-only output checks precede owner/broker creation and the selected command action.
+        preflightCliOutput(options)
         if (command == "doctor") { emit(doctor(), options["out"]); return 0 }
         if (command == "rules") { emit(Catalog().inspect(options["id"]), options["out"]); return 0 }
         if (command == "model-plan") return runOwnerModelPlan(options)
         if (command == "owner-model-session") return runOwnerModelSession(options)
+        if (command == "owner-capture-session") return runOwnerCaptureSession(options)
         // Closed policy-command preflight precedes owner creation, credentials and any acceptance.
         val policyCommand = if (command in setOf("reassess", "policy-status")) parsePolicyReassessmentCli(options) else null
         val workers = if (policyCommand != null) 0 else options.integer("workers", 2)
@@ -243,7 +249,7 @@ internal fun parsePolicyReassessmentCli(options: Arguments): PolicyReassessmentC
         throw CliProblem("invalid_arguments", "Policy commands require zero workers; they cannot start queued provider work.")
     }
     val client = policyCliIdentifier(options.required("client"), "invalid_arguments")
-    options["out"]?.let(::validatePolicyCliOutput)
+    options["out"]?.let(::validateCliOutput)
     return if (command == "reassess") {
         val request = decodePolicyReassessmentCliRequest(readOwnerFile<JsonObject>(options.required("request")))
         PolicyReassessmentCliCommand.Reassess(client, request)
@@ -278,8 +284,20 @@ private fun policyCliIdentifier(value: String, code: String): String {
     return value
 }
 
+/** Ordinary output routes only; closed policy/owner commands retain their separate preflights. */
+internal fun preflightCliOutput(options: Arguments) {
+    val out = when (options.words.firstOrNull()) {
+        "register", "prepare" -> options.required("out")
+        "doctor", "rules", "providers", "overlay", "submit", "status", "events", "cancel" -> options["out"]
+        "suppressions" -> if (options.words.getOrNull(1) in setOf("inspect", "export", "add", "remove", "import",
+            "enable", "disable", "apply", "selector", "explain")) options["out"] else null
+        else -> null
+    }
+    out?.let(::validateCliOutput)
+}
+
 /** Detect unusable output selections before acceptance, without creating/reserving/chmodding files. */
-private fun validatePolicyCliOutput(raw: String) {
+private fun validateCliOutput(raw: String) {
     if (raw.isBlank()) throw CliProblem("invalid_arguments", "Output must select a new file in an existing writable directory.")
     val path = try { Path.of(raw).toAbsolutePath() } catch (_: java.nio.file.InvalidPathException) {
         throw CliProblem("invalid_arguments", "Output must select a valid file path.")
@@ -288,7 +306,8 @@ private fun validatePolicyCliOutput(raw: String) {
     if (Files.exists(path, NOFOLLOW_LINKS) || parent == null || !Files.isDirectory(parent, NOFOLLOW_LINKS) || !Files.isWritable(parent)) {
         throw CliProblem("invalid_arguments", "Output must select a new file in an existing writable directory.")
     }
-    // This is not an output reservation: later I/O failure is recovered with the same request ID/status.
+    // Advisory, not a reservation: later I/O failure can follow a committed action.
+    // Preserve its exact identities/status for recovery; no rollback is implied.
 }
 
 /** Fixed review RPC only. Preserve the trusted historical view, including state/auditOnly, verbatim. */

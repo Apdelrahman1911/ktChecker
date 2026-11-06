@@ -11,6 +11,13 @@ internal object SemanticFactsFreeze {
         sourceSets = list(value.sourceSets.map { it.copy(dependsOn = list(it.dependsOn)) }),
         compilerArguments = list(value.compilerArguments), dependencyArtifacts = list(value.dependencyArtifacts))
 
+    fun observedRequest(value: ObservedSemanticFactsRequest): ObservedSemanticFactsRequest {
+        observedSemanticRequestBounds(value)
+        return value.copy(compilerArtifacts = list(value.compilerArtifacts), sources = list(value.sources),
+            sourceSets = list(value.sourceSets.map { it.copy(dependsOn = list(it.dependsOn)) }),
+            compilerArguments = list(value.compilerArguments), dependencyArtifacts = list(value.dependencyArtifacts))
+    }
+
     fun shards(values: List<SemanticFactShard>, maximum: Int,
                directIntLiteralArgumentsRequested: Boolean = false): List<SemanticFactShard> {
         if (values.size > maximum) fail()

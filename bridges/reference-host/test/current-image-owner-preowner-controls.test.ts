@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PassThrough, Writable } from 'node:stream';
+import { join } from 'node:path';
 import type { JsonObject } from '@ktchecker/mcp-preview/rpc';
 import { canonical, digest, HostError } from '../src/journal.js';
 import { REQUIRED_PARENT_ADAPTER } from './current-image-acceptance-runner.js';
@@ -177,7 +178,8 @@ function syntheticBuild(choice: PreownerSmokeSelection): JsonObject {
     preownerSuccessorReviewDigest: choice.node.digest, hostTransportReviewDigest: choice.node.digest };
 }
 
-test('pure preowner selection demands fresh stage, exact closure and no widened caller fields', () => {
+const linuxSelection = { skip: process.platform !== 'linux' ? 'platform_unavailable:linux_proc_self_fd_secure_io_required' : false };
+test('pure preowner selection demands fresh stage, exact closure and no widened caller fields', linuxSelection, () => {
   const choice = syntheticSelection(); assert.equal(validatePreownerSmokeSelection(choice).schema, choice.schema);
   for (const invalid of [{ ...choice, distributionHome: choice.sourceRoot + '/modules/cli/build/install/ktchecker' },
     { ...choice, distributionHome: choice.sourceRoot + '/build/preview-handoffs/ktchecker-20261105-f909k8w0' },
@@ -187,6 +189,12 @@ test('pure preowner selection demands fresh stage, exact closure and no widened 
     assert.throws(() => validatePreownerSmokeSelection(invalid));
   }
 });
+
+if (process.platform !== 'linux') {
+  test('preowner selection retains its Linux-only path admission guard without file or process work', () => {
+    assert.throws(() => validatePreownerSmokeSelection(syntheticSelection()), { code: 'real_model_absolute_path_required' });
+  });
+}
 
 test('pinned build DATA linkage preserves explicit JAR order and cannot turn a failure into approval', () => {
   const choice = syntheticSelection(), build = syntheticBuild(choice);
@@ -202,8 +210,10 @@ test('actual Main argument vector has one fixed invalid sentinel and no shell, o
   const sentinel = { path: choice.outputDirectory + '/unread-owner-selection.json', digest: digest(PREOWNER_SENTINEL_TEXT),
     bytes: Buffer.byteLength(PREOWNER_SENTINEL_TEXT), fileKey: '1:2' };
   const args = preownerJvmArguments(choice, sentinel);
-  assert.deepEqual(args, ['-Xmx512m', '-XX:MaxMetaspaceSize=256m', '-Duser.home=' + choice.outputDirectory + '/owner-environment-home',
-    '-Djava.io.tmpdir=' + choice.outputDirectory + '/owner-environment-tmp', '-cp', choice.jvmClasspath.map(pin => pin.path).join(':'),
+  // Pure argv DATA only: the real selection above remains Linux-only. Native
+  // join spelling in this inert control is not Windows JVM/owner qualification.
+  assert.deepEqual(args, ['-Xmx512m', '-XX:MaxMetaspaceSize=256m', '-Duser.home=' + join(choice.outputDirectory, 'owner-environment-home'),
+    '-Djava.io.tmpdir=' + join(choice.outputDirectory, 'owner-environment-tmp'), '-cp', choice.jvmClasspath.map(pin => pin.path).join(':'),
     'dev.ktchecker.cli.MainKt', 'owner-model-session', '--owner-action', '--authorize-execution', '--request', sentinel.path, '--selection-digest', sentinel.digest]);
   assert.throws(() => preownerJvmArguments(choice, { ...sentinel, digest: 'sha256:' + 'f'.repeat(64) }));
   assert.throws(() => preownerJvmArguments(choice, { ...sentinel, path: choice.sourceRoot + '/other.json' }));

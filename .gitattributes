@@ -16,3 +16,7 @@
 # Retained provider execution logs are verbatim evidence, not editable source.
 providers/detekt-fixtures/runs/**/original/**/gradle.log -text -whitespace
 providers/ktlint-fixtures/runs/**/original/**/gradle.log -text -whitespace
+
+# Frozen mapping-contract SOURCE preimages are byte-pinned, including line endings.
+providers/compiler-fixtures/mapping-contracts/legacy443-data/** -text
+providers/compiler-fixtures/mapping-contracts/authored-inventory-guard-preimages-v1/** -text

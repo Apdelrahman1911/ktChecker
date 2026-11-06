@@ -543,8 +543,236 @@ class NativeDiscoveryTests(unittest.TestCase):
             self.assertTrue(all(not row["cache_entry_present"] for row in result["dependencies"]))
 
 
+class SemanticFailureDiagnosticsTests(unittest.TestCase):
+    """Owned synthetic bytes only; no real compiler log, JVM, or Native execution."""
+
+    def test_closed_exception_headers_omit_private_messages_threads_and_stacks(self):
+        expected = {
+            "java.lang.NoSuchMethodError": "jvm_no_such_method_error",
+            "java.lang.NoSuchFieldError": "jvm_no_such_field_error",
+            "java.lang.AbstractMethodError": "jvm_abstract_method_error",
+            "java.lang.IncompatibleClassChangeError": "jvm_incompatible_class_change_error",
+            "java.lang.NoClassDefFoundError": "jvm_no_class_def_found_error",
+            "java.lang.ClassNotFoundException": "jvm_class_not_found_exception",
+            "java.lang.ExceptionInInitializerError": "jvm_exception_in_initializer_error",
+            "java.lang.UnsupportedClassVersionError": "jvm_unsupported_class_version_error",
+            "java.lang.IllegalAccessError": "jvm_illegal_access_error",
+            "java.lang.LinkageError": "jvm_linkage_error",
+            "java.util.ServiceConfigurationError": "jvm_service_configuration_error",
+            "java.lang.OutOfMemoryError": "jvm_out_of_memory_error",
+            "java.lang.StackOverflowError": "jvm_stack_overflow_error",
+            "java.lang.AssertionError": "jvm_assertion_error",
+            "java.lang.ClassCastException": "jvm_class_cast_exception",
+            "java.lang.IllegalArgumentException": "jvm_illegal_argument_exception",
+            "java.lang.IllegalStateException": "jvm_illegal_state_exception",
+            "org.jetbrains.kotlin.util.FileAnalysisException": "kotlin_file_analysis_exception",
+            "org.jetbrains.kotlin.backend.common.BackendException": "kotlin_backend_exception",
+            "dev.ktchecker.semantic.SemanticFactException": "semantic_fact_exception",
+        }
+        self.assertEqual(expected, checks.COMPILER_EXCEPTION_MARKERS)
+        for exception, marker in expected.items():
+            for prefix in ("", "exception: ", "Caused by: ", 'Exception in thread "PRIVATE" '):
+                text = f"{prefix}{exception}: PRIVATE /private/SECRET.kt compiler arguments\r\n\tat PRIVATE.symbol(SECRET.kt:8)"
+                with self.subTest(exception=exception, prefix=prefix):
+                    self.assertEqual([marker], checks.compiler_failure_markers(text))
+
+    def test_unknown_types_embedded_strings_paths_and_source_lines_remain_unclassified(self):
+        text = "\n".join((
+            "exception: PRIVATE.UnknownException: SECRET", "Caused by: java.lang.PRIVATE: SECRET",
+            "/private/SECRET.kt:1: error: java.lang.NoSuchMethodError: SECRET",
+            "val secret = \"java.lang.NoSuchMethodError: SECRET\"", "// exception: java.lang.NoSuchMethodError: SECRET",
+            "\tat java.lang.NoSuchMethodError(PRIVATE.java:1)", "java.lang.NoSuchMethodErrorPRIVATE: SECRET",
+            "PRIVATE java.lang.NoSuchMethodError: SECRET", "semantic_request_digest_mismatch PRIVATE",
+        ))
+        self.assertEqual([], checks.compiler_failure_markers(text))
+
+    def test_semantic_reason_markers_require_exact_authored_literal_and_exact_exception_type(self):
+        expected = {
+            "Unknown semantic plugin option": "semantic_plugin_option_unknown",
+            "Semantic request is required": "semantic_request_missing",
+            "Semantic request must be a bounded regular file": "semantic_request_unsafe",
+            "Semantic request changed after authorization": "semantic_request_digest_mismatch",
+            "This adapter requires exact Kotlin 2.4.21": "semantic_compiler_version_mismatch",
+            "Executing compiler implementation was not selected": "semantic_compiler_artifact_unselected",
+            "A separate output directory is required": "semantic_output_missing",
+            "Executing artifact changed after selection": "semantic_artifact_digest_mismatch",
+            "Selected artifact is not a regular file": "semantic_artifact_unsafe",
+        }
+        self.assertEqual(expected, checks.SEMANTIC_EXCEPTION_MESSAGES)
+        source = (checks.REPO_ROOT / "modules/semantic-facts/src/main/kotlin/dev/ktchecker/semantic/adapters/kotlin2421/SemanticPlugin.kt").read_text(encoding="utf-8")
+        for message, code in expected.items():
+            with self.subTest(code=code):
+                self.assertIn(f'SemanticFactException("{code}", "{message}")', source)
+                header = f"Caused by: dev.ktchecker.semantic.SemanticFactException: {message}"
+                self.assertEqual(sorted(["semantic_fact_exception", code]), checks.compiler_failure_markers(header))
+                self.assertEqual(["semantic_fact_exception"], checks.compiler_failure_markers(header + " PRIVATE"))
+                self.assertEqual(["jvm_illegal_state_exception"], checks.compiler_failure_markers(
+                    f"java.lang.IllegalStateException: {message}"))
+        self.assertEqual(["semantic_fact_exception"], checks.compiler_failure_markers(
+            "dev.ktchecker.semantic.SemanticFactException: Invalid selected semantic request: [PRIVATE]"))
+
+    def private_stream(self, root, raw):
+        private = root / "build/ci-evidence/raw/native-semantic-driver"
+        private.mkdir(parents=True)
+        path = private / "positive-stderr.txt"
+        path.write_bytes(raw)
+        return private, path
+
+    def test_bound_stream_keeps_only_fixed_metadata_and_digest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            raw = b"exception: java.lang.NoSuchMethodError: PRIVATE /SECRET source and arguments\n"
+            private, _ = self.private_stream(root, raw)
+            row = checks.failure_stream_metadata(private, root, "positive", "stderr", checks.digest_bytes(raw))
+            self.assertEqual({"stream", "digest", "digest_verified", "status", "markers"}, set(row))
+            self.assertEqual(checks.digest_bytes(raw), row["digest"])
+            self.assertEqual(checks.SECURE_FAILURE_STREAM_IO, row["digest_verified"])
+            self.assertEqual("markers_retained" if checks.SECURE_FAILURE_STREAM_IO else "secure_read_unavailable", row["status"])
+            self.assertEqual(["jvm_no_such_method_error"] if checks.SECURE_FAILURE_STREAM_IO else [], row["markers"])
+            for secret in ("PRIVATE", "SECRET", str(root)):
+                self.assertNotIn(secret, json.dumps(row))
+
+    def test_empty_unknown_and_invalid_utf8_have_explicit_status_not_guessed_markers(self):
+        for raw, status in ((b"", "empty"), (b"PRIVATE UnknownCrash /SECRET", "no_allowlisted_marker"),
+                            (b"exception: java.lang.NoSuchMethodError: PRIVATE\xff", "invalid_utf8")):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve(strict=True)
+                private, _ = self.private_stream(root, raw)
+                row = checks.failure_stream_metadata(private, root, "positive", "stderr", checks.digest_bytes(raw))
+                self.assertEqual(status if checks.SECURE_FAILURE_STREAM_IO else "secure_read_unavailable", row["status"])
+                self.assertEqual(checks.SECURE_FAILURE_STREAM_IO, row["digest_verified"])
+                self.assertEqual([], row["markers"])
+                self.assertNotIn("PRIVATE", json.dumps(row))
+
+    def test_digest_mismatch_does_not_classify_or_emit_observed_private_digest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            raw = b"exception: java.lang.NoSuchMethodError: PRIVATE"
+            private, _ = self.private_stream(root, raw)
+            expected = checks.digest_bytes(b"a different selected execution stream")
+            with patch.object(checks, "compiler_failure_markers") as classifier:
+                row = checks.failure_stream_metadata(private, root, "positive", "stderr", expected)
+            classifier.assert_not_called()
+            self.assertEqual("digest_mismatch" if checks.SECURE_FAILURE_STREAM_IO else "secure_read_unavailable", row["status"])
+            self.assertFalse(row["digest_verified"])
+            self.assertEqual([], row["markers"])
+            self.assertNotIn(checks.digest_bytes(raw), json.dumps(row))
+
+    def test_missing_directory_and_oversized_streams_are_rejected_before_any_read(self):
+        for shape in ("missing", "directory", "oversized"):
+            with self.subTest(shape=shape), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve(strict=True)
+                private, path = self.private_stream(root, b"PRIVATE")
+                if shape == "oversized":
+                    path.write_bytes(b"P" * (65_536 + 1))
+                else:
+                    path.unlink()
+                    if shape == "directory":
+                        path.mkdir()
+                with patch.object(checks.os, "read", side_effect=AssertionError("must not read unsafe stream")) as read:
+                    row = checks.failure_stream_metadata(private, root, "positive", "stderr", "sha256:" + "a" * 64)
+                read.assert_not_called()
+                expected = "oversized" if shape == "oversized" else "unsafe_or_unavailable"
+                self.assertEqual(expected if checks.SECURE_FAILURE_STREAM_IO else "secure_read_unavailable", row["status"])
+                self.assertFalse(row["digest_verified"])
+                self.assertEqual([], row["markers"])
+
+    def test_a_growing_stream_is_read_at_most_bound_plus_one_and_never_classified(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            raw = b"P" * (65_536 + 2)
+            private, path = self.private_stream(root, raw)
+            # The opened regular file grows after the initial bounded stat.
+            initial = SimpleNamespace(st_mode=path.stat().st_mode, st_size=1)
+            with patch.object(checks.os, "fstat", return_value=initial), \
+                    patch.object(checks.os, "read", wraps=os.read) as read, \
+                    patch.object(checks, "compiler_failure_markers") as classifier:
+                row = checks.failure_stream_metadata(private, root, "positive", "stderr", checks.digest_bytes(raw))
+            classifier.assert_not_called()
+            self.assertEqual("oversized" if checks.SECURE_FAILURE_STREAM_IO else "secure_read_unavailable", row["status"])
+            if checks.SECURE_FAILURE_STREAM_IO:
+                self.assertEqual(1, read.call_count)
+                self.assertEqual(65_536 + 1, read.call_args.args[1])
+            else:
+                read.assert_not_called()
+            self.assertFalse(row["digest_verified"])
+
+    def test_closed_selection_and_build_root_prevent_arbitrary_private_file_reads(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            private, _ = self.private_stream(root, b"PRIVATE")
+            with patch.object(checks.os, "open", side_effect=AssertionError("must not open unselected file")) as opened:
+                for label, stream, digest in (("../PRIVATE", "stderr", "sha256:" + "a" * 64),
+                                              ("positive", "../results.json", "sha256:" + "a" * 64),
+                                              ("positive", "stderr", "PRIVATE")):
+                    with self.subTest(label=label, stream=stream), self.assertRaises(ValueError):
+                        checks.failure_stream_metadata(private, root, label, stream, digest)
+                for unsafe in (root / "outside/raw/native-semantic-driver", root / "build/../raw/native-semantic-driver",
+                               root / "build/raw/unrelated", root.parent / "raw/native-semantic-driver"):
+                    row = checks.failure_stream_metadata(unsafe, root, "positive", "stderr", "sha256:" + "a" * 64)
+                    self.assertEqual("unsafe_or_unavailable", row["status"])
+            opened.assert_not_called()
+
+    def test_file_and_ancestor_symlinks_are_not_followed(self):
+        if not checks.SECURE_FAILURE_STREAM_IO:
+            # Native only runs on Darwin; other hosts must omit rather than
+            # fall back to a racy path-based private-file read.
+            return self.test_secure_descriptor_io_unavailable_fails_closed()
+        for ancestor in (False, True):
+            with self.subTest(ancestor=ancestor), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve(strict=True)
+                private, path = self.private_stream(root, b"PRIVATE")
+                if ancestor:
+                    moved = root / "unselected"
+                    private.rename(moved)
+                    fixture_symlink(self, private, moved, target_is_directory=True)
+                else:
+                    moved = root / "PRIVATE.txt"
+                    path.rename(moved)
+                    fixture_symlink(self, path, moved)
+                with patch.object(checks.os, "read", side_effect=AssertionError("must not read through symlink")) as read:
+                    row = checks.failure_stream_metadata(private, root, "positive", "stderr", checks.digest_bytes(b"PRIVATE"))
+                read.assert_not_called()
+                self.assertEqual("unsafe_or_unavailable", row["status"])
+                self.assertFalse(row["digest_verified"])
+
+    def test_secure_descriptor_io_unavailable_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve(strict=True)
+            private, _ = self.private_stream(root, b"PRIVATE")
+            with patch.object(checks, "SECURE_FAILURE_STREAM_IO", False), patch.object(checks.os, "open") as opened:
+                row = checks.failure_stream_metadata(private, root, "positive", "stderr", checks.digest_bytes(b"PRIVATE"))
+            opened.assert_not_called()
+            self.assertEqual("secure_read_unavailable", row["status"])
+            self.assertFalse(row["digest_verified"])
+            self.assertEqual([], row["markers"])
+
+    def test_selector_ignores_success_not_executed_unavailable_and_passing_negatives(self):
+        summary = native_summary()
+        summary["state"] = "failed"
+        for case in summary["cases"]:
+            case["passed"] = case["name"] == "malformed"
+        statuses = {"dependency": ("executed", 0), "positive": ("executed", 2), "unresolved": ("not_executed", None),
+                    "malformed": ("executed", 1), "missing-dependency": ("unavailable", None), "incompatible-actual": ("failed", 0)}
+        for row in summary["executions"]:
+            row["status"], row["exitCode"] = statuses[row["label"]]
+        with patch.object(checks, "failure_stream_metadata", return_value={}) as stream:
+            result = checks.compiler_failure_diagnostics(summary, Path("not-read"), Path("not-read"))
+        self.assertEqual(["incompatible-actual", "positive"], [row["label"] for row in result["executions"]])
+        self.assertEqual([("incompatible-actual", "stdout"), ("incompatible-actual", "stderr"),
+                          ("positive", "stdout"), ("positive", "stderr")],
+                         [(call.args[2], call.args[3]) for call in stream.call_args_list])
+        self.assertEqual(65_536, result["stream_byte_limit"])
+        self.assertFalse(result["raw_logs_uploaded"])
+        self.assertFalse(result["root_cause_identified"])
+        summary["state"] = "passed"
+        with patch.object(checks, "failure_stream_metadata") as stream:
+            self.assertEqual([], checks.compiler_failure_diagnostics(summary, Path("not-read"), Path("not-read"))["executions"])
+        stream.assert_not_called()
+
+
 class SemanticWrapperTests(unittest.TestCase):
-    def run_attempt(self, root, argument, java_home, data_dir, summary, command_state="passed", write_summary=True):
+    def run_attempt(self, root, argument, java_home, data_dir, summary, command_state="passed", write_summary=True, streams=None):
         def command(arguments, **kwargs):
             self.assertIn("-PsemanticMode=native", arguments)
             self.assertIn("-PsemanticTarget=iosSimulatorArm64", arguments)
@@ -556,6 +784,10 @@ class SemanticWrapperTests(unittest.TestCase):
             raw = b"PRIVATE raw facts, source, symbols and compiler commands"
             (private / "results.json").write_bytes(raw)
             summary["privateEvidenceDigest"] = checks.digest_bytes(raw)
+            for (label, stream), content in (streams or {}).items():
+                self.assertIn(label, checks.NATIVE_LABELS)
+                self.assertIn(stream, {"stdout", "stderr"})
+                (private / f"{label}-{stream}.txt").write_bytes(content)
             if write_summary:
                 (private / "summary.json").write_text(json.dumps(summary))
             return {"state": command_state, "return_code": 0 if command_state == "passed" else 1,
@@ -574,7 +806,9 @@ class SemanticWrapperTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve(strict=True)
             argument, java_home, data_dir, summary = setup_attempt(root)
-            result, gradle = self.run_attempt(root, argument, java_home, data_dir, summary)
+            with patch.object(checks, "failure_stream_metadata") as stream:
+                result, gradle = self.run_attempt(root, argument, java_home, data_dir, summary)
+            stream.assert_not_called()
             gradle.assert_called_once()
             self.assertEqual("passed", result["state"])
             self.assertEqual(6, result["compiler_execution_count"])
@@ -582,8 +816,66 @@ class SemanticWrapperTests(unittest.TestCase):
             self.assertFalse(result["native_distribution_downloaded_by_wrapper"])
             self.assertFalse(result["android_required_for_this_gate"])
             self.assertFalse(result["simulator_runtime_required_for_this_gate"])
+            self.assertEqual([], result["compiler_failure_diagnostics"]["executions"])
             self.assertNotIn("PRIVATE", json.dumps(result))
             self.assertNotIn(str(root), json.dumps(result))
+
+    def test_fresh_failed_stream_markers_do_not_change_the_failed_gate_or_qualify_anything(self):
+        for digest_matches in (True, False):
+            with self.subTest(digest_matches=digest_matches), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve(strict=True)
+                argument, java_home, data_dir, summary = setup_attempt(root)
+                stdout = b""
+                stderr = b"exception: java.lang.NoSuchMethodError: PRIVATE /SECRET source and command arguments\n"
+                execution = next(row for row in summary["executions"] if row["label"] == "positive")
+                execution.update(exitCode=2, stdoutDigest=checks.digest_bytes(stdout),
+                                 stderrDigest=checks.digest_bytes(stderr if digest_matches else b"different selected stream"))
+                execution["metrics"]["outputBytes"] = len(stderr)
+                summary.update(state="failed", cases=[], executions=[execution], reasons=["semantic_fixture_driver_failed"])
+                result, gradle = self.run_attempt(root, argument, java_home, data_dir, summary, "failed",
+                                                 streams={("positive", "stdout"): stdout, ("positive", "stderr"): stderr})
+                gradle.assert_called_once()
+                self.assertEqual("failed", result["state"])
+                self.assertEqual("FAILED", result["actual_task_outcome"])
+                self.assertEqual(1, result["compiler_execution_count"])
+                self.assertEqual(["native_semantic_gradle_gate_failed", "semantic_fixture_assertions_did_not_pass"], result["errors"])
+                self.assertTrue(result["private_evidence_digest_verified"])
+                self.assertTrue(result["driver_summary_metadata_valid"])
+                diagnostics = result["compiler_failure_diagnostics"]
+                self.assertEqual("fixed-exception-markers-v1", diagnostics["projection"])
+                self.assertEqual(1, len(diagnostics["executions"]))
+                row = diagnostics["executions"][0]
+                self.assertEqual("positive", row["label"])
+                self.assertEqual(["stdout", "stderr"], [item["stream"] for item in row["streams"]])
+                expected_status = "markers_retained" if digest_matches else "digest_mismatch"
+                self.assertEqual(expected_status if checks.SECURE_FAILURE_STREAM_IO else "secure_read_unavailable", row["streams"][1]["status"])
+                self.assertEqual(["jvm_no_such_method_error"] if digest_matches and checks.SECURE_FAILURE_STREAM_IO else [], row["streams"][1]["markers"])
+                for key in ("tuple_qualified", "custom_rules_qualified", "release_qualified", "raw_logs_uploaded"):
+                    self.assertFalse(result[key])
+                self.assertFalse(diagnostics["root_cause_identified"])
+                self.assertFalse(diagnostics["raw_logs_uploaded"])
+                for secret in ("PRIVATE", "SECRET", str(root)):
+                    self.assertNotIn(secret, json.dumps(result))
+
+    def test_invalid_summary_or_private_result_digest_never_opens_failure_streams(self):
+        real_digest = checks.digest_file
+        for failure in ("metadata", "private_digest"):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve(strict=True)
+                argument, java_home, data_dir, summary = setup_attempt(root)
+                summary.update(state="failed", cases=[], executions=[dict(summary["executions"][0], exitCode=2)])
+                if failure == "metadata":
+                    summary["executions"][0]["label"] = "../PRIVATE"
+                def digest(path):
+                    return "sha256:" + "f" * 64 if failure == "private_digest" and path.name == "results.json" else real_digest(path)
+                with patch.object(checks, "digest_file", side_effect=digest), \
+                        patch.object(checks, "compiler_failure_diagnostics") as diagnostics:
+                    result, _ = self.run_attempt(root, argument, java_home, data_dir, summary, "failed")
+                diagnostics.assert_not_called()
+                self.assertEqual("failed", result["state"])
+                self.assertNotIn("compiler_failure_diagnostics", result)
+                self.assertFalse(result["tuple_qualified"])
+                self.assertNotIn("PRIVATE", json.dumps(result))
 
     def test_actual_trusted_outer_fixture_alias_enrolls_only_canonical_selected_paths(self):
         with tempfile.TemporaryDirectory() as temporary:

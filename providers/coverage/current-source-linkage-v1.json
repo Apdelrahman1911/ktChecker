@@ -1,0 +1,1260 @@
+{
+  "compiler_slice": {
+    "current_observations": {
+      "case_count": 9,
+      "case_sources": [
+        {
+          "bytes": 158,
+          "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/negative_resolved_annotation.kt",
+          "sha256": "c99c7544e3c6cfd6cb4678b4362f9220be67b59ce9c6041c80626e016a994b8d"
+        },
+        {
+          "bytes": 55,
+          "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/negative_warning_name.kt",
+          "sha256": "6f975f5abf6fe3313ccd497b2baa9e2569a78b6074be79d076d32feb91f53755"
+        },
+        {
+          "bytes": 69,
+          "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/positive.kt",
+          "sha256": "f780251fe2aa94d7ea419fc21c989229be2339c5900ecb8591713d32070f9906"
+        },
+        {
+          "bytes": 90,
+          "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/self_suppression.kt",
+          "sha256": "3db7d0b580109ce5b11c72f1f36501833e2f23f90a86bb836ff7343dfcc0bfcf"
+        },
+        {
+          "bytes": 60,
+          "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/negative_boolean.kt",
+          "sha256": "1e4ece9144ab8578ab1df8f8c53b04d520421701309e62613e16f7d9dcad9352"
+        },
+        {
+          "bytes": 44,
+          "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/negative_no_operator.kt",
+          "sha256": "e27051bd9af60d9ea420fee80b0a03e89314ba892c2e2178c28cd1f7501e1f7d"
+        },
+        {
+          "bytes": 53,
+          "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/positive.kt",
+          "sha256": "acc2d15a2cffcd7007aef4c261387a5a7b04c6ab111f7a35abbc752483cd8ead"
+        },
+        {
+          "bytes": 101,
+          "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/suppression_observation.kt",
+          "sha256": "b0b57cd443c3eba96e13552363fb502da30ad0657c7323d5e102fcc3cb14a6b9"
+        }
+      ],
+      "execution_binding": {
+        "bytes": 6167,
+        "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-execution-v1.json",
+        "sha256": "69540ee5ada236b26b6577a7f8ed13bc475e4c7afd757c72733d7047b1515047"
+      },
+      "integration_test_source": {
+        "bytes": 3319,
+        "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerCurrent445FixtureIntegrationTest.kt",
+        "sha256": "ef7d0e0cf045783ec34dfbf5899a73ea782eb2034b643a9863eccf5f0ce47236"
+      },
+      "runner_source": {
+        "bytes": 40415,
+        "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerCurrent445FixtureRunner.kt",
+        "sha256": "265f3b078a5c90abe0f2b10f1a368c989232ff237f9a4482923613aa0c0800e1"
+      },
+      "source_plan": {
+        "bytes": 19921,
+        "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-source-v1.json",
+        "sha256": "ac16e9b94c9bfe50b6d1c1799c7c216ed907219d272e88383192dc3a7f0bea5a"
+      }
+    },
+    "implementation_sources": [
+      {
+        "bytes": 19586,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerCallObservation.kt",
+        "sha256": "c825651b4f1e32f66539017c3a11e573507a27c7d99eefd73c896998c9ef7273"
+      },
+      {
+        "bytes": 17032,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt",
+        "sha256": "48fa09fc3f57241160b1d6d964c4a41f01edead05354afbcc5f2cde9f62a372d"
+      },
+      {
+        "bytes": 4356,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt",
+        "sha256": "750ca4544a2b801bb6020838410ec92e7278a1a6a2ca4f10e58cd17b10819271"
+      },
+      {
+        "bytes": 6777,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerPhaseTimings.kt",
+        "sha256": "7716e2e472debfb4c52bae6b9c8a28856d1e04b8ad8ce9304f479139fc0c89a9"
+      },
+      {
+        "bytes": 4912,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+        "sha256": "02cae63a16b07c5682a32772e7867648ad4cdf01dc2f958024da620c7f1418e8"
+      },
+      {
+        "bytes": 9451,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt",
+        "sha256": "d089b942352d99fa4f0920338669d0fbc35bbc4112fc7d032f7e8ff0684015b7"
+      },
+      {
+        "bytes": 2634,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerVerification.kt",
+        "sha256": "a7930f91d8c3031bd39b5fab47c826db29ccd846189912b5e5f2d51d88196bd9"
+      },
+      {
+        "bytes": 5371,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/JvmCompilerModelOrigin.kt",
+        "sha256": "ab6bc829611cbe18b5f87149acededac2f4b1e5e3506c6fe09d874886ff6272f"
+      },
+      {
+        "bytes": 29802,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt",
+        "sha256": "8bfcb578f6a23203619fdc5f4257eb46580b39b65c9ae553b50e3f0a9d7dcb16"
+      },
+      {
+        "bytes": 1424,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmInstallationView.kt",
+        "sha256": "9d9e12dfe7315a9e672d8d2d8a49979e044945c31cd73653155f320aafbf7738"
+      },
+      {
+        "bytes": 36881,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmModelBinding.kt",
+        "sha256": "193952ea5d7a196490d0216747da3ced5ed4dac5376275943dfcbf17742b9f64"
+      },
+      {
+        "bytes": 19187,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmRuntimeImage.kt",
+        "sha256": "b2f63b10401c42e94376aeac4998933d743d6b60346442677c5490a07a626aea"
+      },
+      {
+        "bytes": 15531,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/CompilerApplicationAuthority.kt",
+        "sha256": "aa06bcf556e133db854f121c44d3a405059dfff8fb26db9ce9c0ef3f3d183671"
+      },
+      {
+        "bytes": 6976,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/CompilerApplicationLifecycle.kt",
+        "sha256": "f1d713019fbaaa78258dd0802b7c2c1b007e9bcc36be0df6a7d89c49fcd5acc7"
+      },
+      {
+        "bytes": 34183,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/KotlinJvmCompilerApplication.kt",
+        "sha256": "9e7a949b4d9a0b22ca3b95c3467cb8d29410c4c50dc33a76540dcb79b0059c18"
+      },
+      {
+        "bytes": 12257,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/KotlinJvmLiveCompilerProvider.kt",
+        "sha256": "b09bfde3969cd9ab5c6386c472bad2bdf2472dfd752b9253af9261ed8eb9baca"
+      },
+      {
+        "bytes": 6818,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/JvmProducedDeclaredArchive.kt",
+        "sha256": "c8160489733faa22bd3d08e380cdb2ecb70abdee945a1f40c0f4a638ff914b05"
+      },
+      {
+        "bytes": 23144,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/JvmProducedOutputPreview.kt",
+        "sha256": "71bbd55dc444c8491dc61b1a99edd67812e2cd20b9e96d9ce92f60cf0360312b"
+      },
+      {
+        "bytes": 21355,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/KotlinJvmModelCompilerApplication.kt",
+        "sha256": "94414a98329a39b27897039b91a04c5687a2182529add8bab62dbac471ad3988"
+      },
+      {
+        "bytes": 16418,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/KotlinJvmModelLiveCompilerProvider.kt",
+        "sha256": "2af16909f0936df89b426147e3fbf20d47f6ed5acfdc877eea2eccc7b9e5f6be"
+      },
+      {
+        "bytes": 10625,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/ModelApplicationAuthority.kt",
+        "sha256": "bdf38f3b76364708d69281b1c052126c0169ef93fec73ffe1ae072218f241c72"
+      },
+      {
+        "bytes": 20855,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/ModelLiveInputs.kt",
+        "sha256": "abf03f03e6d61b8a6ee3568a1b27ca753d1917b514d8d152bf55ab4cd9bda1e0"
+      },
+      {
+        "bytes": 18981,
+        "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/ModelMaterialization.kt",
+        "sha256": "28281cdc4e1af7c54413c53441672b454d3bb7f9469c612db1267ac61739e6f3"
+      }
+    ],
+    "jvm_applicable_mapping_rows": 402,
+    "mapping_contract": "kotlin-compiler-2.4.21-common445-u2-v1",
+    "mapping_path": "modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+    "mapping_rows": 445,
+    "native_mapping_rows": 43,
+    "ordinary_pairs": {
+      "case_sources": [
+        {
+          "bytes": 160,
+          "path": "providers/compiler-fixtures/cases/abstract_class_member_not_implemented/negative.kt",
+          "sha256": "d6eeb32afa4c44f8dcb1fbfa17c3d7ff8e65f73555ad66d872c35cd0eafbae20"
+        },
+        {
+          "bytes": 127,
+          "path": "providers/compiler-fixtures/cases/abstract_class_member_not_implemented/positive.kt",
+          "sha256": "79534a425ffc16ef5ca5e1cea258e33402a4cb8e9ac21d9082a8c9cdcc96eb1f"
+        },
+        {
+          "bytes": 136,
+          "path": "providers/compiler-fixtures/cases/abstract_member_not_implemented/negative.kt",
+          "sha256": "d2f5117a62a36d93a46f48e76edea42cd237fe152be92407cb54165ac9c7ce42"
+        },
+        {
+          "bytes": 103,
+          "path": "providers/compiler-fixtures/cases/abstract_member_not_implemented/positive.kt",
+          "sha256": "35eee0d9cf896855e70941e30214a2b2d70aa679e05ba0a5fcb1793eb04e9827"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/argument_passed_twice/negative.kt",
+          "sha256": "37051bf8322e7c636d451de85296d640d79121bb4fb45f0bcfc24674d1b397cc"
+        },
+        {
+          "bytes": 87,
+          "path": "providers/compiler-fixtures/cases/argument_passed_twice/positive.kt",
+          "sha256": "ea61635a65c3ff235a0bd1e8f8e2e78d4aa9bc9a6c861ffcac1a83a6d0d80470"
+        },
+        {
+          "bytes": 89,
+          "path": "providers/compiler-fixtures/cases/argument_type_mismatch/negative.kt",
+          "sha256": "84ddc70e56de0a4da5dbc3c603d8978a57c146d1acfaf98b6ee3a136c5dd4c71"
+        },
+        {
+          "bytes": 94,
+          "path": "providers/compiler-fixtures/cases/argument_type_mismatch/positive.kt",
+          "sha256": "e3ca48f35c28d63c5df1a72ce786fefd02da2cb052cd104f5859951f4a76b0f7"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/assignment_type_mismatch/negative.kt",
+          "sha256": "0e2a8e5c13bd454f0f33f0b54c3cee6f19180852e89fbc8d2c4dcc51f0d12399"
+        },
+        {
+          "bytes": 97,
+          "path": "providers/compiler-fixtures/cases/assignment_type_mismatch/positive.kt",
+          "sha256": "67b5b7ba4da08a6349637de33f955c029067001675c138e4571280df3e03d048"
+        },
+        {
+          "bytes": 107,
+          "path": "providers/compiler-fixtures/cases/cannot_check_for_erased/negative.kt",
+          "sha256": "963d057e188f6159b9af202333d67b84af907ac2caafbec5974600f1202b42f9"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/cannot_check_for_erased/positive.kt",
+          "sha256": "281ccfd6975f676b8b394610865f5b3ebc3be01f0366bcadc1772058772c8289"
+        },
+        {
+          "bytes": 156,
+          "path": "providers/compiler-fixtures/cases/cannot_weaken_access_privilege/negative.kt",
+          "sha256": "1aa15b6a55ad7faa2f3e7adaf3cc744516a1b09eaa3e7923b28271f288a1c8f3"
+        },
+        {
+          "bytes": 159,
+          "path": "providers/compiler-fixtures/cases/cannot_weaken_access_privilege/positive.kt",
+          "sha256": "23c8dee72795dc31e20f3ca7edb1496cad49185e61042e1777fbb3ce615cdd7e"
+        },
+        {
+          "bytes": 71,
+          "path": "providers/compiler-fixtures/cases/cast_never_succeeds/negative.kt",
+          "sha256": "eec391d9fcce29e433f582ce9fdfd14bdbafac4c0b9ed5ad4eb3a1ff719f3a68"
+        },
+        {
+          "bytes": 82,
+          "path": "providers/compiler-fixtures/cases/cast_never_succeeds/positive.kt",
+          "sha256": "4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138"
+        },
+        {
+          "bytes": 184,
+          "path": "providers/compiler-fixtures/cases/component_function_missing/negative.kt",
+          "sha256": "1328932f99a481611eb34394c00fb01274bfc184e601bd8fd22d014bcef0aa37"
+        },
+        {
+          "bytes": 179,
+          "path": "providers/compiler-fixtures/cases/component_function_missing/positive.kt",
+          "sha256": "8696da0c1430a6d02dab5b00d0b82c0e723ac2615b943f28c798f7bfda837520"
+        },
+        {
+          "bytes": 182,
+          "path": "providers/compiler-fixtures/cases/concurrent_hash_map_contains_operator_error/negative.kt",
+          "sha256": "385f3821ddafad60bbbd647a59628ad937e8284c0ad6cb57788bc25e83fe3989"
+        },
+        {
+          "bytes": 172,
+          "path": "providers/compiler-fixtures/cases/concurrent_hash_map_contains_operator_error/positive.kt",
+          "sha256": "7d58fcfdc28f70b87dca63843743a17075e9be3fbfba7fdd6ef100bba987c2ff"
+        },
+        {
+          "bytes": 79,
+          "path": "providers/compiler-fixtures/cases/condition_type_mismatch/negative.kt",
+          "sha256": "a82b7fb9d1d1d59522a5cbf6bb0a4c999ce68818c3135ec3cfa4a1e9a953cdb5"
+        },
+        {
+          "bytes": 76,
+          "path": "providers/compiler-fixtures/cases/condition_type_mismatch/positive.kt",
+          "sha256": "0fbd2eb6a37ea1a1d597a2fbd33457b33fdcdde4a8b3e904b73aa1913e38e28f"
+        },
+        {
+          "bytes": 175,
+          "path": "providers/compiler-fixtures/cases/conflicting_upper_bounds/negative.kt",
+          "sha256": "5bfa4499f2d64af40be295aa7bf1699b5ce14be59e26502c22da7fbbce1fc864"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/conflicting_upper_bounds/positive.kt",
+          "sha256": "fc4bdd21471be6068e6cad3687ca96a8a10224bbcde45d1540a2a7b2c1f1058a"
+        },
+        {
+          "bytes": 145,
+          "path": "providers/compiler-fixtures/cases/cyclic_constructor_delegation_call/negative.kt",
+          "sha256": "5da8d528ed80fbc81d1068e9fa8d291c7969bec397bfa607b4e1416f7090d9a1"
+        },
+        {
+          "bytes": 135,
+          "path": "providers/compiler-fixtures/cases/cyclic_constructor_delegation_call/positive.kt",
+          "sha256": "b80ebedadb56de59997f66505ef94d5950e2852f4131020d6db8bf607c2dfaf5"
+        },
+        {
+          "bytes": 177,
+          "path": "providers/compiler-fixtures/cases/delegation_by_in_jvm_record/negative.kt",
+          "sha256": "413512bb4d09ea967dc23acf9d1d9b3230b3b5be921a88778a809534891c5bcb"
+        },
+        {
+          "bytes": 142,
+          "path": "providers/compiler-fixtures/cases/delegation_by_in_jvm_record/positive.kt",
+          "sha256": "8d055b9371b8592af32094034dbdbd4dbb4ce055d80ca8d98a3399a934c00557"
+        },
+        {
+          "bytes": 71,
+          "path": "providers/compiler-fixtures/cases/deprecation/negative.kt",
+          "sha256": "bd72e7cab839f26de91a9265f6a325150e0c20b736f3d16dff8080791fad54b0"
+        },
+        {
+          "bytes": 90,
+          "path": "providers/compiler-fixtures/cases/deprecation/positive.kt",
+          "sha256": "a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399"
+        },
+        {
+          "bytes": 54,
+          "path": "providers/compiler-fixtures/cases/division_by_zero/negative.kt",
+          "sha256": "768029687bcb1f822397d08592dc6dddf337c2eb1dfa1b949a4297df99c3076a"
+        },
+        {
+          "bytes": 54,
+          "path": "providers/compiler-fixtures/cases/division_by_zero/positive.kt",
+          "sha256": "620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc"
+        },
+        {
+          "bytes": 57,
+          "path": "providers/compiler-fixtures/cases/empty_range/negative.kt",
+          "sha256": "79d3f1591aa626f44afa8cc18691dcabe9480163fa49d4d34d993e5f26bd9d78"
+        },
+        {
+          "bytes": 59,
+          "path": "providers/compiler-fixtures/cases/empty_range/positive.kt",
+          "sha256": "823eb81e16992276d5cebd6fe5dc19bb7b314158e1af9c75df71caefe9fe76bd"
+        },
+        {
+          "bytes": 103,
+          "path": "providers/compiler-fixtures/cases/equality_not_applicable/negative.kt",
+          "sha256": "05d044d6e4b21dc5ae2fdd23d52a00fd5514e1cc4dd8b35422fa66e3ceb5f144"
+        },
+        {
+          "bytes": 104,
+          "path": "providers/compiler-fixtures/cases/equality_not_applicable/positive.kt",
+          "sha256": "0f96270187449d9bdb591e341c4dac54b435854473bf3d4bbd9eee538453bb11"
+        },
+        {
+          "bytes": 100,
+          "path": "providers/compiler-fixtures/cases/exposed_function_return_type/negative.kt",
+          "sha256": "f593184550060456f13aad945e690e8b35a5d35690aafb64b3b3cb781415ce47"
+        },
+        {
+          "bytes": 93,
+          "path": "providers/compiler-fixtures/cases/exposed_function_return_type/positive.kt",
+          "sha256": "8963fb30a263ae6a268ed19743d7d7c8706781eebc15b62c1c381f963bd22d1e"
+        },
+        {
+          "bytes": 118,
+          "path": "providers/compiler-fixtures/cases/exposed_parameter_type/negative.kt",
+          "sha256": "ec5fb5304bcee052dbfe5ac7e0d6dc7ff2350dcd1579e1fce61983d245b003c2"
+        },
+        {
+          "bytes": 110,
+          "path": "providers/compiler-fixtures/cases/exposed_parameter_type/positive.kt",
+          "sha256": "c10128a902801f7cc84d909d2c909995a705e8535dd744db6cf900838e2f2ced"
+        },
+        {
+          "bytes": 100,
+          "path": "providers/compiler-fixtures/cases/exposed_property_type/negative.kt",
+          "sha256": "234668fba3b2b92e655c80764fc400b9237d372513c9296f6068744f11f28472"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/exposed_property_type/positive.kt",
+          "sha256": "2ff0ba2456a384e068b2f7dd379bb985d6dd0ba34e12bf8d5a02187bc270a356"
+        },
+        {
+          "bytes": 96,
+          "path": "providers/compiler-fixtures/cases/exposed_receiver_type/negative.kt",
+          "sha256": "b7151bfcf975d22b312211a4c58c5d0cd55113844acb777fbdc5ca03e8a89aca"
+        },
+        {
+          "bytes": 88,
+          "path": "providers/compiler-fixtures/cases/exposed_receiver_type/positive.kt",
+          "sha256": "aeac5a238ebd076d5b07fb962f0550fd7864f2c8b48cd39b2852f6ce574b4bcb"
+        },
+        {
+          "bytes": 96,
+          "path": "providers/compiler-fixtures/cases/exposed_super_class/negative.kt",
+          "sha256": "59f0b8b568adbe86a2ce7e4fa966622115ba13903bf81a3d6f85a41cd767aeb7"
+        },
+        {
+          "bytes": 88,
+          "path": "providers/compiler-fixtures/cases/exposed_super_class/positive.kt",
+          "sha256": "11c39788ac5ed155db3d0af7be41a0c1bc4d0dc342b1a0e3aee6ce07b766055c"
+        },
+        {
+          "bytes": 105,
+          "path": "providers/compiler-fixtures/cases/exposed_type_parameter_bound/negative.kt",
+          "sha256": "e50250354473d1661b555e294911d4625b20e7494a80af6b2e83d3081f21f26f"
+        },
+        {
+          "bytes": 97,
+          "path": "providers/compiler-fixtures/cases/exposed_type_parameter_bound/positive.kt",
+          "sha256": "23836bc80da256eb7052edeccd753d6fe4b318de407b81bbe7ee46e96099a15a"
+        },
+        {
+          "bytes": 105,
+          "path": "providers/compiler-fixtures/cases/exposed_typealias_expanded_type/negative.kt",
+          "sha256": "7938eb0475bd145e09940a7a7782065b6df6ccf4675880407090ebd3678900d8"
+        },
+        {
+          "bytes": 97,
+          "path": "providers/compiler-fixtures/cases/exposed_typealias_expanded_type/positive.kt",
+          "sha256": "235206623fafe122f87c84e01546df23b1a30e79bd36e79904fcf285a0a10d81"
+        },
+        {
+          "bytes": 75,
+          "path": "providers/compiler-fixtures/cases/external_declaration_cannot_have_body/negative.kt",
+          "sha256": "909b551935117bb94e0432fca13903d5bb254f2775cc9c70f4bcf108cd6f5650"
+        },
+        {
+          "bytes": 78,
+          "path": "providers/compiler-fixtures/cases/external_declaration_cannot_have_body/positive.kt",
+          "sha256": "8b64781a0667b325d7e715efdb3845e4210ff8bd15e974bc65b6b3c02c441669"
+        },
+        {
+          "bytes": 85,
+          "path": "providers/compiler-fixtures/cases/external_declaration_in_interface/negative.kt",
+          "sha256": "8f23ebd059999667971de15b7facd71b980b8110acd6a8f4d9fcb06f1a5f5ff8"
+        },
+        {
+          "bytes": 102,
+          "path": "providers/compiler-fixtures/cases/external_declaration_in_interface/positive.kt",
+          "sha256": "0d71bafa380fd1455f460969d23f0497d3de364e9e9f3044a6ac1b8f3e2512e5"
+        },
+        {
+          "bytes": 107,
+          "path": "providers/compiler-fixtures/cases/field_in_jvm_record/negative.kt",
+          "sha256": "decca913e3c2f1f3b4ac213fc74106be3df3a202e264a7e2d55e1780200600eb"
+        },
+        {
+          "bytes": 101,
+          "path": "providers/compiler-fixtures/cases/field_in_jvm_record/positive.kt",
+          "sha256": "66b92c8378a9df8fd02153d7e69991736b2925be8debdbf656baaaacc1fc5a22"
+        },
+        {
+          "bytes": 77,
+          "path": "providers/compiler-fixtures/cases/illegal_jvm_name/negative.kt",
+          "sha256": "37062636e6ecaf47a99e6a784923e4935008c2cbaa52fa1cb29b0b42bb1f0d56"
+        },
+        {
+          "bytes": 76,
+          "path": "providers/compiler-fixtures/cases/illegal_jvm_name/positive.kt",
+          "sha256": "8f17b34b8bb1662a9cc7ab76bc381ab1d703421556b3a25d1805a9801a39b04b"
+        },
+        {
+          "bytes": 89,
+          "path": "providers/compiler-fixtures/cases/inapplicable_jvm_field/negative.kt",
+          "sha256": "f5fe1ea129f8033c79feb7440f41bf11d0b6ce8b64be34615b58932f3cf53e0d"
+        },
+        {
+          "bytes": 97,
+          "path": "providers/compiler-fixtures/cases/inapplicable_jvm_field/positive.kt",
+          "sha256": "f2da19a17c53a85c2ae3bbfe65d0d6e3b8322a344e698f7ea9cdf99e807d442f"
+        },
+        {
+          "bytes": 140,
+          "path": "providers/compiler-fixtures/cases/inapplicable_jvm_name/negative.kt",
+          "sha256": "b530c9e63d72d110f7c26a903d686f2da3974a2f883e8871496f2456a07fd4e3"
+        },
+        {
+          "bytes": 160,
+          "path": "providers/compiler-fixtures/cases/inapplicable_jvm_name/positive.kt",
+          "sha256": "993e7d525e6060938c660939d1f337ba71cbd47983517dee2a18f41062f206ca"
+        },
+        {
+          "bytes": 63,
+          "path": "providers/compiler-fixtures/cases/initializer_type_mismatch/negative.kt",
+          "sha256": "08997eea65a80881d420c90bf9d806bf242475791103c6e1fbaf1d0885533c44"
+        },
+        {
+          "bytes": 68,
+          "path": "providers/compiler-fixtures/cases/initializer_type_mismatch/positive.kt",
+          "sha256": "09b2517fe550b84a8e18b33f99941e866fd0e76bd7bf757ea319fda4cca4f155"
+        },
+        {
+          "bytes": 86,
+          "path": "providers/compiler-fixtures/cases/inline_property_with_backing_field/negative.kt",
+          "sha256": "316ed16e8c301b5d09cf35dbf0c2522112fe29a9eefc87f0a5c8315d5be7068a"
+        },
+        {
+          "bytes": 80,
+          "path": "providers/compiler-fixtures/cases/inline_property_with_backing_field/positive.kt",
+          "sha256": "50efe6c65275e38567692c9397648730616c1bf397f224f44400fc3a3bf85570"
+        },
+        {
+          "bytes": 88,
+          "path": "providers/compiler-fixtures/cases/int_literal_out_of_range/negative.kt",
+          "sha256": "0652fc45d72342b7d22de60ec4f14d42f65f807556a3de42f00b9a87b6361f75"
+        },
+        {
+          "bytes": 88,
+          "path": "providers/compiler-fixtures/cases/int_literal_out_of_range/positive.kt",
+          "sha256": "efe8e9a9f74b50cc5dd7645659b7eed8e3928311bd350a4fc2f9d6f8e438a9c0"
+        },
+        {
+          "bytes": 111,
+          "path": "providers/compiler-fixtures/cases/invisible_reference/negative.kt",
+          "sha256": "f9ffd0c5efcc6660dee7d888ce26ad0f421191509397c37c0fcae2761dd74080"
+        },
+        {
+          "bytes": 119,
+          "path": "providers/compiler-fixtures/cases/invisible_reference/positive.kt",
+          "sha256": "c2d57bbf3e09f626c1028030b1de7df442d09b33eb035309ebcecc6a3fa52aee"
+        },
+        {
+          "bytes": 114,
+          "path": "providers/compiler-fixtures/cases/invisible_setter/negative.kt",
+          "sha256": "dd06f082ca1425851359d26defa7a0d4e53b7c36744217bf0a0116165bc48cf3"
+        },
+        {
+          "bytes": 130,
+          "path": "providers/compiler-fixtures/cases/invisible_setter/positive.kt",
+          "sha256": "1473d75d9bf2f859a5633c90e584984a00eec3b034c50fa3136f9a7a4e9711f1"
+        },
+        {
+          "bytes": 180,
+          "path": "providers/compiler-fixtures/cases/iterator_missing/negative.kt",
+          "sha256": "642af9dc71fa4658c8b59a8b50a4e0dcdd10e4f6d7da682a789764ffb0fba3aa"
+        },
+        {
+          "bytes": 114,
+          "path": "providers/compiler-fixtures/cases/iterator_missing/positive.kt",
+          "sha256": "5e663fba752b63fe14a602bc5daac3570c51848fbcec080f9dc44ee3e03bc846"
+        },
+        {
+          "bytes": 96,
+          "path": "providers/compiler-fixtures/cases/jvm_inline_without_value_class/negative.kt",
+          "sha256": "25a249a86e91aba07c9b9a69f6441e2eaa12207d1aa68585d464c784d4364f94"
+        },
+        {
+          "bytes": 90,
+          "path": "providers/compiler-fixtures/cases/jvm_inline_without_value_class/positive.kt",
+          "sha256": "95a5b2916882ac920002f5cc6e5e813cfe7cccd4513a385b21deccc9fc4779ce"
+        },
+        {
+          "bytes": 108,
+          "path": "providers/compiler-fixtures/cases/jvm_record_extends_class/negative.kt",
+          "sha256": "241163668a2438c3701702977e153aaf355fd2f9db06bc0a4b70e30878165854"
+        },
+        {
+          "bytes": 113,
+          "path": "providers/compiler-fixtures/cases/jvm_record_extends_class/positive.kt",
+          "sha256": "161b3c756294de45a5a0c1a45e14cedc8ca15a753987b4ef6335f828dd698c7d"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/jvm_record_not_val_parameter/negative.kt",
+          "sha256": "21afc3f91a6e01a9c991cb8a5bbec10e5a910b6e7455aed448c6210683bd63b5"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/jvm_record_not_val_parameter/positive.kt",
+          "sha256": "92055ea6a5f487c36a93a08fa7be1b8fd83289450e5ff7c8f0d104905f399e49"
+        },
+        {
+          "bytes": 100,
+          "path": "providers/compiler-fixtures/cases/jvm_static_not_in_object_or_companion/negative.kt",
+          "sha256": "b86ef61cf9806a9d0b0b6938a9d6973a57a79f1f5a0fb96ce01f739ab31e523f"
+        },
+        {
+          "bytes": 98,
+          "path": "providers/compiler-fixtures/cases/jvm_static_not_in_object_or_companion/positive.kt",
+          "sha256": "e7be9832a7faf93fd48fea27bed75f836145ae746c4cd0459c250549ca5f9a88"
+        },
+        {
+          "bytes": 95,
+          "path": "providers/compiler-fixtures/cases/jvm_static_on_const_or_jvm_field/negative.kt",
+          "sha256": "31ad1f95ac2e20f7b1ec0c855c1b51e35a43211b4f7947bff674e1dbee480466"
+        },
+        {
+          "bytes": 106,
+          "path": "providers/compiler-fixtures/cases/jvm_static_on_const_or_jvm_field/positive.kt",
+          "sha256": "adfe1c68708396bf2cb5ef374001f323792ab28ab449c7e4b001b07028093b9d"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/named_parameter_not_found/negative.kt",
+          "sha256": "5c20a523e3eb890796ef6c3b21940fe0f16b0bbd1e64f6e9e1aedd3140df4545"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/named_parameter_not_found/positive.kt",
+          "sha256": "d8a874bc538fcd2399712682d6d6b255c0ebedb495c8c2762a912ce567223706"
+        },
+        {
+          "bytes": 98,
+          "path": "providers/compiler-fixtures/cases/no_else_in_when/negative.kt",
+          "sha256": "4aafd331666be6854bf57d3642bd7257d60163803b0dc3ae982691bd59dd6b5c"
+        },
+        {
+          "bytes": 87,
+          "path": "providers/compiler-fixtures/cases/no_else_in_when/positive.kt",
+          "sha256": "5d8f5be96dcbe428c44cf261201a0a02afc48c4734e8e7850c117bfd3d14e575"
+        },
+        {
+          "bytes": 133,
+          "path": "providers/compiler-fixtures/cases/no_get_method/negative.kt",
+          "sha256": "ab955ae686e4bf7464398cb09b061374d4e694f3fc533e1715cb19f78f44b2a2"
+        },
+        {
+          "bytes": 87,
+          "path": "providers/compiler-fixtures/cases/no_get_method/positive.kt",
+          "sha256": "36c4d1ca6646d98ac45c1654a8077d680371f13c73dfc69358bd8d32a63c5d05"
+        },
+        {
+          "bytes": 207,
+          "path": "providers/compiler-fixtures/cases/no_set_method/negative.kt",
+          "sha256": "92a9cdd770def96626bee6bff0f49e7cf7a98aeb5876c2537229001c634367e4"
+        },
+        {
+          "bytes": 135,
+          "path": "providers/compiler-fixtures/cases/no_set_method/positive.kt",
+          "sha256": "4ddbce3291b3c0b9bbb46bf71449d7658939a00a218977c86b2ca01e7a19055c"
+        },
+        {
+          "bytes": 89,
+          "path": "providers/compiler-fixtures/cases/no_value_for_parameter/negative.kt",
+          "sha256": "168700c9d126cd38057b379840e8f4d722825e3d41676619ad3b255562db536f"
+        },
+        {
+          "bytes": 88,
+          "path": "providers/compiler-fixtures/cases/no_value_for_parameter/positive.kt",
+          "sha256": "870e8886fa5dbdf28e79b57226ef0c303b2672f1304d8adf7f090a97c0f0634d"
+        },
+        {
+          "bytes": 89,
+          "path": "providers/compiler-fixtures/cases/non_data_class_jvm_record/negative.kt",
+          "sha256": "e28b0b5ccaa935d7ffe5c80d16fab36fc943211fd205b4368c4836fda322ce57"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/non_data_class_jvm_record/positive.kt",
+          "sha256": "ca919b1c863819f48f365752a348b440fb74580576dd3bb8d43ed4dc01bcfb37"
+        },
+        {
+          "bytes": 97,
+          "path": "providers/compiler-fixtures/cases/non_final_member_in_final_class/negative.kt",
+          "sha256": "99ffd4d2b349bb47949b845c583c0850f06ae0c17c7d78b02eccd24f8ba425aa"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/non_final_member_in_final_class/positive.kt",
+          "sha256": "d6066a54ae1680c843fc8a0ee56f5ef2b8e734c00baea89395eea6e7ada1bb2b"
+        },
+        {
+          "bytes": 170,
+          "path": "providers/compiler-fixtures/cases/non_public_call_from_public_inline/negative.kt",
+          "sha256": "21227edfa94aca82d8addf2b8ebf0298f13cfeadb702205bb701c19ada5acc39"
+        },
+        {
+          "bytes": 155,
+          "path": "providers/compiler-fixtures/cases/non_public_call_from_public_inline/positive.kt",
+          "sha256": "79a173871e46fc0187b97876842eb714fd88deafaa2b75b88babfb0ca2604ab0"
+        },
+        {
+          "bytes": 138,
+          "path": "providers/compiler-fixtures/cases/non_suspend_overridden_by_suspend/negative.kt",
+          "sha256": "a30080c3ded18a3d9ab3e9e21e8ceca079707db1d5bbfbcae62c64fec2f6d09d"
+        },
+        {
+          "bytes": 146,
+          "path": "providers/compiler-fixtures/cases/non_suspend_overridden_by_suspend/positive.kt",
+          "sha256": "7c50a15ac211eeeb65f0854fffdea32d7802d8401d9f3b340c3a761b7ceaf05b"
+        },
+        {
+          "bytes": 100,
+          "path": "providers/compiler-fixtures/cases/non_vararg_spread/negative.kt",
+          "sha256": "8dac2d7a498631eeb6e3e235cf26e2a0b01387115c5690db91dec2f50a96a274"
+        },
+        {
+          "bytes": 101,
+          "path": "providers/compiler-fixtures/cases/non_vararg_spread/positive.kt",
+          "sha256": "02dd78ac96f8906436e5cb2609f34fa2416cba1b665deac09abd6fedde4c6f90"
+        },
+        {
+          "bytes": 75,
+          "path": "providers/compiler-fixtures/cases/nothing_to_override/negative.kt",
+          "sha256": "f99dd8d6607f2fb1d0431540f440ca63bf07674ccb34109c53fd78bcba165bc5"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/nothing_to_override/positive.kt",
+          "sha256": "c3c034d9fc35d2bc2705c917dd2b28951d5ad96cf1321fac574a270317e105d7"
+        },
+        {
+          "bytes": 102,
+          "path": "providers/compiler-fixtures/cases/null_for_nonnull_type/negative.kt",
+          "sha256": "1bbfb915c432d6f14bcb4086ec22d6b1731ea2a640f39ab7f6773faca66b1fa9"
+        },
+        {
+          "bytes": 100,
+          "path": "providers/compiler-fixtures/cases/null_for_nonnull_type/positive.kt",
+          "sha256": "960419f714930897b4c5910942d4cdedc2804949357043766e0ff14c7f508a5e"
+        },
+        {
+          "bytes": 225,
+          "path": "providers/compiler-fixtures/cases/opt_in_argument_is_not_marker/negative.kt",
+          "sha256": "e50ff533619e6ff00a99a6e43dc20c6f000b9fd87fbb6a4f9021f972b8a45b45"
+        },
+        {
+          "bytes": 112,
+          "path": "providers/compiler-fixtures/cases/opt_in_argument_is_not_marker/positive.kt",
+          "sha256": "38ba5bb448403d554b756955223d43d3dd75b185ff18013938db270d0a030f36"
+        },
+        {
+          "bytes": 338,
+          "path": "providers/compiler-fixtures/cases/opt_in_usage/negative.kt",
+          "sha256": "02f1aad6d372e718bcff248351c9d5bd2419326ee7fe42f482bccda2e713b2b1"
+        },
+        {
+          "bytes": 302,
+          "path": "providers/compiler-fixtures/cases/opt_in_usage/positive.kt",
+          "sha256": "06fd3b9727ceed8f2520f7e689cef62ac42744a660c90f30bc15bfd9603a86cb"
+        },
+        {
+          "bytes": 342,
+          "path": "providers/compiler-fixtures/cases/opt_in_usage_error/negative.kt",
+          "sha256": "b4b78dbbea7eb6e1409d6d60978cd86ad17e8cc43110d10a0570ac7b48f333c3"
+        },
+        {
+          "bytes": 306,
+          "path": "providers/compiler-fixtures/cases/opt_in_usage_error/positive.kt",
+          "sha256": "961b0490b56a48fdc2100ed7eb468acf40e484399c9900187999bcc3cb73d8d4"
+        },
+        {
+          "bytes": 250,
+          "path": "providers/compiler-fixtures/cases/opt_in_without_arguments/negative.kt",
+          "sha256": "9a6e4034e60a1e94cc3ac038451e0dc242561f0dec33de64b2b8d8ff2a9ce243"
+        },
+        {
+          "bytes": 72,
+          "path": "providers/compiler-fixtures/cases/opt_in_without_arguments/positive.kt",
+          "sha256": "aaaf0943bae85de13456e717a2441ee0493ab5299f3e37b1dd92c0e21f1b0958"
+        },
+        {
+          "bytes": 94,
+          "path": "providers/compiler-fixtures/cases/overloads_abstract/negative.kt",
+          "sha256": "4f1d0d2bc8de320edae518649f70176df7bfc8b81f9aed36eee221db6270cb81"
+        },
+        {
+          "bytes": 108,
+          "path": "providers/compiler-fixtures/cases/overloads_abstract/positive.kt",
+          "sha256": "f267bce2c4c7a1f302626a535208c9747476f01f6497dff5ca2fb6285d373654"
+        },
+        {
+          "bytes": 95,
+          "path": "providers/compiler-fixtures/cases/overloads_interface/negative.kt",
+          "sha256": "5988fb3c335705efc1ed053807422f64fb2543c25c356f9aa8a7eb428a4d54c3"
+        },
+        {
+          "bytes": 95,
+          "path": "providers/compiler-fixtures/cases/overloads_interface/positive.kt",
+          "sha256": "53ed21646366bc097838318d558128412c41861ff4e687205701d998b89ccda5"
+        },
+        {
+          "bytes": 110,
+          "path": "providers/compiler-fixtures/cases/overloads_local/negative.kt",
+          "sha256": "5d28186003b55ff4fe19e890727e82a8bd7e8629157674d1027be373b55ced39"
+        },
+        {
+          "bytes": 120,
+          "path": "providers/compiler-fixtures/cases/overloads_local/positive.kt",
+          "sha256": "7ce3e8de373e42c4f495e315fa98ac17c70a7c6e9a2972c4c9300a35f946519d"
+        },
+        {
+          "bytes": 112,
+          "path": "providers/compiler-fixtures/cases/overloads_private/negative.kt",
+          "sha256": "431455b51295e161ae0b75398f5c25660cd977afafb95f98a92255ebd218c3b8"
+        },
+        {
+          "bytes": 120,
+          "path": "providers/compiler-fixtures/cases/overloads_private/positive.kt",
+          "sha256": "e3456298b600a0d699f475fc1a956b5d3997b5ca90bb57291fad25f895219f44"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/overloads_without_default_arguments/negative.kt",
+          "sha256": "cc302a10c855f2dbe851317a4e38aac4b1ce9d5e32549b84a86f9ce20ffbd6d3"
+        },
+        {
+          "bytes": 88,
+          "path": "providers/compiler-fixtures/cases/overloads_without_default_arguments/positive.kt",
+          "sha256": "c46dd40de00400bbe0b26406c1c6b4dcaf19e757742c813feb15f72c2d53f74d"
+        },
+        {
+          "bytes": 142,
+          "path": "providers/compiler-fixtures/cases/overriding_final_member/negative.kt",
+          "sha256": "96fdafe2fe75399f2e2fed4518c3b7270106e9ff707f6a8015490a9d95007365"
+        },
+        {
+          "bytes": 137,
+          "path": "providers/compiler-fixtures/cases/overriding_final_member/positive.kt",
+          "sha256": "d2cd18fc25117108dc0b91292b475922d84da990e181034642f953c35cc1ff66"
+        },
+        {
+          "bytes": 163,
+          "path": "providers/compiler-fixtures/cases/parameter_name_changed_on_override/negative.kt",
+          "sha256": "873e41c5527ce865e11eaecc013753044895676efae61ae5468a5af9c1b229eb"
+        },
+        {
+          "bytes": 163,
+          "path": "providers/compiler-fixtures/cases/parameter_name_changed_on_override/positive.kt",
+          "sha256": "b51e3b7426bd8a217caf63340e055a72de54da6d02b505feb8eba0603055e026"
+        },
+        {
+          "bytes": 137,
+          "path": "providers/compiler-fixtures/cases/property_type_mismatch_on_override/negative.kt",
+          "sha256": "b2621871c6adc5fc5265d74e79fe50f976d187ddb2848f5c94b5e32e261d3bcd"
+        },
+        {
+          "bytes": 145,
+          "path": "providers/compiler-fixtures/cases/property_type_mismatch_on_override/positive.kt",
+          "sha256": "6270fd4527663b409fd91ae1b7208fd421b5d48c64b87c45b6e1dda7dca6ced7"
+        },
+        {
+          "bytes": 95,
+          "path": "providers/compiler-fixtures/cases/recursion_in_inline/negative.kt",
+          "sha256": "48261b52380e0b7943b973b0f113b11d037467e000fd86025911fb7ca83d545e"
+        },
+        {
+          "bytes": 117,
+          "path": "providers/compiler-fixtures/cases/recursion_in_inline/positive.kt",
+          "sha256": "c15fd1196e4dae01375c2ec782169159a3e788e718b983f49844c94f8f7dccfc"
+        },
+        {
+          "bytes": 87,
+          "path": "providers/compiler-fixtures/cases/recursive_typealias_expansion/negative.kt",
+          "sha256": "8dac0869823da179a27e8c852fb2c07df7f1394301a466cd53092a3771c653fb"
+        },
+        {
+          "bytes": 94,
+          "path": "providers/compiler-fixtures/cases/recursive_typealias_expansion/positive.kt",
+          "sha256": "be045c201b98296f8b9c09e60a2c3c7e737a26342ef93afcac2e120edf2e3593"
+        },
+        {
+          "bytes": 61,
+          "path": "providers/compiler-fixtures/cases/return_type_mismatch/negative.kt",
+          "sha256": "0193c131a5bb90f961699f6da6c2803a41a7b7c0986471468838da0a425bee1d"
+        },
+        {
+          "bytes": 66,
+          "path": "providers/compiler-fixtures/cases/return_type_mismatch/positive.kt",
+          "sha256": "c986ad1553c671aae2f601948702d049951977d9249a240493d7fda39f3ad88e"
+        },
+        {
+          "bytes": 140,
+          "path": "providers/compiler-fixtures/cases/return_type_mismatch_on_override/negative.kt",
+          "sha256": "fd576f80387a5b12ef96b923974aca2584e4788674301027c4d362a7a0bf8258"
+        },
+        {
+          "bytes": 148,
+          "path": "providers/compiler-fixtures/cases/return_type_mismatch_on_override/positive.kt",
+          "sha256": "ff8b134dc63f1d8b7170ce127a8136e6d1971210b58b527477fadf0ee8742f88"
+        },
+        {
+          "bytes": 175,
+          "path": "providers/compiler-fixtures/cases/smartcast_impossible/negative.kt",
+          "sha256": "d286b894b93c8c307e2cc3ba26584c30322ac62817f8f9ed7cde511fc0458dc4"
+        },
+        {
+          "bytes": 156,
+          "path": "providers/compiler-fixtures/cases/smartcast_impossible/positive.kt",
+          "sha256": "85b8c106b40ec2c8c0989f71d4145ee38e6c4c1eb86d7ea17412752dc169c2c5"
+        },
+        {
+          "bytes": 130,
+          "path": "providers/compiler-fixtures/cases/spread_of_nullable/negative.kt",
+          "sha256": "54133866b669f4c598a416a2085af7104e0005ba0b2418e94eccc5dbd3d10db0"
+        },
+        {
+          "bytes": 108,
+          "path": "providers/compiler-fixtures/cases/spread_of_nullable/positive.kt",
+          "sha256": "fbb0192f4de9a69c5229ada9655571d9d4c143aeb48e6b5d6873b9a9c1c44d4d"
+        },
+        {
+          "bytes": 82,
+          "path": "providers/compiler-fixtures/cases/supertype_not_initialized/negative.kt",
+          "sha256": "1af2c7a56767acb5fff59826c456716e909197589b59062cf334b727ec85ee13"
+        },
+        {
+          "bytes": 80,
+          "path": "providers/compiler-fixtures/cases/supertype_not_initialized/positive.kt",
+          "sha256": "62107df1f76f991026287bef42b7482fcf1c1943000716facddf3ee8cc876683"
+        },
+        {
+          "bytes": 154,
+          "path": "providers/compiler-fixtures/cases/suspend_overridden_by_non_suspend/negative.kt",
+          "sha256": "6d7d0cca71beefd93935049b296a50ba4a5833a3ed8b2d783168fe2d80424f15"
+        },
+        {
+          "bytes": 146,
+          "path": "providers/compiler-fixtures/cases/suspend_overridden_by_non_suspend/positive.kt",
+          "sha256": "5bb7d7a6b9c75aa8f35f3ef6ffb8a08f5771790ec9f6567043a7aedd480839e8"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/synchronized_on_abstract/negative.kt",
+          "sha256": "2dffa2b068a6f44545603aa4cf8246779e11c97424b0302e9f1a26bcccb64d33"
+        },
+        {
+          "bytes": 99,
+          "path": "providers/compiler-fixtures/cases/synchronized_on_abstract/positive.kt",
+          "sha256": "faa782995219cd8213520c430ed99ab2130b4102fe5bc1f11388663afbca6145"
+        },
+        {
+          "bytes": 96,
+          "path": "providers/compiler-fixtures/cases/synchronized_on_inline/negative.kt",
+          "sha256": "8e69a7864553d650fcc43b3f98dd43dacda874d8bba77a57997f6c63fc12a81f"
+        },
+        {
+          "bytes": 103,
+          "path": "providers/compiler-fixtures/cases/synchronized_on_inline/positive.kt",
+          "sha256": "deed6c4c156441afcd5541bf99fe17e89f5691d5248bc974a67841c47457f8c5"
+        },
+        {
+          "bytes": 76,
+          "path": "providers/compiler-fixtures/cases/synchronized_on_suspend_error/negative.kt",
+          "sha256": "08f28afe892afd4f8c23ea8290721d41ea847afd542ad8bbb46baed3aeea20fd"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/synchronized_on_suspend_error/positive.kt",
+          "sha256": "38cf0b428a803a6d92cf436b45e45b21104a460fb6ab1e3c33d8b7e5b6a22d3d"
+        },
+        {
+          "bytes": 105,
+          "path": "providers/compiler-fixtures/cases/throwable_type_mismatch/negative.kt",
+          "sha256": "c61d63da59e56f7300bd98874b17f4bb2d257691e9dcbc5944f8b3a0308ac88f"
+        },
+        {
+          "bytes": 82,
+          "path": "providers/compiler-fixtures/cases/throwable_type_mismatch/positive.kt",
+          "sha256": "67e0af1219e84ed020aaf85c928e7e0c30c3b211eda29dfb0dae7685eedbd72d"
+        },
+        {
+          "bytes": 72,
+          "path": "providers/compiler-fixtures/cases/too_many_arguments/negative.kt",
+          "sha256": "d07b0b6ce2d154e827627cd6ce7b2f0ad2a8c750712e189875f1edd3f875ab5b"
+        },
+        {
+          "bytes": 73,
+          "path": "providers/compiler-fixtures/cases/too_many_arguments/positive.kt",
+          "sha256": "94f3450e4cccca25c787bd9f2f34518d4dd9bb03e9974d372e122005be9ed7a3"
+        },
+        {
+          "bytes": 87,
+          "path": "providers/compiler-fixtures/cases/type_variance_conflict_error/negative.kt",
+          "sha256": "0b668d62c4e2561900625e51b880a13ca166824993979ffe525855a7feac17ab"
+        },
+        {
+          "bytes": 87,
+          "path": "providers/compiler-fixtures/cases/type_variance_conflict_error/positive.kt",
+          "sha256": "a5b2acf2fc4edf6aa75e4a1efbb4cc8a25a521e6e50d1ed7029a4f180a23519e"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/unchecked_cast/negative.kt",
+          "sha256": "9344cad147bb3d029a687385d7156d6da0e74947a272ce9d302925062e430c44"
+        },
+        {
+          "bytes": 95,
+          "path": "providers/compiler-fixtures/cases/unchecked_cast/positive.kt",
+          "sha256": "72f1209b89c0a082f28c63eb8a89b391fb20e8e7cbd61da5ad48688cbd6e7160"
+        },
+        {
+          "bytes": 87,
+          "path": "providers/compiler-fixtures/cases/uninitialized_variable/negative.kt",
+          "sha256": "a38a03ced2e492e0d67299b1ab4b12ff674435bf080b2dee38d4d67f8ff544e2"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/uninitialized_variable/positive.kt",
+          "sha256": "50b19de9b95ef105643f1515b5d12b5b7b6074329a982e913378533e3c946465"
+        },
+        {
+          "bytes": 93,
+          "path": "providers/compiler-fixtures/cases/unnecessary_not_null_assertion/negative.kt",
+          "sha256": "3c9dbcee9ae1e837ef55c6286d76490ab04384b3f4a945fe681650429aa88e4b"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/unnecessary_not_null_assertion/positive.kt",
+          "sha256": "8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2"
+        },
+        {
+          "bytes": 75,
+          "path": "providers/compiler-fixtures/cases/unnecessary_safe_call/negative.kt",
+          "sha256": "809ccd608c17ae112809fd952f506cf1166196b008acd1189277b9b20af5b159"
+        },
+        {
+          "bytes": 74,
+          "path": "providers/compiler-fixtures/cases/unnecessary_safe_call/positive.kt",
+          "sha256": "ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548"
+        },
+        {
+          "bytes": 95,
+          "path": "providers/compiler-fixtures/cases/unreachable_code/negative.kt",
+          "sha256": "c116121d5e27e7f351736fb701838c0ab3f793c25d81e8be4ddadb11c8b95af4"
+        },
+        {
+          "bytes": 90,
+          "path": "providers/compiler-fixtures/cases/unreachable_code/positive.kt",
+          "sha256": "4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f"
+        },
+        {
+          "bytes": 101,
+          "path": "providers/compiler-fixtures/cases/unresolved_import/negative.kt",
+          "sha256": "312ef33f114811ca282e51a44c617bcdc91838f79e1d86731355f2bc57c7a919"
+        },
+        {
+          "bytes": 83,
+          "path": "providers/compiler-fixtures/cases/unresolved_import/positive.kt",
+          "sha256": "ed407fd6fcb4501abac71543be3b3dbb5eb3d69c3016e900c6e52157d22dfaf7"
+        },
+        {
+          "bytes": 92,
+          "path": "providers/compiler-fixtures/cases/unresolved_reference/negative.kt",
+          "sha256": "b806e34702c37d638d0a6452ff9b6c90484a256f6e285ca51a08ae33b5f0970e"
+        },
+        {
+          "bytes": 69,
+          "path": "providers/compiler-fixtures/cases/unresolved_reference/positive.kt",
+          "sha256": "cc58d834595d3f05f4dad1f3a568ea60561c63a08974847a5024d627cc3e940a"
+        },
+        {
+          "bytes": 119,
+          "path": "providers/compiler-fixtures/cases/unresolved_reference_wrong_receiver/negative.kt",
+          "sha256": "d0e173375718e257dbc8a269ace8a1f0f8b61d97905c482534f4f083f4dd551d"
+        },
+        {
+          "bytes": 114,
+          "path": "providers/compiler-fixtures/cases/unresolved_reference_wrong_receiver/positive.kt",
+          "sha256": "53aeeeb8bc32c49c8f24a0baa483182570093924dab33689a9424e2533409dfb"
+        },
+        {
+          "bytes": 65,
+          "path": "providers/compiler-fixtures/cases/unsafe_call/negative.kt",
+          "sha256": "f2a9d838a60636e6383e842c6f819fe32e9ecd60fee6b2d47215f0a02d66b9ca"
+        },
+        {
+          "bytes": 64,
+          "path": "providers/compiler-fixtures/cases/unsafe_call/positive.kt",
+          "sha256": "4f903026cb19f77c8a7e8fa600cd8bbc75609f9aeb03d7bbe6297bbac5d193f0"
+        },
+        {
+          "bytes": 99,
+          "path": "providers/compiler-fixtures/cases/upper_bound_violated/negative.kt",
+          "sha256": "d48e64516ae15b1c4fb1fca18bcca2b2e2992fe8b300b80bc1793b5b10e30be3"
+        },
+        {
+          "bytes": 97,
+          "path": "providers/compiler-fixtures/cases/upper_bound_violated/positive.kt",
+          "sha256": "d4c523be141bce9e62df159a14cb7e31c3bc7842cedca3630dca17b2223b0f50"
+        },
+        {
+          "bytes": 67,
+          "path": "providers/compiler-fixtures/cases/useless_cast/negative.kt",
+          "sha256": "4963806bb8acc6e0d49d6e8e711c701aae8a5fd25420a013c6de50c72dfd9d28"
+        },
+        {
+          "bytes": 65,
+          "path": "providers/compiler-fixtures/cases/useless_cast/positive.kt",
+          "sha256": "08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4"
+        },
+        {
+          "bytes": 87,
+          "path": "providers/compiler-fixtures/cases/useless_elvis/negative.kt",
+          "sha256": "d1e45039824ead644fbb8210895e883feb8667172da25490398b454e235a8eec"
+        },
+        {
+          "bytes": 86,
+          "path": "providers/compiler-fixtures/cases/useless_elvis/positive.kt",
+          "sha256": "a6ac2f1ea9e64a4a1077ada8e42a4b8b655495fc5f49abeb6d59a660c96c1de2"
+        },
+        {
+          "bytes": 85,
+          "path": "providers/compiler-fixtures/cases/useless_is_check/negative.kt",
+          "sha256": "973eb206f6e30cdeb950eb892ebac1eecca0393c697472a116a1ffa80b7f9eb4"
+        },
+        {
+          "bytes": 88,
+          "path": "providers/compiler-fixtures/cases/useless_is_check/positive.kt",
+          "sha256": "5f8b9f40b8453cbce06352ab4155f1193bfad26ce831afcb83b03d8eda6b2d1f"
+        },
+        {
+          "bytes": 83,
+          "path": "providers/compiler-fixtures/cases/val_reassignment/negative.kt",
+          "sha256": "3ad282b3a83b8f21f31eb83a10aee22ad8b21a5c5b512e2694c52f85fc5d34fb"
+        },
+        {
+          "bytes": 84,
+          "path": "providers/compiler-fixtures/cases/val_reassignment/positive.kt",
+          "sha256": "3bf39cc517c492848601e06ff06ee5f6ec0fec12b80b99309a129cb8a8a11ac3"
+        },
+        {
+          "bytes": 107,
+          "path": "providers/compiler-fixtures/cases/value_class_without_jvm_inline_annotation/negative.kt",
+          "sha256": "066b585e95d08c5459a48bd9fc34655bae4c2eda1608c4c69df3071c31c1441c"
+        },
+        {
+          "bytes": 96,
+          "path": "providers/compiler-fixtures/cases/value_class_without_jvm_inline_annotation/positive.kt",
+          "sha256": "1b1efa55fa59f3d9c9a0e71bfeefa00bf443dd1cedf5176a7232ea29beabe81b"
+        },
+        {
+          "bytes": 124,
+          "path": "providers/compiler-fixtures/cases/var_overridden_by_val/negative.kt",
+          "sha256": "5886b8e269f84ef67fcf51fbf97e892436708f478aae7e6d1fd1439bea7a46fa"
+        },
+        {
+          "bytes": 124,
+          "path": "providers/compiler-fixtures/cases/var_overridden_by_val/positive.kt",
+          "sha256": "e2ec7d91db91e8bb5319dbd030cd0639c69b19f204d007d7df2b45f7ad478979"
+        },
+        {
+          "bytes": 140,
+          "path": "providers/compiler-fixtures/cases/virtual_member_hidden/negative.kt",
+          "sha256": "794f48d4c3dad20b906ef0cc6eebc6ca076ec03f497832cdedce5d326ede1fbd"
+        },
+        {
+          "bytes": 131,
+          "path": "providers/compiler-fixtures/cases/virtual_member_hidden/positive.kt",
+          "sha256": "64cc1688a01fa924e6839e1bde0b481572024825f14f64e1fa954f293a9c7572"
+        },
+        {
+          "bytes": 139,
+          "path": "providers/compiler-fixtures/cases/wrong_annotation_target/negative.kt",
+          "sha256": "6fbe78a340fee808c5cfdfa929359a9237e370718c25bafe144707d4764a244a"
+        },
+        {
+          "bytes": 133,
+          "path": "providers/compiler-fixtures/cases/wrong_annotation_target/positive.kt",
+          "sha256": "2b118d54a8d08ec37128a443af8394088f1b9006fbf5bde609e4d69fc801f2cc"
+        }
+      ],
+      "manifest": {
+        "bytes": 169761,
+        "path": "providers/compiler-fixtures/manifest.json",
+        "sha256": "4854aa356caba6e90b48e10e333bf32828460dc64b04dd0d6b86db3653d49774"
+      },
+      "mapping_contract_source": {
+        "bytes": 992,
+        "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureMappingContract.kt",
+        "sha256": "db7d522a88ce7e5e557376623d7304c6e68ea0055ed6c70cc0afadb8944f58be"
+      },
+      "pair_count": 98,
+      "required_mapping_contract": "kotlin-compiler-2.4.21-common443-legacy-v1",
+      "required_mapping_sha256": "f05c525e450c35cd7a7f701361fdb6467e00e7afd82a1c7cb4cfb60d728841e5",
+      "runner_source": {
+        "bytes": 147817,
+        "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureRunner.kt",
+        "sha256": "968429a1a48a5cb04c5a12aec55f10f48ff9a1d4b6655408748cd005f8e68770"
+      }
+    },
+    "provider_id": "kotlin-compiler-jvm",
+    "provider_version": "2.4.21",
+    "registry_source": {
+      "bytes": 4912,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+      "sha256": "02cae63a16b07c5682a32772e7867648ad4cdf01dc2f958024da620c7f1418e8"
+    }
+  },
+  "declared_selection": {
+    "bytes": 5848,
+    "path": "providers/coverage/current-inputs-1665-v1.json",
+    "sha256": "891007e7c9e2f5012ff37d3ab5559e44e25f9592367b2eb107cec50eae770f89"
+  },
+  "expected_owner_original_snapshot_assertion": {
+    "aggregate_sha256": "f361130736f4dbfb1c5b5f8e0a7f7c7e4e4d5149c95cf49ec618c68f0c3b06a7",
+    "bytes": 1255489,
+    "file_count": 4788,
+    "sha256": "74ab480acf0ffca8da64146d2182eb1b5a8cc54d218f89754ddf9b6a023d8df5"
+  },
+  "expected_scope": {
+    "catalog_records": 1665,
+    "contexts": 8,
+    "rows": 13320
+  },
+  "expected_selected_source_bytes": 16036972,
+  "expected_selected_source_file_count": 254,
+  "expected_source_commit": "a14cab05a330dc785c15239d77d9364b509c72eb",
+  "expected_source_dirty": true,
+  "mapping_files": [
+    {
+      "bytes": 2307,
+      "path": "modules/provider-build-contracts/src/main/resources/build-contracts-rule-map.json",
+      "sha256": "14fc2ccf76c667069fd9314abb05621232088a43f62f3a3783fe47cc3b366222"
+    },
+    {
+      "bytes": 2719433,
+      "path": "modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+      "sha256": "f8566bded002ebeb09a047924036770dbefaa687950355cb08d7174e5f82a2de"
+    },
+    {
+      "bytes": 285207,
+      "path": "modules/provider-detekt/src/main/resources/detekt-rule-map.json",
+      "sha256": "47ce5a08d971f8174441a578130188915a141e3c80724f3553609e3672aa1202"
+    },
+    {
+      "bytes": 119199,
+      "path": "modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+      "sha256": "d4b008829ee945561ad1d2867a094746158a1aac67e499f9450c02774a1f4dad"
+    },
+    {
+      "bytes": 398037,
+      "path": "modules/provider-lint/src/main/resources/android-lint-rule-map.json",
+      "sha256": "41ce6f59aa149d8d61308a4fa2a194b881f0ae63631da33fe59b9eecac429b79"
+    },
+    {
+      "bytes": 504388,
+      "path": "modules/provider-native/src/main/resources/kotlin-native-rule-map.json",
+      "sha256": "a9d8e776fd4bcbfbce74d9f57948beb44d77ec04e11674aba45a7f74515e9eac"
+    }
+  ],
+  "schema": "ktchecker/current-source-linkage-selection/2",
+  "scope_note": "Source linkage only. An exact registry/normalizer source pin or authored test is not implemented/tested/qualified execution credit. The public derived 254-file selected-source receipt is pinned and its exact selected membership is checked. Head/dirty and original snapshot SHA/bytes/4788-file count/aggregate remain historical OWNER assertions; the original snapshot is not opened and no current whole-tree or runtime claim is made. No historical execution receipt or generic test total is selected; library bounded slices remain outside this compiler-only source-implementation slice.",
+  "selected_current_rule_evidence": [],
+  "selected_source_subset": {
+    "bytes": 53204,
+    "path": "providers/coverage/fixtures/round14-selected-source-subset.json",
+    "sha256": "c0602fbeee50d6e376df2ac2070515c2002884681a86f7089c7af586514977ba"
+  }
+}

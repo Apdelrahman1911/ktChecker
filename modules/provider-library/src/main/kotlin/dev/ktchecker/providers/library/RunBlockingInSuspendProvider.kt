@@ -28,6 +28,14 @@ class RunBlockingInSuspendProvider(
     /** Owner review helper only. Frozen metadata is a request, never extraction authorization. */
     fun authorizationRequest(input: AnalysisInput): LibraryFactAuthorizationRequest = prepare(input).request
 
+    /** Structural freeze for live owner dispatch, not an approval or replacement authority. */
+    internal fun freezeForRuntime(input: AnalysisInput): Pair<AnalysisInput, AnalysisProvider> {
+        val prepared = prepare(input)
+        val bound = prepared.request
+        return bound.input to RunBlockingInSuspendProvider(model, RunBlockingFactSelection(bound.semanticRequest,
+            prepared.shards, bound.compilerExitCode, bound.applicability), authority)
+    }
+
     override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
         // Do not expand an oversized malformed envelope into an unbounded coverage vector.
         // A partial result without rows/certificates cannot discharge the owner's external plan.

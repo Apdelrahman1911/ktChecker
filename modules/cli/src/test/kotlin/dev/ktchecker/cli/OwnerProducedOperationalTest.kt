@@ -5,6 +5,8 @@ import dev.ktchecker.compiler.live.model.KotlinJvmModelLiveCompilerProvider
 import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.OwnerFullCatalog1665
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlin.test.*
 
 /**
@@ -75,10 +77,10 @@ class OwnerProducedOperationalTest {
         }
         val coordinator = ReviewCoordinator(catalog, listOf(ProviderRoute(provider, { true })), ExecutionGrants(), image)
 
-        fun project(result: ProviderResult = actual): ProviderResult {
+        fun project(result: ProviderResult = actual, onProgress: (ProviderResult) -> Unit = {}): ProviderResult {
             emitted = result
             observed = null
-            val parent = coordinator.analyzeProgressive(input, CancellationToken.NONE) { }
+            val parent = coordinator.analyzeProgressive(input, CancellationToken.NONE, onProgress)
             assertEquals(childInput, observed, "The real coordinator must project exactly the selected child rules")
             return parent
         }
@@ -207,9 +209,80 @@ class OwnerProducedOperationalTest {
         })
         val parent = s.project(actual)
         assertTrue(s.faults(actual, parent).isEmpty())
-        assertEquals(listOf(finding), parent.findings)
+        val normalized = parent.findings.single()
+        assertEquals(finding.copy(fingerprint = normalized.fingerprint), normalized)
+        assertTrue(Digests.valid(normalized.fingerprint))
+        assertNotEquals(finding.fingerprint, normalized.fingerprint, "Raw coordinator identity has its own versioned schema")
+        assertEquals(listOf("owner_produced_coordinator_return_substituted"),
+            s.faults(actual, parent.copy(findings = listOf(finding))))
         assertTrue(parent.coverage.single { it.ruleId == finding.ruleId }.implemented)
         assertFalse(parent.completeFor(s.input))
+    }
+
+    @Test fun coLocatedMaterialWarningsRemainDistinctAndCannotBeDroppedFromTheStrictParentProjection() {
+        val s = Shape()
+        val finding = warning(s.childInput)
+        val sibling = finding.copy(evidence = listOf(Evidence("synthetic_material", "Independent cause",
+            digest = Digests.sha256("SYNTHETIC second cause"))), certainty = "high")
+        assertEquals(finding.fingerprint, sibling.fingerprint)
+        assertEquals(finding.location, sibling.location)
+        assertEquals(finding.diagnosis, sibling.diagnosis)
+        val actual = s.actual.copy(findings = listOf(finding, sibling), coverage = s.actual.coverage.map {
+            it.copy(implemented = it.ruleId == finding.ruleId)
+        })
+        val parent = s.project(actual)
+        assertTrue(s.faults(actual, parent).isEmpty())
+        assertEquals(listOf(finding, sibling), parent.findings.map { it.copy(fingerprint = finding.fingerprint) })
+        assertEquals(2, parent.findings.map { it.fingerprint }.distinct().size)
+        assertTrue(parent.findings.all { Digests.valid(it.fingerprint) })
+        assertEquals(listOf("owner_produced_coordinator_return_substituted"),
+            s.faults(actual, parent.copy(findings = parent.findings.take(1))))
+        assertEquals(listOf("owner_produced_coordinator_return_substituted"), s.faults(actual,
+            parent.copy(findings = parent.findings.map { it.copy(fingerprint = finding.fingerprint) })))
+        assertEquals("partial", parent.status)
+        assertTrue(parent.coverage.all { !it.qualified && !it.tested && it.certificateId == null })
+        assertFalse(parent.completeFor(s.input))
+    }
+
+    @Test fun decodedMalformedCompilerTextFailsTheWholeProjectionEvenWithAPlausibleCleanParent() {
+        val s = Shape()
+        val finding = warning(s.childInput)
+        val valid = s.actual.copy(findings = listOf(finding), coverage = s.actual.coverage.map {
+            it.copy(implemented = it.ruleId == finding.ruleId)
+        })
+        val plausible = s.project(valid)
+        assertTrue(s.faults(valid, plausible).isEmpty(), "The clean reference is only a synthetic classifier shape")
+        val marker = "synthetic-owner-json-diagnosis-marker"
+        val marked = valid.copy(findings = listOf(finding.copy(diagnosis = marker)))
+        for ((escape, unit) in listOf("\\ud800" to 0xd800, "\\udc00" to 0xdc00)) {
+            val wire = ContractJson.encodeToString(marked).replace("\"$marker\"", "\"$escape\"")
+            assertTrue(escape in wire)
+            val decoded = ContractJson.decodeFromString<ProviderResult>(wire)
+            val malformed = decoded.findings.single()
+            assertEquals(listOf(unit), malformed.diagnosis.map { it.code }, "The escaped lone unit must reach the classifier")
+            for (siblings in listOf(listOf(malformed), listOf(finding, malformed), listOf(malformed, finding))) {
+                val actual = decoded.copy(findings = siblings)
+                val progress = mutableListOf<ProviderResult>()
+                val parent = s.project(actual) { progress += it }
+                assertEquals(1, progress.size)
+                (progress + parent).forEach { published ->
+                    assertEquals("partial", published.status)
+                    assertTrue(published.findings.isEmpty(), "Do not retain a benign prefix or suffix of a failed child")
+                    val rows = published.coverage.filter { it.ruleId in selected }
+                    assertEquals(selected, rows.map { it.ruleId })
+                    assertTrue(rows.all { it.state == "failed" && it.reason == "coordinator_finding_text_invalid" })
+                    assertFalse(published.coverage.any { it.successful() || it.qualified || it.tested || it.certificateId != null })
+                    assertFalse(published.completeFor(s.input))
+                }
+                assertEquals(1665, parent.coverage.size)
+                assertEquals(catalog.ids.sorted(), parent.coverage.map { it.ruleId })
+                assertEquals(plausible.coverage.filterNot { it.ruleId in selected }, parent.coverage.filterNot { it.ruleId in selected })
+                assertContains(parent.reasons, "preview_not_release_qualified")
+                assertEquals(listOf("owner_produced_compiler_finding_unrecognized"), s.faults(actual, parent))
+                assertEquals(listOf("owner_produced_compiler_finding_unrecognized"), s.faults(actual, plausible),
+                    "A supplied clean projection cannot launder the exact actual malformed child")
+            }
+        }
     }
 
     @Test fun warningProviderRuleSourceContextSeverityAndSemanticIdentityCannotBeSubstituted() {

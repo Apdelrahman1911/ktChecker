@@ -11,7 +11,7 @@ import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
  * Pure fixed-shape classification, NOT compiler/output authority. The caller separately requires
  * the actual archive-bound compiler return and (for a producer) its under-ARM accepted output
  * token. Never strip failures/reasons and ask whether the remainder looks complete. Both child
- * and exact coordinator projection are checked; any normalization/substitution or unknown raw
+ * and exact coordinator projection are checked; unexpected normalization/substitution or unknown raw
  * diagnostic fails. Every full-catalog missing/disabled row remains visible and unqualified.
  */
 internal fun ownerProducedParentFaults(catalog: Catalog, coordinator: AnalysisProvider, modelProvider: AnalysisProvider,
@@ -80,8 +80,8 @@ internal fun ownerProducedParentFaults(catalog: Catalog, coordinator: AnalysisPr
         parent.metrics.elapsedMillis < child.metrics.elapsedMillis || parent.metrics.elapsedMillis > ageNanos / 1_000_000 + 1 ||
         parent.metrics.elapsedMillis > deadline.durationMillis) return fault("owner_produced_metrics_unrecognized")
 
-    // normalizeChild must be a no-op: selected coverage is total and every finding identity was
-    // checked above. Reproduce the SINGLE selected model route and all missing catalog rows.
+    // Selected coverage is total and every raw finding identity was checked above. Reproduce
+    // the exact coordinator fingerprint/alias projection, SINGLE route and all missing rows.
     val missing = (input.requiredRuleIds.toSet() - selected.toSet()).sorted().map { rule ->
         val decision = activation[rule]
         Coverage(rule, input.context.scope,
@@ -93,9 +93,9 @@ internal fun ownerProducedParentFaults(catalog: Catalog, coordinator: AnalysisPr
             }, depth = catalog.records.firstOrNull { it["id"]?.toString()?.trim('"') == rule }
                 ?.get("depth")?.toString()?.trim('"') ?: "semantic")
     }
-    val findings = child.findings.distinctBy {
-        listOf(it.ruleId, it.context.id, it.location.path, it.location.fileDigest, it.location.line,
-            it.location.column, it.location.endLine, it.location.endColumn, it.diagnosis)
+    val findings = try { normalizeCoordinatorFindings(child.findings) } catch (problem: Throwable) {
+        if (problem !is Exception && problem !is AssertionError) throw problem
+        return fault("owner_produced_compiler_finding_unrecognized")
     }
     val expected = ProviderResult(coordinator.id, "partial", findings, (child.coverage + missing).sortedBy { it.ruleId },
         reasons = (child.reasons.map { "${child.providerId}:$it" } +
