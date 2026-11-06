@@ -1,0 +1,312 @@
+{
+  "schema_version": 1,
+  "rule_id": "ktc.compose.pack.StateParam",
+  "upstream_id": "Compose:StateParam",
+  "default_activation": "opt_in",
+  "depth": "syntax",
+  "entity_kind": "parameter_name",
+  "source_oracle": {
+    "kind": "tagged_source_prediction_not_observation",
+    "tag": "v0.6.8",
+    "commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+    "implementation": {
+      "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/StateParameter.kt",
+      "sha256": "fe2f0c230c464117ae2b0e1a6250d2e39062470c12463e59a0ba0505713ac667",
+      "line_ranges": [
+        [
+          13,
+          25
+        ]
+      ]
+    },
+    "wrapper": {
+      "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/StateParameterCheck.kt",
+      "sha256": "4af1d32e1fb2b3cbc52df9b5e53d4dcbfe20a55477b3060cdbf01be1da9bd59a",
+      "line_ranges": [
+        [
+          11,
+          17
+        ]
+      ]
+    },
+    "tests": {
+      "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/StateParameterCheckTest.kt",
+      "sha256": "3ea1e8f984980adcd5085df7342304c8eaca125c0842ce71785313debc98e066",
+      "line_ranges": [
+        [
+          18,
+          73
+        ]
+      ]
+    }
+  },
+  "boundary": "Opt-in component API convention. Full textual type regexes do not establish symbol identity and do not unwrap import aliases; adopting this policy is not a universal defect claim.",
+  "cases": [
+    {
+      "id": "positive",
+      "kind": "positive",
+      "purpose": "Expose a Compose State holder directly in a composable API.",
+      "source_basis": [
+        "StateParameter.kt:13-20",
+        "StateParameterCheckTest.kt:18-33"
+      ],
+      "semantic_interpretation": "positive",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.State\n\n@Composable\nfun SearchLabel(query: State<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 21,
+          "text": "query"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 21,
+          "text": "query"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "valid-alternative",
+      "kind": "valid_alternative",
+      "purpose": "Expose the snapshot value and an event callback, not another state-holder spelling.",
+      "source_basis": [
+        "StateParameter.kt:22-25",
+        "StateParameterCheckTest.kt:62-73"
+      ],
+      "semantic_interpretation": "valid_alternative",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun SearchLabel(query: String, onQueryChange: (String) -> Unit) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "nullable-and-primitive-state",
+      "kind": "positive_control",
+      "purpose": "The tag recognizes nullable generic State and scalar IntState by exact regex.",
+      "source_basis": [
+        "StateParameter.kt:20",
+        "StateParameterCheckTest.kt:36-59",
+        "runtime1.5.0:IntState"
+      ],
+      "semantic_interpretation": "positive_control",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.IntState\nimport androidx.compose.runtime.State\n\n@Composable\nfun OptionalSearch(query: State<String>?, count: IntState) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 19,
+          "end_line": 8,
+          "end_column": 24,
+          "text": "query"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 42,
+          "end_line": 8,
+          "end_column": 47,
+          "text": "count"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 19,
+          "end_line": 8,
+          "end_column": 24,
+          "text": "query"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 42,
+          "end_line": 8,
+          "end_column": 47,
+          "text": "count"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "additional_api_source_requirements": [
+        "androidx.compose.runtime.IntState:verified-in-1.5.0"
+      ],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "suppression-neighbor",
+      "kind": "suppression_neighbor",
+      "purpose": "The public registered name StateParam, not wrapper class StateParameterCheck, scopes suppression.",
+      "source_basis": [
+        "ComposeRuleSetProvider.kt:64",
+        "StateParameter.kt:13-16",
+        "detekt:Suppressions.kt:19-45"
+      ],
+      "semantic_interpretation": "suppression_neighbor",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.State\n\n@Suppress(\"Compose:StateParam\")\n@Composable\nfun QuietLabel(query: State<String>) { }\n\n@Composable\nfun VisibleLabel(query: State<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 11,
+          "column": 17,
+          "end_line": 11,
+          "end_column": 22,
+          "text": "query"
+        }
+      ],
+      "suppressed_targets": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 15,
+          "end_line": 8,
+          "end_column": 20,
+          "text": "query"
+        }
+      ],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 11,
+          "column": 17,
+          "end_line": 11,
+          "end_column": 22,
+          "text": "query"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "state-import-alias",
+      "kind": "alias_control",
+      "purpose": "An imported alias of genuine Compose State is missed by the full-text regex.",
+      "source_basis": [
+        "StateParameter.kt:15-20"
+      ],
+      "semantic_interpretation": "known_syntax_false_negative_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.State as SnapshotValue\n\n@Composable\nfun SearchLabel(query: SnapshotValue<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "unrelated-state-homonym",
+      "kind": "homonym_control",
+      "purpose": "An application data holder named State is not the Compose API but still matches.",
+      "source_basis": [
+        "StateParameter.kt:15-20"
+      ],
+      "semantic_interpretation": "known_syntax_false_positive_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\ndata class State<T>(val item: T)\n\n@Composable\nfun SearchLabel(query: State<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 21,
+          "text": "query"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 21,
+          "text": "query"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "selected-main-excludes-test",
+      "kind": "source_set_control",
+      "purpose": "Select the valid main source only; the captured test file contains the ordinary positive trigger.",
+      "source_basis": [
+        "detekt-provider:compilation-membership",
+        "fixture:positive",
+        "fixture:valid-alternative"
+      ],
+      "semantic_interpretation": "unselected_source_is_not_analyzed_or_qualified",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun SearchLabel(query: String, onQueryChange: (String) -> Unit) { }\n",
+        "src/test/kotlin/TestOnly.kt": "package fixtures.compose.outside\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.State\n\n@Composable\nfun SearchLabel(query: State<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "excluded_positive_oracle": [
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 21,
+          "text": "query"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    }
+  ],
+  "observation": {
+    "actual_execution": null,
+    "tested": false,
+    "qualified": false,
+    "real_world_precision": null,
+    "coverage_certificate": null
+  }
+}

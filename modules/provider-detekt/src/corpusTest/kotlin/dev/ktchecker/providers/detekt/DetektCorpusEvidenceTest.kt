@@ -12,7 +12,8 @@ import kotlin.test.*
 class DetektCorpusEvidenceTest {
     @TempDir lateinit var temporary: Path
     private fun repository(): Path = Files.createDirectory(temporary.resolve("repository"))
-    private fun sidecar(cohort: String = DetektCorpusCohort.NAME) = buildJsonObject {
+    private val exceptions = DetektCorpusCohort.EXCEPTIONS_CORE
+    private fun sidecar(cohort: String = exceptions.name) = buildJsonObject {
         put("schema_version", 1); put("provider_id", "detekt"); put("provider_version", DETEKT_VERSION)
         put("context", buildJsonObject { put("corpus_cohort", cohort) }); put("rules", JsonArray(emptyList()))
     }
@@ -27,7 +28,7 @@ class DetektCorpusEvidenceTest {
 
     @Test fun `fresh anchored events cannot overwrite or append to an earlier event`() {
         val root = repository()
-        DetektCorpusEvidence(root, "build/evidence/corpus").use { evidence ->
+        DetektCorpusEvidence(root, "build/evidence/corpus", exceptions).use { evidence ->
             val bytes = "original event\n".toByteArray()
             val reference = evidence.artifact("progress/0001.json", bytes)
             val path = root.resolve(reference["path"]!!.jsonPrimitive.content)
@@ -41,7 +42,7 @@ class DetektCorpusEvidenceTest {
 
     @Test fun `artifact traversal absolute and empty paths do not escape owned run`() {
         val root = repository()
-        DetektCorpusEvidence(root, "build/evidence/corpus").use { evidence ->
+        DetektCorpusEvidence(root, "build/evidence/corpus", exceptions).use { evidence ->
             for (relative in listOf("../escape.json", "/escape.json", "unsafe\\path.json", "a/../escape.json", ""))
                 assertFails { evidence.artifact(relative, "blocked".toByteArray()) }
             assertFalse(Files.exists(root.resolve("escape.json")))
@@ -55,17 +56,17 @@ class DetektCorpusEvidenceTest {
         val outside = Files.createDirectory(temporary.resolve("outside"))
         Files.createDirectories(root.resolve("build"))
         Files.createSymbolicLink(root.resolve("build/linked"), outside)
-        assertFails { DetektCorpusEvidence(root, "build/linked/corpus") }
+        assertFails { DetektCorpusEvidence(root, "build/linked/corpus", exceptions) }
         assertFalse(Files.exists(outside.resolve("corpus")))
         Files.createSymbolicLink(root.resolve("providers"), outside)
-        assertFails { DetektCorpusEvidence(root, null) }
+        assertFails { DetektCorpusEvidence(root, null, exceptions) }
         assertFalse(Files.exists(outside.resolve("detekt-fixtures")))
     }
 
     @Test fun `symlink artifact parent and replaced run identity prevent subsequent writes`() {
         val root = repository()
         val outside = Files.createDirectory(temporary.resolve("outside"))
-        DetektCorpusEvidence(root, "build/evidence/corpus").use { evidence ->
+        DetektCorpusEvidence(root, "build/evidence/corpus", exceptions).use { evidence ->
             evidence.artifact("kept.json", "retained".toByteArray())
             Files.createSymbolicLink(evidence.runDirectory.resolve("linked"), outside)
             assertFails { evidence.artifact("linked/escape.json", "blocked".toByteArray()) }
@@ -81,7 +82,7 @@ class DetektCorpusEvidenceTest {
 
     @Test fun `cohort withdrawal preserves original bytes and never touches ordinary sidecars`() {
         val root = repository()
-        DetektCorpusEvidence(root, null).use { evidence ->
+        DetektCorpusEvidence(root, null, exceptions).use { evidence ->
             val ordinary = evidence.root.resolve("evidence/verified-jvm-syntax-native-preview1.json")
             Files.writeString(ordinary, "ordinary original")
             val original = sidecar()
@@ -98,11 +99,67 @@ class DetektCorpusEvidenceTest {
         }
     }
 
+    @Test fun `each selected cohort owns only its own live path and prior bytes`() {
+        val root = repository()
+        val originals = linkedMapOf<Path, ByteArray>()
+        for (selected in DetektCorpusCohort.all) {
+            DetektCorpusEvidence(root, "build/evidence/corpus", selected).use { evidence ->
+                assertSame(selected, evidence.cohort)
+                assertTrue(evidence.runDirectory.fileName.toString().endsWith("-${selected.evidenceStem}-${selected.name}"))
+                evidence.publish(sidecar(selected.name))
+                val live = evidence.root.resolve(evidence.liveRelative)
+                assertEquals("verified-jvm-${selected.evidenceStem}-${selected.name}-native-preview1.json", live.fileName.toString())
+                assertFalse(live in originals)
+                originals[live] = Files.readAllBytes(live)
+            }
+        }
+        val preservedNames = DetektCorpusCohort.preProtocol.map { "verified-jvm-${it.evidenceStem}-${it.name}-native-preview1.json" }.toSet()
+        assertEquals(6, originals.keys.count { it.fileName.toString() in preservedNames })
+        val priorNames = DetektCorpusCohort.preObservability.map { "verified-jvm-${it.evidenceStem}-${it.name}-native-preview1.json" }.toSet()
+        assertEquals(7, originals.keys.count { it.fileName.toString() in priorNames })
+        val preLocalNames = DetektCorpusCohort.preLocalShapes.map { "verified-jvm-${it.evidenceStem}-${it.name}-native-preview1.json" }.toSet()
+        assertEquals(8, originals.keys.count { it.fileName.toString() in preLocalNames })
+        assertEquals(11, originals.size)
+        val ordinary = root.resolve("build/evidence/corpus/detekt/evidence/verified-jvm-syntax-native-preview1.json")
+        Files.writeString(ordinary, "ordinary unchanged")
+        for (selected in DetektCorpusCohort.all) {
+            DetektCorpusEvidence(root, "build/evidence/corpus", selected).use { evidence ->
+                val live = evidence.root.resolve(evidence.liveRelative)
+                evidence.prepareCohort()
+                assertContentEquals(originals.getValue(live), Files.readAllBytes(evidence.runDirectory.resolve("prior-live-sidecar.json")))
+                assertFalse(Files.exists(live))
+                evidence.withdrawCohort() // Already absent; no other named cohort is a fallback target.
+                for ((other, bytes) in originals) if (other != live) assertContentEquals(bytes, Files.readAllBytes(other))
+                assertEquals("ordinary unchanged", Files.readString(ordinary))
+                evidence.publish(sidecar(selected.name))
+                assertContentEquals(originals.getValue(live), Files.readAllBytes(live))
+            }
+        }
+    }
+
+    @Test fun `another recognized cohort cannot be published or withdrawn through the selected path`() {
+        val root = repository()
+        for (selected in DetektCorpusCohort.all) {
+            val other = DetektCorpusCohort.all.first { it !== selected }
+            DetektCorpusEvidence(root, "build/evidence/corpus", selected).use { evidence ->
+                val live = evidence.root.resolve(evidence.liveRelative)
+                val wrong = sidecar(other.name)
+                assertFailsWith<IllegalArgumentException> { evidence.publish(wrong) }
+                assertFalse(Files.exists(live))
+                Files.writeString(live, wrong.toString())
+                assertFailsWith<IllegalArgumentException> { evidence.prepareCohort() }
+                assertFailsWith<IllegalArgumentException> { evidence.withdrawCohort() }
+                assertEquals(wrong.toString(), Files.readString(live))
+                assertFalse(Files.exists(evidence.runDirectory.resolve("prior-live-sidecar.json")))
+            }
+        }
+    }
+
     @Test fun `live cleanup refuses symlink wrong cohort and replacement file identities`() {
         val root = repository()
         val original = temporary.resolve("outside-original.json")
         Files.writeString(original, sidecar().toString())
-        DetektCorpusEvidence(root, "build/evidence/corpus").use { evidence ->
+        DetektCorpusEvidence(root, "build/evidence/corpus", exceptions).use { evidence ->
             val live = evidence.root.resolve(evidence.liveRelative)
             Files.createSymbolicLink(live, original)
             assertFails { evidence.withdrawCohort() }
@@ -125,7 +182,7 @@ class DetektCorpusEvidenceTest {
         val root = repository()
         val original = temporary.resolve("outside-original.json")
         Files.writeString(original, sidecar().toString())
-        DetektCorpusEvidence(root, "build/evidence/corpus").use { evidence ->
+        DetektCorpusEvidence(root, "build/evidence/corpus", exceptions).use { evidence ->
             val live = evidence.root.resolve(evidence.liveRelative)
             Files.createLink(live, original)
             assertFails { evidence.withdrawCohort() }
@@ -138,7 +195,7 @@ class DetektCorpusEvidenceTest {
 
     @Test fun `private scratch and every job ancestor remain after evidence close`() {
         val root = repository()
-        val evidence = DetektCorpusEvidence(root, "build/evidence/corpus")
+        val evidence = DetektCorpusEvidence(root, "build/evidence/corpus", exceptions)
         val scratch = evidence.createRetainedScratch()
         Files.writeString(scratch.resolve("retained-synthetic-job.json"), "not a real process")
         assertEquals("rwx------", java.nio.file.attribute.PosixFilePermissions.toString(Files.getPosixFilePermissions(scratch)))
@@ -152,7 +209,7 @@ class DetektCorpusEvidenceTest {
 
     @Test fun `late deadline after publication rolls back only live leaving explicit candidates`() {
         val root = repository()
-        DetektCorpusEvidence(root, "build/evidence/corpus").use { evidence ->
+        DetektCorpusEvidence(root, "build/evidence/corpus", exceptions).use { evidence ->
             val candidate = JsonObject(sidecar() + mapOf("candidate_only" to JsonPrimitive(true), "run_complete" to JsonPrimitive(false)))
             evidence.artifact("candidate-sidecar.json", candidate.toString().toByteArray())
             val scratch = evidence.createRetainedScratch()

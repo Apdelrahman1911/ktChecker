@@ -1,0 +1,106 @@
+{
+  "files": {
+    "data/rules-core.json": {
+      "bytes": 4989971,
+      "file": "rules-core.json.txt",
+      "sha256": "e49d7317951077d55a68df30387915c263f21dd3972caecf58f47138d885e014"
+    },
+    "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt": {
+      "bytes": 3893,
+      "file": "CompilerRuleRegistry.kt.txt",
+      "sha256": "4acda521ed44c2c30232c2ebd47ef4ed7ecde85e589736d48a98937a0191e667"
+    },
+    "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt": {
+      "bytes": 28624,
+      "file": "KotlinJvmCompilerProvider.kt.txt",
+      "sha256": "3b631237d98703f077ac2af665c782af4213f69fdf203bd4d426f55a70274e63"
+    },
+    "modules/provider-compiler/src/main/resources/compiler-rule-map.json": {
+      "bytes": 2609377,
+      "file": "compiler-rule-map.json.txt",
+      "sha256": "f05c525e450c35cd7a7f701361fdb6467e00e7afd82a1c7cb4cfb60d728841e5"
+    },
+    "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerCheckerActivationTest.kt": {
+      "bytes": 8364,
+      "file": "CompilerCheckerActivationTest.kt.txt",
+      "sha256": "e445c44479e6ac15c8aa17e79167ed557f1240243934564e66eaf0eb03489da6"
+    },
+    "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureDiagnosticBreadthTest.kt": {
+      "bytes": 47236,
+      "file": "CompilerFixtureDiagnosticBreadthTest.kt.txt",
+      "sha256": "e5c67dfd4dd109f75d557052f039da6696577d277b32c8f44c469683c534c603"
+    },
+    "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureNullabilityTest.kt": {
+      "bytes": 38728,
+      "file": "CompilerFixtureNullabilityTest.kt.txt",
+      "sha256": "786b9cb14b8c5ea0462d82244a40a9c7dd133d13a25cf12e68a70113532bf966"
+    },
+    "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureRunner.kt": {
+      "bytes": 147604,
+      "file": "CompilerFixtureRunner.kt.txt",
+      "sha256": "9ad5e860a3b7fe303bc28e9c5aedef51d6918909abab4c04888ef93c49935046"
+    },
+    "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerProviderTest.kt": {
+      "bytes": 20254,
+      "file": "CompilerProviderTest.kt.txt",
+      "sha256": "39176ac8f5b79ce775386357878509e25a9541d2837e40a77902ed6c8b3fcc7f"
+    },
+    "providers/compiler-fixtures/generate_rule_map.py": {
+      "bytes": 3586,
+      "file": "generate_rule_map.py.txt",
+      "sha256": "12836b3b2f8d2ed24727ff1c2b96c9a1180b7c2ac3be29fc1b8dbcf6cc22910c"
+    },
+    "providers/compiler-fixtures/test_checker_activation.py": {
+      "bytes": 20741,
+      "file": "test_checker_activation.py.txt",
+      "sha256": "cc9b0ee1f1fbfe8afd73c17816bb592e975921526bd16a6217c14ea40118c763"
+    },
+    "providers/compiler-fixtures/test_diagnostic_breadth.py": {
+      "bytes": 29472,
+      "file": "test_diagnostic_breadth.py.txt",
+      "sha256": "93de1bdd142c939864a1a72b39ccbbfc4161663c18e8e85db71633c5e5dedbe2"
+    },
+    "providers/compiler-fixtures/test_diagnostic_breadth_hookup.py": {
+      "bytes": 123491,
+      "file": "test_diagnostic_breadth_hookup.py.txt",
+      "sha256": "4b18f75ae9067b75e4177345a9aa3f33d2e62e34ba629be271511d5ce7c86c09"
+    },
+    "providers/compiler-fixtures/test_nullability_protocols.py": {
+      "bytes": 24837,
+      "file": "test_nullability_protocols.py.txt",
+      "sha256": "796f6d39d32527185855de0b4647e4966e5e7d6631108a42aeab98ec99836b2f"
+    },
+    "providers/compiler-fixtures/test_nullability_protocols_hookup.py": {
+      "bytes": 39418,
+      "file": "test_nullability_protocols_hookup.py.txt",
+      "sha256": "1a96f723677a80d94b2d2eb9ab10acd8856ce0cbecec19ef6e51b20cd57acbd0"
+    },
+    "providers/compiler-fixtures/test_original42_selectors.py": {
+      "bytes": 12745,
+      "file": "test_original42_selectors.py.txt",
+      "sha256": "7103af7c1da9f92664e7f9cee7f1fca0e7ea5926248e4bef07b615c0106941b0"
+    },
+    "providers/compiler-fixtures/test_type_boundaries_supplemental.py": {
+      "bytes": 14995,
+      "file": "test_type_boundaries_supplemental.py.txt",
+      "sha256": "6a357412027c4d34ac91fea36aeccdba3b08454b96d7287c86313a9506e910cb"
+    },
+    "providers/coverage/current-inputs.json": {
+      "bytes": 19723,
+      "file": "current-inputs.json.txt",
+      "sha256": "08d88559f95f86557efaa9b7663c8b16e66991f3548d119ec71af1b756f4b7a3"
+    }
+  },
+  "kind": "immutable_SOURCE_test_DATA_only_not_a_runtime_registry_or_execution_witness",
+  "legacy_contract": "kotlin-compiler-2.4.21-common443-legacy-v1",
+  "never_execute_or_import_txt_payloads": true,
+  "no_runtime_loader_or_selector_uses_this_directory": true,
+  "pre_common_activation_map": {
+    "bytes": 2609961,
+    "file": "pre-common-activation-compiler-rule-map.json.txt",
+    "sha256": "0db373ac11f29b911317d12a51426ce690c50c3a02e327d086879541df7cc29c",
+    "source_packet": "/tmp/ktc-compiler-common-checker-activation-r1-20261105-7z_l_qh6",
+    "source_packet_seal_sha256": "a833e3f269e5b2de46d44911bbb51c4ed9788d2253617fc1d8f072ec60fc7eeb"
+  },
+  "schema_version": 1
+}

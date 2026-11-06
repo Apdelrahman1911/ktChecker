@@ -74,10 +74,14 @@ kotlin {
         getByName("androidHostTest").dependencies { implementation(kotlin("test-junit")) }
 
         when (negativeCase) {
-            "missing-actual" -> getByName("iosMain").kotlin.setSrcDirs(emptyList<String>())
-            "wrong-actual" -> getByName("iosMain").kotlin.setSrcDirs(
-                listOf("negative/wrong-actual/iosMain")
-            )
+            // The default hierarchy creates iosMain after this DSL block.
+            // Observe that exact source set lazily; keep both compiler negatives.
+            "missing-actual" -> matching { sourceSet -> sourceSet.name == "iosMain" }.configureEach {
+                kotlin.setSrcDirs(emptyList<String>())
+            }
+            "wrong-actual" -> matching { sourceSet -> sourceSet.name == "iosMain" }.configureEach {
+                kotlin.setSrcDirs(listOf("negative/wrong-actual/iosMain"))
+            }
             "new-api" -> getByName("androidMain").kotlin.srcDir("negative/new-api/androidMain")
         }
     }

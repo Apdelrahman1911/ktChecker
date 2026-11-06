@@ -7,8 +7,10 @@ import dev.ktchecker.contracts.SnapshotManifest
 import dev.ktchecker.projectmodel.*
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.SecureDirectoryStream
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.serialization.encodeToString
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.io.TempDir
 import kotlin.test.*
 
@@ -45,6 +47,11 @@ class ProjectModelAuditTest {
             compiler = artifact("compiler.bin")
             runtime = artifact("runtime.bin")
         }
+
+        // Match the importer's actual filesystem-root capability probe. Unexpected I/O
+        // errors remain failures; an OS label or successful ordinary read grants nothing.
+        fun anchoredReadsSupported(): Boolean =
+            Files.newDirectoryStream(root.root).use { it is SecureDirectoryStream<*> }
 
         fun file(path: String): ModelFile {
             val bytes = Files.readAllBytes(root.resolve(path))
@@ -121,9 +128,71 @@ class ProjectModelAuditTest {
 
     private fun bytes(graph: GradleProjectExport) = ContractJson.encodeToString(graph).toByteArray()
 
+    private fun anchoredFixture(): Fixture = Fixture().also { fixture ->
+        // Abort before any assertFailsWith wrapper: unavailable anchored reads must not
+        // become evidence that an unrelated graph/authority negative control passed.
+        assumeTrue(fixture.anchoredReadsSupported(),
+            "Anchored no-follow model reads unavailable on this filesystem; no successful model import or graph-control coverage is claimed")
+    }
+
+    @Test
+    fun missingOrRetargetedIngressAuthorityIsRejectedBeforeAnyOwnerCallback() {
+        val fixture = Fixture()
+        val graph = fixture.graph()
+        val request = fixture.request(graph)
+        val raw = bytes(graph)
+        val calls = AtomicInteger()
+        val permit = ModelIngressPermit(request, Digests.sha256("TEST-ONLY Gradle runtime"),
+            verifySnapshot = { calls.incrementAndGet() },
+            verifyExecutedExport = { calls.incrementAndGet() },
+            verifyArtifact = { calls.incrementAndGet() },
+            verifyModelInputs = { calls.incrementAndGet() })
+        assertEquals("model_ingress_not_authorized", assertFailsWith<ProjectModelException> {
+            ProjectModelImporter().import(request, raw)
+        }.code)
+        val importer = ProjectModelImporter(ExactModelIngressAuthority(permit))
+        for (retargeted in listOf(
+            request.copy(configurationDigest = Digests.sha256("different-policy")),
+            request.copy(namespace = namespace.copy(lineageId = "another")),
+        )) {
+            assertEquals("model_ingress_not_authorized", assertFailsWith<ProjectModelException> {
+                importer.import(retargeted, raw)
+            }.code)
+        }
+        assertEquals(0, calls.get())
+    }
+
+    @Test
+    fun actualAnchoredReadCapabilityControlsAdmissionWithoutFallback() {
+        val fixture = Fixture()
+        val graph = fixture.graph()
+        val request = fixture.request(graph)
+        val raw = bytes(graph)
+        val calls = AtomicInteger()
+        val permit = fixture.permit(request, graph) { assertEquals(graph, it); calls.incrementAndGet() }
+        val importer = ProjectModelImporter(ExactModelIngressAuthority(permit))
+        if (fixture.anchoredReadsSupported()) {
+            assertEquals(ModelCompleteness.COMPLETE, importer.import(request, raw).context("a-main", policy).completeness)
+            assertEquals(2, calls.get())
+        } else {
+            // No assumption here: exercise the real production fail-closed path. Ordinary
+            // synthetic callback reads cannot substitute for anchored model input reads.
+            assertEquals("model_secure_io_unavailable", assertFailsWith<ProjectModelException> {
+                importer.import(request, raw)
+            }.code)
+            assertEquals(1, calls.get())
+        }
+        // A permit is consumed even when input admission fails; neither branch can replay.
+        val beforeReplay = calls.get()
+        assertEquals("model_ingress_mismatch_or_replay", assertFailsWith<ProjectModelException> {
+            importer.import(request, raw)
+        }.code)
+        assertEquals(beforeReplay, calls.get())
+    }
+
     @Test
     fun callerExportCannotGrantAuthorityAndPermitCannotRetargetOrReplay() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val graph = fixture.graph()
         val request = fixture.request(graph)
         val raw = bytes(graph)
@@ -131,15 +200,19 @@ class ProjectModelAuditTest {
             ProjectModelImporter().import(request, raw)
         }.code)
         val importer = ProjectModelImporter(ExactModelIngressAuthority(fixture.permit(request, graph)))
-        assertFailsWith<ProjectModelException> { importer.import(request.copy(configurationDigest = Digests.sha256("different-policy")), raw) }
-        assertFailsWith<ProjectModelException> { importer.import(request.copy(namespace = namespace.copy(lineageId = "another")), raw) }
+        assertEquals("model_ingress_not_authorized", assertFailsWith<ProjectModelException> {
+            importer.import(request.copy(configurationDigest = Digests.sha256("different-policy")), raw)
+        }.code)
+        assertEquals("model_ingress_not_authorized", assertFailsWith<ProjectModelException> {
+            importer.import(request.copy(namespace = namespace.copy(lineageId = "another")), raw)
+        }.code)
         assertEquals(ModelCompleteness.COMPLETE, importer.import(request, raw).context("a-main", policy).completeness)
         assertEquals("model_ingress_mismatch_or_replay", assertFailsWith<ProjectModelException> { importer.import(request, raw) }.code)
     }
 
     @Test
     fun byteIdenticalFileMovingBetweenAcceptedMembershipsCannotProduceAnEmptyImpactPlan() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val graph = fixture.graph()
         val before = fixture.admit(graph)
         val api = fixture.file("src/Api.kt")
@@ -166,32 +239,33 @@ class ProjectModelAuditTest {
 
     @Test
     fun producersMustOwnTheSelectedModuleVariantAndAssociatedCompilation() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val graph = fixture.graph()
         val consumer = graph.compilations.single { it.id == "c-main" }
-        for (bad in listOf(
-            ModelProjectDependency(":a", "bApiElements", emptyMap(), "b-main"),
-            ModelProjectDependency(":a", "nonexistent-variant", emptyMap(), "a-main"),
-            ModelProjectDependency(":a", "aApiElements", emptyMap(), "missing-producer"),
+        assertEquals(ModelCompleteness.COMPLETE, fixture.admit(graph).context("a-main", policy).completeness)
+        for ((bad, expectedCode) in listOf(
+            ModelProjectDependency(":a", "bApiElements", emptyMap(), "b-main") to "model_producer_variant_invalid",
+            ModelProjectDependency(":a", "nonexistent-variant", emptyMap(), "a-main") to "model_producer_variant_invalid",
+            ModelProjectDependency(":a", "aApiElements", emptyMap(), "missing-producer") to "model_reference_invalid",
         )) {
-            assertFailsWith<ProjectModelException> {
+            assertEquals(expectedCode, assertFailsWith<ProjectModelException> {
                 fixture.admit(graph.copy(compilations = graph.compilations.map {
                     if (it.id == consumer.id) it.copy(projectDependencies = listOf(bad)) else it
                 }))
-            }
+            }.code)
         }
         for (wrong in listOf("b-main", "missing", "a-test")) {
-            assertFailsWith<ProjectModelException> {
+            assertEquals("model_reference_invalid", assertFailsWith<ProjectModelException> {
                 fixture.admit(graph.copy(compilations = graph.compilations.map {
                     if (it.id == "a-test") it.copy(associatedCompilationIds = listOf(wrong)) else it
                 }))
-            }
+            }.code)
         }
     }
 
     @Test
     fun importerDeepFreezesNewAssociatedAndGeneratorCollections() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val graph = fixture.graph()
         val model = fixture.admit(graph)
         val originalAssociated = graph.compilations.single { it.id == "a-test" }.associatedCompilationIds as MutableList<String>
@@ -210,7 +284,7 @@ class ProjectModelAuditTest {
 
     @Test
     fun unselectedUnknownEdgesRemainGraphGapsAndWidenAllRelevantObligations() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val graph = fixture.graph()
         val before = fixture.admit(graph)
         val issue = ModelIssue("project_variant_unmapped", "b-main", "Synthetic unresolved dependency outside selected compilation")
@@ -227,7 +301,7 @@ class ProjectModelAuditTest {
 
     @Test
     fun removedCompilationIsRetainedAsAnUnresolvedConsumerNotSilentlyRetired() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val graph = fixture.graph()
         val before = fixture.admit(graph)
         val after = fixture.admit(graph.copy(compilations = graph.compilations.filterNot { it.id == "c-main" }))
@@ -241,7 +315,7 @@ class ProjectModelAuditTest {
 
     @Test
     fun completeCaptureAuthorityMustBeRecheckedRatherThanInferredFromAnEmptyExportGapList() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val graph = fixture.graph()
         val calls = AtomicInteger()
         val acceptedRequest = fixture.request(graph)
@@ -262,7 +336,7 @@ class ProjectModelAuditTest {
 
     @Test
     fun classpathOrderChangeInvalidatesDependencyIdentityEvenWhenSourceBytesAreIdentical() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val graph = fixture.graph()
         val before = fixture.admit(graph)
         val after = fixture.admit(graph.copy(compilations = graph.compilations.map {
@@ -277,7 +351,7 @@ class ProjectModelAuditTest {
 
     @Test
     fun ordinaryOwnedByteChangeIncludesAssociatedAndReverseProjectConsumersWithoutLosingOldInputs() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val before = fixture.admit()
         Files.writeString(fixture.root.resolve("src/Api.kt"), "// Different synthetic source bytes\n")
         val after = fixture.admit()
@@ -290,7 +364,7 @@ class ProjectModelAuditTest {
 
     @Test
     fun anotherLineageOrPolicyCannotReuseVerifiedModelAuthority() {
-        val fixture = Fixture()
+        val fixture = anchoredFixture()
         val before = fixture.admit()
         val other = fixture.admit(identity = namespace.copy(lineageId = "another-lineage"))
         assertEquals("impact_namespace_mismatch", assertFailsWith<ProjectModelException> {

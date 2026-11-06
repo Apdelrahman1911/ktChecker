@@ -18,70 +18,148 @@ import java.nio.file.StandardOpenOption.READ
 import java.nio.file.attribute.BasicFileAttributeView
 import java.security.MessageDigest
 
-/** Verified owner-export ingress. Parsing/export flags alone never construct an attested model. */
+/** Verified owner-export ingress. The COMPLETE permit contract and returned nominal type stay strict. */
 class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelIngressAuthority.DENY) {
-    fun import(request: ModelImportRequest, rawExport: ByteArray): VerifiedProjectModel {
-        val frozenRequest = freezeRequest(request)
-        val bytes = rawExport.copyOf()
-        if (bytes.size !in 1..MAX_EXPORT_BYTES || Digests.sha256(bytes) != frozenRequest.exportDigest) {
-            throw ProjectModelException("model_export_digest_or_size", "Model export bytes differ from the authorized bounded report.")
-        }
-        validateRequest(frozenRequest)
-        val permit = authority.authorize(frozenRequest)
+    fun import(request: ModelImportRequest, rawExport: ByteArray): VerifiedProjectModel =
+        importSelected(request, rawExport, ModelExporterAdapter.LEGACY_2_4_21)
+
+    /** Explicit owner-selected experiment; never inferred from versions, JSON or a digest.
+     * A COMPLETE owner ingress permit is still mandatory. This grants no compiler/FIR roles. */
+    fun importKgp2410(request: ModelImportRequest, rawExport: ByteArray): VerifiedProjectModel =
+        importSelected(request, rawExport, ModelExporterAdapter.EXPERIMENTAL_2_4_10)
+
+    private fun importSelected(request: ModelImportRequest, rawExport: ByteArray,
+                               adapter: ModelExporterAdapter): VerifiedProjectModel {
+        val input = prepareModelImportBytes(request, rawExport, adapter)
+        val permit = authority.authorize(input.request)
             ?: throw ProjectModelException("model_ingress_not_authorized", "An exact verified owner Gradle export receipt is required.")
-        permit.consume(frozenRequest)
-        permit.verifySnapshot()
-        permit.verifyExecutedExport()
-        val text = bytes.toString(Charsets.UTF_8)
-        if (!text.toByteArray(Charsets.UTF_8).contentEquals(bytes)) throw ProjectModelException("model_export_utf8", "Invalid model UTF-8.")
-        val parsed = try { ContractJson.decodeFromString<GradleProjectExport>(text) }
-        catch (e: Exception) { throw ProjectModelException("model_export_schema", "Malformed/unknown model report, not an empty graph.", e) }
-        val graph = freezeExport(parsed)
-        permit.verifyModelInputs(graph)
-        val issues = validateExport(frozenRequest, graph)
-        val artifacts = graph.buildscriptArtifacts + graph.externalConfigurationArtifacts + graph.compilations.flatMap { compilation ->
-            compilation.classpath + compilation.friendArtifacts + compilation.auxiliaryArtifacts + compilation.toolchain?.let {
-                it.compilerArtifacts + it.runtimeArtifacts + it.compilerPlugins
-            }.orEmpty()
+        permit.consume(input.request)
+        val facts = readModelImportFacts(input, ModelImportOrigin.Complete(permit))
+        return VerifiedProjectModel(input.request.namespace, input.request.snapshot, facts.graph, facts.identity,
+            immutable(facts.issues.distinct().sortedWith(compareBy<ModelIssue> { it.scopeId.orEmpty() }.thenBy { it.kind }.thenBy { it.detail })),
+            facts.contentEvidenceDigest, facts.roleLayouts, facts.roleRejections,
+            verifiedJvmProducedGraph(input.request, facts.graph, facts.identity.modelDigest, facts.issues,
+                facts.roleLayouts, facts.producedOrigins))
+    }
+}
+
+/** Frozen byte/structural facts only. Neither this record nor its digest is importer authority. */
+internal class ModelImportBytes(val request: ModelImportRequest, val bytes: ByteArray, val adapter: ModelExporterAdapter)
+internal class ModelImportFacts(val graph: GradleProjectExport, val identity: ProjectModelIdentity,
+    val issues: List<ModelIssue>, val contentEvidenceDigest: String,
+    val roleLayouts: Map<String, VerifiedJvmArgumentLayout>, val roleRejections: Map<String, String>,
+    val producedOrigins: Map<String, ModelJvmProducedOutputOrigin>)
+
+internal fun prepareModelImportBytes(request: ModelImportRequest, rawExport: ByteArray,
+    adapter: ModelExporterAdapter = ModelExporterAdapter.LEGACY_2_4_21): ModelImportBytes {
+    val frozen = freezeRequest(request)
+    val bytes = rawExport.copyOf()
+    if (bytes.size !in 1..ModelImportValidation.MAX_EXPORT_BYTES || Digests.sha256(bytes) != frozen.exportDigest) {
+        throw ProjectModelException("model_export_digest_or_size", "Model export bytes differ from the authorized bounded report.")
+    }
+    ModelImportValidation.validateRequest(frozen, adapter)
+    return ModelImportBytes(frozen, bytes, adapter)
+}
+
+/** Shared validation produces only facts. The two public importers choose DISTINCT nominal
+ * capabilities after entering through their exact sealed Complete/Observed origin branch. */
+internal fun readModelImportFacts(input: ModelImportBytes, origin: ModelImportOrigin): ModelImportFacts {
+    input.adapter.requireOrigin(origin)
+    val frozenRequest = input.request
+    val bytes = input.bytes
+    origin.verifySnapshot()
+    origin.verifyExecutedExport()
+    val text = bytes.toString(Charsets.UTF_8)
+    if (!text.toByteArray(Charsets.UTF_8).contentEquals(bytes)) throw ProjectModelException("model_export_utf8", "Invalid model UTF-8.")
+    val parsed = try { ContractJson.decodeFromString<GradleProjectExport>(text) }
+    catch (e: Exception) { throw ProjectModelException("model_export_schema", "Malformed/unknown model report, not an empty graph.", e) }
+    val graph = freezeExport(parsed)
+    input.adapter.requirePayload(graph)
+    origin.verifyInputs(graph)
+    val issues = ModelImportValidation.validateExport(frozenRequest, graph, input.adapter)
+    val roleCompilations = graph.compilations.filter { it.jvmArgumentRoles != null }
+    val roleOrigins = roleCompilations.associate { it.id to origin.verifyJvmArgumentOrigin(it) }
+    val producedCompilations = graph.compilations.filter { it.deferredJvmOutputs.isNotEmpty() }
+    val producedOrigins = producedCompilations.associate { it.id to origin.verifyJvmProducedOutputOrigin(it) }
+    producedCompilations.forEach { compilation -> producedOrigins[compilation.id]?.let { origin ->
+        verifyDeferredJvmOrigin(frozenRequest, graph, compilation, origin, roleOrigins)
+    } }
+    // verifyDeferredJvmOrigin has checked the ENTIRE graph and rejected every occurrence
+    // outside the one consumer classpath/friend role, including same-path digested artifacts.
+    val deferredArtifactPaths = producedCompilations.filter { producedOrigins[it.id] != null }
+        .flatMap { it.deferredJvmOutputs }.map { it.outputPath }.toSet()
+    val roleLayouts = linkedMapOf<String, VerifiedJvmArgumentLayout>()
+    val roleRejections = linkedMapOf<String, String>()
+    roleCompilations.forEach { compilation ->
+        val origin = roleOrigins[compilation.id]
+        if (origin == null) roleRejections[compilation.id] = "model_jvm_argument_origin_unavailable"
+        else try { roleLayouts[compilation.id] = classifyJvmArgumentLayout(frozenRequest, compilation, origin, graph.generatedInputs, producedOrigins[compilation.id]) }
+        catch (error: ProjectModelException) {
+            if (error.code != "model_jvm_arguments_unsupported") throw error
+            // Retain every raw fact and every preexisting global issue. An unselected empty
+            // source/cp or unsupported executable layout is NOT erased or a new graph gap.
+            // The selected compiler binding separately requires its live checked layout.
+            roleRejections[compilation.id] = error.code
         }
-        artifacts.distinctBy { it.path to it.digest }.forEach { artifact ->
-            if (artifact.digest == null) {
-                issues += ModelIssue(if (artifact in graph.buildscriptArtifacts || artifact in graph.externalConfigurationArtifacts) "buildscript_artifact_unavailable" else "artifact_unavailable",
-                    artifactScope(graph, artifact), "No immutable bytes for ${artifact.coordinate}.")
-            } else {
-                permit.verifyArtifact(artifact)
-                if (hashFile(Path.of(artifact.path), MAX_ARTIFACT_BYTES, artifact.size) != artifact.digest) {
-                    throw ProjectModelException("model_artifact_changed", "Resolved classpath/compiler/plugin/runtime bytes changed during ingress.")
-                }
+    }
+    val artifacts = graph.buildscriptArtifacts + graph.externalConfigurationArtifacts + graph.compilations.flatMap { compilation ->
+        compilation.classpath + compilation.friendArtifacts + compilation.auxiliaryArtifacts + compilation.toolchain?.let {
+            it.compilerArtifacts + it.runtimeArtifacts + it.compilerPlugins
+        }.orEmpty()
+    }
+    artifacts.distinctBy { it.path to it.digest }.forEach { artifact ->
+        if (artifact.digest == null && artifact.path in deferredArtifactPaths) {
+            // No byte claim is made. The exact typed pending obligation remains in issues.
+            // Old artifact_unavailable/exporter gaps are never filtered or reinterpreted.
+        } else if (artifact.digest == null) {
+            issues += ModelIssue(if (artifact in graph.buildscriptArtifacts || artifact in graph.externalConfigurationArtifacts) "buildscript_artifact_unavailable" else "artifact_unavailable",
+                ModelImportValidation.artifactScope(graph, artifact), "No immutable bytes for ${artifact.coordinate}.")
+        } else {
+            origin.verifyArtifact(artifact)
+            if (hashFile(Path.of(artifact.path), ModelImportValidation.MAX_ARTIFACT_BYTES, artifact.size) != artifact.digest) {
+                throw ProjectModelException("model_artifact_changed", "Resolved classpath/compiler/plugin/runtime bytes changed during ingress.")
             }
         }
-        // Registered capture/origin and external immutable artifact authority remain required;
-        // these byte checks are additional drift detection, not a before/after coherence proof.
-        permit.verifySnapshot()
-        permit.verifyExecutedExport()
-        permit.verifyModelInputs(graph)
-        artifacts.filter { it.digest != null }.distinctBy { it.path to it.digest }.forEach(permit.verifyArtifact)
-        val sourceDigest = canonicalDigest(ContractJson.encodeToJsonElement(frozenRequest.snapshot))
-        val modelDigest = canonicalDigest(ContractJson.encodeToJsonElement(graph))
-        val dependencyDigest = canonicalDigest(ContractJson.encodeToJsonElement(graph.compilations.map {
-            it.id to mapOf("classpath" to it.classpath, "friends" to it.friendArtifacts, "auxiliary" to it.auxiliaryArtifacts)
-        }))
-        val toolchainDigest = canonicalDigest(ContractJson.encodeToJsonElement(graph.compilations.map { it.id to it.toolchain }))
-        val identity = ProjectModelIdentity(frozenRequest.snapshot.snapshotId, sourceDigest, modelDigest, dependencyDigest,
-            toolchainDigest, frozenRequest.exporterDigest, permit.gradleRuntimeDigest, frozenRequest.configurationDigest)
-        val certificate = canonicalDigest(ContractJson.encodeToJsonElement(listOf(frozenRequest.digest(), permit.gradleRuntimeDigest,
-            sourceDigest, modelDigest, dependencyDigest, toolchainDigest)))
-        return VerifiedProjectModel(frozenRequest.namespace, frozenRequest.snapshot, graph, identity,
-            immutable(issues.distinct().sortedWith(compareBy<ModelIssue> { it.scopeId.orEmpty() }.thenBy { it.kind }.thenBy { it.detail })), certificate)
     }
+    // Registered capture/origin and external immutable artifact authority remain required;
+    // these byte checks are additional drift detection, not a before/after coherence proof.
+    origin.verifySnapshot()
+    origin.verifyExecutedExport()
+    origin.verifyInputs(graph)
+    roleCompilations.forEach { compilation ->
+        if (origin.verifyJvmArgumentOrigin(compilation) !== roleOrigins[compilation.id]) {
+            throw ProjectModelException("model_jvm_argument_origin_changed", "Original argument-role owner authority changed during ingress.")
+        }
+    }
+    producedCompilations.forEach { compilation ->
+        if (origin.verifyJvmProducedOutputOrigin(compilation) !== producedOrigins[compilation.id]) {
+            throw ProjectModelException("model_jvm_produced_output_origin_changed", "Deferred owner-edge authority changed during ingress.")
+        }
+    }
+    artifacts.filter { it.digest != null }.distinctBy { it.path to it.digest }.forEach(origin::verifyArtifact)
+    val sourceDigest = canonicalDigest(ContractJson.encodeToJsonElement(frozenRequest.snapshot))
+    val modelDigest = canonicalDigest(ContractJson.encodeToJsonElement(graph))
+    val dependencyDigest = canonicalDigest(ContractJson.encodeToJsonElement(graph.compilations.map {
+        it.id to mapOf("classpath" to it.classpath, "friends" to it.friendArtifacts, "auxiliary" to it.auxiliaryArtifacts)
+    }))
+    val toolchainDigest = canonicalDigest(ContractJson.encodeToJsonElement(graph.compilations.map { it.id to it.toolchain }))
+    val identity = ProjectModelIdentity(frozenRequest.snapshot.snapshotId, sourceDigest, modelDigest, dependencyDigest,
+        toolchainDigest, frozenRequest.exporterDigest, origin.gradleRuntimeDigest, frozenRequest.configurationDigest)
+    val certificate = canonicalDigest(ContractJson.encodeToJsonElement(listOf(frozenRequest.digest(), origin.gradleRuntimeDigest,
+        sourceDigest, modelDigest, dependencyDigest, toolchainDigest)))
+    return ModelImportFacts(graph, identity, immutable(issues), certificate, immutableMap(roleLayouts),
+        immutableMap(roleRejections), immutableMap(producedOrigins.mapNotNull { (id, value) -> value?.let { id to it } }.toMap()))
+}
 
-    private fun validateRequest(request: ModelImportRequest) {
+/** Authority-free bounded schema, structural and byte validators shared by both nominal paths. */
+internal object ModelImportValidation {
+    fun validateRequest(request: ModelImportRequest, adapter: ModelExporterAdapter = ModelExporterAdapter.LEGACY_2_4_21) {
         listOf(request.namespace.ownerId, request.namespace.workspaceId, request.namespace.worktreeId, request.namespace.lineageId,
             request.executionId).forEach { identifier(it) }
         listOf(request.snapshot.snapshotId, request.exportDigest, request.exporterDigest, request.configurationDigest).forEach { digest(it) }
         request.snapshot.parentSnapshotId?.let(::digest)
         identifier(request.snapshot.captureKind)
-        if (request.exporterDigest != GradleModelExporter.scriptDigest()) {
+        if (request.exporterDigest != adapter.scriptDigest()) {
             throw ProjectModelException("model_exporter_unavailable", "The authorized exporter is not this version-pinned adapter.")
         }
         if (request.snapshot.ownerId != request.namespace.ownerId || request.snapshot.workspaceId != request.namespace.workspaceId ||
@@ -97,8 +175,9 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
         request.snapshot.files.forEach { file -> logicalPath(file.path); digest(file.digest); requireBound(file.size >= 0, "snapshot size") }
     }
 
-    private fun validateExport(request: ModelImportRequest, graph: GradleProjectExport): MutableList<ModelIssue> {
-        if (graph.schemaVersion != 1 || graph.exporterId != GRADLE_MODEL_EXPORTER_ID) throw ProjectModelException("model_export_schema", "Unknown Gradle model schema/adapter.")
+    fun validateExport(request: ModelImportRequest, graph: GradleProjectExport,
+        adapter: ModelExporterAdapter = ModelExporterAdapter.LEGACY_2_4_21): MutableList<ModelIssue> {
+        if (graph.schemaVersion != 1 || graph.exporterId != adapter.exporterId) throw ProjectModelException("model_export_schema", "Unknown Gradle model schema/adapter.")
         identifier(graph.gradleVersion)
         requireBound(graph.modules.size in 1..1024 && graph.sourceSets.size <= 4096 && graph.compilations.size <= 4096, "model graph size")
         unique(graph.modules.map { it.id }, "modules"); unique(graph.sourceSets.map { it.id }, "source sets"); unique(graph.compilations.map { it.id }, "compilations")
@@ -109,6 +188,7 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
         val compilations = graph.compilations.associateBy { it.id }
         val moduleCompilations = graph.compilations.groupBy { it.moduleId }
         val issues = graph.issues.toMutableList()
+        issues += adapter.additionalIssues(graph)
         if (graph.compilations.isEmpty()) issues += ModelIssue("compilation_model_empty", null,
             "No actual compilation was exported; graph completeness and admission are nonvacuous.")
         val scopeIds = modules.keys + sets.keys + compilations.keys + graph.generatedInputs.map { it.taskPath }
@@ -226,6 +306,27 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
                 compilation.toolchain.runtimeArtifacts.isEmpty()) issues += ModelIssue("toolchain_unavailable", compilation.id, "Complete compiler/runtime identity is unavailable.")
             requireBound(compilation.compilerArguments.size <= 16_384, "compiler argument count")
             compilation.compilerArguments.forEach { requireBound(it.length <= 8192 && '\u0000' !in it, "compiler argument") }
+            requireBound(compilation.deferredJvmOutputs.size <= 1, "bounded preview producer roles")
+            compilation.deferredJvmOutputs.forEach { ref ->
+                identifier(ref.producerCompilationId); identifier(ref.producerCompileTaskPath); identifier(ref.outputPath)
+                requireBound(ref.producerCompilationId in compilations && ref.producerCompilationId != compilation.id &&
+                    ref.classpathIndex in compilation.classpath.indices && Path.of(ref.outputPath).isAbsolute &&
+                    Path.of(ref.outputPath).normalize().toString() == ref.outputPath &&
+                    (!ref.originalFriendPresent || ref.friend) &&
+                    ref.originalFriendPresent == ref.declaredFriendPresent, "deferred output role")
+                issues += deferredJvmIssue(compilation.id, ref)
+            }
+            compilation.jvmArgumentRoles?.let { roles ->
+                requireBound(roles.schemaVersion == 1 && roles.adapterId == JVM_ARGUMENT_ROLES_ADAPTER, "original JVM role schema")
+                requireBound(roles.sourcePaths.size <= 50_000, "original JVM source role count")
+                roles.sourcePaths.forEach { logicalPath(it) }
+                requireBound(roles.friendPathOperands.size <= 1, "bounded original friend operands")
+                roles.friendPathOperands.forEach(::identifier)
+                listOf(roles.compileTaskPath, roles.destinationPath, roles.selectedJdkHome, roles.pluginDataState).forEach(::identifier)
+                listOfNotNull(roles.classpathOperand, roles.jdkHomeOperand).forEach {
+                    requireBound(it.length <= 8192 && '\u0000' !in it, "original nullable JVM path operand")
+                }
+            }
         }
         graph.generatedInputs.forEach { generated ->
             identifier(generated.taskPath); generated.sourceSetIds.forEach { if (it !in sets) throw ProjectModelException("model_reference_invalid", "Unknown generated-source membership.") }
@@ -252,17 +353,15 @@ class ProjectModelImporter(private val authority: ModelIngressAuthority = ModelI
         return issues
     }
 
-    private fun artifactScope(graph: GradleProjectExport, artifact: ModelArtifact): String? = graph.compilations.singleOrNull {
+    fun artifactScope(graph: GradleProjectExport, artifact: ModelArtifact): String? = graph.compilations.singleOrNull {
         artifact in it.classpath || artifact in it.friendArtifacts || artifact in it.auxiliaryArtifacts || it.toolchain?.let { chain ->
             artifact in chain.compilerArtifacts || artifact in chain.runtimeArtifacts || artifact in chain.compilerPlugins
         } == true
     }?.id
 
-    private companion object {
-        const val MAX_EXPORT_BYTES = 16 * 1024 * 1024
-        const val MAX_SOURCE_BYTES = 32L * 1024 * 1024
-        const val MAX_ARTIFACT_BYTES = 512L * 1024 * 1024
-    }
+    const val MAX_EXPORT_BYTES = 16 * 1024 * 1024
+    const val MAX_SOURCE_BYTES = 32L * 1024 * 1024
+    const val MAX_ARTIFACT_BYTES = 512L * 1024 * 1024
 }
 
 internal fun compilationContext(model: VerifiedProjectModel, scope: RuleContext, configurationDigest: String): VerifiedCompilationContext {
@@ -285,7 +384,7 @@ internal fun compilationContext(model: VerifiedProjectModel, scope: RuleContext,
         classpath = immutable(compilation.classpath.mapNotNull { artifact -> artifact.digest?.let { ArtifactIdentity(artifact.coordinate, it, artifact.path) } }),
         compilerArguments = immutable(compilation.compilerArguments), modelDigest = model.identity.modelDigest, dependencyDigest = dependencyDigest,
         toolchainDigest = toolchainDigest, configurationDigest = configurationDigest, fullProject = fullyModeled,
-        policies = immutableMap(mapOf("ktchecker.model" to GRADLE_MODEL_EXPORTER_ID, "ktchecker.model-certificate" to model.ingressCertificate)),
+        policies = immutableMap(mapOf("ktchecker.model" to model.export.exporterId, "ktchecker.model-certificate" to model.ingressCertificate)),
         compilationFiles = immutable(compilation.sourceFiles.map { it.path }))
     val certificate = if (fullyModeled) canonicalDigest(ContractJson.encodeToJsonElement(listOf(model.ingressCertificate, compilation.id,
         context.modelDigest.orEmpty(), dependencyDigest, toolchainDigest.orEmpty(), configurationDigest))) else null
@@ -317,7 +416,9 @@ internal fun freezeExport(graph: GradleProjectExport): GradleProjectExport = gra
         toolchain = compilation.toolchain?.let { it.copy(compilerArtifacts = immutable(it.compilerArtifacts), runtimeArtifacts = immutable(it.runtimeArtifacts), compilerPlugins = immutable(it.compilerPlugins)) },
         compilerArguments = immutable(compilation.compilerArguments), friendArtifacts = immutable(compilation.friendArtifacts), producedVariants = immutable(compilation.producedVariants),
         associatedCompilationIds = immutable(compilation.associatedCompilationIds), auxiliaryInputFiles = immutable(compilation.auxiliaryInputFiles),
-        auxiliaryArtifacts = immutable(compilation.auxiliaryArtifacts)) }),
+        auxiliaryArtifacts = immutable(compilation.auxiliaryArtifacts),
+        jvmArgumentRoles = compilation.jvmArgumentRoles?.let { it.copy(sourcePaths = immutable(it.sourcePaths),
+            friendPathOperands = immutable(it.friendPathOperands)) }, deferredJvmOutputs = immutable(compilation.deferredJvmOutputs)) }),
     configurationInputs = immutable(graph.configurationInputs),
     generatedInputs = immutable(graph.generatedInputs.map { it.copy(sourceSetIds = immutable(it.sourceSetIds), inputFiles = immutable(it.inputFiles),
         outputFiles = immutable(it.outputFiles), outputRoots = immutable(it.outputRoots), inputProperties = immutableMap(it.inputProperties)) }),

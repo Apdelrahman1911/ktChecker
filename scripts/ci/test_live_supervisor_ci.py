@@ -11,6 +11,7 @@ from __future__ import annotations
 import ast
 from contextlib import ExitStack, contextmanager
 from dataclasses import replace
+import errno
 import io
 import json
 import os
@@ -40,8 +41,22 @@ def write(path: Path, raw: bytes) -> None:
     path.write_bytes(raw)
 
 
+def symlink_creation_unavailable(error: BaseException) -> bool:
+    if isinstance(error, NotImplementedError):
+        return True
+    if not isinstance(error, OSError):
+        return False
+    unavailable_errnos = {
+        getattr(errno, name, None)
+        for name in ("EPERM", "EACCES", "ENOSYS", "ENOTSUP", "EOPNOTSUPP")
+    }
+    unavailable_errnos.discard(None)
+    return error.errno in unavailable_errnos or getattr(error, "winerror", None) == 1314
+
+
 class Fixture:
     def __init__(self, root: Path, target="linux-x86_64", callbacks=None, setup_error=False, unknown_custody=False):
+        root = root.resolve()
         self.root, self.target = root, target
         self.system, self.machine, runner_os = HOSTS[target]
         self.host = runner.v1.normalized_host(self.system, self.machine)
@@ -375,6 +390,51 @@ class LiveFailurePathTests(unittest.TestCase):
                 self.assertEqual(("incomplete", "passed"),
                                  (result["control_scopes"][scope]["state"], result["control_scopes"][scope]["callback_state"]))
             properties = {row.attrib["name"]: row.attrib["value"] for row in ET.parse(fixture.config.junit).findall("./properties/property")}
+            self.assertEqual("true", properties["requires_matching_complete_json_and_successful_wrapper_exit"])
+
+    def test_symlink_unavailability_classifier_does_not_hide_unexpected_errors(self):
+        unexpected_errors = (
+            OSError(errno.EIO, "synthetic I/O fault"),
+            OSError(errno.ENOSPC, "synthetic storage fault"),
+            OSError(),
+            ValueError("synthetic unrelated error"),
+        )
+        for error in unexpected_errors:
+            with self.subTest(error_type=type(error).__name__, errno=getattr(error, "errno", None)):
+                self.assertFalse(symlink_creation_unavailable(error))
+
+    def test_canonical_fixture_root_alias_preserves_discovery_and_json_failure_injection(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            real = base / "real fixture"
+            real.mkdir()
+            alias = base / "fixture alias"
+            try:
+                alias.symlink_to(real, target_is_directory=True)
+            except (OSError, NotImplementedError) as error:
+                if symlink_creation_unavailable(error):
+                    self.skipTest("directory alias creation unavailable")
+                raise
+            for phase in ("discovery", "publication"):
+                (real / phase).mkdir()
+            fixture = Fixture(alias / "discovery")
+            self.assertEqual((real / "discovery").resolve(), fixture.root)
+            result = fixture.run()
+            self.assertEqual("passed", result["state"])
+            self.assertTrue(result["results_complete"] and result["persistence_complete"])
+            fixture = Fixture(alias / "publication")
+            publish = runner.recorder.publish_exclusive
+            def fail_json(path, raw):
+                if path == fixture.config.output:
+                    raise OSError("synthetic publication fault")
+                publish(path, raw)
+            with fixture.context(), patch.object(runner.recorder, "publish_exclusive", side_effect=fail_json):
+                result = runner.run(fixture.config)
+            self.assertEqual("incomplete", result["state"])
+            self.assertFalse(result["persistence_complete"])
+            self.assertFalse(fixture.config.output.exists())
+            properties = {row.attrib["name"]: row.attrib["value"]
+                          for row in ET.parse(fixture.config.junit).findall("./properties/property")}
             self.assertEqual("true", properties["requires_matching_complete_json_and_successful_wrapper_exit"])
 
 

@@ -2,6 +2,8 @@
 """Explicit owner/controller example, not a project importer or a model host.
 
 Creates two clients and synthetic immutable overlays in a NEW private directory.
+--prepare-only retains non-authorized records and never submits a review.
+Ordinary runs and explicit benchmark runs authorize their prepared profiles.
 Requires an owner-selected compiler JDK; does not download, prepare or copy one.
 The CLI, not this script's lightweight path preflight, verifies the complete
 link-free JDK 21 image. JAVA_HOME selects the independent broker JVM.
@@ -28,10 +30,14 @@ import stat
 import subprocess
 import sys
 import time
+import uuid
+
+import preview_benchmark as benchmark
 
 
 RULE = "ktc.compiler.common.abstract_member_not_implemented"
 CONTRACT = "ktchecker/preview-1"
+FINDING_WIRE_PROFILE = "ktchecker/finding-retrieval-attachments-1"
 COMPILER = "kotlin-compiler-jvm"
 UPSTREAM = "ABSTRACT_MEMBER_NOT_IMPLEMENTED"
 CONTAINMENT_PROTOCOL = "ktchecker-owned-child-supervisor/preview-1"
@@ -379,6 +385,8 @@ class BoundedProcess:
 
 
 class NdjsonClient:
+    """Profile acknowledgment is per response, never a cached connection handshake."""
+
     def __init__(self, transport: BoundedProcess):
         self.transport = transport
         self.counter = 0
@@ -395,22 +403,31 @@ class NdjsonClient:
         require(isinstance(method, str) and re.fullmatch(r"[a-z][a-zA-Z0-9_.]{0,127}", method) is not None and
                 isinstance(params, dict), "invalid_request")
         deadline = deadline if deadline is not None else self.transport.deadline(RPC_TIMEOUT_SECONDS)
-        data = encode_json({"id": identifier, "method": method, "params": params}, self.transport.limits.frame_bytes)
+        data = encode_json({"id": identifier, "method": method, "params": params,
+                            "findingWireProfile": FINDING_WIRE_PROFILE}, self.transport.limits.frame_bytes)
         self.transport.write_frame(data, deadline)
         response = parse_json(self.transport.read_frame(deadline), self.transport.limits.frame_bytes)
         require(response.get("contractVersion") == CONTRACT, "wrong_contract")
         require(type(response.get("id")) is str and response["id"] == identifier, "wrong_response_id")
         if "error" in response:
             raise ExampleError("rpc_rejected")  # Do not echo even the server's error code/message.
-        require(set(response) == {"contractVersion", "id", "result"} and isinstance(response["result"], dict),
-                "invalid_response")
+        # The peer may already have performed a mutating request. A bad success
+        # acknowledgment leaves its outcome uncertain: do not expose its result,
+        # infer rollback, retry, or replay the request automatically.
+        profile = response.get("findingWireProfile")
+        require(type(profile) is str and profile == FINDING_WIRE_PROFILE,
+                "finding_wire_profile_outcome_uncertain")
+        require(set(response) == {"contractVersion", "id", "result", "findingWireProfile"} and
+                isinstance(response["result"], dict), "invalid_response")
         require(time.monotonic() < deadline, "transport_timeout")
         return response["result"]
 
 
 def run_json_command(command: list[str], *, timeout: float = OWNER_TIMEOUT_SECONDS,
-                     limits: PipeLimits | None = None, contract_required: bool = True) -> tuple[dict, dict]:
-    deadline = BoundedProcess.deadline(timeout)
+                     limits: PipeLimits | None = None, contract_required: bool = True,
+                     deadline: float | None = None) -> tuple[dict, dict]:
+    deadline = BoundedProcess.deadline(timeout) if deadline is None else deadline
+    require(type(deadline) in (int, float) and math.isfinite(deadline) and deadline > time.monotonic(), "invalid_timeout")
     with BoundedProcess(command, limits) as transport:
         transport.process.stdin.close()
         response = parse_json(transport.read_frame(deadline), transport.limits.frame_bytes)
@@ -575,8 +592,10 @@ def scope_for(client_id: str) -> dict:
     return {"module": ":" + client_id, "sourceSet": "main", "target": "jvm", "compilation": "main"}
 
 
-def validate_prepared(client: dict, name: str, toolchain_digest: str) -> None:
-    require(isinstance(client, dict) and isinstance(client.get("prepared"), dict) and
+def validate_prepared(client: dict, name: str, toolchain_digest: str, *, source: str | None = None,
+                      patch_id: str = "patch-1", idempotency_key: str = "request-1",
+                      execution_authorized: bool = True) -> None:
+    require(type(execution_authorized) is bool and isinstance(client, dict) and isinstance(client.get("prepared"), dict) and
             isinstance(client.get("registration"), dict), "invalid_prepared_binding")
     prepared, registration = client["prepared"], client["registration"]
     require(prepared.get("contractVersion") == registration.get("contractVersion") == CONTRACT,
@@ -590,8 +609,8 @@ def validate_prepared(client: dict, name: str, toolchain_digest: str) -> None:
     require(isinstance(credential, dict) and credential.get("clientId") == name and
             isinstance(credential.get("token"), str) and re.fullmatch(r"[A-Za-z0-9_-]{43}", credential["token"]) is not None,
             "invalid_prepared_binding")
-    require(prepared.get("patchId") == "patch-1" and prepared.get("idempotencyKey") == "request-1" and
-            prepared.get("executionAuthorized") is True and
+    require(prepared.get("patchId") == patch_id and prepared.get("idempotencyKey") == idempotency_key and
+            prepared.get("executionAuthorized") is execution_authorized and
             prepared.get("coverageScope") == "explicit-rule-subset-not-full-release", "invalid_prepared_binding")
     input_value = prepared.get("input")
     require(isinstance(input_value, dict), "invalid_prepared_binding")
@@ -607,7 +626,7 @@ def validate_prepared(client: dict, name: str, toolchain_digest: str) -> None:
     files = snapshot.get("files")
     require(isinstance(files, list), "invalid_prepared_binding")
     own_files = [row for row in files if isinstance(row, dict) and row.get("path") == name + "/Main.kt"]
-    source_bytes = SOURCES[name].encode("utf-8")
+    source_bytes = (SOURCES[name] if source is None else source).encode("utf-8")
     require(len(own_files) == 1 and own_files[0].get("digest") == "sha256:" + hashlib.sha256(source_bytes).hexdigest() and
             type(own_files[0].get("size")) is int and own_files[0]["size"] == len(source_bytes), "invalid_prepared_binding")
 
@@ -784,7 +803,8 @@ class Controller:
         self.owner_transport.append(statistics)
         return response
 
-    def prepare(self) -> list[dict]:
+    def prepare(self, *, authorize_execution: bool) -> list[dict]:
+        require(type(authorize_execution) is bool, "invalid_execution_authorization")
         started = time.monotonic_ns()
         # Initialize CLI state while the NEW root is still empty. A foreign
         # pre-populated directory correctly fails the CLI's state initializer.
@@ -814,13 +834,17 @@ class Controller:
             spec_name, prepared_name = name + "-compilation.json", name + "-prepared.json"
             self.root.write_json(spec_name, compilation)
             prepared_path = self.root.file_path(prepared_name, must_be_new=True)
+            # Preparation-only is not a deferred execution grant. Never repair or
+            # upgrade a non-authorized record while reading it back.
+            authorization = ["--authorize-execution"] if authorize_execution else []
             response = self.call("prepare", "--request", str(self.root.file_path(spec_name)),
-                                 "--authorize-execution", "--out", str(prepared_path))
+                                 *authorization, "--out", str(prepared_path))
             require(provider_inspection(response.get("installedProviders")) == self.inspection,
                     "compiler_inspection_changed")
             client = {"prepared": self.root.read_json(prepared_name),
                       "registration": self.root.read_json(name + "-credentials.json")}
-            validate_prepared(client, name, self.inspection["toolchainDigest"])
+            validate_prepared(client, name, self.inspection["toolchainDigest"],
+                              execution_authorized=authorize_execution)
             require(client["prepared"]["input"]["snapshot"]["snapshotId"] == base_snapshot, "invalid_prepared_binding")
             clients.append(client)
         self.preparation_ms = (time.monotonic_ns() - started) / 1e6
@@ -829,7 +853,7 @@ class Controller:
     def review(self, clients: list[dict]) -> dict:
         require(self.inspection is not None and len(clients) == 2, "owner_preparation_required")
         for client, name in zip(clients, SOURCES):
-            validate_prepared(client, name, self.inspection["toolchainDigest"])
+            validate_prepared(client, name, self.inspection["toolchainDigest"], execution_authorized=True)
         self.root.verify()
         started = time.monotonic_ns()
         with BoundedProcess(self.command + ["rpc", "--workers", "2"]) as transport:
@@ -911,27 +935,479 @@ class Controller:
         return report
 
 
+def read_benchmark_scenario(path: Path, selected: str) -> benchmark.Scenario:
+    # A bounded data input, never executable scenario code or a model/host receipt.
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+        with os.fdopen(fd, "rb") as stream:
+            info = os.fstat(stream.fileno())
+            require(stat.S_ISREG(info.st_mode) and info.st_size <= 65_536, "benchmark_scenarios_invalid")
+            data = stream.read(65_537)
+        return benchmark.select_scenario(parse_json(data, 65_536), selected)
+    except OSError:
+        raise ExampleError("benchmark_scenarios_unavailable") from None
+
+
+class OwnerCaptureSession:
+    """A lazy, private trusted-owner pipe. Never expose it to ordinary review clients.
+
+    Reuses only overlay/explicit compiler-subset preparation, not provider execution.
+    Per-frame consent and installation identity are mandatory. Any error poisons the
+    pipe; mutation may already have happened, so no reconnect, replay or fallback.
+    """
+
+    def __init__(self, command: list[str], root: PrivateDirectory, inspection: dict):
+        digest = inspection.get("toolchainDigest") if isinstance(inspection, dict) else None
+        require(type(digest) is str and DIGEST.fullmatch(digest) is not None, "invalid_provider_inspection")
+        self.command, self.root, self.inspection = tuple(command), root, inspection
+        self.toolchain_digest = digest
+        self.transport = self.rpc = None
+        self.poisoned = self.closed = False
+        self.startup = None
+        self.completed = 0
+        self.record = None
+
+    def _private_name(self, raw: str, *, must_be_new: bool = False) -> str:
+        require(type(raw) is str, "unsafe_private_filename")
+        name = Path(raw).name
+        selected = self.root.file_path(name, must_be_new=must_be_new)
+        require(raw == str(selected), "unsafe_output_path")
+        return name
+
+    def call(self, *args: str, deadline: float) -> tuple[dict, dict]:
+        require(not self.closed and not self.poisoned, "owner_capture_session_failed")
+        try:
+            require(type(deadline) in (int, float) and math.isfinite(deadline) and
+                    deadline > time.monotonic(), "invalid_timeout")
+            self.root.verify()
+            # Closed forms from this controller only. Never forward arbitrary CLI words.
+            if len(args) == 3 and args[:2] == ("overlay", "--request"):
+                method, consent, output_name = "owner.overlay", None, None
+            elif len(args) == 5 and args[:2] == ("prepare", "--request") and args[3] == "--out":
+                method, consent = "owner.prepare", False
+                output_name = self._private_name(args[4], must_be_new=True)
+            elif len(args) == 6 and args[:2] == ("prepare", "--request") and args[3:5] == ("--authorize-execution", "--out"):
+                method, consent = "owner.prepare", True
+                output_name = self._private_name(args[5], must_be_new=True)
+            else:
+                raise ExampleError("owner_capture_command_invalid")
+            document = self.root.read_json(self._private_name(args[2]))
+            params = {"document": document, "expectedToolchainDigest": self.toolchain_digest}
+            if method == "owner.prepare":
+                params["authorizeExecution"] = consent  # Required on EVERY frame, including explicit false.
+            # Preflight output and private inputs before startup/sending; this does not reserve output.
+            require(time.monotonic() < deadline, "transport_timeout")
+            if self.transport is None:
+                started = time.monotonic_ns()
+                self.startup = {"spawnStartedMonotonicNanos": started, "spawnObservedMillis": None,
+                                "firstSuccessfulCaptureReplyMillisFromSpawnStart": None,
+                                "startupIncludedInFirstCaptureLatency": True,
+                                "establishesCompilerExecutionOrWarmth": False}
+                self.transport = BoundedProcess([*self.command, "owner-capture-session", "--owner-action", "--workers", "0"])
+                self.startup["spawnObservedMillis"] = (time.monotonic_ns() - started) / 1e6
+                self.rpc = NdjsonClient(self.transport)
+            before = self.transport.statistics()
+            response = self.rpc.call(method, params, deadline=deadline)  # The same original absolute bound includes startup.
+            reply_observed = time.monotonic_ns()
+            self.root.verify()
+            if method == "owner.prepare":
+                require(isinstance(response, dict) and set(response) == {"prepared", "installedProviders"} and
+                        isinstance(response.get("prepared"), dict), "owner_capture_response_invalid")
+                prepared = response["prepared"]
+                value = prepared.get("input")
+                binding = prepared.get("binding")
+                require(prepared.get("contractVersion") == CONTRACT and prepared.get("executionAuthorized") is consent and
+                        isinstance(binding, dict) and binding.get("clientId") == document.get("clientId") and
+                        prepared.get("patchId") == document.get("patchId") and
+                        prepared.get("idempotencyKey") == document.get("idempotencyKey") and
+                        isinstance(value, dict) and isinstance(value.get("snapshot"), dict) and
+                        value["snapshot"].get("snapshotId") == document.get("snapshotId") and
+                        isinstance(value.get("context"), dict) and
+                        value["context"].get("toolchainDigest") == self.toolchain_digest and
+                        provider_inspection(response["installedProviders"]) == self.inspection,
+                        "owner_capture_response_invalid")
+                self.root.write_json(output_name, prepared)
+                response = {"contractVersion": CONTRACT, "state": "prepared", "executionAuthorized": consent,
+                            "installedProviders": response["installedProviders"], "releaseQualified": False}
+            else:
+                require(isinstance(response, dict), "owner_capture_response_invalid")
+            self.root.verify()
+            require(time.monotonic() < deadline, "transport_timeout")
+            after = self.transport.statistics()
+            statistics = dict(after)
+            for field in ("stdinBytes", "stdoutBytes", "stderrBytes"):
+                statistics[field] = after[field] - before[field]
+            statistics["byteMeasurementScope"] = "completed owner capture command delta; excludes session teardown"
+            self.completed += 1
+            if self.startup["firstSuccessfulCaptureReplyMillisFromSpawnStart"] is None:
+                self.startup["firstSuccessfulCaptureReplyMillisFromSpawnStart"] = (
+                    reply_observed - self.startup["spawnStartedMonotonicNanos"]) / 1e6
+            return response, statistics
+        except BaseException:
+            self.poisoned = True
+            raise
+
+    def close(self) -> None:
+        if self.closed:
+            return
+        self.closed = True
+        self.record = {"state": "not_started" if self.startup is None else
+                                "startup_attempted_no_retained_transport" if self.transport is None else "transport_returned",
+                       "startup": self.startup, "completedCaptureCommands": self.completed,
+                       "poisoned": self.poisoned, "workerCount": 0,
+                       "authorityScope": "explicit owner overlay and compiler preparation only; not ordinary review RPC",
+                       "transportTotalsOverlapOwnerCommandDeltas": True,
+                       "establishesCompilerExecutionOrWarmth": False,
+                       "transport": None, "cleanup": {"state": "unavailable"}}
+        if self.transport is None:
+            return
+        self.record["transport"] = self.transport.statistics()
+        try:
+            self.transport.close()  # Existing full cooperative-helper grace, final group signal and leader reap.
+            self.record["cleanup"] = dict(self.transport.cleanup_statistics(),
+                                          state="owned_group_signaled_leader_reaped_pipes_closed")
+        except BaseException:
+            self.poisoned = True
+            self.record["poisoned"] = True
+            self.record["cleanup"] = {"state": "failed", "forcedHelperLossGuaranteed": False}
+            raise
+
+
+class BenchmarkController(Controller):
+    """The same owner commands and bounded RPC transport, with retained trial accounting.
+
+    Warm scenarios retain ONE broker across real new capture/prepare/submit rounds.
+    Fresh scenarios start a NEW broker per scheduled batch, never erase state or
+    cancel old accepted obligations. Both schedules retain a separate zero-worker
+    capture owner; its startup stays inside the first patch's capture interval.
+    Neither schedule proves warm compiler state.
+    """
+
+    def __init__(self, home: Path, root: PrivateDirectory, compiler_java_home: Path, scenario: benchmark.Scenario):
+        super().__init__(home, root, compiler_java_home)
+        self.scenario = scenario
+        self.started_ns = time.monotonic_ns()
+        self.run_deadline_ns = self.started_ns + scenario.runTimeoutSeconds * 1_000_000_000
+        self.ledger = benchmark.Ledger(scenario, self.started_ns, str(uuid.uuid4()), RULE, COMPILER, UPSTREAM, scope_for)
+        self.active = []
+        self.clients = {}
+        self.base_snapshot, self.base_revision = None, 0
+        self.cursors = {name: {"cursor": None, "sequence": 0, "pages": 0} for name in SOURCES}
+        self.seen_event_ids = set()
+        self.transport = self.rpc = None
+        self.sessions = []
+        self.session_startup = None
+        self.owner_capture = None
+        self.failure = None
+
+    def deadline_ns(self) -> int:
+        # One original run bound plus each original completed-patch bound. No
+        # polling, duplicate submission or owner subprocess resets these clocks.
+        # Terminal active trials remain bounded through event draining; a newly
+        # unsettled historical review retains ITS original patch deadline too.
+        return min([self.run_deadline_ns] + [trial.times["patchComplete"] + self.scenario.trialTimeoutSeconds * 1_000_000_000
+                                           for trial in self.ledger.trials.values()
+                                           if trial in self.active or trial.review_id is not None and not trial.terminal])
+
+    def deadline(self, cap: float) -> float:
+        now = time.monotonic_ns()
+        limit = min(self.deadline_ns(), now + int(cap * 1_000_000_000))
+        require(now < limit, "benchmark_deadline")
+        return limit / 1e9
+
+    def call(self, *args: str) -> dict:
+        self.root.verify()
+        deadline = self.deadline(OWNER_TIMEOUT_SECONDS)
+        if args and args[0] in {"overlay", "prepare"}:
+            if self.owner_capture is None:
+                self.owner_capture = OwnerCaptureSession(self.command, self.root, self.inspection)
+            response, statistics = self.owner_capture.call(*args, deadline=deadline)
+        else:
+            response, statistics = run_json_command(self.command + ["--workers", "0", *args], deadline=deadline)
+        self.root.verify()
+        self.owner_transport.append(statistics)
+        require(time.monotonic_ns() < self.deadline_ns(), "benchmark_deadline")
+        return response
+
+    def close_owner_capture(self) -> None:
+        if self.owner_capture is not None:
+            self.owner_capture.close()
+
+    def setup(self) -> None:
+        self.inspection = provider_inspection(self.call("providers"))
+        # CLI must initialize the empty private root before any scenario file.
+        self.root.write_json("benchmark-plan.json", {"schema": benchmark.SCHEMA,
+                             "scenario": benchmark.asdict(self.scenario),
+                             "plannedTrials": [{"trialId": patch.trial_id, "phase": patch.phase, "clientId": patch.client_id,
+                                                "sourceDigest": patch.source_digest, "expected": patch.expected}
+                                               for patch in self.ledger.plan],
+                             "releaseQualified": False, "executionObserved": False})
+        for name in SOURCES:
+            credentials = self.root.file_path(name + "-credentials.json", must_be_new=True)
+            self.call("register", "--workspace", "example-project", "--worktree", "shared-overlay",
+                      "--client", name, "--session", "session-" + name, "--lineage", "task-" + name,
+                      "--out", str(credentials))
+            self.clients[name] = self.root.read_json(name + "-credentials.json")
+        self.preparation_ms = (time.monotonic_ns() - self.started_ns) / 1e6
+
+    def prepare_trial(self, trial: benchmark.Trial) -> None:
+        patch = trial.patch
+        previous = self.base_snapshot
+        overlay = {"workspaceId": "example-project", "worktreeId": "shared-overlay", "clientId": patch.client_id,
+                   "sessionId": "session-" + patch.client_id, "patchId": patch.patch_id,
+                   "baseSnapshotId": previous, "expectedHeadRevision": self.base_revision,
+                   "changes": [{"operation": "put", "path": patch.path, "content": patch.source}]}
+        prefix = "benchmark-" + patch.trial_id
+        trial.stamp("captureStarted", time.monotonic_ns())
+        self.root.write_json(prefix + "-overlay.json", overlay)
+        committed = self.call("overlay", "--request", str(self.root.file_path(prefix + "-overlay.json")))
+        manifest = committed.get("manifest")
+        require(isinstance(manifest, dict) and benchmark.is_digest(manifest.get("snapshotId")) and
+                type(committed.get("headRevision")) is int and committed["headRevision"] == self.base_revision + 1,
+                "invalid_overlay_result")
+        self.base_snapshot, self.base_revision = manifest["snapshotId"], committed["headRevision"]
+        trial.stamp("captureCommitted", time.monotonic_ns())
+        compilation = {"clientId": patch.client_id, "snapshotId": self.base_snapshot, "patchId": patch.patch_id,
+                       "idempotencyKey": patch.idempotency_key, "compilationFiles": [patch.path],
+                       "compilerVersion": "2.4.21", "requiredRuleIds": [RULE], "scope": scope_for(patch.client_id)}
+        self.root.write_json(prefix + "-compilation.json", compilation)
+        prepared_name = prefix + "-prepared.json"
+        response = self.call("prepare", "--request", str(self.root.file_path(prefix + "-compilation.json")),
+                             "--authorize-execution", "--out", str(self.root.file_path(prepared_name, must_be_new=True)))
+        require(provider_inspection(response.get("installedProviders")) == self.inspection, "compiler_inspection_changed")
+        client = {"prepared": self.root.read_json(prepared_name), "registration": self.clients[patch.client_id]}
+        validate_prepared(client, patch.client_id, self.inspection["toolchainDigest"], source=patch.source,
+                          patch_id=patch.patch_id, idempotency_key=patch.idempotency_key, execution_authorized=True)
+        value = client["prepared"]["input"]
+        require(value["snapshot"]["snapshotId"] == self.base_snapshot and value.get("baselineSnapshotId") == previous and
+                value["snapshot"].get("parentSnapshotId") == previous, "invalid_prepared_binding")
+        trial.bind(client, time.monotonic_ns())
+
+    def start_broker(self) -> None:
+        require(self.transport is None and self.rpc is None, "benchmark_broker_already_started")
+        started = time.monotonic_ns()
+        self.deadline(RPC_TIMEOUT_SECONDS)
+        self.transport = BoundedProcess(self.command + ["rpc", "--workers", str(self.scenario.workerCount)])
+        spawned = time.monotonic_ns()
+        self.rpc = NdjsonClient(self.transport)
+        self.session_startup = {"session": len(self.sessions) + 1, "spawnStartedMonotonicNanos": started,
+                                "spawnObservedMillis": (spawned - started) / 1e6, "readyObservedMillisFromSpawnStart": None,
+                                "establishesCompilerExecutionOrWarmth": False}
+        doctor = self.rpc.call("doctor", {}, deadline=self.deadline(RPC_TIMEOUT_SECONDS))
+        ready = time.monotonic_ns()
+        require(doctor.get("contractVersion") == CONTRACT and doctor.get("command") == "doctor" and
+                doctor.get("installedProvidersInspected") is True and
+                provider_inspection(doctor.get("installedProviders")) == self.inspection, "broker_readiness_failed")
+        self.session_startup["readyObservedMillisFromSpawnStart"] = (ready - started) / 1e6
+
+    def close_broker(self) -> None:
+        if self.transport is None:
+            return
+        transport = self.transport
+        self.transport = self.rpc = None
+        record = {"startup": self.session_startup, "transport": transport.statistics(), "cleanup": {"state": "unavailable"}}
+        self.sessions.append(record)
+        try:
+            transport.close()
+            record["cleanup"] = dict(transport.cleanup_statistics(), state="owned_group_signaled_leader_reaped_pipes_closed")
+        except BaseException:
+            record["cleanup"] = {"state": "failed", "forcedHelperLossGuaranteed": False}
+            raise
+
+    def params(self, trial: benchmark.Trial) -> dict:
+        prepared = trial.client["prepared"]
+        return {"credential": trial.client["registration"]["client"], "patchId": prepared["patchId"],
+                "idempotencyKey": prepared["idempotencyKey"], "input": prepared["input"]}
+
+    def submit(self, trial: benchmark.Trial) -> None:
+        params = self.params(trial)
+        trial.broker_session = len(self.sessions) + 1
+        prior = [item for item in self.ledger.trials.values() if item.review_id is not None]
+        trial.prior_accepted = len(prior)
+        trial.prior_unsettled = sum(not item.required_complete for item in prior)
+        call_deadline = self.deadline(RPC_TIMEOUT_SECONDS)
+        trial.stamp("submitStarted", time.monotonic_ns())
+        status_value = self.rpc.call("review.submit", params, deadline=call_deadline)
+        trial.observe(status_value, time.monotonic_ns(), "review.submit")
+        # Additive, immutable observation files preserve accepted joins if a later
+        # batch fails. These files are observations, NOT a crash-tested journal or
+        # permission to replay an uncertain submit after this controller dies.
+        self.root.write_json("benchmark-" + trial.patch.trial_id + "-accepted.json", trial.public())
+
+    def duplicate(self, trial: benchmark.Trial) -> None:
+        call_deadline = self.deadline(RPC_TIMEOUT_SECONDS)
+        started = time.monotonic_ns()
+        status_value = self.rpc.call("review.submit", self.params(trial), deadline=call_deadline)
+        observed = time.monotonic_ns()
+        trial.observe(status_value, observed, "duplicate review.submit")
+        trial.duplicate_round_trip_ms = (observed - started) / 1e6
+
+    def events(self, name: str) -> None:
+        # A client cursor spans ALL its historical accepted reviews. Never route
+        # every page to only its newest patch or silently discard old obligations.
+        state = self.cursors[name]
+        while True:
+            params = {"credential": self.clients[name]["client"], "limit": 50}
+            if state["cursor"] is not None:
+                params["cursor"] = state["cursor"]
+            page = self.rpc.call("review.events", params, deadline=self.deadline(RPC_TIMEOUT_SECONDS))
+            observed = time.monotonic_ns()
+            require(isinstance(page, dict) and page.get("contractVersion") == CONTRACT and
+                    isinstance(page.get("events"), list) and len(page["events"]) <= 50 and
+                    isinstance(page.get("cursor"), str) and 1 <= len(page["cursor"]) <= 8192 and
+                    type(page.get("hasMore")) is bool and (not page["hasMore"] or bool(page["events"])) and
+                    (not page["events"] or page["cursor"] != state["cursor"]), "invalid_event_page")
+            last_sequence = state["sequence"]
+            known = {trial.review_id: trial for trial in self.ledger.trials.values()
+                     if trial.review_id is not None and trial.patch.client_id == name}
+            validated = []
+            page_ids = set()
+            for event_value in page["events"]:
+                require(isinstance(event_value, dict) and isinstance(event_value.get("reviewId"), str) and
+                        event_value["reviewId"] in known, "invalid_event_binding")
+                trial = known[event_value["reviewId"]]
+                require(event_value.get("contractVersion") == CONTRACT and event_value.get("clientId") == name and
+                        type(event_value.get("generation")) is int and event_value["generation"] == trial.client["prepared"]["binding"]["generation"] and
+                        event_value.get("patchId") == trial.patch.patch_id and event_value.get("sourceSnapshotId") == trial.join["snapshotId"] and
+                        isinstance(event_value.get("eventId"), str) and UUID.fullmatch(event_value["eventId"]) is not None and
+                        event_value["eventId"] not in self.seen_event_ids and event_value["eventId"] not in page_ids and
+                        type(event_value.get("sequence")) is int and event_value["sequence"] > last_sequence and
+                        event_value.get("kind") in {"accepted", "progress", "result", "cancelled"} and
+                        event_value.get("deliveryRequired") is True and isinstance(event_value.get("payload"), str), "invalid_event_binding")
+                payload_bytes = event_value["payload"].encode("utf-8", errors="strict")
+                require(event_value.get("payloadDigest") == "sha256:" + hashlib.sha256(payload_bytes).hexdigest(), "invalid_event_digest")
+                payload = parse_json(payload_bytes)
+                trial.inspect(payload, accepted_event=True)
+                require((event_value["kind"] == "accepted" and payload["state"] == "accepted") or
+                        (event_value["kind"] == "progress" and payload["state"] in {"running", "cancelled"}) or
+                        (event_value["kind"] == "result" and payload["state"] in TERMINAL_STATES) or
+                        (event_value["kind"] == "cancelled" and payload["state"] == "cancelled"), "invalid_event_binding")
+                validated.append((trial, payload, event_value))
+                page_ids.add(event_value["eventId"])
+                last_sequence = event_value["sequence"]
+            require(self.ledger.trace_count + len(validated) <= benchmark.MAX_TRACE_ENTRIES, "benchmark_trace_limit")
+            # Validate the ENTIRE page before observing any item or moving its cursor.
+            for trial, payload, event_value in validated:
+                trial.observe(payload, observed, "review.events", event=event_value)
+            self.seen_event_ids.update(page_ids)
+            state["sequence"], state["cursor"] = last_sequence, page["cursor"]
+            state["pages"] += 1
+            if not page["hasMore"]:
+                return  # Fetch progress only; NEVER review.ack/review.observe.
+
+    def poll_current(self, trial: benchmark.Trial) -> None:
+        status_value = self.rpc.call("review.status", {"credential": trial.client["registration"]["client"],
+                                     "reviewId": trial.review_id}, deadline=self.deadline(RPC_TIMEOUT_SECONDS))
+        trial.observe(status_value, time.monotonic_ns(), "review.status")
+
+    def collect_batch(self) -> None:
+        for trial in self.active:
+            self.submit(trial)
+        # Admit the concurrent batch first, then check idempotency. No extra
+        # threads, hidden warm-up, cached-result substitution or automatic retry.
+        for trial in self.active:
+            self.duplicate(trial)
+        while True:
+            for trial in self.ledger.trials.values():
+                if trial.review_id is not None and not trial.terminal:
+                    self.poll_current(trial)
+            for name in SOURCES:
+                if any(trial.review_id is not None and trial.patch.client_id == name for trial in self.ledger.trials.values()):
+                    self.events(name)
+            # Events are validated as whole pages before any cursor advances.
+            # Confirm EVERY affected accepted review after fetching, including
+            # terminal reviews from older batches. A failed confirmation leaves
+            # the admission and pending obligation intact for the failure report.
+            for trial in self.ledger.trials.values():
+                if trial.confirmation_pending:
+                    self.poll_current(trial)
+            if all(trial.terminal for trial in self.ledger.trials.values() if trial.review_id is not None):
+                return
+            time.sleep(min(0.025, max(0, (self.deadline_ns() - time.monotonic_ns()) / 1e9)))
+
+    def fail(self, code: str) -> None:
+        kind = "timeout" if code in {"preview_example_transport_timeout", "preview_example_benchmark_deadline"} else "aborted"
+        if self.failure is None:
+            self.failure = {"kind": kind, "code": code}
+        self.ledger.abort(kind, code, time.monotonic_ns())
+
+    def run(self) -> dict:
+        try:
+            self.setup()
+            for batch in benchmark.batches(self.scenario, self.ledger.plan):
+                self.active = [self.ledger.trials[patch.trial_id] for patch in batch]
+                ready = time.monotonic_ns()
+                for trial in self.active:
+                    trial.stamp("patchComplete", ready)
+                for trial in self.active:
+                    self.prepare_trial(trial)
+                if self.rpc is None:
+                    self.start_broker()
+                self.collect_batch()
+                if self.scenario.warmthRequest == "fresh_broker_resident_dependencies":
+                    self.close_broker()
+                self.active = []
+        except (ExampleError, benchmark.BenchmarkError) as error:
+            self.fail(error.code)
+        except KeyboardInterrupt:
+            self.fail("preview_example_interrupted")
+        except Exception:
+            self.fail("preview_example_local_failure")
+        finally:
+            # Teardown independently: a broker failure must not skip the retained owner's cleanup.
+            for close in (self.close_broker, self.close_owner_capture):
+                try:
+                    close()
+                except (ExampleError, benchmark.BenchmarkError) as error:
+                    self.fail(error.code)
+                except BaseException:
+                    self.fail("preview_example_cleanup_failed")
+        report = self.ledger.report(time.monotonic_ns())
+        report.update(collectionState="collected" if self.failure is None else "failed", collectorFailure=self.failure,
+                      compilerInspection=self.inspection, initialOwnerSetupObservedMillis=self.preparation_ms,
+                      brokerSessions=self.sessions,
+                      ownerCaptureSession=self.owner_capture.record if self.owner_capture is not None else
+                                          {"state": "not_started", "establishesCompilerExecutionOrWarmth": False},
+                      ownerCommandTransportTotals={field: sum(value[field] for value in self.owner_transport)
+                                                   for field in ("stdinBytes", "stdoutBytes", "stderrBytes")},
+                      ownerTransportScope="completed owner commands only; no metrics inferred for a failed command",
+                      cleanupScope="owned process teardown reported separately; not successful required completion")
+        # Unlike the legacy demonstration, failed/censored runs retain all planned
+        # trials and uncertain admissions. Never emit success if cleanup failed.
+        self.root.write_json("benchmark-observations.json", report)
+        return report
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = SafeArgumentParser(prog="run_preview_example.py", description=__doc__)
     parser.add_argument("--distribution", type=Path, default=Path("modules/cli/build/install/ktchecker"))
     parser.add_argument("--compiler-java-home", required=True, type=Path,
                         help="explicit owner-selected compiler JDK; CLI verifies complete link-free JDK 21 identity")
     parser.add_argument("--output", required=True, type=Path, help="NEW private synthetic demo directory (POSIX)")
-    parser.add_argument("--prepare-only", action="store_true", help="Prepare private owner records; does not execute a compiler")
+    parser.add_argument("--prepare-only", action="store_true",
+                        help="Prepare non-authorized private owner records; does not execute a compiler")
+    parser.add_argument("--benchmark-scenarios", type=Path, help="bounded scenario JSON; must also select --benchmark-scenario")
+    parser.add_argument("--benchmark-scenario", help="explicit scenario ID; smoke observations, not benchmark qualification")
     args = parser.parse_args(argv)
     try:
         require(os.name == "posix", "posix_required")
+        require((args.benchmark_scenarios is None) == (args.benchmark_scenario is None) and
+                not (args.prepare_only and args.benchmark_scenario is not None), "benchmark_arguments_invalid")
+        scenario = None if args.benchmark_scenarios is None else read_benchmark_scenario(args.benchmark_scenarios, args.benchmark_scenario)
         home = args.distribution.resolve(strict=True)
         require(home.is_dir() and (home / "lib").is_dir(), "distribution_missing")
         # Check the explicitly supplied path before creating private state. No auto-selection.
         require(args.compiler_java_home.is_dir() and (args.compiler_java_home / "bin" / "java").is_file(),
                 "compiler_java_home_missing")
         with PrivateDirectory(args.output) as root:
-            controller = Controller(home, root, args.compiler_java_home)
-            clients = controller.prepare()
-            if args.prepare_only:
+            if scenario is not None:
+                report = BenchmarkController(home, root, args.compiler_java_home, scenario).run()
+            else:
+                controller = Controller(home, root, args.compiler_java_home)
+                clients = controller.prepare(authorize_execution=not args.prepare_only)
+            if scenario is None and args.prepare_only:
                 report = {"contractVersion": CONTRACT, "state": "prepared", "clientCount": len(clients),
-                          "releaseQualified": False, "compilerExecutionObserved": False,
+                          "releaseQualified": False, "compilerExecutionObserved": False, "executionAuthorized": False,
                           "compilerInspection": controller.inspection,
                           "ownerPreparationObservedMillis": controller.preparation_ms,
                           "ownerPreparationTimingScope": "owner commands and teardown; not compiler or useful-feedback latency",
@@ -943,11 +1419,11 @@ def main(argv: list[str] | None = None) -> int:
                           "requiredScope": "explicit one-rule partial-project preview per client",
                           "contextDelivery": {"state": "not_attempted"},
                           "warning": "owner files contain private credentials; never put credentials in model context"}
-            else:
+            elif scenario is None:
                 report = controller.review(clients)
         print(json.dumps(report, indent=2, allow_nan=False))
-        return 0
-    except ExampleError as error:
+        return 1 if report.get("collectionState") == "failed" else 0
+    except (ExampleError, benchmark.BenchmarkError) as error:
         print(json.dumps({"state": "failed", "code": error.code, "releaseQualified": False}), file=sys.stderr)
         return 1
     except KeyboardInterrupt:

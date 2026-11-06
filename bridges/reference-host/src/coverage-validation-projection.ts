@@ -31,7 +31,9 @@ function proofRow(value: unknown): ProofRow {
   if (!object(value) || canonical(Object.keys(value).sort()) !== canonical(rowKeys) ||
       typeof value.ruleId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,255}$/.test(value.ruleId) ||
       !context || canonical(Object.keys(context).sort()) !== canonical(contextKeys) ||
-      contextKeys.some(key => typeof context[key] !== 'string' || !(context[key] as string).length) ||
+      // RuleContext preserves an empty exported target for the produced JVM lane.
+      // Empty is data, never a relabeling to "jvm"; all other scope fields stay nonempty.
+      contextKeys.some(key => typeof context[key] !== 'string' || (key !== 'target' && !(context[key] as string).length)) ||
       typeof value.state !== 'string' || typeof value.depth !== 'string' || typeof value.provenance !== 'string' ||
       (value.reason !== null && typeof value.reason !== 'string') ||
       (value.certificateId !== null && typeof value.certificateId !== 'string') ||

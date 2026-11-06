@@ -1,5 +1,6 @@
 package dev.ktchecker.cli
 
+import dev.ktchecker.compiler.CompilerCallObservation
 import dev.ktchecker.compiler.KotlinJvmCompilerProvider
 import dev.ktchecker.compiler.KotlinJvmInputMode
 import dev.ktchecker.compiler.KotlinJvmToolchain
@@ -10,6 +11,7 @@ import dev.ktchecker.kernel.*
 import dev.ktchecker.projectmodel.GradleModelExporter
 import dev.ktchecker.projectmodel.ProjectModelImporter
 import dev.ktchecker.projectmodel.VerifiedProjectModel
+import dev.ktchecker.projectmodel.ObservedProjectModel
 import dev.ktchecker.reviewcontroller.OwnerPlanAssembler
 import dev.ktchecker.providers.detekt.DetektInstallation
 import dev.ktchecker.providers.detekt.DetektProvider
@@ -23,7 +25,10 @@ import dev.ktchecker.providers.lint.LintCatalog
 import dev.ktchecker.providers.native.KotlinNativeProvider
 import dev.ktchecker.providers.native.NativeCatalog
 import dev.ktchecker.providers.runtime.IsolatedProcessRunner
+import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.providers.runtime.fileDigest
+import dev.ktchecker.workerprotocol.ApplicationWire
+import dev.ktchecker.workerprotocol.CompilerModelWire
 import dev.ktchecker.snapshot.*
 import java.nio.file.Files
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
@@ -96,7 +101,13 @@ internal data class WorkbenchOptions(
     val compilerJavaHome: Path? = null,
     /** In-process owner selection only; paths/profile JSON cannot reconstruct this capability. */
     val modelCompilerInstallation: KotlinJvmToolchain? = null,
-)
+    /** Explicit owner runtime, selected by the owner model command or typed owner composition, never RPC. */
+    val liveModelRuntime: OwnerLiveModelRuntime? = null,
+    /** Typed owner composition only; never a CLI/RPC/serialized request option. */
+    val compilerCallObservation: CompilerCallObservation? = null,
+) {
+    init { require(modelCompilerInstallation == null || liveModelRuntime == null) { "Select one exact model execution mode; no fallback" } }
+}
 
 /** Trusted local composition root; ordinary MCP tools cannot call its owner-control methods. */
 internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable, RpcHandler {
@@ -105,6 +116,9 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     val snapshots = SnapshotStore(state.namespace("snapshots"), state.ownerId)
     private val grants = ExecutionGrants()
     private val modelGrants = ModelAttemptGrants()
+    private val liveModelRuntime = options.liveModelRuntime.also {
+        require(it == null || it.ownerId == state.ownerId) { "A live model runtime belongs to this exact local owner" }
+    }
     private val java = Path.of(System.getProperty("java.home"), "bin", if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java")
     // Explicit shipped closure: core/policy/storage/normalization/provider adapters and their
     // data, Kotlin/serialization and SQLite. This is NOT automatic arbitrary-plugin discovery
@@ -114,6 +128,7 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         KernelService::class.java, ConfigStore::class.java, IsolatedProcessRunner::class.java,
         ProjectModelImporter::class.java, OwnerPlanAssembler::class.java,
         KotlinJvmCompilerProvider::class.java, DetektProvider::class.java, KtlintProvider::class.java,
+        ApplicationWire::class.java, CompilerModelWire::class.java,
         AndroidLintProvider::class.java, KotlinNativeProvider::class.java,
         Unit::class.java, kotlinx.serialization.KSerializer::class.java, Json::class.java,
         Class.forName("org.sqlite.JDBC", false, Workbench::class.java.classLoader),
@@ -126,6 +141,7 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             "/dev/ktchecker/providers/runtime/native/manifest"),
         "compiler-mappings" to CodeImage.resourceRoot(CompilerRuleRegistry::class.java, "/compiler-rule-map.json"),
         "project-model-exporter" to CodeImage.resourceRoot(GradleModelExporter::class.java, "/${GradleModelExporter.SCRIPT}"),
+        "owner-model-origins" to CodeImage.resourceRoot(Workbench::class.java, "/ktchecker-owner-model-origin.init.gradle"),
         "detekt-mappings" to CodeImage.resourceRoot(DetektCatalog::class.java, "/detekt-rule-map.json"),
         "detekt-artifact-pins" to CodeImage.resourceRoot(DetektCatalog::class.java, "/detekt-artifacts.json"),
         "ktlint-mappings" to CodeImage.resourceRoot(KtlintCatalog::class.java, "/ktlint-rule-map.json"),
@@ -155,29 +171,33 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             ContractJson.encodeToJsonElement(KtlintCatalog.verifyArtifacts(installed.artifactDirectory)))) }.getOrNull()
     }
     private val routes = buildList {
+        liveModelRuntime?.let { runtime -> add(ProviderRoute(runtime.routingProvider, runtime::routes,
+            implementationIdentity = runtime.implementationIdentity, preparedChild = runtime::child,
+            finishAttempt = runtime::finish)) }
         modelCompiler?.let { provider -> add(ProviderRoute(provider, modelGrants::routes,
             implementationIdentity = Digests.sha256(providerIdentity(provider) + modelCompilerInstallation!!.digest + Digests.canonical(
                 ContractJson.encodeToJsonElement(modelCompilerInstallation.compilerClasspath))),
             preparedChild = modelGrants::child, finishAttempt = modelGrants::finish)) }
-        compiler?.let { provider -> add(ProviderRoute(provider,
-            { !modelGrants.routes(it) && it.context.scope.target.lowercase() in setOf("jvm", "desktop", "android") && it.context.compilerVersion == "2.4.21" }, { provider.executionProfile(it) },
+        compiler?.let { provider -> add(ProviderRoute(
+            ordinaryCompilerProviderWithObservation(provider, options.compilerCallObservation, codeImage.digest),
+            { !isModelAttempt(it) && it.context.scope.target.lowercase() in setOf("jvm", "desktop", "android") && it.context.compilerVersion == "2.4.21" }, { provider.executionProfile(it) },
             Digests.sha256(providerIdentity(provider) + compilerInstallation!!.digest + Digests.canonical(
                 ContractJson.encodeToJsonElement(compilerInstallation.compilerClasspath))))) }
             ?: add(ProviderRoute(UnavailableCompilerProvider(compilerSelection.unavailableReason!!),
-                { !modelGrants.routes(it) && it.context.scope.target.lowercase() in setOf("jvm", "desktop", "android") && it.context.compilerVersion == "2.4.21" }))
+                { !isModelAttempt(it) && it.context.scope.target.lowercase() in setOf("jvm", "desktop", "android") && it.context.compilerVersion == "2.4.21" }))
         // Some syntax/Compose catalog IDs have multiple upstream adapters. Prefer Ktlint only
         // on its explicitly installed, parser-compatible tuple; it must not steal the same IDs
         // from Detekt on a newer Kotlin project or an unavailable platform/profile.
         val ktlintRoute = ProviderRoute(ktlint, { true }, ktlint::executionProfile, ktlintIdentity)
-        add(ktlintRoute.copy(applicable = { !modelGrants.routes(it) && ktlintPreferred(it, ktlintIdentity != null) }))
-        add(ProviderRoute(detekt, { !modelGrants.routes(it) }, detekt::executionProfile, detektInstallation?.let { installed ->
+        add(ktlintRoute.copy(applicable = { !isModelAttempt(it) && ktlintPreferred(it, ktlintIdentity != null) }))
+        add(ProviderRoute(detekt, { !isModelAttempt(it) }, detekt::executionProfile, detektInstallation?.let { installed ->
             runCatching { Digests.sha256(providerIdentity(detekt) + Digests.canonical(
                 ContractJson.encodeToJsonElement(DetektCatalog.verifyArtifacts(installed.artifactDirectory)))) }.getOrNull()
         }))
         // Keep Ktlint-only unsupported/missing tuples visible through its precise abstention.
-        add(ktlintRoute.copy(applicable = { !modelGrants.routes(it) && !ktlintPreferred(it, ktlintIdentity != null) }))
-        add(ProviderRoute(lint, { !modelGrants.routes(it) && it.context.scope.target.lowercase().contains("android") }))
-        add(ProviderRoute(native, { !modelGrants.routes(it) && it.context.scope.target in setOf("iosArm64", "iosSimulatorArm64") }))
+        add(ktlintRoute.copy(applicable = { !isModelAttempt(it) && !ktlintPreferred(it, ktlintIdentity != null) }))
+        add(ProviderRoute(lint, { !isModelAttempt(it) && it.context.scope.target.lowercase().contains("android") }))
+        add(ProviderRoute(native, { !isModelAttempt(it) && it.context.scope.target in setOf("iosArm64", "iosSimulatorArm64") }))
     }
     private val coordinator = ReviewCoordinator(catalog, routes, grants, codeImage)
     private val routingAliases = policyAliases(catalog)
@@ -192,9 +212,11 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         ) })
     })
     val configs = ConfigStore(state.namespace("configuration"), aliases)
-    private val modelPlans = OwnerModelPlans(state, snapshots, configs, catalog, modelCompilerInstallation, modelCompiler, modelGrants, codeImage::verify)
+    private val modelPlans = OwnerModelPlans(state, snapshots, configs, catalog, modelCompilerInstallation, modelCompiler,
+        modelGrants, codeImage::verify, liveRuntime = liveModelRuntime, parentProvider = coordinator)
     private val loadedPolicies = ConcurrentHashMap<String, ConfigSnapshot>()
     private val records = ConcurrentHashMap<String, PreparedReview>()
+    private val policyAdmissions = WorkbenchPolicyAdmissions(state)
     /** The exact trusted policy object used by this composition, including lazy restart recovery. */
     internal val capturedResultPolicy: ResultPolicy = ResultPolicy.versioned("ktchecker/workbench-policy/1:${codeImage.digest}", object : ResultPolicy {
         override fun isReady(binding: ClientBinding, input: AnalysisInput): Boolean =
@@ -217,10 +239,18 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             return configs.apply(policy, input, raw)
         }
     })
+    internal val policyReassessmentAuthority: PolicyReassessmentAuthority = WorkbenchPolicyReassessments(
+        state, configs, snapshots, codeImage.digest, codeImage::verify, ::prepared, ::retainedPolicyAdmission,
+        coordinator.id, coordinator.version)
     val kernel: KernelService = KernelService.open(state.namespace("broker"), coordinator,
         config = KernelConfig(workerCount = options.workerCount, globalParallelism = 2, perWorktreeParallelism = 1),
         snapshotGate = sourceGate(),
         preparedInputObserver = object : PreparedInputObserver {
+            override fun preparedProduced(attempt: ProducedExecutionAttempt) {
+                codeImage.verify()
+                modelPlans.observeProduced(attempt)
+            }
+
             override fun prepared(original: AnalysisInput, effective: AnalysisInput, verifyFrozen: () -> Unit) {
                 codeImage.verify()
                 if (modelPlans.evidence(original) != null) modelPlans.observe(original, effective, verifyFrozen)
@@ -236,40 +266,66 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             override fun finished(effective: AnalysisInput) {
                 // The worker owns the attempt lifetime, including cancellation after preparation
                 // but before any provider is invoked. Coordinator teardown is an idempotent backup.
-                try { modelGrants.finish(effective) } finally { grants.finish(effective) }
+                try { liveModelRuntime?.finish(effective) } finally {
+                    try { modelGrants.finish(effective) } finally { grants.finish(effective) }
+                }
             }
         },
         planAuthority = modelPlans,
         findingProviders = coordinator.findingProviders,
-        resultPolicy = capturedResultPolicy)
+        resultPolicy = capturedResultPolicy,
+        policyReassessmentAuthority = policyReassessmentAuthority)
 
     override fun close() = kernel.close()
+
+    internal val ownerCodeDigest: String get() = codeImage.digest
+    internal fun verifyOwnerCode() = codeImage.verify()
+
+    private fun isModelAttempt(input: AnalysisInput): Boolean =
+        liveModelRuntime?.routes(input) == true || modelGrants.routes(input)
 
     fun register(workspaceId: String, worktreeId: String, clientId: String, sessionId: String, lineageId: String): ClientRegistration =
         register(ClientBinding(state.ownerId, workspaceId, worktreeId, clientId, lineageId, sessionId = sessionId))
 
-    private fun register(binding: ClientBinding): ClientRegistration = state.locked("client:${binding.clientId}") {
+    private fun register(binding: ClientBinding): ClientRegistration {
         if (binding.ownerId != state.ownerId) throw CliProblem("permission_denied", "Client belongs to another user namespace.")
-        val file = state.keyFile("clients", binding.clientId)
-        if (Files.exists(file, NOFOLLOW_LINKS)) {
-            val current = state.read<ClientRegistration>(file)
-            if (current.binding != binding) throw CliProblem("client_binding_conflict", "Client is already registered to a different session or lineage.")
-            kernel.registerClient(current)
-        } else {
-            fun token() = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })
-            val registration = ClientRegistration(binding, ClientCredential(binding.clientId, token()), AdapterCredential(binding.clientId, token()))
-            // Durable private enrollment intent precedes broker admission. A crash at either side
-            // can replay the same exact binding and token hashes, never replace another client.
-            state.write(file, registration)
-            kernel.registerClient(registration)
+        // Match the kernel's binding preflight BEFORE even creating a client lock or intent.
+        // Otherwise a rejected workspace/session typo durably occupies this state-global client
+        // ID, and a corrected retry conflicts with an enrollment the broker never accepted.
+        listOf(binding.ownerId, binding.workspaceId, binding.worktreeId, binding.clientId, binding.lineageId, binding.sessionId)
+            .forEach { value ->
+                if (value.isBlank() || value.length > 512 || value.any { it == '\u0000' || it.isISOControl() }) {
+                    throw CliProblem("invalid_identifier", "binding identity is empty or invalid")
+                }
+            }
+        if (binding.generation !in 1..9_007_199_254_740_991L) {
+            throw CliProblem("invalid_binding", "Generation must be a positive interoperable integer")
+        }
+        return state.locked("client:${binding.clientId}") {
+            val file = state.keyFile("clients", binding.clientId)
+            if (Files.exists(file, NOFOLLOW_LINKS)) {
+                val current = state.read<ClientRegistration>(file)
+                if (current.binding != binding) throw CliProblem("client_binding_conflict",
+                    "Client ID is already bound to a different workspace, worktree, session or lineage; use a distinct client ID or replay its exact binding.")
+                kernel.registerClient(current)
+            } else {
+                fun token() = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })
+                val registration = ClientRegistration(binding, ClientCredential(binding.clientId, token()), AdapterCredential(binding.clientId, token()))
+                // Durable private enrollment intent precedes broker admission. A crash at either side
+                // can replay the same exact binding and token hashes, never replace another client.
+                state.write(file, registration)
+                kernel.registerClient(registration)
+            }
         }
     }
 
     fun registration(clientId: String): ClientRegistration = state.read(state.keyFile("clients", clientId))
 
     /** Owner-only beginning of a model import; capture configuration and consent BEFORE Gradle. */
-    fun beginModelReview(clientId: String, request: SubmitPlanRequest, authorizeExecution: Boolean): OwnerModelIntent =
-        modelPlans.begin(registration(clientId).binding, request, authorizeExecution)
+    fun beginModelReview(clientId: String, request: SubmitPlanRequest, authorizeExecution: Boolean,
+        originalIngressDeadline: OwnedApplicationDeadline? = modelPlans.ingressDeadline()): OwnerModelIntent {
+        return modelPlans.begin(registration(clientId).binding, request, authorizeExecution, originalIngressDeadline)
+    }
 
     /** Typed live importer capability only. There is deliberately no model JSON/RPC counterpart. */
     fun prepareModelReview(intent: OwnerModelIntent, before: VerifiedProjectModel?, after: VerifiedProjectModel,
@@ -278,6 +334,16 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             throw CliProblem("model_client_binding_changed", "Model intent belongs to another exact client session.")
         }
         return modelPlans.prepare(intent, before, after, materialized)
+    }
+
+    /** Nominal observed-only API. The earlier model is documentary; no previous grant/clock is
+     * restored. Failure retains the entire attempted vector and registers no scalar/prefix plan. */
+    fun prepareObservedModelReview(intent: OwnerModelIntent, before: ObservedProjectModel?, after: ObservedProjectModel,
+        materialized: MaterializedSnapshot): PreparedOwnerModelPlan {
+        if (registration(intent.binding.clientId).binding != intent.binding) {
+            throw CliProblem("model_client_binding_changed", "Observed intent belongs to another exact client session.")
+        }
+        return modelPlans.prepareObserved(intent, before, after, materialized)
     }
 
     /** A parent reference resolves only through live owner authority; cached inputs are not plans. */
@@ -366,17 +432,10 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             ("ktchecker.execution-plan" to Digests.sha256(Digests.canonical(ContractJson.encodeToJsonElement(profiles))))))
         val prepared = PreparedReview(binding, spec.patchId, spec.idempotencyKey, input, configs.exportSnapshot(policy), profiles,
             authorizeExecution, if (spec.requiredRuleIds == null) "all-catalog-candidates-for-declared-target" else "explicit-rule-subset-not-full-release")
+        val admission = describePolicyAdmission(prepared, policy, spec.requiredRuleIds != null,
+            codeImage.digest, catalog, coordinator.routes)
         codeImage.verify()
-        state.locked("prepared:${input.analysisKey()}") {
-            val file = state.keyFile("prepared", input.analysisKey())
-            // Work sharing must never overwrite a different consumer's owner policy, patch or
-            // execution consent. A general shared-work authorization registry is still separate
-            // release work; this single-compilation controller rejects collisions instead.
-            if (Files.exists(file, NOFOLLOW_LINKS) && state.read<PreparedReview>(file) != prepared) {
-                throw CliProblem("prepared_binding_conflict", "Input already has a different immutable consumer/authorization binding.")
-            }
-            state.write(file, prepared)
-        }
+        policyAdmissions.publishNew(prepared, admission)
         records[input.analysisKey()] = prepared
         loadedPolicies[policyKey(binding, input)] = policy
         return prepared
@@ -402,6 +461,20 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         state.read<PreparedReview>(file).also {
             if (it.input != input || it.binding.ownerId != state.ownerId) throw CliProblem("prepared_identity_mismatch", "Prepared input identity differs.")
         }
+    }
+
+    /** Original owner preparation only; this does not certify a raw execution or current policy. */
+    internal fun retainedPolicyAdmission(record: PreparedReview): WorkbenchPolicyAdmission {
+        codeImage.verify()
+        val retained = policyAdmissions.requireRetained(record)
+        val original = configs.restoreSnapshot(record.configuration, record.configuration.revisionToken)
+        val expected = describePolicyAdmission(record, original, retained.activation.explicitOwnerSubset,
+            codeImage.digest, catalog, coordinator.routes)
+        if (retained != expected) {
+            throw CliProblem("policy_admission_authority_changed", "Current code, routes or typed activation differ from the retained owner preparation.")
+        }
+        codeImage.verify()
+        return retained
     }
 
     private fun validateSnapshot(record: PreparedReview) {
@@ -472,6 +545,14 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
                 result(submit(params.decode("credential"), params.decode("patchId"), params.decode("idempotencyKey"), params.decode("input")))
             }
             "review.status" -> { requireKeys(params, setOf("credential", "reviewId")); result(kernel.status(params.decode("credential"), params.decode("reviewId"))) }
+            "review.policy.reassess" -> {
+                requireKeys(params, setOf("credential", "request"))
+                result(kernel.reassessPolicy(params.decode("credential"), params.decode("request")))
+            }
+            "review.policy.status" -> {
+                requireKeys(params, setOf("credential", "idempotencyKey"))
+                result(kernel.policyReassessmentStatus(params.decode("credential"), params.decode("idempotencyKey")))
+            }
             "review.cancel" -> { requireKeys(params, setOf("credential", "reviewId")); result(kernel.cancel(params.decode("credential"), params.decode("reviewId"))) }
             "review.events" -> {
                 requireKeys(params, setOf("credential", "cursor", "limit"))
@@ -547,12 +628,17 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     private fun providerIdentity(provider: AnalysisProvider): String = "${provider.id}:${provider.version}:${codeImage.digest}"
 
     companion object {
-        private fun distributionHome(): Path? {
+        internal fun distributionHome(): Path? {
             val location = Path.of(Workbench::class.java.protectionDomain.codeSource.location.toURI())
             return if (Files.isRegularFile(location) && location.parent.fileName.toString() == "lib") location.parent.parent else null
         }
     }
 }
+
+/** Null is an exact reference-preserving bypass: no wrapper, recorder or observation clock. */
+internal fun ordinaryCompilerProviderWithObservation(provider: KotlinJvmCompilerProvider,
+    observation: CompilerCallObservation?, ownerCodeDigest: String): AnalysisProvider =
+    if (observation == null) provider else observation.observedProvider(provider, ownerCodeDigest)
 
 /** Preference only. The provider independently verifies all execution/config/artifact prerequisites. */
 internal fun ktlintPreferred(input: AnalysisInput, installed: Boolean): Boolean = installed &&

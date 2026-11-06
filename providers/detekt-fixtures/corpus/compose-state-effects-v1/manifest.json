@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "namespace": "compose-state-effects-v1",
+  "provider": {
+    "id": "detekt",
+    "version": "2.0.0-alpha.6",
+    "compose_rules": "0.6.8",
+    "embedded_kotlin": "2.4.10",
+    "source_commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b"
+  },
+  "scope": {
+    "module": ":compose-state-effects-corpus",
+    "source_set": "main",
+    "target": "jvm",
+    "compilation": "main"
+  },
+  "oracle_coordinates": {
+    "line_base": 1,
+    "column_base": 0,
+    "end": "exclusive",
+    "text_kind": "ASCII Kotlin SOURCE"
+  },
+  "selection": "Exactly one rule per future native job; no automatic all-rule, generic integration, or existing-cohort selection.",
+  "oracle_fields": {
+    "expected_raw_findings": "All literal tag-SOURCE predictions, independent of the current guard; never execution evidence.",
+    "expected_admitted_findings": "Only the current executable reviewed message/API facets may reach Findings; empty for no-launch rules.",
+    "expected_withheld_raw_findings": "Two unsupported-family sites in executable partial-rule cases: expect real raw SARIF but neutralized provider advice only after an admitted native run.",
+    "uninvoked_raw_source_oracle": "Nine raw tag-SOURCE sites across two no-launch rules; no raw detector observation or admitted/withheld output is expected under the current guard."
+  },
+  "source_api_baseline_only": {
+    "androidx.compose.runtime:runtime-desktop": "1.12.1",
+    "androidx.compose.runtime:runtime-annotation-jvm": "1.12.1",
+    "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm": "0.3.8"
+  },
+  "historical_scalar_source_contrast_only": {
+    "primitive_int_state_present": "1.5.0",
+    "primitive_int_factory_declaration_not_found": "1.4.3",
+    "full_rule_authority": false
+  },
+  "api_surface_review": "api-surface-review.json",
+  "admission_contexts": "admission-contexts.json",
+  "pending_coverage": "pending-coverage.json",
+  "guard_disposition": {
+    "full_reviewed_surfaces": [
+      "RememberContentMissing",
+      "ContentSlotReused",
+      "StateParam",
+      "UnstableCollections"
+    ],
+    "partial_message_facets_whole_rule_unavailable": [
+      "RememberMissing",
+      "MutableStateAutoboxing"
+    ],
+    "unavailable_no_native_invocation": [
+      "LambdaParameterInRestartableEffect",
+      "MutableStateParam"
+    ]
+  },
+  "resolved_runtime_artifact": null,
+  "rules": [
+    {
+      "path": "fixtures/remember-missing.json",
+      "rule_id": "ktc.compose.pack.RememberMissing",
+      "upstream_id": "Compose:RememberMissing",
+      "default_activation": "advisory",
+      "case_count": 8,
+      "sha256": "9eef666f2aeb916905e6f48829bd32ae63324771f2c93e0d60ecea8d0917151e"
+    },
+    {
+      "path": "fixtures/remember-content-missing.json",
+      "rule_id": "ktc.compose.pack.RememberContentMissing",
+      "upstream_id": "Compose:RememberContentMissing",
+      "default_activation": "advisory",
+      "case_count": 8,
+      "sha256": "7cec613305a3440b4ae7a6bdde9996ca7143d59d777dbb411f250c22f3a8ab2f"
+    },
+    {
+      "path": "fixtures/lambda-parameter-in-restartable-effect.json",
+      "rule_id": "ktc.compose.pack.LambdaParameterInRestartableEffect",
+      "upstream_id": "Compose:LambdaParameterInRestartableEffect",
+      "default_activation": "advisory",
+      "case_count": 8,
+      "sha256": "d161a74a26d6641a834b1d93794c68285a2efde438850598ce59619c0def1e3f"
+    },
+    {
+      "path": "fixtures/content-slot-reused.json",
+      "rule_id": "ktc.compose.pack.ContentSlotReused",
+      "upstream_id": "Compose:ContentSlotReused",
+      "default_activation": "opt_in",
+      "case_count": 8,
+      "sha256": "38292bd913bf17c436df22120ccfe169b271d584edad0cb3f94eba8525e48c4a"
+    },
+    {
+      "path": "fixtures/mutable-state-autoboxing.json",
+      "rule_id": "ktc.compose.pack.MutableStateAutoboxing",
+      "upstream_id": "Compose:MutableStateAutoboxing",
+      "default_activation": "advisory",
+      "case_count": 8,
+      "sha256": "ea1afe6fa542ec723b939273748896b77d986663a08200e812b58f9328637b6c"
+    },
+    {
+      "path": "fixtures/state-param.json",
+      "rule_id": "ktc.compose.pack.StateParam",
+      "upstream_id": "Compose:StateParam",
+      "default_activation": "opt_in",
+      "case_count": 7,
+      "sha256": "6058d0233a6dbbabf86349251b930dc520e32ee15df1abe8fc8dfdf04abc4b39"
+    },
+    {
+      "path": "fixtures/mutable-state-param.json",
+      "rule_id": "ktc.compose.pack.MutableStateParam",
+      "upstream_id": "Compose:MutableStateParam",
+      "default_activation": "opt_in",
+      "case_count": 7,
+      "sha256": "c3b182d724e6b1cde1f24b249060248968b8a3e9568088cfada0454f5205c43d"
+    },
+    {
+      "path": "fixtures/unstable-collections.json",
+      "rule_id": "ktc.compose.pack.UnstableCollections",
+      "upstream_id": "Compose:UnstableCollections",
+      "default_activation": "advisory",
+      "case_count": 7,
+      "sha256": "eeb8ee583489fa015e3553465f875a1de935db887a5a8a464e5e53d4f717dc2e"
+    }
+  ],
+  "authored_case_count": 61,
+  "activation_counts": {
+    "advisory": 5,
+    "opt_in": 3
+  },
+  "observation": {
+    "actual_execution": null,
+    "tested": false,
+    "qualified": false,
+    "real_world_precision": null
+  },
+  "limitations": [
+    "These are literal-source expectations traced to the exact upstream tag, not observed detector results.",
+    "Resolved runtime/library authority and its bytes are not supplied by source_api_baseline_only or source imports.",
+    "The private owner-authority seam and separate bounded one-rule task need adoption and explicit execution admission before any native run; authored SOURCE is not runtime evidence.",
+    "Missing authority or unsupported tuple yields unavailable with no launch. Unknown whole surfaces cannot pass: only exact reviewed scalar/generic messages may be advisory while whole-rule coverage stays unavailable and implemented=false.",
+    "All fixture programs are authored syntactic examples; no compiler typecheck or project/runtime compatibility was performed.",
+    "Alias misses and homonym hits are explicit precision-gap probes, not semantic fixes or evidence of safety.",
+    "No existing corpus counts, cohort registry, coverage snapshots, catalog rows, or release qualification are modified."
+  ]
+}

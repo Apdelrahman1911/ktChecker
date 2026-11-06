@@ -217,6 +217,11 @@ class KernelException(val code: String, message: String) : RuntimeException(mess
 fun interface PreparedInputObserver {
     fun prepared(original: AnalysisInput, effective: AnalysisInput, verifyFrozen: () -> Unit)
 
+    /** No input-only observer may accidentally authorize a declared-slot execution. */
+    fun preparedProduced(attempt: ProducedExecutionAttempt) {
+        throw KernelException("produced_plan_observer_unavailable", "An exact live declaration-to-execution observer is required")
+    }
+
     /**
      * Outside all kernel/config/source locks, once for each attempt whose prepared callback began,
      * including partial preparation failure or cancellation before provider entry. Release ONLY

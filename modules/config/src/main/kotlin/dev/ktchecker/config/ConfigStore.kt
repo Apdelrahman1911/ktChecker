@@ -98,6 +98,25 @@ class ConfigStore(
     /** Original status/coverage/failure evidence is retained verbatim. */
     fun apply(snapshot: ConfigSnapshot, input: AnalysisInput, result: ProviderResult): ProviderResult = matcher.apply(snapshot, input, result)
 
+    /**
+     * Pure compatibility check of trusted archived captures; no live capture, execution,
+     * grants or currentness check. The caller must authenticate retained input/captures.
+     * The original AnalysisInput is never retagged with the requested policy digest.
+     */
+    fun prepareReassessment(
+        originalInput: AnalysisInput,
+        originalConfig: FrozenConfig,
+        currentConfig: FrozenConfig,
+    ): PolicyReassessmentSubject = PolicyReassessmentSubject.create(this, originalInput, originalConfig, currentConfig)
+
+    /** Byte-bound policy v1 only; no legacy identity/lifecycle verifier is invoked. */
+    fun explainReassessment(subject: PolicyReassessmentSubject, finding: Finding): SuppressionExplanation =
+        subject.explain(matcher, aliases.digest, finding)
+
+    /** Only dispositions change; no status, coverage, evidence or completion is upgraded. */
+    fun applyReassessment(subject: PolicyReassessmentSubject, result: ProviderResult): ProviderResult =
+        subject.apply(matcher, aliases.digest, result)
+
     fun mutate(request: ConfigMutationRequest, permit: MutationPermit): ConfigSnapshot {
         // Detach collection-bearing import payloads before verification/use. A client
         // cannot change mutable lists after a payload-bound permit has been checked.

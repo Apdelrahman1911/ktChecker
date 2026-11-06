@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-exception-observability-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+  "upstream_id": "exceptions:PrintStackTrace",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "severity": "info",
+  "kind": "policy",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "542a8df8cc273a59465734253a1ae5a4aa3cc39fa7fb647ce5a07fb4353f3d61",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-exceptions/src/main/kotlin/dev/detekt/rules/exceptions/PrintStackTrace.kt",
+    "source_file_sha256": "091de705446bc09bfefdfb770ce9f6894d6951921d643fa763dbcdfe14bc6d5a",
+    "predicate_line_numbers": [
+      49,
+      50,
+      51,
+      52,
+      53,
+      55,
+      59,
+      60,
+      61,
+      62,
+      63,
+      68,
+      69,
+      70
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/exceptions/PrintStackTrace",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:90186a3d3d3a5aeb3cf64bba0d399026de69eca075f0e16768d8a36f44358505"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [],
+  "bounded_predicate": "Opt-in output policy: a dumpStack call-name with receiver text exactly Thread reports the KtCallExpression only; catch-body descendant names equal to the catch parameter report that receiver-name entity when nextSibling.nextSibling is a call whose text starts printStackTrace(. No rule-specific options or destination/type/alias analysis.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.stacktracepolicy\n\nfun directThreadDump() {\n    Thread.dumpStack()\n}\n\nfun invokeWithDirectTrace(action: () -> Unit) {\n    try {\n        action()\n    } catch (failure: Exception) {\n        failure.printStackTrace()\n    }\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 11,
+        "end_line": 4,
+        "end_column": 22,
+        "span": "dumpStack()",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 11,
+        "column": 8,
+        "end_line": 11,
+        "end_column": 15,
+        "span": "failure",
+        "occurrence": 1
+      }
+    ],
+    "intent": "Exercise both actual entity shapes on valid JVM spellings: direct Thread.dumpStack reports only dumpStack(), while a caught throwable printStackTrace reports only its failure receiver. Both violate the explicitly selected output convention, not a proved confidentiality property."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.stacktracepolicy\n\nfun recordThreadCheckpoint(record: (String) -> Unit) {\n    record(\"thread checkpoint\")\n}\n\nfun invokeWithControlledTrace(action: () -> Unit, report: (Throwable) -> Unit) {\n    try {\n        action()\n    } catch (failure: Exception) {\n        report(failure)\n    }\n}\n"
+    },
+    "expected": [],
+    "intent": "Use caller-controlled recording/report callbacks instead of the two direct stack-print spellings. The rule stays active; absence of this warning is not proof that the callbacks redact, persist, or handle failure correctly."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.stacktracepolicy\n\nfun directThreadDump() {\n    Thread.dumpStack()\n}\n\nfun invokeWithDirectTrace(action: () -> Unit) {\n    try {\n        action()\n    } catch (failure: Exception) {\n        failure.printStackTrace()\n    }\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"PrintStackTrace\")\n\npackage suppressed.corpus.stacktracepolicy\n\nfun directThreadDump() {\n    Thread.dumpStack()\n}\n\nfun invokeWithDirectTrace(action: () -> Unit) {\n    try {\n        action()\n    } catch (failure: Exception) {\n        failure.printStackTrace()\n    }\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 11,
+        "end_line": 4,
+        "end_column": 22,
+        "span": "dumpStack()",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 11,
+        "column": 8,
+        "end_line": 11,
+        "end_column": 15,
+        "span": "failure",
+        "occurrence": 1
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.stacktracepolicy\n\nprivate object Thread {\n    fun dumpStack(): List<String> = listOf(\"queued-work\")\n}\n\nfun queuedWorkNames(): List<String> = Thread.dumpStack()\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 7,
+          "column": 45,
+          "end_line": 7,
+          "end_column": 56,
+          "span": "dumpStack()",
+          "occurrence": 1
+        }
+      ],
+      "intent": "This private non-JDK Thread object returns a benign work-name list; it does not print a stack trace. The exact receiver/call spelling still matches. Retain the anticipated false positive caused by absent type resolution.",
+      "id": "non-jdk-thread-dumpstack-is-not-stack-printing",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.stacktracepolicy\n\nfun invokeWithAliasedTrace(action: () -> Unit) {\n    try {\n        action()\n    } catch (failure: Exception) {\n        val alias = failure\n        alias.printStackTrace()\n    }\n}\n"
+      },
+      "expected": [],
+      "intent": "The caught throwable is still directly printed, but through a local alias rather than a receiver named exactly like the catch parameter. Preserve the anticipated false negative; alias flow is not inspected.",
+      "id": "caught-throwable-alias-still-prints",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.stacktracepolicy\n\nfun directQualifiedThreadDump() {\n    java.lang.Thread.dumpStack()\n}\n"
+      },
+      "expected": [],
+      "intent": "The real JDK java.lang.Thread.dumpStack still prints a stack dump, but the receiver text is qualified rather than exactly Thread. Retain this anticipated false negative instead of treating qualification as safe logging.",
+      "id": "qualified-jdk-thread-dumpstack-is-missed",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    }
+  ],
+  "limitations": [
+    "This is explicit opt-in info/policy/intent-dependent output style. Direct diagnostics can be intentional and destination policy must be decided by the owner.",
+    "The Thread branch reports the call expression without its receiver. The caught-throwable branch reports the receiver-name reference, not the method name or whole qualified call.",
+    "A same-spelled non-JDK Thread is an anticipated false positive. A local caught-throwable alias and fully qualified JDK Thread are independently retained anticipated false negatives.",
+    "Printing outside a catch, whitespace/sibling forms, nested same-named receivers and other output mechanisms are not fully covered. No exhaustive call or type resolution is claimed.",
+    "Stream/writer destinations, log retention, secrets, taint and redaction are not evaluated. This is not an information-disclosure, security or safe-logging certificate.",
+    "No rule-specific options exist. No parser/compiler, semantic, cancellation, ownership, model, natural-project or release qualification is claimed."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. All three rules require explicit owner opt-in and retain info/intent-dependent classification. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, parser, semantic, ownership, cancellation-flow, taint, redaction, model or release qualification."
+}

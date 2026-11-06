@@ -1,0 +1,1482 @@
+{
+  "schema": "ktchecker/detekt-syntax-local-shapes-case-matrix/1",
+  "cohort_id": "constant-and-body-policy-v1",
+  "state": "AUTHORED_NOT_RUN",
+  "candidate_only": true,
+  "baseline_scope_reference": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/scope.json",
+  "analyses": [
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 11,
+          "span": "retries",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "eb6dbb60a4289a70a0c34701963468274d23f653867b10fb6c642f577d334a01",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "44a5357f7abfbf3e28f363f7f34f14c4ac22ebf9ee3d4abc63a647f805d1c3e4",
+          "bytes": 56
+        }
+      ],
+      "expected_override": null,
+      "intent": "A no-argument helper only returns a literal policy value. Exposing a const may be clearer in some APIs, but function identity, overrides and ABI are explicit design choices, not defects.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "af237d841f58f6144ffa2315b6f7e213b0be3a6189f24d1f8d55d22d35619015",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "1b8b8b0056a18a9fbb82753a4c7c866b8c3ab75dfa5374a0ba76c76bc82cb3c3",
+          "bytes": 60
+        }
+      ],
+      "expected_override": null,
+      "intent": "The intended compile-time value is represented by a legal const val instead of a function; the active rule has no function to report.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "eb6dbb60a4289a70a0c34701963468274d23f653867b10fb6c642f577d334a01",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "44a5357f7abfbf3e28f363f7f34f14c4ac22ebf9ee3d4abc63a647f805d1c3e4",
+          "bytes": 56
+        }
+      ],
+      "expected_override": [],
+      "intent": "A no-argument helper only returns a literal policy value. Exposing a const may be clearer in some APIs, but function identity, overrides and ABI are explicit design choices, not defects.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 11,
+          "span": "retries",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "eb6dbb60a4289a70a0c34701963468274d23f653867b10fb6c642f577d334a01",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "44a5357f7abfbf3e28f363f7f34f14c4ac22ebf9ee3d4abc63a647f805d1c3e4",
+          "bytes": 56
+        }
+      ],
+      "expected_override": null,
+      "intent": "A no-argument helper only returns a literal policy value. Exposing a const may be clearer in some APIs, but function identity, overrides and ABI are explicit design choices, not defects.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 11,
+          "span": "retries",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0fffbf930bb2576aea8889c5db6b4f3fcbffa81ad171db5761b36f584c55bbe2",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "44a5357f7abfbf3e28f363f7f34f14c4ac22ebf9ee3d4abc63a647f805d1c3e4",
+          "bytes": 56
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "9edf3eddce159eff9ecca4fcecb5fc5337a1356654b053c779a06b0d5746572f",
+          "bytes": 116
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "af237d841f58f6144ffa2315b6f7e213b0be3a6189f24d1f8d55d22d35619015",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "1b8b8b0056a18a9fbb82753a4c7c866b8c3ab75dfa5374a0ba76c76bc82cb3c3",
+          "bytes": 60
+        }
+      ],
+      "expected_override": null,
+      "intent": "The intended compile-time value is represented by a legal const val instead of a function; the active rule has no function to report.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "overridden-contract-default-exemption",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "4070f6e846689082603f561019419a485f7a5e97f239a86a2748fd2203ba5ed8",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "485c0024213d81a2afc844b05ce1500a1d992da662d195f9022fc733fc26fec6",
+          "bytes": 155
+        }
+      ],
+      "expected_override": null,
+      "intent": "An implementation returns a fixed value to satisfy an interface contract; default ignoreOverridableFunction permits this legitimate override.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "configured-overrides-report-with-contract-intact",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 17,
+          "end_line": 5,
+          "end_column": 24,
+          "span": "retries",
+          "occurrence": 1
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "genuine_upstream_option",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "ignoreOverridableFunction": false
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "4070f6e846689082603f561019419a485f7a5e97f239a86a2748fd2203ba5ed8",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "485c0024213d81a2afc844b05ce1500a1d992da662d195f9022fc733fc26fec6",
+          "bytes": 155
+        }
+      ],
+      "expected_override": null,
+      "intent": "With the genuine ignoreOverridableFunction option set false, the same override is intentionally reported. This opt-in policy result cannot authorize replacing an interface method with a constant.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "null-literal-is-not-legal-const-value",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 17,
+          "span": "noCachedToken",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "98047bbc7fd5cbf308c8a4d44d3c4145ff0a5abf5ff84e6d729b3afed69dafeb",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "ea23bafb9fff84b4c2035788d3e89c61063798e986835d975e98405f7c58d09a",
+          "bytes": 69
+        }
+      ],
+      "expected_override": null,
+      "intent": "Literal null is a KtConstantExpression and matches, but Kotlin const val cannot be null. Preserve the anticipated false-positive rewrite suggestion instead of claiming const eligibility.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "configured-function-glob-keeps-unexcluded-neighbor",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+      "fixture_json_pointer": "/controls/3",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 17,
+          "span": "manualRetries",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "genuine_upstream_option",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "excludedFunctions": [
+          "generated*"
+        ]
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e696e720852223c0214028aaea263d32255308907ea29ce035f3a660aed8897f",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "7e4af6387f097a5d97576ea6af853404c58679537acccbb0956b7610faabbe02",
+          "bytes": 94
+        }
+      ],
+      "expected_override": null,
+      "intent": "The actual excludedFunctions glob excludes generatedRetries only; manualRetries still reports. This demonstrates configured policy without a disabled rule or scope reduction.",
+      "selected_sarif_rule_id": "detekt.style.FunctionOnlyReturningConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 23,
+          "span": "return prefix + key",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "2029720fc372dd8815476bf90dd8f108fd30e3e5d03e1bd7bb14abc4303654a1",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4199f3ba4f7c8b514d3af153a7bf883f9e55fc55542c096574199fe9d279a780",
+          "bytes": 109
+        }
+      ],
+      "expected_override": null,
+      "intent": "A simple value-producing helper contains just a return and can express its body directly. This is explicit syntax policy, not a claim about program defects.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "9dc14c96fc7fd64ac34a2e11dffc7d70b066ea261d5b9c942aee46adf55c4aa7",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "0ae747b980412a9b2426bbbc8e99f745f2fb2ce91786c03a686fa313d73ab2bf",
+          "bytes": 96
+        }
+      ],
+      "expected_override": null,
+      "intent": "An expression body directly produces the same string for these stable parameters; the same rule is active.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "2029720fc372dd8815476bf90dd8f108fd30e3e5d03e1bd7bb14abc4303654a1",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4199f3ba4f7c8b514d3af153a7bf883f9e55fc55542c096574199fe9d279a780",
+          "bytes": 109
+        }
+      ],
+      "expected_override": [],
+      "intent": "A simple value-producing helper contains just a return and can express its body directly. This is explicit syntax policy, not a claim about program defects.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 23,
+          "span": "return prefix + key",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "2029720fc372dd8815476bf90dd8f108fd30e3e5d03e1bd7bb14abc4303654a1",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4199f3ba4f7c8b514d3af153a7bf883f9e55fc55542c096574199fe9d279a780",
+          "bytes": 109
+        }
+      ],
+      "expected_override": null,
+      "intent": "A simple value-producing helper contains just a return and can express its body directly. This is explicit syntax policy, not a claim about program defects.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 23,
+          "span": "return prefix + key",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "a63ecd3148b8bc2f0de2e91e1be791adb73297b7392ff7655eaab626ce6a74f9",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4199f3ba4f7c8b514d3af153a7bf883f9e55fc55542c096574199fe9d279a780",
+          "bytes": 109
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "50bc1879f2f3ac6a859ba8af8f968f00426d52eee16ecc0929b6039ed4197d4f",
+          "bytes": 160
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "9dc14c96fc7fd64ac34a2e11dffc7d70b066ea261d5b9c942aee46adf55c4aa7",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "0ae747b980412a9b2426bbbc8e99f745f2fb2ce91786c03a686fa313d73ab2bf",
+          "bytes": 96
+        }
+      ],
+      "expected_override": null,
+      "intent": "An expression body directly produces the same string for these stable parameters; the same rule is active.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "wrapped-return-default-exemption",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "7e6fd36a750f2adc6ec0e6ae32905295041d962e7c030062a1d501b22258258f",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "ac72551d09f5da39c464898475c3c684727d9f76682b09ab6d325e9acf3c9c3a",
+          "bytes": 117
+        }
+      ],
+      "expected_override": null,
+      "intent": "Default includeLineWrapping=false exempts a deliberate wrapped returned expression, even though it is the only statement.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "configured-wrapped-return-entity",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 5,
+          "end_column": 11,
+          "span": "return prefix +\n        key",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "genuine_upstream_option",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "includeLineWrapping": true
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "7e6fd36a750f2adc6ec0e6ae32905295041d962e7c030062a1d501b22258258f",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "ac72551d09f5da39c464898475c3c684727d9f76682b09ab6d325e9acf3c9c3a",
+          "bytes": 117
+        }
+      ],
+      "expected_override": null,
+      "intent": "The actual includeLineWrapping option makes the byte-identical wrapped return report as one whole return entity. It is not a reformatting execution.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "elvis-early-return-prevents-expression-body",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "1ba8cfeccbec789933b8461e009e80cea2b8de95b921862daf05dd3d540a4d3b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "d76e59f6347006eef2741b2be23ab536f4786107ae125ffb9d6d2a2565b4757b",
+          "bytes": 114
+        }
+      ],
+      "expected_override": null,
+      "intent": "The Elvis alternative performs an early function return. Moving this body blindly to an expression body is not generally legal; the explicit nested-return guard must keep it unreported.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "property-getter-lone-return-is-in-scope",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+      "fixture_json_pointer": "/controls/3",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 12,
+          "end_line": 6,
+          "end_column": 22,
+          "span": "return key",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "562353aa68c47370b1ce57852ed92cd590998b6d56d00c0ca17a7a0833af4972",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4bc15b0062c0dfda978e68e6582f225e4107fc718b479bae7e7575738afc83ba",
+          "bytes": 143
+        }
+      ],
+      "expected_override": null,
+      "intent": "A property getter is another supported declaration-with-body, and its lone return is the reported entity. It is not a separate rule or a function-name oracle.",
+      "selected_sarif_rule_id": "detekt.style.ExpressionBodySyntax",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 14,
+          "span": "retryLimit",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "51e0e71695453412f8d71dd839286f083060b696a3686866cd36ca8d6ebaa8e4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "d6a1cf5cbe809ccdf5f5c855c2ede9cf8165c450fbda8291778dc2c771e2924a",
+          "bytes": 54
+        }
+      ],
+      "expected_override": null,
+      "intent": "A top-level immutable primitive literal can be represented as a compile-time constant in a context where inlining/interoperability is intended; this remains explicit opt-in policy.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "54098608cd373b8c43fb6f0bc18bbcd3fe5a03a8a3504a67808fd02ad6b4b376",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "8830e5033359fa2a5bcbb8827e661c7d61a8556e7ec5e6d10a7cba3cd9dae6ed",
+          "bytes": 61
+        }
+      ],
+      "expected_override": null,
+      "intent": "A legal const val already expresses the intended compile-time value and must not report.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "51e0e71695453412f8d71dd839286f083060b696a3686866cd36ca8d6ebaa8e4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "d6a1cf5cbe809ccdf5f5c855c2ede9cf8165c450fbda8291778dc2c771e2924a",
+          "bytes": 54
+        }
+      ],
+      "expected_override": [],
+      "intent": "A top-level immutable primitive literal can be represented as a compile-time constant in a context where inlining/interoperability is intended; this remains explicit opt-in policy.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 14,
+          "span": "retryLimit",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "51e0e71695453412f8d71dd839286f083060b696a3686866cd36ca8d6ebaa8e4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "d6a1cf5cbe809ccdf5f5c855c2ede9cf8165c450fbda8291778dc2c771e2924a",
+          "bytes": 54
+        }
+      ],
+      "expected_override": null,
+      "intent": "A top-level immutable primitive literal can be represented as a compile-time constant in a context where inlining/interoperability is intended; this remains explicit opt-in policy.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 14,
+          "span": "retryLimit",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "c0277ee1c966429cc74452c467c259e8715d0aa2161c850fafb5aacc75191c7e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "d6a1cf5cbe809ccdf5f5c855c2ede9cf8165c450fbda8291778dc2c771e2924a",
+          "bytes": 54
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "b76849f982196d77222cb5777f06e7363a58fbcd86ff2b95feca7ee01a0414bf",
+          "bytes": 98
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "54098608cd373b8c43fb6f0bc18bbcd3fe5a03a8a3504a67808fd02ad6b4b376",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "8830e5033359fa2a5bcbb8827e661c7d61a8556e7ec5e6d10a7cba3cd9dae6ed",
+          "bytes": 61
+        }
+      ],
+      "expected_override": null,
+      "intent": "A legal const val already expresses the intended compile-time value and must not report.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "nullable-declared-type-is-not-const-eligible",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 17,
+          "span": "optionalLimit",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "06f3e7ffe08a6c456efbddb53fcf35be84c59937d299839976249719cba4cfbb",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "ebf4a796c3e06b8926746efffb42d55606f4b5275c4c5de399b53292db49d959",
+          "bytes": 58
+        }
+      ],
+      "expected_override": null,
+      "intent": "The literal initializer matches, but the explicitly nullable declared type is not permitted for const val. Keep this anticipated unsafe-advice false positive instead of treating the initializer as sufficient semantic proof.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "local-literal-cannot-be-const",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e1ed7cdc54db7f3e007078dd67b1273e4ea7b41863288c30aec33a1b2de5b814",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "5957e1a991d6dfda3ee634d8ccedc0a528a584286afd73464ff96ccbcf07a29a",
+          "bytes": 101
+        }
+      ],
+      "expected_override": null,
+      "intent": "A local immutable literal is legal code but cannot be declared const at local scope; the explicit local-property exclusion keeps it unreported.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "same-file-constant-arithmetic-shape",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 14,
+          "span": "totalLimit",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "61044c280d9b1deced988110b320df8e7f58fa5f1efbf070dfcc7494e5867e8d",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6ae586740e4a1b2cd697c8e8018b4373f4dbecf9500baaad67fce4a84b412f69",
+          "bytes": 97
+        }
+      ],
+      "expected_override": null,
+      "intent": "A same-file const name combined with supported arithmetic is recognized; the already-const BASE_LIMIT is not a second finding. No cross-file or overloaded-operator binding is inferred.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "getter-backed-property-is-excluded",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+      "fixture_json_pointer": "/controls/3",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "c34cb603ea2562887062372f9814824b1e1f747e639889b94d204ad5e8b72604",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "006b8688c8412638f6c52734d9df96008024c1de8a38e63e6475c12e025ead4c",
+          "bytes": 60
+        }
+      ],
+      "expected_override": null,
+      "intent": "An accessor-backed property is deliberately excluded even when its body returns a literal; property access behavior is a separate API surface.",
+      "selected_sarif_rule_id": "detekt.style.MayBeConstant",
+      "selected_sarif_descriptor_enabled_required": true
+    }
+  ],
+  "invocation_schedule": [
+    {
+      "ordinal": 1,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 0
+    },
+    {
+      "ordinal": 2,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 3,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 1
+    },
+    {
+      "ordinal": 4,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 2
+    },
+    {
+      "ordinal": 5,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 3
+    },
+    {
+      "ordinal": 6,
+      "kind": "cli_probe",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "cli-version-probe",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "expected_version": "2.0.0-alpha.6"
+    },
+    {
+      "ordinal": 7,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 8,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 9,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 4
+    },
+    {
+      "ordinal": 10,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 5
+    },
+    {
+      "ordinal": 11,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "overridden-contract-default-exemption",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 6
+    },
+    {
+      "ordinal": 12,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "configured-overrides-report-with-contract-intact",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 7
+    },
+    {
+      "ordinal": 13,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "null-literal-is-not-legal-const-value",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 8
+    },
+    {
+      "ordinal": 14,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "case_id": "configured-function-glob-keeps-unexcluded-neighbor",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 9
+    },
+    {
+      "ordinal": 15,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 10
+    },
+    {
+      "ordinal": 16,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 17,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 11
+    },
+    {
+      "ordinal": 18,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 12
+    },
+    {
+      "ordinal": 19,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 13
+    },
+    {
+      "ordinal": 20,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 21,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 22,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 14
+    },
+    {
+      "ordinal": 23,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 15
+    },
+    {
+      "ordinal": 24,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "wrapped-return-default-exemption",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 16
+    },
+    {
+      "ordinal": 25,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "configured-wrapped-return-entity",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 17
+    },
+    {
+      "ordinal": 26,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "elvis-early-return-prevents-expression-body",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 18
+    },
+    {
+      "ordinal": 27,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+      "case_id": "property-getter-lone-return-is-in-scope",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 19
+    },
+    {
+      "ordinal": 28,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 20
+    },
+    {
+      "ordinal": 29,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 30,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 21
+    },
+    {
+      "ordinal": 31,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 22
+    },
+    {
+      "ordinal": 32,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 23
+    },
+    {
+      "ordinal": 33,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 34,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 35,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 24
+    },
+    {
+      "ordinal": 36,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 25
+    },
+    {
+      "ordinal": 37,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "nullable-declared-type-is-not-const-eligible",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 26
+    },
+    {
+      "ordinal": 38,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "local-literal-cannot-be-const",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 27
+    },
+    {
+      "ordinal": 39,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "same-file-constant-arithmetic-shape",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 28
+    },
+    {
+      "ordinal": 40,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+      "case_id": "getter-backed-property-is-excluded",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 29
+    }
+  ],
+  "counts": {
+    "authored_analyses": 30,
+    "all_calls": 40,
+    "native_launch_ceiling": 31,
+    "expected_runtime_callbacks": 34,
+    "planned_progress_events": 122,
+    "independent_controls": 12,
+    "authored_alert_bearing_analyses": 16,
+    "authored_zero_finding_analyses": 14,
+    "authored_expected_finding_observations": 16,
+    "unique_rule_source_sets": 19,
+    "unique_rule_source_configuration_sets": 24,
+    "independent_control_assessments": {
+      "predicate_boundary": 7,
+      "genuine_upstream_option": 3,
+      "anticipated_upstream_false_positive": 2
+    },
+    "actual_executions": 0,
+    "actual_findings": null,
+    "natural_project_observations": 0,
+    "precision_reviewed_natural_observations": 0
+  },
+  "explicit_opt_in_policy_rule_ids": [
+    "ktc.kotlin.detekt.style.function-only-returning-constant",
+    "ktc.kotlin.detekt.style.expression-body-syntax",
+    "ktc.kotlin.detekt.style.may-be-constant"
+  ],
+  "source_authored_not_observed": true
+}

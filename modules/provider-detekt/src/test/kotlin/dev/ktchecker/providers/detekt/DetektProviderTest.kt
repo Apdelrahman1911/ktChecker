@@ -118,6 +118,153 @@ class DetektProviderTest {
         assertFalse(Coverage(exactRule, state = "passed", provenance = "executed").successful())
     }
 
+    @Test fun `legacy projection distinguishes process execution from each enabled rule`() {
+        val input = input()
+        val semanticRule = "ktc.kotlin.detekt.potential-bugs.missing-use-call"
+        val positive = DetektReportParser().parse(sarif().toByteArray(), input)
+        val negative = positive.copy(diagnostics = emptyList())
+        val noDescriptor = negative.copy(enabledSarifIds = emptySet())
+        // Synthetic projection inputs only: never passed to analyze, an authority, or a runner.
+        val plan = DetektExecutionPlan(TrustedExecution("/never-executed", approved = false), "", Digests.sha256(""),
+            emptyList(), setOf(exactRule), "light")
+        val processDetail = RawDiagnostic("Synthetic process detail is not an individual rule execution witness", "info")
+        data class Case(
+            val label: String,
+            val ruleId: String,
+            val active: Set<String>,
+            val report: DetektReport,
+            val state: String,
+            val reason: String,
+            val provenance: String,
+            val implemented: Boolean,
+            val findingCount: Int = 0,
+            val settings: DetektSettings = DetektSettings(),
+        )
+        val cases = listOf(
+            Case("enabled finding", exactRule, setOf(exactRule), positive, "findings",
+                "exact_upstream_executed_but_compatibility_and_release_qualification_missing", "executed", true, 1),
+            Case("enabled zero findings is not a clean certificate", exactRule, setOf(exactRule), negative, "unknown",
+                "exact_upstream_executed_but_compatibility_and_release_qualification_missing", "executed", true),
+            Case("active plan without an enabled descriptor", exactRule, setOf(exactRule), noDescriptor, "unknown",
+                "upstream_rule_not_reported_active", "not_executed", false),
+            Case("descriptor cannot override owner disabled rule", exactRule, emptySet(), negative, "unknown",
+                "rule_disabled_by_owner_selected_configuration", "not_executed", false,
+                settings = DetektSettings(disabledRuleIds = setOf(exactRule))),
+            Case("unavailable semantic prerequisites", semanticRule, emptySet(), noDescriptor, "unknown",
+                "full_jvm_semantic_prerequisites_unavailable", "not_executed", false),
+        )
+        assertFalse(input.context.fullProject)
+        assertTrue(input.context.classpath.isEmpty())
+        for (case in cases) {
+            val provider = DetektProvider(settings = case.settings)
+            val mapping = DetektCatalog.byId.getValue(case.ruleId)
+            assertTrue(case.ruleId in provider.mappedRuleIds, case.label)
+            assertTrue(case.ruleId in provider.supportedRuleIds, case.label)
+            assertEquals("exact", mapping.relation, case.label)
+            assertEquals("advisory", mapping.default_activation, case.label)
+            val selectedInput = input.copy(requiredRuleIds = listOf(case.ruleId))
+            val result = provider.projectReport(selectedInput, plan.copy(activeRuleIds = case.active), case.report,
+                Digests.sha256("synthetic projection: ${case.label}"), "synthetic/not-executed.sarif", listOf(processDetail))
+            assertEquals("detekt", result.providerId, case.label)
+            assertEquals(DETEKT_VERSION, result.providerVersion, case.label)
+            assertEquals("partial", result.status, case.label)
+            assertEquals(listOf(processDetail), result.rawDiagnostics, case.label)
+            assertEquals(Coverage(case.ruleId, input.context.scope, case.state, case.reason, depth = mapping.depth,
+                provenance = case.provenance, implemented = case.implemented), result.coverage.single(), case.label)
+            assertEquals(case.findingCount, result.findings.size, case.label)
+            assertTrue(result.findings.all { it.ruleId == case.ruleId && it.context == input.context.scope }, case.label)
+            assertTrue("detekt_compatibility_tuple_unqualified" in result.reasons, case.label)
+            assertFalse(result.complete(), case.label)
+            assertFalse(result.completeFor(selectedInput), case.label)
+            assertTrue(result.coverage.none { it.successful() || it.tested || it.qualified || it.certificateId != null }, case.label)
+        }
+    }
+
+    @Test fun `copied Compose support metadata cannot mint projection authority while generic findings remain`() {
+        val composeRule = "ktc.compose.pack.StateParam"
+        val original = input().copy(requiredRuleIds = listOf(exactRule, composeRule))
+        val parsed = DetektReportParser().parse(sarif().toByteArray(), original)
+        val composeSarif = DetektCatalog.byId.getValue(composeRule).sarifId
+        val report = parsed.copy(enabledSarifIds = parsed.enabledSarifIds + composeSarif,
+            diagnostics = parsed.diagnostics + parsed.diagnostics.single().copy(sarifId = composeSarif,
+                message = "unproved Compose diagnostic must be withheld"))
+        val forged = DetektComposeApplicability(Digests.sha256("copied authority metadata"), mapOf(composeRule to
+            DetektComposeRuleApplicability(mapOf(DetektComposeApiFamily.GENERIC_STATE to DetektComposeApiState.REVIEWED_PRESENT),
+                executableFacets = true, completeApiSurface = true, reason = null)))
+        val plan = DetektExecutionPlan(TrustedExecution("/never-executed", approved = false), "", Digests.sha256(""),
+            emptyList(), setOf(exactRule, composeRule), "light", forged)
+        val result = DetektProvider().projectReport(original, plan, report, Digests.sha256("synthetic"), "not-executed.sarif",
+            diagnostics = listOf(RawDiagnostic("unproved Compose diagnostic must be withheld")))
+        assertEquals(listOf(exactRule), result.findings.map { it.ruleId })
+        assertEquals("findings", result.coverage.single { it.ruleId == exactRule }.state)
+        assertTrue(result.coverage.single { it.ruleId == exactRule }.implemented)
+        val denied = result.coverage.single { it.ruleId == composeRule }
+        assertEquals("unavailable", denied.state)
+        assertEquals("detekt_compose_execution_observation_required", denied.reason)
+        assertFalse(denied.implemented || denied.tested || denied.qualified || denied.successful())
+        assertTrue(result.rawDiagnostics.none { it.message == "unproved Compose diagnostic must be withheld" })
+        assertTrue(result.rawDiagnostics.any { it.message.startsWith("Compose diagnostic withheld:") })
+        assertFalse(result.complete())
+    }
+
+    @Test fun `fresh report locators are retained but do not change projected material evidence`() {
+        // Pure parser/projection fixture only: no native runner, report read or authority permit.
+        val input = input()
+        val bytes = sarif().toByteArray()
+        val parsed = DetektReportParser().parse(bytes, input)
+        val reportDigest = Digests.sha256(bytes)
+        val plan = DetektExecutionPlan(TrustedExecution("/never-executed", approved = false), "", Digests.sha256(""),
+            emptyList(), setOf(exactRule), "light")
+        val provider = DetektProvider()
+        val firstPath = "/outputs/work-a/attempt-1/provider-a/detekt.sarif"
+        val secondPath = "/outputs/work-b/attempt-2/provider-b/detekt.sarif"
+        val first = provider.projectReport(input, plan, parsed, reportDigest, firstPath)
+        val second = provider.projectReport(input, plan, parsed, reportDigest, secondPath)
+        val a = first.findings.single()
+        val b = second.findings.single()
+        assertEquals(a.evidence, b.evidence)
+        assertEquals(reportDigest, a.evidence.single { it.kind == "upstream_sarif" }.digest)
+        assertNull(a.evidence.single { it.kind == "upstream_sarif" }.artifactRef)
+        assertEquals(listOf(EvidenceRetrievalAttachment("upstream_sarif", reportDigest, firstPath)), a.retrievalAttachments)
+        assertEquals(listOf(EvidenceRetrievalAttachment("upstream_sarif", reportDigest, secondPath)), b.retrievalAttachments)
+        assertEquals(a.copy(retrievalAttachments = emptyList()), b.copy(retrievalAttachments = emptyList()))
+        assertEquals(first.copy(findings = listOf(a.copy(retrievalAttachments = b.retrievalAttachments))), second)
+        assertNotEquals(Digests.canonical(ContractJson.encodeToJsonElement(first)),
+            Digests.canonical(ContractJson.encodeToJsonElement(second)))
+        assertEquals("partial", first.status)
+        assertEquals(DETEKT_VERSION, first.providerVersion)
+        assertTrue(first.coverage.none { it.successful() || it.tested || it.qualified || it.certificateId != null })
+        assertTrue("detekt_compatibility_tuple_unqualified" in first.reasons)
+        assertFalse(first.complete())
+    }
+
+    @Test fun `complete report byte churn remains material even when parsed diagnostic is identical`() {
+        val input = input()
+        val bytes = sarif().toByteArray()
+        val changedBytes = (sarif() + "\n").toByteArray()
+        val firstReport = DetektReportParser().parse(bytes, input)
+        val changedReport = DetektReportParser().parse(changedBytes, input)
+        assertEquals(firstReport.diagnostics, changedReport.diagnostics)
+        assertEquals(firstReport.enabledSarifIds, changedReport.enabledSarifIds)
+        val plan = DetektExecutionPlan(TrustedExecution("/never-executed", approved = false), "", Digests.sha256(""),
+            emptyList(), setOf(exactRule), "light")
+        val provider = DetektProvider()
+        val first = provider.projectReport(input, plan, firstReport, Digests.sha256(bytes), "synthetic/report.sarif")
+        val changed = provider.projectReport(input, plan, changedReport, Digests.sha256(changedBytes), "synthetic/report.sarif")
+        assertNotEquals(Digests.sha256(bytes), Digests.sha256(changedBytes))
+        assertNotEquals(first.findings.single().evidence, changed.findings.single().evidence)
+        for ((result, digest) in listOf(first to Digests.sha256(bytes), changed to Digests.sha256(changedBytes))) {
+            val finding = result.findings.single()
+            assertEquals(digest, finding.evidence.single().digest)
+            assertEquals(digest, finding.retrievalAttachments.single().digest)
+            assertEquals("synthetic/report.sarif", finding.retrievalAttachments.single().artifactRef)
+            assertFalse(result.complete())
+        }
+        assertEquals(first.coverage, changed.coverage)
+        assertEquals(first.reasons, changed.reasons)
+        assertEquals(first.findings.single().location, changed.findings.single().location)
+    }
+
     private fun input(extraFile: Boolean = false): AnalysisInput {
         val source = "package fixture\nfun source() {}\n"
         Files.writeString(temporary.resolve("source.kt"), source)

@@ -32,11 +32,9 @@ EXPECTED_DEVELOPER_DIR = "/Applications/Xcode_26.4.1.app/Contents/Developer"
 EXPECTED_XCODE_VERSION = "26.4.1"
 EXPECTED_XCODE_BUILD = "17E202"
 EXPECTED_SDK_VERSION = "26.4"
-PINNED_RUNTIME_VERSIONS = {"26.4", "26.4.0"}
-PINNED_RUNTIME_IDENTIFIERS = {
-    "com.apple.CoreSimulator.SimRuntime.iOS-26-4",
-    "com.apple.CoreSimulator.SimRuntime.iOS-26-4-0",
-}
+PINNED_RUNTIME_VERSIONS = {"26.4.1"}
+# This is the Apple simulator runtime build, not the selected Xcode build.
+PINNED_RUNTIME_BUILD = "23E254a"
 PINNED_DISPLAY_NAME = "iPhone 17"
 PINNED_DEVICE_TYPE = "com.apple.CoreSimulator.SimDeviceType.iPhone-17"
 TEXT_PROBES = {
@@ -71,9 +69,9 @@ PROBE_REASONS = {
 }
 LIMITATIONS = [
     "Availability-only observation commands; no compilation, linking, simulator test execution or Native/Apple rule qualification.",
-    "The existing target selector, SDK/runtime/device matrix and Native FIR eligibility are unchanged. No fallback is selected.",
+    "The simulator policy requires exact reported version 26.4.1/build 23E254a and a canonical observed iOS identifier. Target/SDK/device and Native FIR gates remain required; no fallback is selected.",
     "Display-name equality is an existing selector predicate, not hardware identity. Canonical device type is separately observed only when reported.",
-    "Runtime build and device state are not simulator selection predicates; boot/shutdown inventory states do not prove test execution.",
+    "Runtime version/build must match on the same observed row; the identifier suffix is not inferred from the version. Device state values are not simulator selection predicates; boot/shutdown states do not prove test execution.",
     "Only complete bounded stdout-only probes with accepted schemas support zero/absence counts; failed/not-probed remains unobserved.",
     "Trusted fresh/quiescent same-UID hosted state is assumed. Environment runner labels and path checks are not host attestation or race-proof binding.",
     "Each pipe probe has a cooperative 30-second deadline and at most two seconds of direct-child cleanup; process creation and descendant cleanup are not attested.",
@@ -316,6 +314,7 @@ def runtime_summary(value):
         identifier_version = tuple(int(component) for component in match.groups() if component is not None)
         version = tuple(int(component) for component in row["version"].split("."))
         public.append({"identifier": row["identifier"], "version": row["version"], "available": row["isAvailable"],
+                       "pinned_build_match": row.get("buildversion") == PINNED_RUNTIME_BUILD,
                        "version_identifier_consistent": (version + (0,))[:3] == (identifier_version + (0,))[:3]})
     return {"state": "observed", "complete": True, "total_rows": len(rows),
             "recognized_ios_rows": len(public), "unpublished_rows": len(rows) - len(public), "rows": public}
@@ -342,19 +341,23 @@ def device_summary(value):
 
 
 def diagnose_simulator(runtimes, devices):
-    keys = ("runtime_rows", "version_rows", "identifier_rows", "version_identifier_rows", "available_runtime_rows",
+    keys = ("runtime_rows", "version_rows", "identifier_rows", "version_identifier_rows", "build_rows",
+            "version_identifier_build_rows", "available_runtime_rows",
             "matching_device_groups", "device_group_rows", "display_name_rows", "available_display_name_rows", "valid_uuid_rows")
     counts = {key: None for key in keys}
     eligible, names = set(), []
     if runtimes is not None:
         rows = runtimes["runtimes"]
         version_rows = [row for row in rows if row["version"] in PINNED_RUNTIME_VERSIONS]
-        intersections = [row for row in version_rows if row["identifier"] in PINNED_RUNTIME_IDENTIFIERS]
-        available = [row for row in intersections if row["isAvailable"]]
+        intersections = [row for row in version_rows if IOS_IDENTIFIER.fullmatch(row["identifier"]) is not None]
+        build_matches = [row for row in intersections if row.get("buildversion") == PINNED_RUNTIME_BUILD]
+        available = [row for row in build_matches if row["isAvailable"]]
         eligible = {row["identifier"] for row in available}
         counts.update(runtime_rows=len(rows), version_rows=len(version_rows),
-                      identifier_rows=sum(row["identifier"] in PINNED_RUNTIME_IDENTIFIERS for row in rows),
-                      version_identifier_rows=len(intersections), available_runtime_rows=len(available))
+                      identifier_rows=sum(IOS_IDENTIFIER.fullmatch(row["identifier"]) is not None for row in rows),
+                      version_identifier_rows=len(intersections),
+                      build_rows=sum(row.get("buildversion") == PINNED_RUNTIME_BUILD for row in rows),
+                      version_identifier_build_rows=len(build_matches), available_runtime_rows=len(available))
     if runtimes is not None and devices is not None:
         groups = devices["devices"]
         rows = [row for identifier in eligible for row in groups.get(identifier, [])]
@@ -370,6 +373,7 @@ def diagnose_simulator(runtimes, devices):
     else:
         ordered = (("version_rows", "pinned_runtime_version_absent"),
                    ("version_identifier_rows", "pinned_runtime_identifier_mismatch"),
+                   ("version_identifier_build_rows", "pinned_runtime_build_mismatch"),
                    ("available_runtime_rows", "pinned_runtime_unavailable"),
                    ("matching_device_groups", "pinned_device_runtime_group_absent"),
                    ("display_name_rows", "pinned_device_name_absent"),
@@ -389,7 +393,7 @@ def diagnose_simulator(runtimes, devices):
                          missing_type_rows=missing)
     return {"state": state, "fixed_mismatch_code": code, "predicate_counts": counts,
             "canonical_device_type": canonical,
-            "scope": "Current simulator selector predicates only; display name is not hardware identity, build/state are not predicates."}
+            "scope": "Exact observed runtime version/build and iOS identifier structure; device groups join to that exact observed identifier. Display name is not hardware identity; device state is not a predicate."}
 
 
 def availability_alternatives(runtimes, devices):
@@ -441,7 +445,8 @@ def observe(root=REPO_ROOT):
                        "arch": "arm64" if platform.machine() in {"arm64", "aarch64"} else "other"},
               "expected": {"xcode_version": EXPECTED_XCODE_VERSION, "xcode_build": EXPECTED_XCODE_BUILD,
                            "iphoneos_sdk": EXPECTED_SDK_VERSION, "iphonesimulator_sdk": EXPECTED_SDK_VERSION,
-                           "runtime_versions": sorted(PINNED_RUNTIME_VERSIONS), "runtime_identifiers": sorted(PINNED_RUNTIME_IDENTIFIERS),
+                           "runtime_versions": sorted(PINNED_RUNTIME_VERSIONS), "runtime_build": PINNED_RUNTIME_BUILD,
+                           "runtime_identifier_policy": "canonical iOS identifier observed in bounded trusted inventory; not derived from version",
                            "legacy_display_name": PINNED_DISPLAY_NAME, "canonical_device_type": PINNED_DEVICE_TYPE},
               "selected_xcode": {"developer_dir_matches_expected": False, "version": None, "build": None,
                                  "pinned_version_build_match": None, "iphoneos_sdk": None, "iphonesimulator_sdk": None,

@@ -11,8 +11,8 @@ import kotlin.test.*
 class CompilerProviderTest {
     @Test fun exactManifestIsNotTargetCoverage() {
         val registry = CompilerRuleRegistry.load()
-        assertEquals(443, registry.mappings.size)
-        assertEquals(400, registry.jvmRuleIds.size)
+        assertEquals(445, registry.mappings.size)
+        assertEquals(402, registry.jvmRuleIds.size)
         assertFalse("ktc.compiler.native.throws_list_empty" in registry.jvmRuleIds)
         assertEquals(43, registry.mappings.count { !it.jvmApplicable })
     }

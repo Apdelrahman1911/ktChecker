@@ -112,6 +112,15 @@ export async function reserveActualDemoEvidence(path: string): Promise<ActualDem
   const selected = explicitPath(path, 'actual_demo_invalid_evidence_path');
   let opened: FileHandle | undefined;
   try {
+    // Windows exclusive-open errors for occupied reparse paths need not be
+    // EEXIST. Classify an existing leaf with lstat without following it; retain
+    // wx below as the authoritative no-overwrite check against creation races.
+    try {
+      await lstat(selected);
+      throw new HostError('actual_demo_evidence_exists');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
     await mkdir(dirname(selected), { recursive: true });
     const handle = await open(selected, 'wx', 0o600);
     opened = handle;

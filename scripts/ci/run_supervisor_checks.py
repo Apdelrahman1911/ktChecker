@@ -66,6 +66,7 @@ LIMITATIONS = [
     "Raw version streams, machine/compiler paths and original command arguments are not uploaded.",
     "The CI version-probe runner is neither a sandbox nor proof of the reviewed runtime's process-tree supervision.",
     "Unittest outcome metadata does not retain or reconstruct the original syscall traces or compiler transcripts.",
+    "Mocked shutdown state methods run deterministic no-child C models, not Darwin ABI/syscall or real child-ownership evidence.",
 ]
 RECEIPT_KEYS = {"schemaVersion", "protocolVersion", "status", "reason", "host", "compiler", "inputs", "invocation", "output",
                 "compilerDriverIdentityOnly", "transitiveCompilerToolchainVerified", "sourceToBinaryReproducibilityEstablished", "privacy"}
@@ -93,9 +94,19 @@ NATIVE_METHODS = (
     "test_invalid_limits_exit_before_start_without_fake_terminal",
     "test_syscalls_every_real_group_signal_precedes_any_leader_reap",
 )
+MOCKED_SHUTDOWN_METHODS = (
+    "test_mocked_signal_uncertainty_preserves_history_until_independent_empty_group",
+    "test_mocked_observation_uncertainty_can_resolve_only_after_empty_group",
+    "test_mocked_live_or_inaccessible_group_expires_without_quiescence",
+    "test_mocked_wait_and_ownership_failures_cannot_recover",
+    "test_mocked_no_real_signal_after_reaping_even_for_reused_group",
+    "test_mocked_quiescence_cannot_be_confirmed_at_or_after_deadline",
+    "test_mocked_other_failure_flags_are_not_cleared_by_quiescence",
+)
 CASES = {f"test_supervisor.{class_name}.{method}": scope
          for class_name, methods, scope in (("BuildReceiptTest", BUILDER_METHODS, "builder_metadata"),
-                                           ("NativeSupervisorTest", NATIVE_METHODS, "owned_child_runtime"))
+                                           ("NativeSupervisorTest", NATIVE_METHODS, "owned_child_runtime"),
+                                           ("MockedShutdownStateTest", MOCKED_SHUTDOWN_METHODS, "mocked_shutdown_state"))
          for method in methods}
 LINUX_ONLY = {
     "test_supervisor.NativeSupervisorTest.test_actual_owner_death_closes_control_and_helper_cleans_owned_child":
@@ -444,6 +455,8 @@ def outcome_metadata(value: object, source: dict, host: dict, inputs: dict, root
             "failure_diagnostics": diagnostics,
             "native_methods_executed": sum(row["scope"] == "owned_child_runtime" and row["state"] in {"passed", "failed", "error"}
                                            for row in projected),
+            "mocked_shutdown_methods_executed": sum(row["scope"] == "mocked_shutdown_state" and row["state"] in {"passed", "failed", "error"}
+                                                    for row in projected),
             "builder_metadata_methods_passed": sum(row["scope"] == "builder_metadata" and row["state"] == "passed" for row in projected),
             "linux_syscall_and_owner_death_controls_passed": passed and host["os"] == "linux",
             "raw_exception_messages_retained": False, "original_test_report_uploaded": False}
@@ -469,7 +482,8 @@ def controls(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
         if not supported:
             result["controls"] = {"state": "unavailable", "reason": "process_group_containment_unavailable",
                                   "selected_method_count": len(CASES), "tests_run": 0, "methods_not_executed": len(CASES),
-                                  "native_methods_not_executed": len(NATIVE_METHODS), "builder_metadata_methods_not_executed": len(BUILDER_METHODS)}
+                                  "native_methods_not_executed": len(NATIVE_METHODS), "builder_metadata_methods_not_executed": len(BUILDER_METHODS),
+                                  "mocked_shutdown_methods_not_executed": len(MOCKED_SHUTDOWN_METHODS)}
         else:
             cc = Path(args.cc)
             if not cc.is_absolute() or digest_bytes(str(cc).encode("utf-8")) != prerequisites["compiler"]["selected_path_digest"] \

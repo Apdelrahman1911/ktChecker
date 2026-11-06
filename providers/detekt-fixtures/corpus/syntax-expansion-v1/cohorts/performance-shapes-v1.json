@@ -1,0 +1,1412 @@
+{
+  "schema": "ktchecker/detekt-syntax-expansion-case-matrix/1",
+  "cohort_id": "performance-shapes-v1",
+  "state": "AUTHORED_NOT_RUN",
+  "candidate_only": true,
+  "baseline_scope_reference": "../scope.json#/preserved_baseline",
+  "analyses": [
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 5,
+          "end_line": 5,
+          "end_column": 14,
+          "span": "0..<limit",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 5,
+          "end_line": 6,
+          "end_column": 26,
+          "span": "limit downTo 1 step 2",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "8d43f585d7b1b0c6c04df1b59784dd192de18d13b052d9c24f8d6978f2b587b4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "26080b8c925fc1382366abf531b855f3d7a4ba0584d9ba5bfdf8725d379e130e",
+          "bytes": 193
+        }
+      ],
+      "expected_override": null,
+      "intent": "Exclusive Int range and stepped descending progression are different syntactic operator-chain shapes; no benchmark or optimizer claim.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "30bddd501db05ac3c3b27b102e8074b3cdbc24018d45305010a9ea139497db11",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f1f259acfc7df8f6d907fa0a8856948044f8196b2b4bbc963c6e0c030ad0c265",
+          "bytes": 197
+        }
+      ],
+      "expected_override": null,
+      "intent": "Equivalent counting work uses for loops over the same exclusive and descending progressions; the selected rule stays active.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "8d43f585d7b1b0c6c04df1b59784dd192de18d13b052d9c24f8d6978f2b587b4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "26080b8c925fc1382366abf531b855f3d7a4ba0584d9ba5bfdf8725d379e130e",
+          "bytes": 193
+        }
+      ],
+      "expected_override": [],
+      "intent": "Exclusive Int range and stepped descending progression are different syntactic operator-chain shapes; no benchmark or optimizer claim.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 5,
+          "end_line": 5,
+          "end_column": 14,
+          "span": "0..<limit",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 5,
+          "end_line": 6,
+          "end_column": 26,
+          "span": "limit downTo 1 step 2",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "8d43f585d7b1b0c6c04df1b59784dd192de18d13b052d9c24f8d6978f2b587b4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "26080b8c925fc1382366abf531b855f3d7a4ba0584d9ba5bfdf8725d379e130e",
+          "bytes": 193
+        }
+      ],
+      "expected_override": null,
+      "intent": "Exclusive Int range and stepped descending progression are different syntactic operator-chain shapes; no benchmark or optimizer claim.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 5,
+          "end_line": 5,
+          "end_column": 14,
+          "span": "0..<limit",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 6,
+          "column": 5,
+          "end_line": 6,
+          "end_column": 26,
+          "span": "limit downTo 1 step 2",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "a42e3c4879055c37331967c28921eb2bb5b725430d9644ec8cd454fcec5a1b2f",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "26080b8c925fc1382366abf531b855f3d7a4ba0584d9ba5bfdf8725d379e130e",
+          "bytes": 193
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "2f97f9f6b2b06454c675662c5958c3c43083fba2000a736749efe59d78569556",
+          "bytes": 238
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "30bddd501db05ac3c3b27b102e8074b3cdbc24018d45305010a9ea139497db11",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f1f259acfc7df8f6d907fa0a8856948044f8196b2b4bbc963c6e0c030ad0c265",
+          "bytes": 197
+        }
+      ],
+      "expected_override": null,
+      "intent": "Equivalent counting work uses for loops over the same exclusive and descending progressions; the selected rule stays active.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "stored-range-origin-not-followed",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "7056530de83e24c190f02fbc6588906cd17849d644c213b3758f959fcfdc0e12",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "7afe760c468568a63b3628e50222b79e26f5c31a97e1afea0001983315720659",
+          "bytes": 161
+        }
+      ],
+      "expected_override": null,
+      "intent": "A local variable still denotes an IntRange, but this predicate does not follow its initializer. Preserve the unreported same-category shape rather than claim every range loop is covered.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "materialized-list-is-not-a-range-receiver",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 4,
+          "end_line": 5,
+          "end_column": 24,
+          "span": "(0..<limit).toList()",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b6e86e046deafc2dc370833eccdde10529b9383ead5f7b6ce63c1e9bdf91fb2a",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4b17fd0844eebe4744e132d6efd1316d1c590ae87b58f5d467ff5c3ae4c26b96",
+          "bytes": 155
+        }
+      ],
+      "expected_override": null,
+      "intent": "The actual forEach receiver is a List. Recursing through toList retains a range-shaped origin and reports anyway; retain this receiver-classification false positive without asserting measured cost.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "parenthesized-explicit-range-to-method",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 6,
+          "end_line": 5,
+          "end_column": 22,
+          "span": "0.rangeTo(limit)",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "153c5fd808fa499fe544ad6515a110a16b397479a33a53541b42c8d18aabe826",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "8b153917b5d0bee2ed85f9610d686718b7f798de6da774e169d3725d7b44562c",
+          "bytes": 150
+        }
+      ],
+      "expected_override": null,
+      "intent": "Nested parentheses and explicit rangeTo call spelling remain within the advertised chain predicate, independent of operator token form.",
+      "selected_sarif_rule_id": "detekt.performance.ForEachOnRange",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 29,
+          "end_line": 3,
+          "end_column": 46,
+          "span": "IntArray(4) { 0 }",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 33,
+          "end_line": 4,
+          "end_column": 58,
+          "span": "BooleanArray(2) { false }",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0dae4ce8abb2f93b1e62900325f9b01b90f970d3bd57d44c6abedcff0f71a0dc",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "24f4255bd724f8af279130e2bf6bac6809a2c882b03faa4684b5bcadd1461d6a",
+          "bytes": 132
+        }
+      ],
+      "expected_override": null,
+      "intent": "Numeric zero and Boolean false initialization exercise two default-value families without claiming a measured speedup.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fe63c9a57a6f0577d7f022aa5a127820cab983e7379aee67e59600e15b5f66e0",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "91e531ad5378d633ad43198e8a0a56a3be7bc9c6461cee4da5ade82d72dcc1ae",
+          "bytes": 179
+        }
+      ],
+      "expected_override": null,
+      "intent": "Default constructors retain default initialization; index-dependent initialization is genuinely useful and not a listed constant.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0dae4ce8abb2f93b1e62900325f9b01b90f970d3bd57d44c6abedcff0f71a0dc",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "24f4255bd724f8af279130e2bf6bac6809a2c882b03faa4684b5bcadd1461d6a",
+          "bytes": 132
+        }
+      ],
+      "expected_override": [],
+      "intent": "Numeric zero and Boolean false initialization exercise two default-value families without claiming a measured speedup.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 29,
+          "end_line": 3,
+          "end_column": 46,
+          "span": "IntArray(4) { 0 }",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 33,
+          "end_line": 4,
+          "end_column": 58,
+          "span": "BooleanArray(2) { false }",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0dae4ce8abb2f93b1e62900325f9b01b90f970d3bd57d44c6abedcff0f71a0dc",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "24f4255bd724f8af279130e2bf6bac6809a2c882b03faa4684b5bcadd1461d6a",
+          "bytes": 132
+        }
+      ],
+      "expected_override": null,
+      "intent": "Numeric zero and Boolean false initialization exercise two default-value families without claiming a measured speedup.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 29,
+          "end_line": 3,
+          "end_column": 46,
+          "span": "IntArray(4) { 0 }",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 33,
+          "end_line": 4,
+          "end_column": 58,
+          "span": "BooleanArray(2) { false }",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "a9886f5435270f0b6b114c123c161a3ccec7dd280717ff7124f221656f156c28",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "24f4255bd724f8af279130e2bf6bac6809a2c882b03faa4684b5bcadd1461d6a",
+          "bytes": 132
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "4eab5b40062016d847ce83ebee8ffebac846d16764191067f06007c24496b16c",
+          "bytes": 185
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fe63c9a57a6f0577d7f022aa5a127820cab983e7379aee67e59600e15b5f66e0",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "91e531ad5378d633ad43198e8a0a56a3be7bc9c6461cee4da5ade82d72dcc1ae",
+          "bytes": 179
+        }
+      ],
+      "expected_override": null,
+      "intent": "Default constructors retain default initialization; index-dependent initialization is genuinely useful and not a listed constant.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "multi-statement-default-initializer-retains-audit",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "bbc166891bb8b57167760fe2741714605baec430b761cb43979bb43634f65bee",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "44975e3eb393b402c20c4c85be1dd9df37c6b5fbf3fd136f3aae56d6876d1fac",
+          "bytes": 202
+        }
+      ],
+      "expected_override": null,
+      "intent": "A mutable audit update before returning zero must survive. The real upstream multi-statement guard declines to recommend removing it.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "computed-default-expression-not-evaluated",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "fdae024bcaa1e02d089d8f463eac73a67f5b265e682c78577dd84a1ca94c3393",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b062541bd60bd011989577816e3a2b4c210ae73aa1ddc2553b933f3e8b422141",
+          "bytes": 80
+        }
+      ],
+      "expected_override": null,
+      "intent": "A constant-valued arithmetic expression is not one of the exact default strings. Preserve the optimization-shape miss; no constant evaluator is supplied by the host.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "shadowed-array-constructor-requires-lambda",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 10,
+          "column": 28,
+          "end_line": 10,
+          "end_column": 45,
+          "span": "IntArray(4) { 0 }",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "7ca68792a9b3be79451d94dfc084f8cc8fafd976422c1bff0a00d6bdbdb77a6f",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "c809f19b6fb9f3b31ba615c9224c0ab8ad8de46f39a6e4b5531c4f4af3c9b256",
+          "bytes": 263
+        }
+      ],
+      "expected_override": null,
+      "intent": "This user class stores a deferred reader and has no one-argument constructor. Removing the lambda would change the API and fail; callee text alone cannot identify the Kotlin primitive array constructor.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryInitOnArray",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 61,
+          "end_line": 3,
+          "end_column": 85,
+          "span": "ready || cached || ready",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 64,
+          "end_line": 4,
+          "end_column": 91,
+          "span": "valid && permitted && valid",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "de2ff02000689f320f548cea2f5f430b32c017795d41c461b1d1290b43efb2a7",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "1572df94ebf116e78b4b27a9d4aed510c38cc44d013cecccd011b9b1985152e9",
+          "bytes": 206
+        }
+      ],
+      "expected_override": null,
+      "intent": "Repeated stable Boolean values in distinct OR and AND chains are genuinely redundant without side effects.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "f2562fe1ef2e2ca5ed47afbf31fa0d8c20dfc1f1085842d2c181dbb2571960ea",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4092e66ea90efc4af1018556045116b2663f10079cb1f76a7ac99db2164d9246",
+          "bytes": 186
+        }
+      ],
+      "expected_override": null,
+      "intent": "Independent stable Boolean inputs remain semantically different after removing the redundant repeated term.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "de2ff02000689f320f548cea2f5f430b32c017795d41c461b1d1290b43efb2a7",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "1572df94ebf116e78b4b27a9d4aed510c38cc44d013cecccd011b9b1985152e9",
+          "bytes": 206
+        }
+      ],
+      "expected_override": [],
+      "intent": "Repeated stable Boolean values in distinct OR and AND chains are genuinely redundant without side effects.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 61,
+          "end_line": 3,
+          "end_column": 85,
+          "span": "ready || cached || ready",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 64,
+          "end_line": 4,
+          "end_column": 91,
+          "span": "valid && permitted && valid",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "de2ff02000689f320f548cea2f5f430b32c017795d41c461b1d1290b43efb2a7",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "1572df94ebf116e78b4b27a9d4aed510c38cc44d013cecccd011b9b1985152e9",
+          "bytes": 206
+        }
+      ],
+      "expected_override": null,
+      "intent": "Repeated stable Boolean values in distinct OR and AND chains are genuinely redundant without side effects.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 61,
+          "end_line": 3,
+          "end_column": 85,
+          "span": "ready || cached || ready",
+          "occurrence": 0
+        },
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 64,
+          "end_line": 4,
+          "end_column": 91,
+          "span": "valid && permitted && valid",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 2,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "79f3d1a8cecb92fe801f90d9417d4821c8a1be9dd9d0a26b903ddf5e6f11f07f",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "1572df94ebf116e78b4b27a9d4aed510c38cc44d013cecccd011b9b1985152e9",
+          "bytes": 206
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "1bf0547261e6230973dfc800b0b3e05f2a04a116b0c66a1524a9bc3a4d702232",
+          "bytes": 270
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "f2562fe1ef2e2ca5ed47afbf31fa0d8c20dfc1f1085842d2c181dbb2571960ea",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4092e66ea90efc4af1018556045116b2663f10079cb1f76a7ac99db2164d9246",
+          "bytes": 186
+        }
+      ],
+      "expected_override": null,
+      "intent": "Independent stable Boolean inputs remain semantically different after removing the redundant repeated term.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "stateful-second-poll-is-not-redundant",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 11,
+          "column": 60,
+          "end_line": 11,
+          "end_column": 90,
+          "span": "events.poll() || events.poll()",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "48c73750f6b24918e9e34791b88b5307d0e56006c9d2a8bed38414f5dba9c02d",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "48086ba637adfb2671ba6cbdc8d8a12ad0eb02d7aa7809120dd85c83686c88b2",
+          "bytes": 252
+        }
+      ],
+      "expected_override": null,
+      "intent": "The second poll changes the result because the receiver tracks calls. Repeated text is not pure/idempotent behavior; retaining both calls is a valid bounded second attempt.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "whitespace-inside-string-literals-is-significant",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 52,
+          "end_line": 3,
+          "end_column": 83,
+          "span": "value == \"a b\" || value == \"ab\"",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ef72894b0e1f0e28848d0fabfa8d6de68e3a57a6296c260b3c01e81bde7c6784",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "c1645b853bb02bfcfa6ee667517f88bef0a5840e852588c23809ae0226a09764",
+          "bytes": 112
+        }
+      ],
+      "expected_override": null,
+      "intent": "Whitespace removal crosses string-literal boundaries: the two valid spellings are not equal predicates. Preserve the raw false positive and its exact range.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "parenthesized-duplicate-is-not-flattened",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "05ee410da8dbd202d6d980c776e5aa866c6d61dd441095a5a5c61fe5a93560cb",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "afe86730851f868adacce0015649c4ff5018adb86c41cb4aa488192c25bd8116",
+          "bytes": 101
+        }
+      ],
+      "expected_override": null,
+      "intent": "The same stable Boolean value is redundantly checked, but parentheses remain part of leaf text. Do not infer logical normalization from an empty report.",
+      "selected_sarif_rule_id": "detekt.performance.UnnecessaryPartOfBinaryExpression",
+      "selected_sarif_descriptor_enabled_required": true
+    }
+  ],
+  "invocation_schedule": [
+    {
+      "ordinal": 1,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "positive",
+      "matrix_index": 0,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 2,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 3,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "negative",
+      "matrix_index": 1,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 4,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "configuration",
+      "matrix_index": 2,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 5,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "version",
+      "matrix_index": 3,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 6,
+      "kind": "cli_probe",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "cli-version-probe",
+      "native_launch_required": true,
+      "expected_version": "2.0.0-alpha.6",
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 7,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 8,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 9,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "suppression",
+      "matrix_index": 4,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 10,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "regression",
+      "matrix_index": 5,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 11,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "stored-range-origin-not-followed",
+      "matrix_index": 6,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 12,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "materialized-list-is-not-a-range-receiver",
+      "matrix_index": 7,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 13,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+      "case_id": "parenthesized-explicit-range-to-method",
+      "matrix_index": 8,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 14,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "positive",
+      "matrix_index": 9,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 15,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 16,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "negative",
+      "matrix_index": 10,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 17,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "configuration",
+      "matrix_index": 11,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 18,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "version",
+      "matrix_index": 12,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 19,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 20,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 21,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "suppression",
+      "matrix_index": 13,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 22,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "regression",
+      "matrix_index": 14,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 23,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "multi-statement-default-initializer-retains-audit",
+      "matrix_index": 15,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 24,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "computed-default-expression-not-evaluated",
+      "matrix_index": 16,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 25,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "case_id": "shadowed-array-constructor-requires-lambda",
+      "matrix_index": 17,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 26,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "positive",
+      "matrix_index": 18,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 27,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 28,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "negative",
+      "matrix_index": 19,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 29,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "configuration",
+      "matrix_index": 20,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 30,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "version",
+      "matrix_index": 21,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 31,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 32,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 33,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "suppression",
+      "matrix_index": 22,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 34,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "regression",
+      "matrix_index": 23,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 35,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "stateful-second-poll-is-not-redundant",
+      "matrix_index": 24,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 36,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "whitespace-inside-string-literals-is-significant",
+      "matrix_index": 25,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    },
+    {
+      "ordinal": 37,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "case_id": "parenthesized-duplicate-is-not-flattened",
+      "matrix_index": 26,
+      "native_launch_required": true,
+      "runtime_callback_required": true
+    }
+  ],
+  "counts": {
+    "authored_analyses": 27,
+    "all_calls": 37,
+    "native_launch_ceiling": 28,
+    "expected_runtime_callbacks": 31,
+    "planned_progress_events": 113,
+    "independent_controls": 9,
+    "authored_alert_bearing_analyses": 14,
+    "authored_zero_finding_analyses": 13,
+    "authored_expected_finding_observations": 23,
+    "unique_rule_source_sets": 18,
+    "unique_rule_source_configuration_sets": 21,
+    "independent_control_assessments": {
+      "anticipated_upstream_false_negative": 3,
+      "anticipated_upstream_false_positive": 4,
+      "predicate_boundary": 2
+    },
+    "actual_executions": 0,
+    "actual_findings": null,
+    "natural_project_observations": 0,
+    "precision_reviewed_natural_observations": 0
+  }
+}

@@ -1,4 +1,5 @@
 import type { JsonObject } from '@ktchecker/mcp-preview/rpc';
+export type { PolicyReassessmentRequest, PolicyReassessmentView } from '@ktchecker/mcp-preview';
 export interface ClientBinding {
   ownerId: string; workspaceId: string; worktreeId: string; clientId: string;
   lineageId: string; generation: number; sessionId?: string | undefined;

@@ -141,3 +141,74 @@ Both forms retain `tupleQualified=false` and `customRulesQualified=false`. A
 passing fixture is integration evidence only, not release or benchmark
 qualification. A tested HEAD may have uncommitted changes; the source snapshot and
 artifact digests bind actual inputs, not a claim that HEAD contains all changes.
+
+
+## Optional JVM physical-container survey (source candidate)
+
+`SemanticFactsRequest.observeJvmBinaryOrigins` defaults to `false` and is omitted
+from default serialization. `SemanticFactShard.jvmBinaryOrigins` defaults to null
+and is likewise omitted. All previous fields and structural symbol IDs stay
+unchanged. Default invocations create no observer and perform no new VFS reads.
+An opt-in request has a different request digest; old outputs cannot satisfy it.
+
+The versioned optional survey records every original symbol ID within its shard with either a
+physical-container **observation** or an explicit unknown reason. It only follows
+these exact Kotlin 2.4.21 compiler-object edges:
+
+- Direct `Library` named functions: `containerSource` through
+  `JvmPackagePartSource.knownJvmBinaryClass` or
+  `KotlinJvmBinarySourceElement.binaryClass`, then `VirtualFileKotlinClass.file`.
+- Direct `FirJavaMethod`: its actual `containingClassSymbol` and the class's
+  `VirtualFileBasedSourceElement.virtualFile`. Ordinary enhanced Java call targets
+  may not be this direct shape and remain `java_enhancement_origin_unsupported`.
+
+No FQN lookup, classpath search, class loading, reflection, or fake-override unwrap
+is used to invent an origin. Source/local/noncallable/unsupported declarations,
+Native/common contexts, enhancement/override wrappers, absent physical sources,
+other VFS protocols, exploded directories, unsafe paths, oversize/read failures,
+and ambiguous equal structural IDs all remain explicit unknown observations.
+
+Only actual `jar` or `jrt` VFS coordinates are decoded. The compiler VFS path is
+retained verbatim; archive entry or actual JDK home/module/class-entry components
+come from that path, never a class-name-to-filename convention. A bounded VFS read
+retains size and SHA-256 of the class bytes at observation time. It is not evidence
+that those were the bytes previously loaded into a compiler cache. The observer
+accepts class payloads up to 4 MiB and reserves at most 32 MiB per invocation for
+its own stream consumption, including one EOF probe per attempt. Failed reads
+consume their full reservation. This is **not** a bound on compiler VFS internal
+allocations: exact `FastJarVirtualFile.getInputStream` first materializes its own
+byte array. Existing isolated-process memory/time limits remain necessary. Whole
+incoming surveys also have shared record/text bounds and are recursively detached
+by assembly.
+
+This data is **not an authenticated extraction or binary-ownership receipt**.
+The owner must still retain a genuine successful exact invocation, immutable
+source/argv/plugin/output custody, every actual dependency/container byte mapping,
+and the entire selected JDK image. A JRT class digest is not a JDK-image digest;
+archive coordinates are not whole-JAR identity. The original bundle completeness
+flag concerns its original vocabulary, not binary-ownership completeness. Unknown
+survey rows stay unknown even when the original facts are complete. Optional
+survey structural validation performs no compiler execution or artifact read.
+Within-shard equal-ID disagreements become unknown; the separate owner must also
+check cross-shard/context agreement rather than treating structural IDs as global
+binary identities. VFS coordinates are not canonical, symlink-free custody paths.
+
+All physical paths/class identities remain PRIVATE fact evidence. They must not
+be added to the metadata-only CI summary or used as a permission source. This
+candidate installs no provider route, authority issuer, coroutine qualification,
+new catalog ID, or context. No compilation or extraction of this candidate has
+been performed by its author.
+
+The **existing** genuine fixture driver accepts optional
+`-PsemanticJvmBinaryOrigins=true` (paired runner argument
+`--jvm-binary-origins true`) only in JVM mode. Absence retains the original argument
+vector and default request/shard encoding for identical original fields. This
+flag changes no source fixture, language/target option, attempt schedule,
+timeout, heap, or output limit; its request-digest binding does change: the
+driver still makes **five serial compiler attempts**, one dependency and four
+plugin-bearing compilations. It is not a one-process probe. Root must independently
+review and admit each exact actual extraction run; no automatic probe is added.
+The flag requests observation only: existing positive-case success does not prove
+that any particular target has a supported physical origin. Inspect the PRIVATE
+survey and preserve unknowns. The data-only authored controls do not load FIR,
+read class bytes, execute a compiler, or qualify a binary ownership tuple.

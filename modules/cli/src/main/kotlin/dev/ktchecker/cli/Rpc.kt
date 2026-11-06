@@ -9,6 +9,9 @@ import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import kotlinx.serialization.json.*
 
+/** Exact private-RPC wire profile, not an authentication or source-read capability. */
+internal const val FINDING_WIRE_PROFILE = "ktchecker/finding-retrieval-attachments-1"
+
 /** Private NDJSON transport. MCP framing/version negotiation belongs to the SDK bridge. */
 fun interface RpcHandler { fun call(method: String, params: JsonObject): JsonObject }
 
@@ -58,7 +61,7 @@ class RpcServer(
             StrictJsonInput(line).check()
             val request = ContractJson.parseToJsonElement(line) as? JsonObject
                 ?: throw CliProblem("invalid_request", "A request object is required.")
-            requireKeys(request, setOf("id", "method", "params"))
+            requireKeys(request, setOf("id", "method", "params", "findingWireProfile"))
             val idValue = request["id"] as? JsonPrimitive
             if (idValue == null || !idValue.isString || idValue.content.length !in 1..256) {
                 throw CliProblem("invalid_request", "A bounded string request ID is required.")
@@ -71,9 +74,17 @@ class RpcServer(
             }
             val params = request["params"] as? JsonObject
                 ?: throw CliProblem("invalid_request", "A params object is required.")
+            // Check every request before credential decoding or any handler side effect. An
+            // earlier admitted request never grants a later request or reconnected peer admission.
+            val profile = request["findingWireProfile"] as? JsonPrimitive
+            if (profile == null || !profile.isString || profile.content != FINDING_WIRE_PROFILE) {
+                throw CliProblem("incompatible_finding_wire_profile",
+                    "This broker requires a matching ktChecker finding wire profile; rebuild or install matching peers.")
+            }
             buildJsonObject {
                 put("contractVersion", PREVIEW_CONTRACT)
                 put("id", id)
+                put("findingWireProfile", FINDING_WIRE_PROFILE)
                 put("result", handler.call(methodValue.content, params))
             }
         } catch (e: CliProblem) {

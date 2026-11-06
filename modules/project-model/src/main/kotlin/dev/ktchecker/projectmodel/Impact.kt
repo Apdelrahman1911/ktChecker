@@ -9,6 +9,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 @Serializable
 data class CompilationObligation(
     val compilationId: String,
+    /** Exported audit/routing label; unsupported/removed labels are not verified analysis or execution authority. */
     val context: RuleContext?,
     val compilationFilesDigest: String?,
     val modelDigest: String?,
@@ -54,6 +55,22 @@ class ProjectImpactPlanner {
         if (before != null && structuralDigest(before) != structuralDigest(after)) reasons += "model_topology_membership_or_arguments_changed"
         if (changed.any(::configurationPath)) reasons += "executable_build_configuration_changed"
         if (after.issues.isNotEmpty() || before?.issues?.isNotEmpty() == true) reasons += "unknown_model_inputs_require_full_relevant_graph"
+        // A captured path may occupy several roles. Source-set ownership does not discharge
+        // auxiliary/configuration/generator effects, and no precise consumer equivalence exists.
+        val changedPaths = changed.toSet()
+        val exports = listOfNotNull(before?.export, after.export)
+        if (exports.any { model -> model.compilations.any { compilation -> compilation.auxiliaryInputFiles.any { it.path in changedPaths } } }) {
+            reasons += "auxiliary_input_changed_requires_full_relevant_graph"
+        }
+        if (exports.any { model -> model.configurationInputs.any { it.path in changedPaths } }) {
+            reasons += "configuration_input_changed_requires_full_relevant_graph"
+        }
+        if (exports.any { model -> model.generatedInputs.any { generated -> generated.inputFiles.any { it.path in changedPaths } } }) {
+            reasons += "generated_input_changed_requires_full_relevant_graph"
+        }
+        if (exports.any { model -> model.generatedInputs.any { generated -> generated.outputFiles.any { it.path in changedPaths } } }) {
+            reasons += "generated_output_changed_requires_full_relevant_graph"
+        }
         val allCompilations = (before?.export?.compilations.orEmpty() + after.export.compilations).groupBy { it.id }
         val allSets = (before?.export?.sourceSets.orEmpty() + after.export.sourceSets).groupBy { it.id }
         val affectedSets = allSets.filterValues { versions -> versions.any { sourceSet ->
@@ -79,26 +96,47 @@ class ProjectImpactPlanner {
         }; consumer.associatedCompilationIds.forEach { producer -> reverseCompilations.getOrPut(producer) { mutableSetOf() } += consumer.id } }
         expand(affected, reverseCompilations)
         if (reasons.isNotEmpty()) { affected += allCompilations.keys; affectedSets += allSets.keys }
-        val obligations = affected.sorted().map { id ->
+        val obligations = affected.sorted().flatMap { id ->
             val current = after.compilation(id)
+            val previous = before?.compilation(id)
+            val oldVerification = before?.let { old -> previous?.let { old.context(it.id, old.identity.configurationDigest) } }
+            val oldContext = oldVerification?.context
+            val oldScope = if (before != null && previous != null) oldContext?.scope ?: exportedScope(before, previous) else null
+            val oldLabelReasons = if (previous != null && oldContext == null) {
+                oldVerification?.issues.orEmpty().map { it.kind } + "exported_context_label_only"
+            } else emptyList()
             if (current == null) {
-                val previous = before?.compilation(id)
-                val oldContext = before?.let { old -> previous?.let { old.context(it.id, old.identity.configurationDigest).context } }
-                CompilationObligation(id, oldContext?.scope, previous?.let { canonicalDigest(ContractJson.encodeToJsonElement(it.sourceFiles)) },
+                listOf(CompilationObligation(id, oldScope, previous?.let { canonicalDigest(ContractJson.encodeToJsonElement(it.sourceFiles)) },
                     before?.identity?.modelDigest, oldContext?.dependencyDigest, oldContext?.toolchainDigest, after.identity.configurationDigest,
-                    "removed_unresolved", immutable(reasons.distinct() + "consumer_removed_without_retirement_evidence"))
+                    "removed_unresolved", immutable((reasons + oldLabelReasons + "consumer_removed_without_retirement_evidence").distinct())))
             } else {
                 val context = after.context(id, after.identity.configurationDigest)
-                CompilationObligation(id, context.context?.scope, canonicalDigest(ContractJson.encodeToJsonElement(current.sourceFiles)),
+                val scope = context.context?.scope ?: exportedScope(after, current)
+                val labelReasons = if (context.context == null) listOf("exported_context_label_only") else emptyList()
+                val currentObligation = CompilationObligation(id, scope, canonicalDigest(ContractJson.encodeToJsonElement(current.sourceFiles)),
                     after.identity.modelDigest, context.context?.dependencyDigest, context.context?.toolchainDigest, after.identity.configurationDigest,
                     if (context.completeness == ModelCompleteness.COMPLETE) "pending" else "unsupported",
-                    immutable((reasons + context.issues.map { it.kind }).distinct()))
+                    immutable((reasons + context.issues.map { it.kind } + labelReasons).distinct()))
+                // Stable IDs cannot retire an old actual scope, including when ambiguity leaves
+                // both verified AnalysisContexts absent. Labels never fill missing certificates.
+                val previousObligation = if (before != null && previous != null && oldScope != scope) {
+                    CompilationObligation(id, oldScope, canonicalDigest(ContractJson.encodeToJsonElement(previous.sourceFiles)),
+                        before.identity.modelDigest, oldContext?.dependencyDigest, oldContext?.toolchainDigest, after.identity.configurationDigest,
+                        "removed_unresolved", immutable((reasons + oldLabelReasons + listOf("required_context_retargeted_unresolved",
+                            "consumer_context_changed_without_retirement_evidence")).distinct()))
+                } else null
+                listOf(currentObligation) + listOfNotNull(previousObligation)
             }
         }
         val certificate = canonicalDigest(ContractJson.encodeToJsonElement(listOf(before?.ingressCertificate.orEmpty(), after.ingressCertificate,
             Digests.canonical(ContractJson.encodeToJsonElement(changed)), Digests.canonical(ContractJson.encodeToJsonElement(obligations)))))
         return ProjectImpactPlan(before?.identity, after.identity, changed, affectedSets.sorted(), obligations, reasons.distinct().sorted(), certificate)
     }
+
+    /** Importer-admitted tuple only: no AnalysisContext, semantic certificate or executable input is fabricated. */
+    private fun exportedScope(model: VerifiedProjectModel, compilation: ModelCompilation): RuleContext = RuleContext(
+        compilation.target, requireNotNull(model.sourceSet(compilation.defaultSourceSetId)).name, compilation.moduleId, compilation.name,
+    )
 
     private fun captureDigest(model: VerifiedProjectModel): String = canonicalDigest(ContractJson.encodeToJsonElement(
         listOf(model.snapshot.ownerId, model.snapshot.workspaceId, model.snapshot.worktreeId, model.snapshot.captureKind,

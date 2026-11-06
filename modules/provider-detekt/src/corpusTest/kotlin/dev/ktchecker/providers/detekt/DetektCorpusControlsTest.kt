@@ -10,15 +10,18 @@ import kotlin.test.*
 
 /** Synthetic control states only: these tests never invoke a provider, helper, process, or sleep. */
 class DetektCorpusControlsTest {
-    private val rule = DetektCorpusCohort.analysesByRule.keys.first()
+    private val cohort = DetektCorpusCohort.EXCEPTIONS_CORE
+    private val rule = cohort.analysesByRule.keys.first()
     private val identity = OwnedSupervisorIdentity("ktchecker-owned-child-supervisor/preview-1", "linux-x86_64",
         "sha256:${"a".repeat(64)}", "sha256:${"b".repeat(64)}")
     private val references = listOf(buildJsonObject { put("path", "synthetic-control-only.json"); put("sha256", "0".repeat(64)) })
-    private fun settings() = DetektCorpusSettings.selected(DetektCorpusCohort.NAME, null, null, null)
+    private fun settings(selected: DetektCorpusCohort = cohort) = DetektCorpusSettings.selected(selected.name, null, null, null)
     private fun native() = ProcessOutcome("executed", exitCode = 0, supervisorIdentity = identity, executionConfirmed = true)
     private fun denial() = ProcessOutcome("unavailable", listOf("execution_not_authorized"))
     private fun abstention(selectedRule: String = rule, target: String = "common") = ProviderResult("detekt", "partial",
-        coverage = listOf(Coverage(selectedRule, RuleContext(target = target), state = "unsupported")))
+        coverage = listOf(Coverage(selectedRule, RuleContext(target = target), state = "unsupported",
+            reason = "detekt_jvm_provider_does_not_qualify_common_or_native_targets")),
+        reasons = listOf("detekt_jvm_provider_does_not_qualify_common_or_native_targets"))
 
     private class Clock(var nanos: Long = 0) { fun now(): Long = nanos }
     private fun checkedNative(budget: DetektCorpusBudget, kind: CorpusInvocationKind, selectedRule: String, case: String) {
@@ -28,7 +31,12 @@ class DetektCorpusControlsTest {
     }
 
     @Test fun `integration alone has no cohort and full-ten selection is rejected`() {
-        for (cohort in listOf(null, "", "syntax-v1", "all", "full-ten", "exceptions-core-v2"))
+        for (cohort in listOf(null, "", "syntax-v1", "all", "full-ten", "exceptions-core-v2",
+            "iteration-core-v2", "iteration-core-v1 ", " iteration-core-v1", "value-core-v1,opt-in-policy-v1", "../value-core-v1", "full-sixteen", "performance-shapes-v1 ",
+            "performance-shapes-v1,public-contract-policy-v1", "syntax-expansion-v1", "full-nineteen", "syntax-protocol-v1",
+            "protocol-and-catch-boundaries-v1 ", "protocol-and-catch-boundaries-v1,exceptions-core-v1",
+            "full-twenty-two", "syntax-exception-observability-v1", "exception-observability-policy-v1 ",
+            "exception-observability-policy-v1,protocol-and-catch-boundaries-v1"))
             assertFailsWith<IllegalArgumentException> { DetektCorpusSettings.selected(cohort, null, null, null) }
         assertEquals(40, settings().maxInvocations)
         assertEquals(1_200_000L, settings().aggregateMillis)
@@ -36,22 +44,83 @@ class DetektCorpusControlsTest {
     }
 
     @Test fun `approved plan counts every call and retains full authoring scope`() {
-        assertEquals(listOf(8, 11, 9), DetektCorpusCohort.analysesByRule.values.toList())
-        assertEquals(38, DetektCorpusCohort.plannedInvocations)
-        assertEquals(listOf(28, 1, 6, 3), DetektCorpusCohort.invocationsByKind.values.toList())
-        assertEquals(10, DetektCorpusCohort.FULL_AUTHORED_RULES)
-        assertEquals(91, DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
-        assertTrue(DetektCorpusCohort.planIdentity.contains("10/91/not_run"))
+        assertEquals(listOf(8, 11, 9), cohort.analysesByRule.values.toList())
+        assertEquals(38, cohort.plannedInvocations)
+        assertEquals(listOf(28, 1, 6, 3), cohort.invocationsByKind.values.toList())
+        assertEquals(10, DetektCorpusCohort.BASELINE_AUTHORED_RULES)
+        assertEquals(16, DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_RULES)
+        assertEquals(19, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_RULES)
+        assertEquals(22, DetektCorpusCohort.PRE_LOCAL_SHAPES_AUTHORED_RULES)
+        assertEquals(31, DetektCorpusCohort.FULL_AUTHORED_RULES)
+        assertEquals(91, DetektCorpusCohort.BASELINE_AUTHORED_ANALYSES)
+        assertEquals(145, DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_ANALYSES)
+        assertEquals(172, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_ANALYSES)
+        assertEquals(199, DetektCorpusCohort.PRE_LOCAL_SHAPES_AUTHORED_ANALYSES)
+        assertEquals(287, DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
+        assertTrue(cohort.planIdentity.contains("10/91/not_run"))
+        assertEquals("sha256:1a04a745f3a90b093f07725c33f7aa5e4f68dcb4e08300e7498eabb23046469f", Digests.sha256(cohort.planIdentity))
+    }
+
+    @Test fun `four closed plans partition all ten unchanged rule counts without an all selector`() {
+        val plans = DetektCorpusCohort.baseline
+        assertEquals(listOf("exceptions-core-v1", "iteration-core-v1", "value-core-v1", "opt-in-policy-v1"), plans.map { it.name })
+        assertEquals(listOf(listOf(8, 11, 9), listOf(9, 9, 10), listOf(9, 8), listOf(9, 9)),
+            plans.map { it.analysesByRule.values.toList() })
+        assertEquals(listOf(28, 28, 17, 18), plans.map { it.analysesByRule.values.sum() })
+        assertEquals(listOf(38, 38, 24, 25), plans.map { it.plannedInvocations })
+        assertEquals(listOf(29, 29, 18, 19), plans.map { it.nativeLaunchCeiling })
+        assertEquals(listOf(32, 32, 20, 21), plans.map { it.expectedRuntimeCallbacks })
+        val rules = plans.flatMap { it.analysesByRule.keys }
+        assertEquals(10, rules.size)
+        assertEquals(10, rules.distinct().size)
+        assertEquals(DetektCorpusCohort.authoredRuleIds - DetektCorpusExpansionPins.controlIds.keys - DetektCorpusProtocolPins.controlIds.keys - DetektCorpusObservabilityPins.controlIds.keys - DetektCorpusLocalShapesPins.controlIds.keys, rules.toSet())
+        assertEquals(91, plans.sumOf { it.analysesByRule.values.sum() })
+        for (plan in plans) {
+            assertSame(plan, DetektCorpusCohort.selected(plan.name))
+            assertSame(plan, settings(plan).cohort)
+            assertTrue(plan.plannedInvocations <= 40)
+            assertTrue(plan.planIdentity.contains("10/91/not_run"))
+        }
+    }
+
+    @Test fun `closed selected rule and invocation maps cannot be mutated into another plan`() {
+        for (plan in DetektCorpusCohort.all) {
+            assertFailsWith<UnsupportedOperationException> { (plan.analysesByRule as MutableMap<String, Int>).clear() }
+            assertFailsWith<UnsupportedOperationException> { (plan.invocationsByKind as MutableMap<CorpusInvocationKind, Int>).clear() }
+        }
+        assertFailsWith<UnsupportedOperationException> { (DetektCorpusCohort.all as MutableList<DetektCorpusCohort>).clear() }
+        assertFailsWith<UnsupportedOperationException> { (DetektCorpusCohort.preProtocol as MutableList<DetektCorpusCohort>).clear() }
+        assertEquals(6, DetektCorpusCohort.preProtocol.size)
+        assertFailsWith<UnsupportedOperationException> { (DetektCorpusCohort.preObservability as MutableList<DetektCorpusCohort>).clear() }
+        assertEquals(7, DetektCorpusCohort.preObservability.size)
+        assertEquals(8, DetektCorpusCohort.preLocalShapes.size)
+        assertEquals(11, DetektCorpusCohort.all.size)
+    }
+
+    @Test fun `a rule from another authored cohort fails before reservation`() {
+        for (selected in DetektCorpusCohort.all) {
+            val events = mutableListOf<JsonObject>()
+            val budget = DetektCorpusBudget(settings(selected), { events += it })
+            val other = DetektCorpusCohort.authoredRuleIds.first { it !in selected.analysesByRule }
+            assertFailsWith<IllegalArgumentException> { budget.reserve(CorpusInvocationKind.ANALYSIS, other, "positive") }
+            assertEquals(1, events.size)
+            assertEquals(0, budget.summary()["reserved_invocations"]!!.jsonPrimitive.int)
+            assertEquals(1, budget.reserve(CorpusInvocationKind.ANALYSIS, selected.analysesByRule.keys.first(), "positive").ordinal)
+        }
     }
 
     @Test fun `invalid insufficient and oversized controls fail before any reservation`() {
-        for (maximum in listOf("0", "-1", "37", "41", "48", "100000", "1.5", "yes"))
-            assertFails { DetektCorpusSettings.selected(DetektCorpusCohort.NAME, maximum, null, null) }
-        for (aggregate in listOf("0", "-1", "1200001", "999999999999999999999999", "bad"))
-            assertFails { DetektCorpusSettings.selected(DetektCorpusCohort.NAME, null, aggregate, null) }
-        for (child in listOf("0", "-1", "60001", "bad"))
-            assertFails { DetektCorpusSettings.selected(DetektCorpusCohort.NAME, null, null, child) }
-        assertEquals(38, DetektCorpusSettings.selected(DetektCorpusCohort.NAME, "38", "500", "10").maxInvocations)
+        for (selected in DetektCorpusCohort.all) {
+            for (maximum in listOf("0", "-1", (selected.plannedInvocations - 1).toString(), "41", "48", "100000", "1.5", "yes"))
+                assertFails { DetektCorpusSettings.selected(selected.name, maximum, null, null) }
+            for (aggregate in listOf("0", "-1", "1200001", "999999999999999999999999", "bad"))
+                assertFails { DetektCorpusSettings.selected(selected.name, null, aggregate, null) }
+            for (child in listOf("0", "-1", "60001", "bad"))
+                assertFails { DetektCorpusSettings.selected(selected.name, null, null, child) }
+            assertEquals(selected.plannedInvocations,
+                DetektCorpusSettings.selected(selected.name, selected.plannedInvocations.toString(), "500", "10").maxInvocations)
+        }
+        assertEquals(38, DetektCorpusSettings.selected(cohort.name, "38", "500", "10").maxInvocations)
     }
 
     @Test fun `callback and authorization do not release the next reservation`() {
@@ -141,28 +210,68 @@ class DetektCorpusControlsTest {
         assertEquals(60_000L, capped.childTimeoutMillis(capped.reserve(CorpusInvocationKind.ANALYSIS, rule, "positive")))
     }
 
-    @Test fun `complete exact schedule confirms 29 launches and counts all 38 requests`() {
-        val events = mutableListOf<JsonObject>()
-        val budget = DetektCorpusBudget(settings().copy(maxInvocations = 38), { events += it })
-        for ((selectedRule, count) in DetektCorpusCohort.analysesByRule) {
-            repeat(count) { checkedNative(budget, CorpusInvocationKind.ANALYSIS, selectedRule, "analysis-$it") }
-            val denied = budget.reserve(CorpusInvocationKind.AUTHORIZATION_DENIAL, selectedRule, "configuration-permit-replay")
-            budget.observeProcess(denied, denial(), identity); budget.checked(denied, references)
-            for (target in listOf("common", "native")) {
-                val unsupported = budget.reserve(CorpusInvocationKind.ABSTENTION, selectedRule, "unsupported-$target")
-                budget.observeAbstention(unsupported, abstention(selectedRule, target), null); budget.checked(unsupported, references)
-            }
+    @Test fun `unsupported tuple rejects wrong status reasons certificate rule and empty coverage`() {
+        val valid = abstention(target = "native")
+        val variants = listOf(valid.copy(status = "failed"), valid.copy(reasons = emptyList()),
+            valid.copy(reasons = valid.reasons + "unrelated_failure"), valid.copy(coverage = emptyList()),
+            valid.copy(coverage = listOf(valid.coverage.single().copy(ruleId = "ktc.unrequested"))),
+            valid.copy(coverage = listOf(valid.coverage.single().copy(reason = "another_reason"))),
+            valid.copy(coverage = listOf(valid.coverage.single().copy(certificateId = "synthetic-not-a-certificate"))))
+        for (result in variants) {
+            val budget = DetektCorpusBudget(settings(), {})
+            val ticket = budget.reserve(CorpusInvocationKind.ABSTENTION, rule, "unsupported-native")
+            budget.observeAbstention(ticket, result, null)
+            assertFailsWith<IllegalStateException> { budget.checked(ticket, references) }
+            assertTrue(budget.cancellation.isCancelled())
         }
-        checkedNative(budget, CorpusInvocationKind.CLI_PROBE, rule, "cli-version-probe")
-        assertEquals(29, events.count { it["execution_confirmed"]?.jsonPrimitive?.booleanOrNull == true })
-        val summary = budget.finish()
-        assertEquals(38, summary["reserved_invocations"]!!.jsonPrimitive.int)
-        assertEquals(38, summary["checked_invocations"]!!.jsonPrimitive.int)
-        assertTrue(summary["all_invocations_checked"]!!.jsonPrimitive.boolean)
-        assertEquals(DetektCorpusCohort.invocationsByKind.mapKeys { it.key.id },
-            summary["checked_by_kind"]!!.jsonObject.mapValues { it.value.jsonPrimitive.int })
-        assertFailsWith<IllegalStateException> { budget.reserve(CorpusInvocationKind.ANALYSIS, rule, "unapproved-extra") }
-        assertEquals(116, events.size) // One START + 38 * (reserve, actual, checked) + finish.
+    }
+
+    @Test fun `each selected schedule requires its own exact native callback and request counts`() {
+        val sizes = mutableListOf<Int>()
+        for (selected in DetektCorpusCohort.all) {
+            val events = mutableListOf<JsonObject>()
+            val budget = DetektCorpusBudget(settings(selected).copy(maxInvocations = selected.plannedInvocations), { events += it })
+            for ((ruleIndex, entry) in selected.analysesByRule.entries.withIndex()) {
+                val (selectedRule, count) = entry
+                repeat(count) { caseIndex ->
+                    val case = listOf("positive", "negative", "configuration", "version", "suppression", "regression")
+                        .getOrNull(caseIndex) ?: if (selected.expansion || selected.protocol || selected.observability || selected.localShapes)
+                            selected.independentControlIds.getValue(selectedRule)[caseIndex - 6] else "control-$caseIndex"
+                    checkedNative(budget, CorpusInvocationKind.ANALYSIS, selectedRule, case)
+                    if (case == "positive") {
+                        val denied = budget.reserve(CorpusInvocationKind.AUTHORIZATION_DENIAL, selectedRule, "configuration-permit-replay")
+                        budget.observeProcess(denied, denial(), identity); budget.checked(denied, references)
+                    }
+                    if (case == "version") {
+                        if (ruleIndex == 0) checkedNative(budget, CorpusInvocationKind.CLI_PROBE, selectedRule, "cli-version-probe")
+                        for (target in listOf("common", "native")) {
+                            val unsupported = budget.reserve(CorpusInvocationKind.ABSTENTION, selectedRule, "unsupported-$target")
+                            budget.observeAbstention(unsupported, abstention(selectedRule, target), null); budget.checked(unsupported, references)
+                        }
+                    }
+                }
+            }
+            assertEquals(selected.nativeLaunchCeiling, events.count { it["execution_confirmed"]?.jsonPrimitive?.booleanOrNull == true })
+            val summary = budget.finish()
+            assertEquals(selected.name, summary["cohort"]!!.jsonPrimitive.content)
+            assertEquals(selected.plannedInvocations, summary["reserved_invocations"]!!.jsonPrimitive.int)
+            assertEquals(selected.plannedInvocations, summary["checked_invocations"]!!.jsonPrimitive.int)
+            assertEquals(selected.nativeLaunchCeiling, summary["native_launch_ceiling"]!!.jsonPrimitive.int)
+            assertEquals(selected.expectedRuntimeCallbacks, summary["actual_runtime_callbacks"]!!.jsonPrimitive.int)
+            assertTrue(summary["all_invocations_checked"]!!.jsonPrimitive.boolean)
+            assertFalse(summary["publication_committed"]!!.jsonPrimitive.boolean)
+            assertEquals(selected.invocationsByKind.mapKeys { it.key.id },
+                summary["checked_by_kind"]!!.jsonObject.mapValues { it.value.jsonPrimitive.int })
+            assertFailsWith<IllegalStateException> {
+                budget.reserve(CorpusInvocationKind.ANALYSIS, selected.analysesByRule.keys.first(), "unapproved-extra")
+            }
+            assertEquals(2 + 3 * selected.plannedInvocations, events.size)
+            sizes += events.size
+        }
+        assertEquals(listOf(116, 116, 74, 77, 113, 113), sizes.take(6))
+        assertEquals(listOf(116, 116, 74, 77, 113, 113, 113), sizes.take(7))
+        assertEquals(listOf(116, 116, 74, 77, 113, 113, 113, 113), sizes.take(8))
+        assertEquals(listOf(119, 119, 122), sizes.drop(8))
     }
 
     @Test fun `incomplete run cannot finish and progress write failure stops before a call`() {
@@ -177,4 +286,51 @@ class DetektCorpusControlsTest {
         assertEquals(1, failed.summary()["reserved_invocations"]!!.jsonPrimitive.int)
         assertEquals(0, failed.summary()["checked_invocations"]!!.jsonPrimitive.int)
     }
+    @Test fun `new closed plans add six routes without changing old four identities`() {
+        assertEquals(listOf(
+            "sha256:1a04a745f3a90b093f07725c33f7aa5e4f68dcb4e08300e7498eabb23046469f",
+            "sha256:855ccc2174e1497b74560aa5041923b870dbb289c68728eeffaf58140eb58890",
+            "sha256:c6e6311078fe7d849755351e936326f00db5c508482f9830ac2367268a41c0c6",
+            "sha256:83266a809d5e1e5ec7591a36882f7435ff7f108ea28a3426b418ce7d0f9ee421",
+        ), DetektCorpusCohort.baseline.map { Digests.sha256(it.planIdentity) })
+        val added = DetektCorpusCohort.all.filter { it.expansion }
+        assertEquals(listOf("performance-shapes-v1", "public-contract-policy-v1"), added.map { it.name })
+        assertEquals(16, DetektCorpusCohort.preProtocol.flatMap { it.analysesByRule.keys }.distinct().size)
+        assertEquals(145, DetektCorpusCohort.preProtocol.sumOf { it.analysesByRule.values.sum() })
+        assertEquals(19, DetektCorpusCohort.preObservability.flatMap { it.analysesByRule.keys }.distinct().size)
+        assertEquals(172, DetektCorpusCohort.preObservability.sumOf { it.analysesByRule.values.sum() })
+        assertEquals(22, DetektCorpusCohort.preLocalShapes.flatMap { it.analysesByRule.keys }.distinct().size)
+        assertEquals(199, DetektCorpusCohort.preLocalShapes.sumOf { it.analysesByRule.values.sum() })
+        for (plan in added) {
+            assertEquals(listOf(9, 9, 9), plan.analysesByRule.values.toList())
+            assertEquals(37, plan.plannedInvocations)
+            assertEquals(28, plan.nativeLaunchCeiling)
+            assertEquals(31, plan.expectedRuntimeCallbacks)
+            assertEquals("syntax-expansion", plan.evidenceStem)
+            val schedule = assertNotNull(plan.expectedSchedule)
+            assertEquals(37, schedule.size)
+            assertFailsWith<UnsupportedOperationException> { (schedule as MutableList<CorpusInvocationSpec>).clear() }
+        }
+        assertTrue(DetektCorpusCohort.baseline.all { it.evidenceStem == "syntax-corpus" && it.expectedSchedule == null })
+    }
+
+    @Test fun `new schedules reject reordered analysis and fabricated control before reservation`() {
+        for (plan in DetektCorpusCohort.all.filter { it.expansion || it.protocol || it.observability || it.localShapes }) {
+            val events = mutableListOf<JsonObject>()
+            val budget = DetektCorpusBudget(settings(plan), { events += it })
+            val selectedRule = plan.analysesByRule.keys.first()
+            assertFailsWith<IllegalArgumentException> { budget.reserve(CorpusInvocationKind.ANALYSIS, selectedRule, "negative") }
+            assertEquals(0, budget.summary()["reserved_invocations"]!!.jsonPrimitive.int)
+            checkedNative(budget, CorpusInvocationKind.ANALYSIS, selectedRule, "positive")
+            assertFailsWith<IllegalArgumentException> { budget.reserve(CorpusInvocationKind.ANALYSIS, selectedRule, "negative") }
+            assertFailsWith<IllegalArgumentException> { budget.reserve(CorpusInvocationKind.AUTHORIZATION_DENIAL, selectedRule, "fake-refusal") }
+            assertEquals(1, budget.summary()["reserved_invocations"]!!.jsonPrimitive.int)
+            assertEquals(4, events.size)
+            val deniedTicket = budget.reserve(CorpusInvocationKind.AUTHORIZATION_DENIAL, selectedRule, "configuration-permit-replay")
+            budget.observeProcess(deniedTicket, denial(), identity)
+            budget.checked(deniedTicket, references)
+            assertEquals(2, budget.summary()["checked_invocations"]!!.jsonPrimitive.int)
+        }
+    }
+
 }

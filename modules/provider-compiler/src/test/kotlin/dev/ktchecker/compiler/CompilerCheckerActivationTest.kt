@@ -1,0 +1,165 @@
+package dev.ktchecker.compiler
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+/** Readiness predicates only: no compiler/provider run, fixture oracle or qualification credit. */
+class CompilerCheckerActivationTest {
+    private val registry = CompilerRuleRegistry.load()
+    private val commonPolicies = linkedMapOf(
+        "ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS" to "advisory",
+        "REDUNDANT_CALL_OF_CONVERSION_METHOD" to "opt_in",
+        "UNUSED_EXPRESSION" to "advisory",
+        "UNUSED_LAMBDA_EXPRESSION" to "advisory",
+    )
+    private val actualExtraIds = setOf(
+        "ASSIGNED_VALUE_IS_NEVER_READ",
+        "CAN_BE_VAL",
+        "CAN_BE_VAL_DELAYED_INITIALIZATION",
+        "CAN_BE_VAL_LATEINIT",
+        "REDUNDANT_MODALITY_MODIFIER",
+        "REDUNDANT_RETURN_UNIT_TYPE",
+        "REDUNDANT_SETTER_PARAMETER_TYPE",
+        "REDUNDANT_SINGLE_EXPRESSION_STRING_TEMPLATE",
+        "REDUNDANT_VISIBILITY_MODIFIER",
+        "UNREACHABLE_CODE",
+        "UNUSED_ANONYMOUS_PARAMETER",
+        "UNUSED_VARIABLE",
+        "USELESS_CALL_ON_NOT_NULL",
+        "VARIABLE_INITIALIZER_IS_REDUNDANT",
+        "VARIABLE_NEVER_READ",
+    )
+
+    @Test fun fourPinnedCommonCheckersDoNotRequireExtraWarnings() {
+        assertEquals("2.4.21", CompilerRuleRegistry.VERSION)
+        assertEquals(4, commonPolicies.size)
+        for (id in commonPolicies.keys) {
+            val mapping = registry.byUpstreamId.getValue(id)
+            for (arguments in listOf(emptyList(), listOf("-jvm-target", "17"), listOf("-Wextra"))) {
+                assertNull(CompilerFlags.activationGap(mapping, arguments), "$id / $arguments")
+            }
+        }
+    }
+
+    @Test fun factorySectionsAndOwnerPoliciesAreNotRewrittenToHideRegistration() {
+        for ((id, policy) in commonPolicies) {
+            val mapping = registry.byUpstreamId.getValue(id)
+            assertEquals("Extra checkers", mapping.sourceSection, id)
+            assertEquals("common", mapping.backend, id)
+            assertEquals("WARNING", mapping.declaredSeverity, id)
+            assertEquals(policy, mapping.defaultActivation, id)
+        }
+    }
+
+    @Test fun explicitWarningDisableControlsStillPrecedeCommonRegistration() {
+        for (id in commonPolicies.keys) {
+            val mapping = registry.byUpstreamId.getValue(id)
+            for (arguments in listOf(
+                listOf("-nowarn"), listOf("-Wextra", "-nowarn"),
+                listOf("-Xwarning-level=$id:disabled"),
+                listOf("-Wextra", "-Xwarning-level=$id:disabled"),
+                listOf("-Xuse-fir-experimental-checkers", "-Xwarning-level=$id:disabled"),
+            )) {
+                assertEquals("compiler_warning_disabled_under_selected_configuration",
+                    CompilerFlags.activationGap(mapping, arguments), "$id / $arguments")
+            }
+        }
+    }
+
+    @Test fun warningLevelsDoNotBecomeExtraCheckerSwitchesOrSiblingIdSuppressions() {
+        for (id in commonPolicies.keys) {
+            val mapping = registry.byUpstreamId.getValue(id)
+            for (arguments in listOf(
+                listOf("-Werror"), listOf("-Xwarning-level=$id:warning"), listOf("-Xwarning-level=$id:error"),
+                listOf("-Xwarning-level=UNUSED_VARIABLE:disabled"),
+            )) {
+                assertNull(CompilerFlags.activationGap(mapping, arguments), "$id / $arguments")
+            }
+        }
+    }
+
+    @Test fun allFifteenActualExtraCheckersRemainFailClosedWithoutExtraWarnings() {
+        assertEquals(15, actualExtraIds.size)
+        assertTrue(actualExtraIds.intersect(commonPolicies.keys).isEmpty())
+        for (id in actualExtraIds) {
+            val mapping = registry.byUpstreamId.getValue(id)
+            for (arguments in listOf(emptyList(), listOf("-Xuse-fir-experimental-checkers"),
+                listOf("-Xwarning-level=$id:warning"), listOf("-Xwarning-level=$id:error"))) {
+                assertEquals("compiler_extra_checker_not_enabled",
+                    CompilerFlags.activationGap(mapping, arguments), "$id / $arguments")
+            }
+            assertNull(CompilerFlags.activationGap(mapping, listOf("-Wextra")), id)
+            for (arguments in listOf(listOf("-Wextra", "-nowarn"),
+                listOf("-Wextra", "-Xwarning-level=$id:disabled"))) {
+                assertEquals("compiler_warning_disabled_under_selected_configuration",
+                    CompilerFlags.activationGap(mapping, arguments), "$id / $arguments")
+            }
+        }
+    }
+
+    @Test fun emptyRangeRetainsItsIndependentExperimentalPrerequisite() {
+        val mapping = registry.byUpstreamId.getValue("EMPTY_RANGE")
+        for (arguments in listOf(emptyList(), listOf("-Wextra"))) {
+            assertEquals("compiler_experimental_checker_not_enabled", CompilerFlags.activationGap(mapping, arguments))
+        }
+        assertNull(CompilerFlags.activationGap(mapping, listOf("-Xuse-fir-experimental-checkers")))
+        for (arguments in listOf(
+            listOf("-Xuse-fir-experimental-checkers", "-nowarn"),
+            listOf("-Xuse-fir-experimental-checkers", "-Xwarning-level=EMPTY_RANGE:disabled"),
+        )) {
+            assertEquals("compiler_warning_disabled_under_selected_configuration", CompilerFlags.activationGap(mapping, arguments))
+        }
+    }
+
+    @Test fun returnValueCheckerModesRemainDistinctFromUnusedExpressionRegistration() {
+        for (id in listOf("RETURN_VALUE_NOT_USED", "RETURN_VALUE_NOT_USED_COERCION")) {
+            val mapping = registry.byUpstreamId.getValue(id)
+            for (arguments in listOf(emptyList(), listOf("-Wextra"), listOf("-Xreturn-value-checker=disable"))) {
+                assertEquals("compiler_return_value_checker_not_enabled",
+                    CompilerFlags.activationGap(mapping, arguments), "$id / $arguments")
+            }
+            for (mode in listOf("check", "full")) {
+                assertNull(CompilerFlags.activationGap(mapping, listOf("-Xreturn-value-checker=$mode")), id)
+                assertEquals("compiler_warning_disabled_under_selected_configuration",
+                    CompilerFlags.activationGap(mapping, listOf("-Xreturn-value-checker=$mode", "-Xwarning-level=$id:disabled")), id)
+            }
+        }
+    }
+
+    @Test fun commonExceptionsDoNotGeneralizeToOtherIdsBackendsOrVersions() {
+        val mapping = registry.byUpstreamId.getValue("UNUSED_EXPRESSION")
+        for (other in listOf(mapping.copy(backend = "jvm"), mapping.copy(backend = "ir"),
+            mapping.copy(upstreamId = "UNUSED_EXPRESSION_UNREVIEWED"),
+            mapping.copy(upstreamId = "UNREVIEWED_EXTRA_CHECKER"))) {
+            assertEquals("compiler_extra_checker_not_enabled", CompilerFlags.activationGap(other, emptyList()))
+        }
+        val resource = checkNotNull(CompilerRuleRegistry::class.java.getResourceAsStream("/compiler-rule-map.json"))
+            .bufferedReader(Charsets.UTF_8).use { it.readText() }
+        val pinnedVersionField = "\"provider_version\": \"2.4.21\""
+        assertTrue(pinnedVersionField in resource)
+        for (version in listOf("2.4.20", "2.5.0")) {
+            assertFails { CompilerRuleRegistry.parse(resource.replace(pinnedVersionField, "\"provider_version\": \"$version\"")) }
+        }
+    }
+
+    @Test fun allCompilerMappingsAndPolicyCountsRemainVisibleWithoutPromotion() {
+        assertEquals(445, registry.mappings.size)
+        assertEquals(402, registry.jvmRuleIds.size)
+        assertEquals(mapOf("common" to 294, "jvm" to 99, "native" to 43, "ir" to 9),
+            registry.mappings.groupingBy { it.backend }.eachCount())
+        assertEquals(mapOf("enabled_when_validated" to 330, "advisory" to 63, "opt_in" to 52),
+            registry.mappings.groupingBy { it.defaultActivation }.eachCount())
+    }
+
+    @Test fun compilerArgumentValidationAddsNoFlagsOrNewEscapeSurface() {
+        assertEquals(emptyList(), CompilerFlags.validate(emptyList()))
+        val arguments = listOf("-jvm-target", "17", "-Xwarning-level=UNUSED_EXPRESSION:error")
+        assertEquals(arguments, CompilerFlags.validate(arguments))
+        for (flag in listOf("@options.txt", "-d", "-Xplugin=/tmp/untrusted.jar", "-J-Xmx9g", "-classpath")) {
+            assertFails { CompilerFlags.validate(listOf(flag)) }
+        }
+    }
+}

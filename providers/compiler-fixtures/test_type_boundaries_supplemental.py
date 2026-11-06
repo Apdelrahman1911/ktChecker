@@ -7,6 +7,8 @@ import json
 import re
 import unittest
 
+import compiler_mapping_contracts as contracts
+
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'providers/compiler-fixtures'
@@ -50,6 +52,9 @@ def segment(source, name, next_marker):
 class TypeBoundarySupplementalSourceContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        # Affirmative445 production contract, distinct from every frozen legacy443 oracle below.
+        cls.current_mapping = contracts.current445(ROOT)
+        contracts.require_legacy_runner_refusal_source(ROOT)
         cls.manifest = json.loads((FIXTURES / 'manifest.json').read_text(encoding='utf-8'))
         cls.rows = [row for row in cls.manifest['fixtures'] if row.get('authored_cohort') == '2026-11-04-type_boundaries']
         cls.runner = (KOTLIN / 'CompilerFixtureRunner.kt').read_text(encoding='utf-8')
@@ -59,7 +64,9 @@ class TypeBoundarySupplementalSourceContractTest(unittest.TestCase):
 
     def test_all_existing_fixture_and_initial_authoring_bytes_are_preserved(self):
         for relative, expected in SOURCE_ONLY_PREIMAGE_HASHES.items():
-            self.assertEqual(expected, hashlib.sha256((FIXTURES / relative).read_bytes()).hexdigest(), relative)
+            # Legacy authoring SOURCE bytes are independently reconstructed, never treated as current.
+            prior = contracts.historical_source_bytes(ROOT, 'providers/compiler-fixtures/' + relative)
+            self.assertEqual(expected, hashlib.sha256(prior).hexdigest(), relative)
         files = sorted([*(FIXTURES / 'cases').rglob('*.kt'), *(FIXTURES / 'planned-kmp-cases').rglob('*.kt')],
                        key=lambda path: path.relative_to(FIXTURES).as_posix())
         self.assertEqual(278, len(files))
@@ -166,7 +173,12 @@ class TypeBoundarySupplementalSourceContractTest(unittest.TestCase):
     def test_all_98_ordinary_16_planned_443_mappings_remain_visible_without_six_kind_promotion(self):
         self.assertEqual(98, len(self.manifest['fixtures']))
         self.assertEqual(16, len(json.loads((FIXTURES / 'planned-kmp-manifest.json').read_text())['fixtures']))
-        self.assertEqual(443, len(json.loads((ROOT / 'modules/provider-compiler/src/main/resources/compiler-rule-map.json').read_text())['mappings']))
+        # Existing schedule assertions describe443 SOURCE DATA, while actual production is445 and refuses it.
+        self.assertEqual(443, len(contracts.legacy_mapping(ROOT)['mappings']))
+        self.assertEqual(445, len(self.current_mapping['mappings']))
+        self.assertEqual(402, sum(row['backend'] != 'native' for row in self.current_mapping['mappings']))
+        self.assertFalse(set(contracts.NEW_IDS) & {row['rule_id'] for row in self.manifest['fixtures']})
+        contracts.require_legacy_runner_refusal_source(ROOT)
         self.assertIn('allFixtures.map { fixture ->', self.runner)
         self.assertIn('"planned_unsupported_common_jvm_graphs" to 16', self.runner)
         self.assertIn('"catalog_mappings" to 443', self.runner)

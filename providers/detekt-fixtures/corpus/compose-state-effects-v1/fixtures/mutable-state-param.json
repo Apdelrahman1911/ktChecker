@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "rule_id": "ktc.compose.pack.MutableStateParam",
+  "upstream_id": "Compose:MutableStateParam",
+  "default_activation": "opt_in",
+  "depth": "syntax",
+  "entity_kind": "parameter_name",
+  "source_oracle": {
+    "kind": "tagged_source_prediction_not_observation",
+    "tag": "v0.6.8",
+    "commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+    "implementation": {
+      "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/MutableStateParameter.kt",
+      "sha256": "2732d3a28e708aface6b98fd9b7effa73c3d2c32ed1d8bcd2b5ba7fb0647c5b3",
+      "line_ranges": [
+        [
+          13,
+          33
+        ]
+      ]
+    },
+    "wrapper": {
+      "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/MutableStateParameterCheck.kt",
+      "sha256": "bb5bea6c5d6f3f6832ced1ac47bcf547337384f98150579e4a0b92e619df204d",
+      "line_ranges": [
+        [
+          11,
+          17
+        ]
+      ]
+    },
+    "tests": {
+      "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/MutableStateParameterCheckTest.kt",
+      "sha256": "baab09a3056699ac8a3718b5b0e83a307ff72b33f5b0681c1bed6e610bc1668c",
+      "line_ranges": [
+        [
+          18,
+          59
+        ],
+        [
+          98,
+          109
+        ]
+      ]
+    }
+  },
+  "boundary": "Opt-in ownership convention; neither a spelling match nor a missing alias match proves API identity or statelessness. New primitive collection holder names are not qualified by this scalar-only corpus.",
+  "cases": [
+    {
+      "id": "positive",
+      "kind": "positive",
+      "purpose": "Expose shared mutable Compose state directly in a composable parameter.",
+      "source_basis": [
+        "MutableStateParameter.kt:13-28",
+        "MutableStateParameterCheckTest.kt:18-33"
+      ],
+      "semantic_interpretation": "positive",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.MutableState\n\n@Composable\nfun SearchField(query: MutableState<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 21,
+          "text": "query"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 21,
+          "text": "query"
+        }
+      ]
+    },
+    {
+      "id": "valid-alternative",
+      "kind": "valid_alternative",
+      "purpose": "Concede state ownership to the caller via a value/event API rather than a differently named holder.",
+      "source_basis": [
+        "MutableStateParameter.kt:30-33",
+        "MutableStateParameterCheckTest.kt:98-109"
+      ],
+      "semantic_interpretation": "valid_alternative",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun SearchField(query: String, onQueryChange: (String) -> Unit) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "nullable-and-primitive-state",
+      "kind": "positive_control",
+      "purpose": "Cover nullable generic MutableState and the real scalar MutableIntState type.",
+      "source_basis": [
+        "MutableStateParameter.kt:20-28",
+        "MutableStateParameterCheckTest.kt:36-59",
+        "runtime1.5.0:MutableIntState"
+      ],
+      "semantic_interpretation": "positive_control",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.MutableIntState\nimport androidx.compose.runtime.MutableState\n\n@Composable\nfun OptionalSearch(query: MutableState<String>?, count: MutableIntState) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 19,
+          "end_line": 8,
+          "end_column": 24,
+          "text": "query"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 49,
+          "end_line": 8,
+          "end_column": 54,
+          "text": "count"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "additional_api_source_requirements": [
+        "androidx.compose.runtime.MutableIntState:verified-in-1.5.0"
+      ],
+      "uninvoked_raw_source_oracle": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 19,
+          "end_line": 8,
+          "end_column": 24,
+          "text": "query"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 49,
+          "end_line": 8,
+          "end_column": 54,
+          "text": "count"
+        }
+      ]
+    },
+    {
+      "id": "suppression-neighbor",
+      "kind": "suppression_neighbor",
+      "purpose": "Use the registered MutableStateParam suppression without hiding a neighbor.",
+      "source_basis": [
+        "ComposeRuleSetProvider.kt:54",
+        "MutableStateParameter.kt:13-16",
+        "detekt:Suppressions.kt:19-45"
+      ],
+      "semantic_interpretation": "suppression_neighbor",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.MutableState\n\n@Suppress(\"Compose:MutableStateParam\")\n@Composable\nfun QuietField(query: MutableState<String>) { }\n\n@Composable\nfun VisibleField(query: MutableState<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 11,
+          "column": 17,
+          "end_line": 11,
+          "end_column": 22,
+          "text": "query"
+        }
+      ],
+      "suppressed_targets": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 15,
+          "end_line": 8,
+          "end_column": 20,
+          "text": "query"
+        }
+      ],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 11,
+          "column": 17,
+          "end_line": 11,
+          "end_column": 22,
+          "text": "query"
+        }
+      ]
+    },
+    {
+      "id": "state-import-alias",
+      "kind": "alias_control",
+      "purpose": "Aliasing the real MutableState type does not make it stateless; it only evades the syntax regex.",
+      "source_basis": [
+        "MutableStateParameter.kt:15-28"
+      ],
+      "semantic_interpretation": "known_syntax_false_negative_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.MutableState as EditableValue\n\n@Composable\nfun SearchField(query: EditableValue<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "unrelated-state-homonym",
+      "kind": "homonym_control",
+      "purpose": "The name also matches a distinct application-owned holder with no Compose snapshot semantics.",
+      "source_basis": [
+        "MutableStateParameter.kt:15-28"
+      ],
+      "semantic_interpretation": "known_syntax_false_positive_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\nclass MutableState<T>(var item: T)\n\n@Composable\nfun SearchField(query: MutableState<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 21,
+          "text": "query"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 21,
+          "text": "query"
+        }
+      ]
+    },
+    {
+      "id": "selected-main-excludes-test",
+      "kind": "source_set_control",
+      "purpose": "Select the valid main source only; the captured test file contains the ordinary positive trigger.",
+      "source_basis": [
+        "detekt-provider:compilation-membership",
+        "fixture:positive",
+        "fixture:valid-alternative"
+      ],
+      "semantic_interpretation": "unselected_source_is_not_analyzed_or_qualified",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun SearchField(query: String, onQueryChange: (String) -> Unit) { }\n",
+        "src/test/kotlin/TestOnly.kt": "package fixtures.compose.outside\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.MutableState\n\n@Composable\nfun SearchField(query: MutableState<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "excluded_positive_oracle": [
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 21,
+          "text": "query"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    }
+  ],
+  "observation": {
+    "actual_execution": null,
+    "tested": false,
+    "qualified": false,
+    "real_world_precision": null,
+    "coverage_certificate": null
+  }
+}

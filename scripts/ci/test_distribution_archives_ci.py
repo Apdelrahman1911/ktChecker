@@ -1,4 +1,4 @@
-"""Tiny synthetic-only ZIP/USTAR controls; never launch or extract a product.
+"""Tiny synthetic-only ZIP/USTAR and GNU filename controls; never launch or extract a product.
 
 All filesystem fixtures are beneath one TemporaryDirectory. Run this file's
 suite alone, including under -O; its checks use unittest, never Python assert.
@@ -167,6 +167,15 @@ def make_tar(entries, *, end_blocks=2, suffix=b""):
     return bytes(body) + b"\0" * (end_blocks * 512) + suffix
 
 
+def gnu_long_name(item):
+    """Tiny explicit GNU name control + canonical USTAR owner, never a reader."""
+    name = item["name"]
+    name = name.encode("utf-8") if isinstance(name, str) else name
+    control = {"name": b"././@LongLink", "flag": b"L", "data": name + b"\0",
+               "header_changes": {257: b"ustar  \0"}}
+    return [control, dict(item, name=name[:100])]
+
+
 def change_tar(raw, changes, *, recalculate=True):
     header = bytearray(raw[:512])
     for start, value in changes.items():
@@ -320,6 +329,8 @@ class DistributionArchiveTests(unittest.TestCase):
         archives = [self.zip(), self.tar()]
         result = self.check_valid(*archives)
         self.assertEqual({"zip32", "ustar"}, {row["format"] for row in result["archives"]})
+        self.assertEqual("ustar_with_optional_gnu_longname_v1", result["archives"][1]["tar_name_profile"])
+        self.assertNotIn("tar_name_profile", result["archives"][0])
         self.assertEqual(3, result["installation"]["file_count"])
         for row in result["installation"]["files"]:
             self.assertEqual(len(self.content[row["path"]]), row["bytes"])
@@ -328,6 +339,31 @@ class DistributionArchiveTests(unittest.TestCase):
         for path, row in zip(archives, result["archives"]):
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), row["sha256"])
             self.assertEqual(result["installation"]["inventory_sha256"], row["matched_staged_inventory_sha256"])
+
+    def test_explicit_expected_prefix_binds_both_archives_without_inferring_filenames(self):
+        prefix = "reviewed distribution-caf\u00e9"
+        archives = [self.zip(self.entries(prefix=prefix)), self.tar(self.entries(prefix=prefix))]
+        result = self.check_valid(*archives, expected_prefix=prefix)
+        self.assertEqual(prefix, result["expected_prefix"])
+        self.assertEqual([prefix, prefix], [row["prefix"] for row in result["archives"]])
+        self.assertTrue(all(path.stem != prefix for path in archives))
+
+    def test_expected_prefix_rejects_wrong_or_differing_archive_roots(self):
+        for index in (0, 1):
+            with self.subTest(wrong_archive=index + 1):
+                rows = [self.entries(), self.entries()]
+                rows[index] = self.entries(prefix=PREFIX + "-other")
+                result = self.verify(self.zip(rows[0]), self.tar(rows[1]), expected_prefix=PREFIX)
+                self.assertEqual("failed", result["state"])
+                self.assertEqual([{"code": "archive_prefix_mismatch", "phase": "archives",
+                                   "archive_index": index + 1}], result["errors"])
+                self.assertTrue(all(row["state"] != "verified" for row in result["archives"]))
+                self.assertEqual("not_completed", result["input_recheck"])
+
+    def test_omitted_expected_prefix_preserves_explicit_local_comparison_scope(self):
+        result = self.check_valid(self.zip(), self.tar(self.entries(prefix="another-safe-prefix")))
+        self.assertIsNone(result["expected_prefix"])
+        self.assertEqual([PREFIX, "another-safe-prefix"], [row["prefix"] for row in result["archives"]])
 
     def test_valid_raw_deflate_zip_including_empty_stream(self):
         self.check_valid(self.zip(self.entries(method=8)))
@@ -750,16 +786,228 @@ class DistributionArchiveTests(unittest.TestCase):
 
     def test_tar_magic_and_version_are_explicitly_unsupported(self):
         raw = make_tar(self.entries())
-        for changes in ({257: b"ustar "}, {263: b" \0"}, {257: b"\0" * 8}):
+        for changes in ({257: b"ustar "}, {263: b" \0"}, {257: b"\0" * 8}, {257: b"ustar  \0"}):
             with self.subTest(changes=changes):
                 self.reject(self.archive(change_tar(raw, changes), ".tar"), "unsupported_tar_format", state="unsupported")
 
-    def test_tar_pax_gnu_sparse_and_longname_extensions_are_unsupported(self):
+    def test_tar_pax_sparse_longlink_and_non_gnu_longname_extensions_are_unsupported(self):
         for flag in (b"x", b"g", b"L", b"K", b"S"):
             with self.subTest(flag=flag):
                 rows = self.entries()
                 rows[0]["flag"] = flag
                 self.reject(self.tar(rows), "unsupported_tar_extension_or_sparse", state="unsupported")
+
+    def test_tar_gnu_long_name_mixed_with_ustar_matches_zip_and_exact_prefix(self):
+        relative = "app/" + "n" * 84
+        self.content[relative] = b"synthetic long filename\n"
+        self.new_file(self.installation / relative, self.content[relative])
+        rows = self.entries()
+        long_row = next(row for row in rows if row["name"] == PREFIX + "/" + relative)
+        pair = gnu_long_name(long_row)
+        self.assertEqual(102, len(pair[0]["data"]))
+        self.assertEqual(b"././@LongLink", pair[0]["name"])
+        self.assertEqual(b"ustar  \0", pair[0]["header_changes"][257])
+        tar_rows = [part for row in rows for part in (gnu_long_name(row) if row is long_row else [row])]
+        result = self.check_valid(self.zip(rows), self.tar(tar_rows), expected_prefix=PREFIX)
+        self.assertEqual("ustar", result["archives"][1]["format"])
+        self.assertEqual("ustar_with_optional_gnu_longname_v1", result["archives"][1]["tar_name_profile"])
+        self.assertEqual(len(rows), result["archives"][1]["member_count"])
+        self.assertEqual(4, result["archives"][1]["regular_file_count"])
+        self.assertEqual(sum(map(len, self.content.values())), result["archives"][1]["decoded_file_bytes"])
+
+    def test_tar_gnu_long_name_decodes_full_utf8_not_a_split_short_field(self):
+        relative = "app/" + "n" * 82 + "é.txt"
+        self.content[relative] = b"synthetic UTF-8 long name\n"
+        self.new_file(self.installation / relative, self.content[relative])
+        rows = self.entries()
+        target = next(row for row in rows if row["name"] == PREFIX + "/" + relative)
+        pair = gnu_long_name(target)
+        self.assertEqual(100, len(pair[1]["name"]))
+        self.assertEqual(b"\xc3", pair[1]["name"][-1:])
+        self.check_valid(self.tar([part for row in rows for part in (pair if row is target else [row])]))
+
+    def test_tar_gnu_long_directory_names_allow_only_one_optional_trailing_slash(self):
+        relative = "d" * 90
+        (self.installation / relative).mkdir(mode=0o700)
+        for slash in (True, False):
+            with self.subTest(slash=slash):
+                rows = self.entries(empty=(relative,))
+                if not slash:
+                    rows[0]["name"] = rows[0]["name"][:-1]
+                self.check_valid(self.tar(gnu_long_name(rows[0]) + rows[1:]))
+        rows = self.entries(empty=(relative,))
+        rows[0]["name"] += "/"
+        self.reject(self.tar(gnu_long_name(rows[0]) + rows[1:]), "unsafe_member_name")
+
+    def test_tar_gnu_name_is_consumed_once_and_separate_records_can_repeat(self):
+        rows = self.entries()
+        self.check_valid(self.tar(gnu_long_name(rows[0]) + rows[1:]))
+        self.check_valid(self.tar(gnu_long_name(rows[0]) + gnu_long_name(rows[1]) + rows[2:]))
+
+    def test_tar_gnu_long_name_control_header_fields_are_strict(self):
+        changes = (
+            ({"name": b"././@Other"}, "tar_invalid_gnu_long_name_header", "failed"),
+            ({"header_changes": {257: b"ustar  \0", 345: b"prefix"}}, "tar_invalid_gnu_long_name_header", "failed"),
+            ({"header_changes": {257: b"ustar  \0", 500: b"X"}}, "tar_nonzero_header_padding", "failed"),
+            ({"header_changes": {257: b"ustar  \0", 90: b"X"}}, "tar_nonzero_name_padding", "failed"),
+            ({"header_changes": {257: b"ustar\0", 263: b"00"}}, "unsupported_tar_extension_or_sparse", "unsupported"),
+            ({"header_changes": {257: b"ustar ", 263: b"00"}}, "unsupported_tar_format", "unsupported"),
+            ({"header_changes": {257: b"ustar  \0", 157: b"link"}}, "tar_link_or_device_metadata", "failed"),
+            ({"header_changes": {257: b"ustar  \0", 329: tar_octal(1, 8)}}, "tar_link_or_device_metadata", "failed"),
+            ({"header_changes": {257: b"ustar  \0", 108: b"\x80" + b"\0" * 7}}, "unsupported_tar_numeric_encoding", "unsupported"),
+            ({"mode": 0o666}, "unsafe_file_mode", "failed"),
+        )
+        for alteration, code, state in changes:
+            with self.subTest(alteration=alteration):
+                rows = self.entries()
+                pair = gnu_long_name(rows[0])
+                pair[0].update(alteration)
+                self.reject(self.tar(pair + rows[1:]), code, state=state)
+
+    def test_tar_gnu_long_name_payload_has_exactly_one_terminal_nul(self):
+        for payload in (b"", b"\0", b"X", b"name", b"name\0hidden", b"name\0\0", b"name\0hidden\0"):
+            with self.subTest(payload=payload):
+                rows = self.entries()
+                pair = gnu_long_name(rows[0])
+                pair[0]["data"] = payload
+                code = "tar_long_name_bytes_limit" if len(payload) < 2 else "tar_invalid_long_name_payload"
+                self.reject(self.tar(pair + rows[1:]), code)
+
+    def test_tar_gnu_repeated_or_dangling_long_name_is_not_ignored(self):
+        rows = self.entries()
+        control = gnu_long_name(rows[0])[0]
+        self.reject(self.tar([control, control] + rows), "tar_repeated_long_name")
+        for end_blocks in (0, 1, 2):
+            with self.subTest(end_blocks=end_blocks):
+                self.reject(self.tar([control], end_blocks=end_blocks), "tar_dangling_long_name")
+
+    def test_tar_gnu_long_name_requires_matching_short_name_and_no_prefix(self):
+        for alteration in ({"name": "different"}, {"prefix": "alternate"},
+                           {"name": b""}, {"header_changes": {257: b"ustar  \0"}}):
+            with self.subTest(alteration=alteration):
+                rows = self.entries()
+                pair = gnu_long_name(rows[0])
+                pair[1].update(alteration)
+                code = "unsupported_tar_format" if "header_changes" in alteration else "tar_long_name_header_mismatch"
+                self.reject(self.tar(pair + rows[1:]), code,
+                            state="unsupported" if "header_changes" in alteration else "failed")
+
+    def test_tar_gnu_long_name_keeps_full_utf8_and_portable_path_rejections(self):
+        names = ("../escape", "/absolute", PREFIX + "//double", PREFIX + "/../up", "C:/drive",
+                 PREFIX + "\\backslash", PREFIX + "/CON.txt", PREFIX + "/trailing.", PREFIX + "/.git/file",
+                 PREFIX + "/non-nfc-e\u0301", PREFIX + "/newline\n", PREFIX + "/bidi\u202e",
+                 PREFIX + "/" + "x" * 256, b"\xff" * 101, b"n" * 100 + b"\xff")
+        for name in names:
+            with self.subTest(name=repr(name)):
+                rows = self.entries()
+                rows[0]["name"] = name
+                self.reject(self.tar(gnu_long_name(rows[0]) + rows[1:]),
+                            "unsupported_member_name_encoding" if isinstance(name, bytes) else "unsafe_member_name",
+                            state="unsupported" if isinstance(name, bytes) else "failed")
+        rows = self.entries()
+        rows[0]["name"] += "/"
+        self.reject(self.tar(gnu_long_name(rows[0]) + rows[1:]), "file_name_has_directory_suffix")
+
+    def test_tar_gnu_long_name_does_not_hide_duplicate_case_or_kind_aliases(self):
+        rows = self.entries()
+        duplicate = dict(rows[0])
+        case_alias = dict(rows[0], name=rows[0]["name"].upper())
+        kind_alias = {"name": rows[0]["name"] + "/", "kind": "directory"}
+        parent_alias = dict(rows[0], name=rows[0]["name"] + "/child")
+        for row, code in ((duplicate, "duplicate_member_name"), (case_alias, "member_case_or_file_directory_alias"),
+                          (kind_alias, "duplicate_member_name"), (parent_alias, "member_case_or_file_directory_alias")):
+            with self.subTest(code=code, row=row):
+                self.reject(self.tar(rows + gnu_long_name(row)), code)
+
+    def test_tar_gnu_long_name_never_admits_pax_sparse_link_or_special_owners(self):
+        for flag in (b"x", b"g", b"L", b"K", b"S", b"1", b"2", b"3", b"4", b"6", b"7", b"?"):
+            with self.subTest(flag=flag):
+                rows = self.entries()
+                pair = gnu_long_name(rows[0])
+                pair[1]["flag"] = flag
+                extension = flag in {b"x", b"g", b"L", b"K", b"S"}
+                self.reject(self.tar(pair + rows[1:]), "unsupported_tar_extension_or_sparse" if extension else "tar_link_or_special_member",
+                            state="unsupported" if extension else "failed")
+
+    def test_tar_gnu_control_and_owner_checksums_and_payload_padding_are_checked(self):
+        rows = self.entries()
+        pair = gnu_long_name(rows[0])
+        raw = make_tar(pair + rows[1:])
+        self.reject(self.archive(change_tar(raw, {0: b"X"}, recalculate=False), ".tar"), "tar_header_checksum_mismatch")
+        owner_offset = 1024
+        damaged = raw[:owner_offset] + change_tar(raw[owner_offset:], {0: b"X"}, recalculate=False)
+        self.reject(self.archive(damaged, ".tar"), "tar_header_checksum_mismatch")
+        pair[0]["padding"] = b"X" + b"\0" * ((-len(pair[0]["data"])) % 512 - 1)
+        self.reject(self.tar(pair + rows[1:]), "tar_nonzero_member_padding")
+
+    def test_tar_gnu_long_name_declared_size_and_extent_are_bounded_before_read(self):
+        rows = self.entries()
+        control = gnu_long_name(rows[0])[0]
+        self.reject(self.tar([dict(control, expanded=verifier.Limits().max_path_bytes + 3)] + rows), "tar_long_name_bytes_limit")
+        self.reject(self.tar([dict(control, expanded=1026, payload=b"")]), "tar_member_extent_truncated")
+        self.reject(self.archive(make_tar(gnu_long_name(rows[0]) + rows[1:])[:-1], ".tar"), "tar_truncated_or_unaligned")
+
+    def test_tar_gnu_name_metadata_counts_toward_entry_but_not_regular_file_limit(self):
+        rows = [part for row in self.entries() for part in gnu_long_name(row)]
+        archive = self.tar(rows)
+        result = self.check_valid(archive, limits=replace(verifier.Limits(), max_entries=6, max_files=3))
+        self.assertEqual(3, result["archives"][0]["member_count"])
+        self.assertEqual(3, result["archives"][0]["regular_file_count"])
+        self.reject(archive, "tar_member_count_limit", limits=replace(verifier.Limits(), max_entries=5))
+
+    def test_tar_gnu_name_metadata_obeys_file_and_declared_decoded_limits(self):
+        relative = "app/" + "n" * 84
+        self.content[relative] = b"synthetic name budget\n"
+        self.new_file(self.installation / relative, self.content[relative])
+        rows = self.entries()
+        target = next(row for row in rows if row["name"] == PREFIX + "/" + relative)
+        pair = gnu_long_name(target)
+        archive = self.tar([part for row in rows for part in (pair if row is target else [row])])
+        total = sum(map(len, self.content.values())) + len(pair[0]["data"])
+        self.check_valid(archive, limits=replace(verifier.Limits(), max_decompressed_bytes=total, max_total_decompressed_bytes=total))
+        self.reject(archive, "archive_decompressed_bytes_limit", limits=replace(verifier.Limits(), max_decompressed_bytes=total - 1))
+        self.reject(archive, "total_decompressed_bytes_limit", limits=replace(verifier.Limits(), max_total_decompressed_bytes=total - 1))
+        self.reject(archive, "archive_member_bytes_limit", limits=replace(verifier.Limits(), max_file_bytes=max(map(len, self.content.values()))))
+
+    def test_tar_gnu_name_metadata_is_charged_to_actual_decoded_budget(self):
+        rows = self.entries()
+        pair = gnu_long_name(rows[0])
+        archive = self.tar(pair + rows[1:])
+        budget = verifier.Budget(verifier.Limits())
+        with verifier.HeldPath(archive, directory=False, budget=budget) as held:
+            members = verifier.tar_members(held, budget)
+            self.assertEqual(len(pair[0]["data"]), budget.actual_decoded_bytes)
+            self.assertEqual(sum(map(len, self.content.values())) + len(pair[0]["data"]), budget.declared_decoded_bytes)
+            for member in members:
+                verifier.hash_member(held, member, budget)
+        self.assertEqual(budget.declared_decoded_bytes, budget.actual_decoded_bytes)
+        budget = verifier.Budget(replace(verifier.Limits(), max_total_decompressed_bytes=3))
+        with verifier.HeldPath(archive, directory=False, budget=budget) as held, self.assertRaises(verifier.VerificationError) as error:
+            verifier.tar_members(held, budget)
+        self.assertEqual("actual_total_decompressed_bytes_limit", error.exception.code)
+
+    def test_tar_gnu_directory_slash_and_nul_do_not_expand_portable_path_limit(self):
+        relative = "d" * 12
+        (self.installation / relative).mkdir(mode=0o700)
+        rows = self.entries(empty=(relative,))
+        pair = gnu_long_name(rows[0])
+        limit = len(PREFIX + "/" + relative)
+        self.assertEqual(limit + 2, len(pair[0]["data"]))
+        archive = self.tar(pair + rows[1:])
+        self.check_valid(archive, limits=replace(verifier.Limits(), max_path_bytes=limit))
+        self.reject(archive, "tar_long_name_bytes_limit", limits=replace(verifier.Limits(), max_path_bytes=limit - 1))
+
+    def test_tar_gnu_long_name_still_requires_exact_file_bytes_modes_and_prefix(self):
+        for alteration, code in (({"data": b"X" * len(FILES["app/data.txt"])}, "archive_file_sha256_mismatch"),
+                                 ({"data": b"X"}, "archive_file_size_mismatch"),
+                                 ({"mode": 0o755}, "archive_executable_mismatch")):
+            with self.subTest(alteration=alteration):
+                rows = self.entries()
+                pair = gnu_long_name(rows[0])
+                pair[1].update(alteration)
+                self.reject(self.tar(pair + rows[1:]), code)
+        rows = self.entries(prefix="other-dist")
+        self.reject(self.tar(gnu_long_name(rows[0]) + rows[1:]), "archive_prefix_mismatch", expected_prefix=PREFIX)
 
     def test_tar_links_devices_fifo_and_unknown_types_are_rejected(self):
         for flag in (b"1", b"2", b"3", b"4", b"6", b"7", b"Z"):
@@ -1656,6 +1904,28 @@ class DistributionArchiveTests(unittest.TestCase):
 
 
 class DistributionArchiveStaticAndAvailabilityTests(unittest.TestCase):
+    def test_invalid_expected_prefix_fails_closed_before_io_without_echoing_it(self):
+        prefixes = ("", ".", "..", "a/b", "../private", "C:\\private", "CON", "bad\nprefix",
+                    "\ud800", "non-nfc-e\u0301", "x" * 256, b"bytes", 1, True, [], {})
+        for prefix in prefixes:
+            with self.subTest(prefix_type=type(prefix).__name__), \
+                    patch.object(verifier.os, "open") as opened:
+                result = verifier.verify(Path("not-opened"), [Path("not-opened.zip")], expected_prefix=prefix)
+            opened.assert_not_called()
+            self.assertEqual("failed", result["state"])
+            self.assertIsNone(result["expected_prefix"])
+            self.assertEqual([{"code": "invalid_expected_archive_prefix", "phase": "arguments"}], result["errors"])
+            self.assertIsNone(result["installation"])
+            self.assertEqual([], result["archives"])
+
+    def test_expected_prefix_does_not_bypass_platform_unavailability(self):
+        with patch.object(verifier, "platform_available", return_value=False), patch.object(verifier.os, "open") as opened:
+            result = verifier.verify(Path("not-opened"), [Path("not-opened.zip")], expected_prefix=PREFIX)
+        opened.assert_not_called()
+        self.assertEqual("unavailable", result["state"])
+        self.assertEqual(PREFIX, result["expected_prefix"])
+        self.assertEqual([{"code": "platform_no_follow_unavailable", "phase": "arguments"}], result["errors"])
+
     def test_platform_unavailable_is_non_success_without_opening_inputs(self):
         with patch.object(verifier, "platform_available", return_value=False), patch.object(verifier.os, "open") as opened:
             result = verifier.verify(Path("unopened-installation"), [Path("unopened.zip")])

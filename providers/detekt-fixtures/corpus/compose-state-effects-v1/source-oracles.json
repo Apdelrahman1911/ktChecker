@@ -1,0 +1,658 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "authoritative_SOURCE_read_and_hash_only",
+  "compose_rules": {
+    "repository": "https://github.com/mrmans0n/compose-rules",
+    "tag": "v0.6.8",
+    "commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+    "files": [
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/RememberStateMissingCheck.kt",
+        "bytes": 600,
+        "sha256": "c93ef5119f4bde5ade9511820fa13f146b81a02754fb6999fa8e7cf9d79fee76"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/RememberContentMissingCheck.kt",
+        "bytes": 622,
+        "sha256": "74b65c47b61c95428cd910d35902cda95a587bd1585c394ecb55ec5115ff51ef"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/LambdaParameterInRestartableEffectCheck.kt",
+        "bytes": 685,
+        "sha256": "6b2554d6385c2911455a019233e89df819ed4f82180d675968bcee8cb2b57603"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/ContentSlotReusedCheck.kt",
+        "bytes": 614,
+        "sha256": "0a2d827a84a5622732e0db31eef06f99fb23603440f874c0d06a05fd5657676a"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/MutableStateAutoboxingCheck.kt",
+        "bytes": 615,
+        "sha256": "d60d059aa3965ea5e78dc161af0bad0da6b2dcbc483a1a24edbc9900bae8fd57"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/StateParameterCheck.kt",
+        "bytes": 573,
+        "sha256": "4af1d32e1fb2b3cbc52df9b5e53d4dcbfe20a55477b3060cdbf01be1da9bd59a"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/MutableStateParameterCheck.kt",
+        "bytes": 609,
+        "sha256": "bb5bea6c5d6f3f6832ced1ac47bcf547337384f98150579e4a0b92e619df204d"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/UnstableCollectionsCheck.kt",
+        "bytes": 625,
+        "sha256": "f29acc7cba9ba775435c327354cba1adc03d0325b8e7a72048384645dda6c763"
+      },
+      {
+        "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/RememberStateMissingCheckTest.kt",
+        "bytes": 8888,
+        "sha256": "0e56765994dc0cf36ae2cd978e30458d6cff5ce20bbfda44f32583136e9f855e"
+      },
+      {
+        "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/RememberContentMissingCheckTest.kt",
+        "bytes": 3874,
+        "sha256": "a2b1b1ff9bbd08170d3baf0cb6c104a26d67c6b4af696ee923ae31f7abf2e42c"
+      },
+      {
+        "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/LambdaParameterInRestartableEffectCheckTest.kt",
+        "bytes": 7689,
+        "sha256": "c201867f8b598144f48b5dbbb613f5f871081445116ecb2e0cb936cc8beddf2e"
+      },
+      {
+        "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/ContentSlotReusedCheckTest.kt",
+        "bytes": 5692,
+        "sha256": "5e6921b8353937259f824679f5c50f994b9996e6d48a1fe0c4f14c28802f5f71"
+      },
+      {
+        "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/MutableStateAutoboxingCheckTest.kt",
+        "bytes": 10112,
+        "sha256": "6239be4ea272197fea3e1acffc24a3a8181f60465043df6b3cc28dba2d1d61a3"
+      },
+      {
+        "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/StateParameterCheckTest.kt",
+        "bytes": 2207,
+        "sha256": "3ea1e8f984980adcd5085df7342304c8eaca125c0842ce71785313debc98e066"
+      },
+      {
+        "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/MutableStateParameterCheckTest.kt",
+        "bytes": 3533,
+        "sha256": "baab09a3056699ac8a3718b5b0e83a307ff72b33f5b0681c1bed6e610bc1668c"
+      },
+      {
+        "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/UnstableCollectionsCheckTest.kt",
+        "bytes": 1930,
+        "sha256": "9988d5ba2b48f3b43bd1c0309f11a9080e9d4979838d943f47fddd2dbdf77b16"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/RememberStateMissing.kt",
+        "bytes": 2796,
+        "sha256": "7338da30bcb4f0beb5627f9125b796464de8e1e492b796192398a2f7e4f7db16"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/RememberContentMissing.kt",
+        "bytes": 2477,
+        "sha256": "df2bb31c6c4e1ac93866463f64db31fc6716d95f03d2589cb9b65f238a56ced3"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/LambdaParameterInRestartableEffect.kt",
+        "bytes": 6955,
+        "sha256": "4f79026e65ee8453073b31e1e7bf0b1f996178ca9701adee82e47abb6ec5efaa"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/ContentSlotReused.kt",
+        "bytes": 2794,
+        "sha256": "cc98212f8eb7ae97bd0a2f164786cec060ab111ea0d83d37596648344590dae8"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/MutableStateAutoboxing.kt",
+        "bytes": 17071,
+        "sha256": "55284c392bae4654779efc4d11806bb7ccdf29d3a6f59395a54108d57c5b3bc6"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/StateParameter.kt",
+        "bytes": 1224,
+        "sha256": "fe2f0c230c464117ae2b0e1a6250d2e39062470c12463e59a0ba0505713ac667"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/MutableStateParameter.kt",
+        "bytes": 1869,
+        "sha256": "2732d3a28e708aface6b98fd9b7effa73c3d2c32ed1d8bcd2b5ba7fb0647c5b3"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/UnstableCollections.kt",
+        "bytes": 1912,
+        "sha256": "dfe57502d2ee6c17cbb25d81d206a819921287e59d2bc3eb605997bd2433e83f"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/ComposeKtVisitor.kt",
+        "bytes": 793,
+        "sha256": "e6a324ef9e86fc654c70d88bcced429eeb534fb3923cfdfac1bc0943a122787d"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/DetektRule.kt",
+        "bytes": 2542,
+        "sha256": "7b0bd0087a81fb49bd625084ef5576158c6a2b36a5d0c679fce1377ed19cc153"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/KtCallExpressions.kt",
+        "bytes": 5035,
+        "sha256": "60c1ee87a6a147b950924fe75d9f00ed6089c6ceb8bfd89a6983e1fbf9a37f8e"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/KtFunctions.kt",
+        "bytes": 2808,
+        "sha256": "a600439f3088d0c789db1cddd0d029a4bae70ccbfe8531c5a2dc46610ce07fd5"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/Lambdas.kt",
+        "bytes": 5448,
+        "sha256": "c7bc92dd8a19c1527076de66d65d9e5b4a04607c0ece2172eff72655640bee27"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/KtParameters.kt",
+        "bytes": 295,
+        "sha256": "82827b255186d73c611a77fbf7cb854496896712000f0654218d7f93cc96a1ea"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/KtCallableDeclarations.kt",
+        "bytes": 1696,
+        "sha256": "9cae68c7848acdd3024852ca4d9c999eaba7322869b5bf2c2b16b4e9a30afecf"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/KtAnnotateds.kt",
+        "bytes": 1088,
+        "sha256": "82770f753766fc3b872a35a6c47aac25c944b2293b526bbea9c6831c09c783d0"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/PsiElements.kt",
+        "bytes": 1970,
+        "sha256": "338815b4624aa506003dbd618d7363d0356f2eca81c31bdc766fda147a4f4fb2"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/KtConstantExpressions.kt",
+        "bytes": 989,
+        "sha256": "fcca7bbfdab45d617aac35f29285cf001cce688660c741997c83ff6141d42264"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/Composables.kt",
+        "bytes": 13763,
+        "sha256": "a7f6cefb8374679dc9dbfb5ff0815522b507ba783da7990da1d8b392e626b17c"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/KotlinUtils.kt",
+        "bytes": 2031,
+        "sha256": "83444f9132b6eafb8b306bd5166eeac120fb495c0339fa6d0e43f73589bd8e02"
+      },
+      {
+        "path": "rules/common/src/main/kotlin/io/nlopez/compose/core/Emitter.kt",
+        "bytes": 750,
+        "sha256": "f1801d239b87e5ac88e2ca67614a0cb4b2b1ebc7bf0544e8d4598c1995fde2c9"
+      },
+      {
+        "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/ComposeRuleSetProvider.kt",
+        "bytes": 5314,
+        "sha256": "9af220326d660ddd928059be5f8b033622e729cd79ca62f4b694abda0dac4b4e"
+      },
+      {
+        "path": "rules/detekt/src/main/resources/config/config.yml",
+        "bytes": 2259,
+        "sha256": "74c30cec058d9da9f8f2e309aa0f1bf945bf712d6d42a37f14e9186523e39903"
+      },
+      {
+        "path": "gradle/libs.versions.toml",
+        "bytes": 3032,
+        "sha256": "2a53a93e292e692e8082f57a53f1e7a4ebaf754dc7e3350fbc4d763888a07c55"
+      },
+      {
+        "path": "docs/detekt.md",
+        "bytes": 10281,
+        "sha256": "05869c8b2d9cb600b4a43d8b0b70684371349664d6b8e82fe91aea6d87614b70"
+      },
+      {
+        "path": "LICENSE.md",
+        "bytes": 9370,
+        "sha256": "dbc837c6dad1c3f837797c2cffc13bf1acb85c3429ec34793b377041bbc98ee0"
+      }
+    ]
+  },
+  "detekt": {
+    "repository": "https://github.com/detekt/detekt",
+    "tag": "v2.0.0-alpha.6",
+    "commit": "401c64bf232db0dcb054a7cfd0ca5fed3a095bc6",
+    "files": [
+      {
+        "path": "detekt-api/src/main/kotlin/dev/detekt/api/Entity.kt",
+        "bytes": 2285,
+        "sha256": "fa547278b6555be79d44d70a7bcfd667139e09ef12877e11ca2cb84c80bfbace"
+      },
+      {
+        "path": "detekt-api/src/main/kotlin/dev/detekt/api/Location.kt",
+        "bytes": 3584,
+        "sha256": "f61ab6d19ef331cbc2e3eb9139053ea344a1fbedb3b4cc1f5ba52607b1f785b0"
+      },
+      {
+        "path": "detekt-core/src/main/kotlin/dev/detekt/core/suppressors/Suppressions.kt",
+        "bytes": 1995,
+        "sha256": "3ad2e8b7cbba196e5f1f4a6cde1248aa9222a9dcf7df7fd793a4557c2cb2aa7c"
+      },
+      {
+        "path": "detekt-core/src/test/kotlin/dev/detekt/core/suppressors/SuppressionsSpec.kt",
+        "bytes": 9760,
+        "sha256": "1887ab950971d89e95cbc554a868cc634db72192e85328257f8f5a39829ea55a"
+      }
+    ]
+  },
+  "published_api_source_archives": [
+    {
+      "coordinate": "androidx.compose.runtime:runtime:1.4.3:sources",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime/1.4.3/runtime-1.4.3-sources.jar",
+      "path": "runtime-1.4.3-sources.jar",
+      "bytes": 311040,
+      "sha256": "ccb5f263a327ba229d23964d9a43a10c3880ae1603fab4647b98f0b7001fa3f2",
+      "sources": [
+        {
+          "path": "androidx/compose/runtime/Composable.kt",
+          "bytes": 2299,
+          "sha256": "1a462324b8f0d4e266330bfc2eae5b90137a203780c9918bc713f343fd25b6cf"
+        },
+        {
+          "path": "androidx/compose/runtime/Composables.kt",
+          "bytes": 18430,
+          "sha256": "8c5727107e4d10ffb2110651d3e55991d870ac81ae138a863546f282644770d7"
+        },
+        {
+          "path": "androidx/compose/runtime/Effects.kt",
+          "bytes": 20050,
+          "sha256": "2abbfd212449c2c88c2debff3ff051968cfe39f7c71c02271a856371ed106754"
+        },
+        {
+          "path": "androidx/compose/runtime/MovableContent.kt",
+          "bytes": 10205,
+          "sha256": "f8e7b46eed587864834b6d22e97fd52b51ac7aa055bad5e09be8473dc893e712"
+        },
+        {
+          "path": "androidx/compose/runtime/SnapshotState.kt",
+          "bytes": 10066,
+          "sha256": "4a69b207b3e184c9549442d7547962cd328d75d23310a1beea76ef300a84d738"
+        }
+      ]
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime:1.5.0:sources",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime/1.5.0/runtime-1.5.0-sources.jar",
+      "path": "runtime-1.5.0-sources.jar",
+      "bytes": 321503,
+      "sha256": "f3f37eeb3a5f874984a854b65c70e7bf75373c95df62d9eba93f244768d91e46",
+      "sources": [
+        {
+          "path": "commonMain/androidx/compose/runtime/Composable.kt",
+          "bytes": 2299,
+          "sha256": "1a462324b8f0d4e266330bfc2eae5b90137a203780c9918bc713f343fd25b6cf"
+        },
+        {
+          "path": "commonMain/androidx/compose/runtime/Composables.kt",
+          "bytes": 18430,
+          "sha256": "8c5727107e4d10ffb2110651d3e55991d870ac81ae138a863546f282644770d7"
+        },
+        {
+          "path": "commonMain/androidx/compose/runtime/Effects.kt",
+          "bytes": 20627,
+          "sha256": "feb8b1036f204b8c408d33d1e13dec2bc4378085db81dc0a465bf34d5e38e7da"
+        },
+        {
+          "path": "commonMain/androidx/compose/runtime/MovableContent.kt",
+          "bytes": 10205,
+          "sha256": "f8e7b46eed587864834b6d22e97fd52b51ac7aa055bad5e09be8473dc893e712"
+        },
+        {
+          "path": "commonMain/androidx/compose/runtime/SnapshotIntState.kt",
+          "bytes": 6071,
+          "sha256": "da5069ed65ef9bdeb98aef915bbfc0860b1b5cbe948947051ae78352e0f9d524"
+        },
+        {
+          "path": "commonMain/androidx/compose/runtime/SnapshotState.kt",
+          "bytes": 10267,
+          "sha256": "959a04a4dc21411b87e9004ff2f832a7042c13283103eb960d7417da5e6f04ff"
+        }
+      ]
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8:sources",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-collections-immutable/0.3.8/kotlinx-collections-immutable-0.3.8-sources.jar",
+      "path": "kotlinx-collections-immutable-0.3.8-sources.jar",
+      "bytes": 70555,
+      "sha256": "7afda93161f4d0e4cff603dbcc5ebc2eb6c591280d2b0c643c0c1407610e2d9d",
+      "sources": [
+        {
+          "path": "commonMain/ImmutableCollection.kt",
+          "bytes": 5752,
+          "sha256": "cf2f17ae2b9204849335d9efcb83074b8a53d5d2fa51ba5aa2a0b6a20a2aeb1b"
+        },
+        {
+          "path": "commonMain/ImmutableList.kt",
+          "bytes": 7760,
+          "sha256": "8673c4b0ecf78f162bfc8bca2f89091c0d1308232d0719900f91845ea1579088"
+        },
+        {
+          "path": "commonMain/ImmutableMap.kt",
+          "bytes": 5592,
+          "sha256": "c691a9910b4b98d40ff1f79f61bac16f4a96ee4f0d68fedc0c00115870248c89"
+        },
+        {
+          "path": "commonMain/ImmutableSet.kt",
+          "bytes": 4911,
+          "sha256": "3cce16eafe317c698d5033b5029f22712addde516f2391b0c141f267bc225a64"
+        }
+      ]
+    }
+  ],
+  "api_references": {
+    "runtime1.5.0:remember": {
+      "coordinate": "androidx.compose.runtime:runtime:1.5.0:sources",
+      "path": "commonMain/androidx/compose/runtime/Composables.kt",
+      "line_ranges": [
+        [
+          19,
+          37
+        ]
+      ]
+    },
+    "runtime1.5.0:movableContentOf": {
+      "coordinate": "androidx.compose.runtime:runtime:1.5.0:sources",
+      "path": "commonMain/androidx/compose/runtime/MovableContent.kt",
+      "line_ranges": [
+        [
+          21,
+          42
+        ]
+      ]
+    },
+    "runtime1.5.0:rememberUpdatedState": {
+      "coordinate": "androidx.compose.runtime:runtime:1.5.0:sources",
+      "path": "commonMain/androidx/compose/runtime/SnapshotState.kt",
+      "line_ranges": [
+        [
+          272,
+          306
+        ]
+      ]
+    },
+    "runtime1.5.0:LaunchedEffect": {
+      "coordinate": "androidx.compose.runtime:runtime:1.5.0:sources",
+      "path": "commonMain/androidx/compose/runtime/Effects.kt",
+      "line_ranges": [
+        [
+          320,
+          340
+        ]
+      ]
+    },
+    "runtime1.5.0:mutableIntStateOf": {
+      "coordinate": "androidx.compose.runtime:runtime:1.5.0:sources",
+      "path": "commonMain/androidx/compose/runtime/SnapshotIntState.kt",
+      "line_ranges": [
+        [
+          27,
+          52
+        ]
+      ]
+    },
+    "runtime1.5.0:IntState": {
+      "coordinate": "androidx.compose.runtime:runtime:1.5.0:sources",
+      "path": "commonMain/androidx/compose/runtime/SnapshotIntState.kt",
+      "line_ranges": [
+        [
+          54,
+          69
+        ]
+      ]
+    },
+    "runtime1.5.0:MutableIntState": {
+      "coordinate": "androidx.compose.runtime:runtime:1.5.0:sources",
+      "path": "commonMain/androidx/compose/runtime/SnapshotIntState.kt",
+      "line_ranges": [
+        [
+          77,
+          97
+        ]
+      ]
+    },
+    "immutable0.3.8:interfaces": {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8:sources",
+      "paths": [
+        "commonMain/ImmutableList.kt",
+        "commonMain/ImmutableSet.kt",
+        "commonMain/ImmutableMap.kt"
+      ],
+      "declarations": [
+        "ImmutableList",
+        "ImmutableSet",
+        "ImmutableMap"
+      ]
+    }
+  },
+  "older_runtime_int_api_contrast": {
+    "source_file_count": 123,
+    "source_names_sha256": "3e88442535ca7089a7c90a445cde7d05679676e1ef595032465c49a46339efe6",
+    "declaration_scan": "No fun mutableIntStateOf( declaration in the123 Kotlin SOURCE members; not a binary/API compatibility test."
+  },
+  "shared_predicates": {
+    "composable_recognition": "KtAnnotateds.kt:11-12 (annotation callee text only)",
+    "remember_recognition": "Composables.kt:369-375 (remember* or retain ancestor)",
+    "effect_recognition": "Composables.kt:352-366 (fixed short-name set)",
+    "lambda_aliases": "Lambdas.kt:77-142 (same-file/configured syntax aliases)",
+    "collection_regex": "KtCallableDeclarations.kt:41-48 (full textual regex)",
+    "detekt_entities": "DetektRule.kt:31-36 + detekt Entity.kt:20-28 + Location.kt:25-35",
+    "suppression": "detekt Suppressions.kt:19-45 (registered child ID and annotated ancestors)"
+  },
+  "native_bindings": {
+    "runtime_binary": null,
+    "runtime_artifact_digest": null,
+    "owner_authority": null,
+    "compiler_qualification": null
+  },
+  "note": "Published sources prove only the cited declarations and source-derived oracle predicates. They are neither resolved runtime binaries, owner capabilities, executed outcomes, nor release evidence.",
+  "published_api_family_source_and_data": [
+    {
+      "coordinate": "androidx.compose.runtime:runtime:1.12.1",
+      "kind": "published_SOURCE_archive",
+      "path": "runtime-1.12.1-sources.jar",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime/1.12.1/runtime-1.12.1-sources.jar",
+      "bytes": 594365,
+      "sha256": "0ba59f493f3d13e4078bdd9ed80c6567f85346fe6a3ea2481548b68fc6200661"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime:1.12.1",
+      "kind": "published_module_DATA",
+      "path": "runtime-1.12.1.pom",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime/1.12.1/runtime-1.12.1.pom",
+      "bytes": 4716,
+      "sha256": "0bcb66c1b123a7421fd088d2620ee04d2e56213bb5d2c9c427a6b1a41a687fcb"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime:1.12.1",
+      "kind": "published_module_DATA",
+      "path": "runtime-1.12.1.module",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime/1.12.1/runtime-1.12.1.module",
+      "bytes": 43437,
+      "sha256": "6229c46e743d284155b9a0d3dbbc9e61ec6ced6a4fbdbef85ce2619895dfbcae"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-desktop:1.12.1",
+      "kind": "published_module_DATA",
+      "path": "runtime-desktop-1.12.1.pom",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-desktop/1.12.1/runtime-desktop-1.12.1.pom",
+      "bytes": 4487,
+      "sha256": "919f59648eee57144b70b3d8c170988b4bb1987b92cc105921f34b84a895c9a1"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-desktop:1.12.1",
+      "kind": "published_module_DATA",
+      "path": "runtime-desktop-1.12.1.module",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-desktop/1.12.1/runtime-desktop-1.12.1.module",
+      "bytes": 12204,
+      "sha256": "2920ed8534406d1206e40faaa733521a8cea7c202993dec5e49b132ebf89d8a4"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-desktop:1.12.1",
+      "kind": "published_SOURCE_archive",
+      "path": "runtime-desktop-1.12.1-sources.jar",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-desktop/1.12.1/runtime-desktop-1.12.1-sources.jar",
+      "bytes": 580590,
+      "sha256": "45f2757069be7d7f99cf4692bac068ef23a0e84a7a27d28fc9c12b8610c4ccdd"
+    },
+    {
+      "coordinate": "androidx.collection:collection:1.5.0",
+      "kind": "published_module_DATA",
+      "path": "collection-1.5.0.module",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/collection/collection/1.5.0/collection-1.5.0.module",
+      "bytes": 39702,
+      "sha256": "bfeb7bd84f3f7dda7bd73b6709d4a1f61f5a37f843728bae08a067e3df9a0aef"
+    },
+    {
+      "coordinate": "androidx.collection:collection:1.5.0",
+      "kind": "published_module_DATA",
+      "path": "collection-1.5.0.pom",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/collection/collection/1.5.0/collection-1.5.0.pom",
+      "bytes": 2561,
+      "sha256": "2d65c8d0b36d4b4faadc44aff9bade23d871d7159eedf2b3f02d802b34b77a57"
+    },
+    {
+      "coordinate": "androidx.collection:collection:1.5.0",
+      "kind": "published_SOURCE_archive",
+      "path": "collection-1.5.0-sources.jar",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/collection/collection/1.5.0/collection-1.5.0-sources.jar",
+      "bytes": 286668,
+      "sha256": "8664c27604f69a439a7c0755c2b6e9f82b6c74c815804f07750fc9a8b5743209"
+    },
+    {
+      "coordinate": "androidx.collection:collection-jvm:1.5.0",
+      "kind": "published_module_DATA",
+      "path": "collection-jvm-1.5.0.module",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0.module",
+      "bytes": 4660,
+      "sha256": "dde85e292509231b5471bb091b575099d4f43161eb281e87385038a0161072e6"
+    },
+    {
+      "coordinate": "androidx.collection:collection-jvm:1.5.0",
+      "kind": "published_module_DATA",
+      "path": "collection-jvm-1.5.0.pom",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0.pom",
+      "bytes": 2383,
+      "sha256": "11c415864d3402f61d426e67210158dce1b04680412526a994f1823ecd3cb388"
+    },
+    {
+      "coordinate": "androidx.collection:collection-jvm:1.5.0",
+      "kind": "published_SOURCE_archive",
+      "path": "collection-jvm-1.5.0-sources.jar",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0-sources.jar",
+      "bytes": 288386,
+      "sha256": "bcc6197ec5fb349e86ae3ba6c94b164d3a9ac5a03d9f9c235d7c4eb24e5878b3"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8",
+      "kind": "published_module_DATA",
+      "path": "kotlinx-collections-immutable-0.3.8.module",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-collections-immutable/0.3.8/kotlinx-collections-immutable-0.3.8.module",
+      "bytes": 43307,
+      "sha256": "98efbce16290845fb308de942b91a3038658ba1533a0d2f77883b96eca914002"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8",
+      "kind": "published_module_DATA",
+      "path": "kotlinx-collections-immutable-0.3.8.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-collections-immutable/0.3.8/kotlinx-collections-immutable-0.3.8.pom",
+      "bytes": 1706,
+      "sha256": "dc855b3e33a1f6efc03fbdbf0d99511b74b087e96995f00451fbf2c89ae0a477"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.3.8",
+      "kind": "published_module_DATA",
+      "path": "kotlinx-collections-immutable-jvm-0.3.8.module",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-collections-immutable-jvm/0.3.8/kotlinx-collections-immutable-jvm-0.3.8.module",
+      "bytes": 3402,
+      "sha256": "6a4d3a8eb74221b43b08fe21bf955cabd69138977dcf78f86fd0ef6220b711f7"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.3.8",
+      "kind": "published_module_DATA",
+      "path": "kotlinx-collections-immutable-jvm-0.3.8.pom",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-collections-immutable-jvm/0.3.8/kotlinx-collections-immutable-jvm-0.3.8.pom",
+      "bytes": 1705,
+      "sha256": "2c4dcd56368ab52b502b08b02c2f1d38c069579042f5979a9cc106ce403bbbbf"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.3.8",
+      "kind": "published_SOURCE_archive",
+      "path": "kotlinx-collections-immutable-jvm-0.3.8-sources.jar",
+      "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-collections-immutable-jvm/0.3.8/kotlinx-collections-immutable-jvm-0.3.8-sources.jar",
+      "bytes": 70426,
+      "sha256": "80219b91c78709f696305970895d27481c78bda7cae0c180c7c8202240f47d34"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-annotation:1.12.1",
+      "kind": "published_module_DATA",
+      "path": "runtime-annotation-1.12.1.module",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation/1.12.1/runtime-annotation-1.12.1.module",
+      "bytes": 44628,
+      "sha256": "43bcb5a97aa5cace0ab5d981a8f70618a875ec35b6071e7bb18d55d3ea127d8d"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-annotation:1.12.1",
+      "kind": "published_module_DATA",
+      "path": "runtime-annotation-1.12.1.pom",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation/1.12.1/runtime-annotation-1.12.1.pom",
+      "bytes": 3902,
+      "sha256": "7e65281b333ab81af736debc19a8e4ea86ab7b6e82eb1cd7a4b3e8c6ca695c8f"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-annotation:1.12.1",
+      "kind": "published_SOURCE_archive",
+      "path": "runtime-annotation-1.12.1-sources.jar",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation/1.12.1/runtime-annotation-1.12.1-sources.jar",
+      "bytes": 12735,
+      "sha256": "272b2b47cf1d938a66fa4c92e73ab8820c91f9c0d07208050aa5986988bc73b9"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-annotation-jvm:1.12.1",
+      "kind": "published_module_DATA",
+      "path": "runtime-annotation-jvm-1.12.1.module",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation-jvm/1.12.1/runtime-annotation-jvm-1.12.1.module",
+      "bytes": 11456,
+      "sha256": "a6f8f1750e9ca881b16c8823008f7c5167eb955e7df34ef691874cbbd2221e8d"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-annotation-jvm:1.12.1",
+      "kind": "published_module_DATA",
+      "path": "runtime-annotation-jvm-1.12.1.pom",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation-jvm/1.12.1/runtime-annotation-jvm-1.12.1.pom",
+      "bytes": 3706,
+      "sha256": "0b9433b10ceeadc475160909b26547642b2e66a85d1ebf8ae0254b404816d25e"
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-annotation-jvm:1.12.1",
+      "kind": "published_SOURCE_archive",
+      "path": "runtime-annotation-jvm-1.12.1-sources.jar",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation-jvm/1.12.1/runtime-annotation-jvm-1.12.1-sources.jar",
+      "bytes": 12735,
+      "sha256": "272b2b47cf1d938a66fa4c92e73ab8820c91f9c0d07208050aa5986988bc73b9"
+    },
+    {
+      "coordinate": "androidx.compose:compose-bom:2026.09.00",
+      "kind": "published_BOM_DATA",
+      "path": "compose-bom-2026.09.00.pom",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/2026.09.00/compose-bom-2026.09.00.pom",
+      "bytes": 41126,
+      "sha256": "74791c31313009659bd0bf09008bd514a163aa04452dd4cb82df2fb971c757c3"
+    }
+  ],
+  "api_surface_review": {
+    "path": "api-surface-review.json",
+    "sha256": "a027758498d025d3dce68a0feabd05f11cc2c2afbe8e84fcdc991a56abe0aba2"
+  },
+  "runtime_binary_validation": null,
+  "source_qualification": "SOURCE declarations and module-advertised JVM binary identities only. SOURCE jars are not executable/runtime pins; owner bytes are still required."
+}

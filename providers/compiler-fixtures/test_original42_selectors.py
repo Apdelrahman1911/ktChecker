@@ -7,6 +7,8 @@ import json
 import re
 import unittest
 
+import compiler_mapping_contracts as contracts
+
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'providers/compiler-fixtures'
@@ -54,14 +56,17 @@ def literal_original_id_map(controls):
 class Original42SelectorSourceContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        # Affirmative445 production contract, distinct from every frozen legacy443 oracle below.
+        cls.current_mapping = contracts.current445(ROOT)
+        contracts.require_legacy_runner_refusal_source(ROOT)
         cls.manifest = json.loads((FIXTURES / 'manifest.json').read_text())
         cls.proposal = json.loads((FIXTURES / 'original42-partition-proposal.json').read_text())
         cls.controls = (KOTLIN / 'CompilerFixtureControls.kt').read_text()
         cls.runner = (KOTLIN / 'CompilerFixtureRunner.kt').read_text()
         cls.selectors = literal_original_id_map(cls.controls)
         cls.original = {row['rule_id']: row for row in cls.manifest['fixtures'] if 'authored_cohort' not in row}
-        cls.mappings = {row['rule_id']: row for row in json.loads(
-            (ROOT / 'modules/provider-compiler/src/main/resources/compiler-rule-map.json').read_text())['mappings']}
+        # Original42 schedule metadata is frozen443 DATA; never select an executable443 registry.
+        cls.mappings = {row['rule_id']: row for row in contracts.legacy_mapping(ROOT)['mappings']}
 
     def test_ten_literal_selectors_match_reviewed_ids_and_partition_exactly_original42(self):
         descriptor = {group['proposed_selector_name']: {member['rule_id'] for member in group['members']}
@@ -73,6 +78,9 @@ class Original42SelectorSourceContractTest(unittest.TestCase):
         self.assertEqual(set(self.original), set().union(*self.selectors.values()))
         self.assertEqual(98, len(self.manifest['fixtures']))
         self.assertEqual(443, len(self.mappings))
+        self.assertEqual(445, len(self.current_mapping['mappings']))
+        self.assertEqual(402, sum(row['backend'] != 'native' for row in self.current_mapping['mappings']))
+        self.assertFalse(set(contracts.NEW_IDS) & set().union(*self.selectors.values()))
         self.assertTrue(set(self.original) <= self.mappings.keys())
         for name, ids in self.selectors.items():
             self.assertEqual(REVIEWED_BOUNDS[name][0], len(ids))

@@ -1,0 +1,31 @@
+{
+  "current_counts": null,
+  "current_stage_transfer_allowed": false,
+  "gaps": [
+    "full_historical_source_identity_unknown",
+    "historical_implemented_cell_identities_unknown",
+    "historical_claims_not_current_coverage"
+  ],
+  "historical_claims": {
+    "implemented": 2,
+    "mapped": 11448,
+    "qualified": 0,
+    "runtime_defaults_enabled": false,
+    "tested": 0
+  },
+  "historical_report_read": false,
+  "historical_scope": {
+    "catalog_records": 1663,
+    "contexts": 8,
+    "rows": 13304
+  },
+  "implemented_cell_identities": null,
+  "provenance": "Owner-supplied metadata only; report body and restricted artifacts were not read or revalidated by this lane.",
+  "report_path": "build/ci-evidence/current-coverage-integrated-20261105-r1/inventory.json",
+  "report_sha256": "26a0aeb9875a1ceeb34f873da230805e8dc94d4dacceb98d58aa5dd11ce65f98",
+  "schema": "ktchecker/historical-inventory-reference/1",
+  "source_binding_verified": false,
+  "source_hint": "c364 (abbreviated checkpoint label only, not a source identity)",
+  "source_sha256": null,
+  "status": "source_reference_unavailable"
+}

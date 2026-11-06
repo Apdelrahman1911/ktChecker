@@ -1,0 +1,177 @@
+name: Compose state/effects corpus (explicit owner dispatch)
+
+# PRIVATE SOURCE proposal: installation is not execution authorization.
+# Deliberately no PR/push/schedule trigger. All 43 Compose mappings remain in
+# release scope; these six jobs exercise 46 admitted native fixture analyses.
+# The other two rules retain 15 SOURCE-only cases, not native negatives.
+on:
+  workflow_dispatch:
+    inputs:
+      consent:
+        description: "Authorize these six jobs / at most 46 native analyses for this exact reviewed source/workflow commit"
+        required: true
+        type: choice
+        default: not-authorized
+        options:
+          - not-authorized
+          - compose-state-effects-v1-six-rules-46-analyses
+      expected_commit:
+        description: "Independently reviewed full 40-character source AND workflow commit"
+        required: true
+        type: string
+      owner_lock_sha256:
+        description: "sha256:<64 lower hex> of the reviewed complete owner runtime lock already committed with its resolution provenance"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  compose-corpus:
+    name: Compose corpus / ${{ matrix.slug }} (one explicit rule)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - rule_id: ktc.compose.pack.RememberMissing
+            slug: remember-missing
+            maximum_native_invocations: 8
+          - rule_id: ktc.compose.pack.RememberContentMissing
+            slug: remember-content-missing
+            maximum_native_invocations: 8
+          - rule_id: ktc.compose.pack.ContentSlotReused
+            slug: content-slot-reused
+            maximum_native_invocations: 8
+          - rule_id: ktc.compose.pack.MutableStateAutoboxing
+            slug: mutable-state-autoboxing
+            maximum_native_invocations: 8
+          - rule_id: ktc.compose.pack.StateParam
+            slug: state-param
+            maximum_native_invocations: 7
+          - rule_id: ktc.compose.pack.UnstableCollections
+            slug: unstable-collections
+            maximum_native_invocations: 7
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      KTC_COMPOSE_CI_CONSENT: ${{ inputs.consent }}
+      KTC_COMPOSE_EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+      KTC_COMPOSE_OWNER_LOCK_SHA256: ${{ inputs.owner_lock_sha256 }}
+      KTC_COMPOSE_SELECTED_RULE: ${{ matrix.rule_id }}
+      KTC_COMPOSE_SELECTED_SLUG: ${{ matrix.slug }}
+
+    steps:
+      - name: Check out the workflow's exact source commit
+        id: checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          submodules: false
+          lfs: false
+
+      - name: Select Python for the owner CI contract
+        id: python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+
+      # Hard failure BEFORE Java/provision/build when the separately reviewed
+      # complete owner lock is unavailable. No guessed stdlib/coroutines closure
+      # or relabeled "other runtime" is checked in by this SOURCE proposal.
+      - name: Require exact owner enrollment and fresh hosted dispatch
+        timeout-minutes: 3
+        run: |
+          umask 077
+          python -B scripts/ci/run_compose_corpus.py --phase gate \
+            --rule "$KTC_COMPOSE_SELECTED_RULE" \
+            --owner-lock-sha256 "$KTC_COMPOSE_OWNER_LOCK_SHA256"
+
+      - name: Exercise synthetic CI contract controls (never provider/runtime probes)
+        timeout-minutes: 3
+        run: |
+          umask 077
+          python -B -m unittest scripts.ci.test_compose_corpus_ci
+
+      - name: Select JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: "21"
+          # No Gradle cache: exact task execution and fresh reports are required.
+
+      - name: Observe the checked-in Gradle 9.6.1 wrapper without printing its raw log
+        timeout-minutes: 5
+        run: |
+          umask 077
+          python -B scripts/ci/run_compose_corpus.py --phase wrapper \
+            --rule "$KTC_COMPOSE_SELECTED_RULE" \
+            --owner-lock-sha256 "$KTC_COMPOSE_OWNER_LOCK_SHA256"
+
+      - name: Record source, hosted runner, JDK and executed wrapper identity
+        timeout-minutes: 3
+        run: |
+          umask 077
+          python -B scripts/ci/record_environment.py \
+            --output "build/ci-evidence/compose/$KTC_COMPOSE_SELECTED_SLUG/environment.json" \
+            --gradle-result "build/ci-evidence/compose/$KTC_COMPOSE_SELECTED_SLUG/gradle-version.json" \
+            --require-java-major 21 --require-gradle 9.6.1 --require-ci-context
+
+      - name: Provision only the complete supplied owner vectors and pinned Detekt engine
+        timeout-minutes: 25
+        run: |
+          umask 077
+          python -B scripts/ci/run_compose_corpus.py --phase provision --download \
+            --rule "$KTC_COMPOSE_SELECTED_RULE" \
+            --owner-lock-sha256 "$KTC_COMPOSE_OWNER_LOCK_SHA256"
+
+      - name: Execute the dedicated one-rule task once with explicit native budgets
+        timeout-minutes: 22
+        run: |
+          umask 077
+          python -B scripts/ci/run_compose_corpus.py --phase execute \
+            --rule "$KTC_COMPOSE_SELECTED_RULE" \
+            --owner-lock-sha256 "$KTC_COMPOSE_OWNER_LOCK_SHA256"
+
+      - name: Join actual task, private native observations and original successful XML
+        id: collect
+        if: ${{ always() && steps.checkout.outcome == 'success' && steps.python.outcome == 'success' }}
+        timeout-minutes: 5
+        env:
+          KT_CI_JOB_STATUS: ${{ job.status }}
+        run: |
+          umask 077
+          python -B scripts/ci/run_compose_corpus.py --phase collect \
+            --rule "$KTC_COMPOSE_SELECTED_RULE" \
+            --owner-lock-sha256 "$KTC_COMPOSE_OWNER_LOCK_SHA256"
+
+      - name: Retain only the sanitized per-rule availability/observation summary
+        if: ${{ always() && steps.checkout.outcome == 'success' && steps.python.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: compose-corpus-${{ matrix.slug }}-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/compose/${{ matrix.slug }}/summary.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Retain the byte-identical privacy-whitelisted original successful XML
+        if: ${{ steps.collect.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: compose-corpus-${{ matrix.slug }}-original-junit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/ci-evidence/compose/${{ matrix.slug }}/junit-original.xml
+          if-no-files-found: error
+          retention-days: 14
+
+      # No upload of raw/, owner descriptors, process data, native SARIF, source,
+      # failed/unrecognized XML, or broad build/** globs. No cleanup or retry.
+      # Job-disk preservation is NOT durable off-host private evidence custody.
+      # JDK launcher/release hashes are NOT a whole-JDK distribution lock.
+      # A passed selected fixture is NOT a whole-rule, tuple or release certificate.

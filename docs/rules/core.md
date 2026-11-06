@@ -6,9 +6,9 @@ Source of truth: [full records](../../data/rules-core.json). Each record include
 
 **Catalog membership is not implemented or validated coverage.** Platform labels are conditional scope, not tested support. Costs are estimates. `enabled_when_validated` is an intended default, never a current enablement. No test recipe or upstream test is evidence of ktChecker integration.
 
-Records: 797. Dispositions: advisory=122, enabled_when_validated=334, excluded=20, opt_in=321.
+Records: 799. Dispositions: advisory=123, enabled_when_validated=335, excluded=20, opt_in=321.
 
-Statuses: planned=797.
+Statuses: planned=799.
 
 | Stable ID | Problem | Platforms (conditional) | Depth / cost | Kind / severity / certainty | Intended activation | Status |
 |---|---|---|---|---|---|---|
@@ -93,6 +93,7 @@ Statuses: planned=797.
 | `ktc.compiler.common.enum_entry_as_type` | Compiler diagnostic ENUM_ENTRY_AS_TYPE: Use of enum entry names as types is prohibited. Use enum type instead. | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
 | `ktc.compiler.common.equality_not_applicable` | Compiler diagnostic EQUALITY_NOT_APPLICABLE: Operator '{0}' cannot be applied to '{1}' and '{2}'. | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
 | `ktc.compiler.common.error_in_contract_description` | Compiler diagnostic ERROR_IN_CONTRACT_DESCRIPTION: Error in contract description: {0}. | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
+| `ktc.compiler.common.error_suppression` | Compiler diagnostic ERROR_SUPPRESSION: kotlin.Suppress names an unsupported hard-error suppression, even when its annotated body is valid. | common, android, ios, desktop, jvm | build / slow | probable_defect / warning / intent_dependent | advisory | planned |
 | `ktc.compiler.common.expect_actual_classifiers_are_in_beta_warning` | Compiler diagnostic EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING: 'expect'/'actual' classes (including interfaces, objects, annotations, enums, and 'actual' typealiases) are in Beta. Consider using the '-Xexpect-actual-classes' flag to suppress this warning. Also see: https://youtrack.jetbrains.com/issue/KT-61573 | common, android, ios, desktop, jvm | build / slow | policy / warning / high | opt_in | planned |
 | `ktc.compiler.common.expect_actual_incompatible_class_kind` | Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_CLASS_KIND: The 'expect' and the 'actual' declarations are incompatible.   expect: {0}   actual: {1}   reason: {2} | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
 | `ktc.compiler.common.expect_actual_incompatible_class_modifiers` | Compiler diagnostic EXPECT_ACTUAL_INCOMPATIBLE_CLASS_MODIFIERS: The 'expect' and the 'actual' declarations are incompatible.   expect: {0}   actual: {1}   reason: {2} | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
@@ -151,6 +152,7 @@ Statuses: planned=797.
 | `ktc.compiler.common.implementation_by_delegation_in_expect_class` | Compiler diagnostic IMPLEMENTATION_BY_DELEGATION_IN_EXPECT_CLASS: Implementation by delegation in 'expect' classes is prohibited. | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
 | `ktc.compiler.common.implicit_boxing_in_identity_equals` | Compiler diagnostic IMPLICIT_BOXING_IN_IDENTITY_EQUALS: Identity equality for arguments of types '{0}' and '{1}' can be unstable because of implicit boxing. | common, android, ios, desktop, jvm | build / slow | probable_defect / warning / intent_dependent | advisory | planned |
 | `ktc.compiler.common.inapplicable_all_target` | Compiler diagnostic INAPPLICABLE_ALL_TARGET: '@all:' annotations cannot be applied to {0}. | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
+| `ktc.compiler.common.inapplicable_operator_modifier` | Compiler diagnostic INAPPLICABLE_OPERATOR_MODIFIER: an explicit operator function has an illegal operator name or an inapplicable signature. | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
 | `ktc.compiler.common.incompatible_enum_comparison_error` | Compiler diagnostic INCOMPATIBLE_ENUM_COMPARISON_ERROR: Comparison of incompatible enums '{0}' and '{1}' is always unsuccessful. | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |
 | `ktc.compiler.common.inferred_invisible_when_type_warning` | Compiler diagnostic INFERRED_INVISIBLE_WHEN_TYPE_WARNING: Inferred type '{0}' for {1} expression is not visible in this scope. | common, android, ios, desktop, jvm | build / slow | probable_defect / warning / intent_dependent | advisory | planned |
 | `ktc.compiler.common.initialization_before_declaration` | Compiler diagnostic INITIALIZATION_BEFORE_DECLARATION: Variable cannot be initialized before declaration. | common, android, ios, desktop, jvm | build / slow | correctness / error / high | enabled_when_validated | planned |

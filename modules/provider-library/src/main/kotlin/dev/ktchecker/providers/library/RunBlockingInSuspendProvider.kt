@@ -28,6 +28,14 @@ class RunBlockingInSuspendProvider(
     /** Owner review helper only. Frozen metadata is a request, never extraction authorization. */
     fun authorizationRequest(input: AnalysisInput): LibraryFactAuthorizationRequest = prepare(input).request
 
+    /** Structural freeze for live owner dispatch, not an approval or replacement authority. */
+    internal fun freezeForRuntime(input: AnalysisInput): Pair<AnalysisInput, AnalysisProvider> {
+        val prepared = prepare(input)
+        val bound = prepared.request
+        return bound.input to RunBlockingInSuspendProvider(model, RunBlockingFactSelection(bound.semanticRequest,
+            prepared.shards, bound.compilerExitCode, bound.applicability), authority)
+    }
+
     override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
         // Do not expand an oversized malformed envelope into an unbounded coverage vector.
         // A partial result without rows/certificates cannot discharge the owner's external plan.
@@ -36,22 +44,25 @@ class RunBlockingInSuspendProvider(
             return ProviderResult(id, "partial", reasons = libraryList(listOf("library_analysis_envelope_bound_exceeded")),
                 providerVersion = version)
         }
-        val requested = input.requiredRuleIds.distinct()
+        // One detached vector governs preparation, authorization, dispatch and reported rows.
+        // Cancellation/owner callbacks must not rebind a caller-owned mutable rule list.
+        val selectedInput = input.copy(requiredRuleIds = libraryList(input.requiredRuleIds))
+        val requested = selectedInput.requiredRuleIds.distinct()
         fun unavailable(reason: String, state: String = "unavailable"): ProviderResult = ProviderResult(id,
             if (state == "cancelled") "cancelled" else "partial",
             coverage = libraryList(requested.map { rule ->
-                Coverage(rule, input.context.scope,
+                Coverage(rule, selectedInput.context.scope,
                     if (rule == RUNBLOCKING_IN_SUSPEND || state == "cancelled") state else "unsupported",
                     if (rule == RUNBLOCKING_IN_SUSPEND || state == "cancelled") reason else "library_rule_not_implemented",
                     depth = "semantic")
             }), reasons = libraryList(listOf(reason)), providerVersion = version)
         if (cancellation.isCancelled()) return unavailable("library_analysis_cancelled", "cancelled")
         if (requested.isEmpty()) return unavailable("library_no_explicit_rules_requested")
-        if (requested.size != input.requiredRuleIds.size) return unavailable("library_rule_selection_duplicate")
+        if (requested.size != selectedInput.requiredRuleIds.size) return unavailable("library_rule_selection_duplicate")
         if (RUNBLOCKING_IN_SUSPEND !in requested) return unavailable("library_requested_rules_not_implemented", "unsupported")
         return try {
             cancellation.throwIfCancelled()
-            val prepared = prepare(input)
+            val prepared = prepare(selectedInput)
             cancellation.throwIfCancelled()
             val permit = authority.authorize(prepared.request)
                 ?: return unavailable("library_extraction_not_authorized")

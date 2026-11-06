@@ -5,10 +5,22 @@ import java.nio.file.Path
 
 /** No project code, compiler, or plugin is loaded here; only supplied immutable source bytes. */
 object SemanticFactsValidation {
-    fun requestProblems(request: SemanticFactsRequest): List<String> {
+    fun requestProblems(request: SemanticFactsRequest): List<String> = extractionRequestProblems(SemanticRequestData.of(request))
+
+    fun observedRequestProblems(request: ObservedSemanticFactsRequest): List<String> {
+        try { observedSemanticRequestBounds(request) }
+        catch (_: SemanticFactException) { return listOf("observed_semantic_request_bound") }
+        return extractionRequestProblems(SemanticRequestData.of(request))
+    }
+
+    internal fun extractionRequestProblems(request: SemanticRequestData): List<String> {
         val problems = mutableListOf<String>()
         if (request.schemaVersion != 1 || request.adapterId != SEMANTIC_ADAPTER_ID ||
             request.compilerVersion != SEMANTIC_COMPILER_VERSION) problems += "semantic_tuple_unavailable"
+        if (request.directIntLiteralArgumentVersion != null &&
+            request.directIntLiteralArgumentVersion != DIRECT_INT_LITERAL_ARGUMENT_VERSION) {
+            problems += "semantic_direct_int_literal_request_version_unsupported"
+        }
         if (listOf(request.snapshotId, request.analysisId, request.toolchainId).any { !Digests.valid(it) }) {
             problems += "semantic_identity_invalid"
         }
@@ -23,7 +35,17 @@ object SemanticFactsValidation {
         if (request.sources.sumOf { it.size.coerceIn(0, 4_194_305) } > 268_435_456) problems += "semantic_input_limit"
         if (request.compilerArtifacts.isEmpty() || request.compilerArtifacts.any { !Digests.valid(it.digest) } ||
             !Digests.valid(request.pluginArtifact.digest)) problems += "semantic_artifact_identity_invalid"
-        if (request.target.isBlank() || request.compilationId.isBlank()) problems += "semantic_context_missing"
+        if ((request.observed == null && request.target.isBlank()) || request.compilationId.isBlank()) problems += "semantic_context_missing"
+        request.observed?.let { observed ->
+            if (observed.profile != OBSERVED_SEMANTIC_REQUEST_PROFILE || observed.platform != "jvm" ||
+                observed.target.any { it.isISOControl() } || observed.target.isNotEmpty() && observed.target.isBlank()) {
+                problems += "observed_semantic_context_unsupported"
+            }
+            if (!Digests.valid(observed.modelEvidenceIdentity) ||
+                !Regex("[a-f0-9]{32}").matches(observed.observedInvocationIdentity) ||
+                !Regex("[a-f0-9]{32}").matches(observed.originalDeadlineIdentity) ||
+                observed.originalDeadlineMillis !in 1..3_600_000) problems += "observed_semantic_origin_labels_invalid"
+        }
         if (request.compilerArguments.isEmpty() || request.compilerArguments.size > 4096 ||
             request.compilerArguments.any { it.length > 16_384 || '\u0000' in it }) problems += "semantic_compiler_options_unknown"
         if (request.dependencyArtifacts.any { !Digests.valid(it.digest) }) problems += "semantic_dependency_identity_invalid"
@@ -68,20 +90,39 @@ object SemanticFactsValidation {
                  sourceBytes: ((SemanticSource) -> ByteArray)? = null): SemanticFactBundle {
         val frozenRequest = SemanticFactsFreeze.request(request)
         val frozenShards = try {
-            SemanticFactsFreeze.shards(shards, (frozenRequest.sources.size.toLong() * 4).coerceAtMost(200_000).toInt())
+            SemanticFactsFreeze.shards(shards, (frozenRequest.sources.size.toLong() * 4).coerceAtMost(200_000).toInt(),
+                directIntLiteralArgumentsRequested = frozenRequest.directIntLiteralArgumentVersion != null)
         } catch (e: SemanticFactException) {
             return SemanticFactBundle(frozenRequest.digest(), frozenRequest.snapshotId, frozenRequest.analysisId,
                 frozenRequest.target, frozenRequest.compilationId, "failed", compilerExitCode,
                 SemanticFactsFreeze.list(listOf(e.code)), emptyList(), false)
         }
-        return assembleFrozen(frozenRequest, frozenShards, compilerExitCode, executedSuccessfully,
+        return assembleFrozen(SemanticRequestData.of(frozenRequest), frozenShards, compilerExitCode, executedSuccessfully,
             SemanticFactsFreeze.list(executionReasons), sourceBytes)
     }
 
-    private fun assembleFrozen(request: SemanticFactsRequest, shards: List<SemanticFactShard>, compilerExitCode: Int?,
+    /** Separate nominal observed route. Execution booleans remain DATA, never an owner receipt. */
+    fun assembleObserved(request: ObservedSemanticFactsRequest, shards: List<SemanticFactShard>, compilerExitCode: Int?,
+                         executedSuccessfully: Boolean, executionReasons: List<String> = emptyList(),
+                         sourceBytes: ((SemanticSource) -> ByteArray)? = null): ObservedSemanticFactBundle {
+        val frozenRequest = SemanticFactsFreeze.observedRequest(request)
+        val frozenShards = try {
+            SemanticFactsFreeze.shards(shards, (frozenRequest.sources.size.toLong() * 4).coerceAtMost(4096).toInt(),
+                directIntLiteralArgumentsRequested = frozenRequest.directIntLiteralArgumentVersion != null)
+        } catch (e: SemanticFactException) {
+            return ObservedSemanticFactBundle(frozenRequest, SemanticFactBundle(frozenRequest.digest(),
+                frozenRequest.snapshotId, frozenRequest.analysisId, frozenRequest.target, frozenRequest.compilationId,
+                "failed", compilerExitCode, SemanticFactsFreeze.list(listOf(e.code)), emptyList(), false))
+        }
+        val facts = assembleFrozen(SemanticRequestData.of(frozenRequest), frozenShards, compilerExitCode,
+            executedSuccessfully, SemanticFactsFreeze.list(executionReasons), sourceBytes)
+        return ObservedSemanticFactBundle(frozenRequest, facts)
+    }
+
+    private fun assembleFrozen(request: SemanticRequestData, shards: List<SemanticFactShard>, compilerExitCode: Int?,
                                executedSuccessfully: Boolean, executionReasons: List<String>,
                                sourceBytes: ((SemanticSource) -> ByteArray)?): SemanticFactBundle {
-        val requestProblems = requestProblems(request)
+        val requestProblems = extractionRequestProblems(request)
         val reasons = requestProblems.toMutableList()
         reasons += executionReasons
         if (!executedSuccessfully) reasons += "semantic_execution_unavailable"
@@ -89,7 +130,7 @@ object SemanticFactsValidation {
         else if (compilerExitCode != 0) reasons += "semantic_compilation_failed"
         val digest = request.digest()
         val byPath = request.sources.associateBy { it.path }
-        var invalid = false
+        var invalid = "semantic_direct_int_literal_request_version_unsupported" in requestProblems
         val allSpans = mutableListOf<SemanticSpan>()
         shards.forEach { shard ->
             if (shard.schemaVersion != 1 || shard.adapterId != request.adapterId || shard.requestDigest != digest ||
@@ -99,6 +140,21 @@ object SemanticFactsValidation {
                 invalid = true
                 reasons += "semantic_evidence_binding_invalid"
             }
+            val binaryOriginProblems = JvmBinaryOriginValidation.problems(request.observeJvmBinaryOrigins,
+                shard.jvmBinaryOrigins, shard.symbols)
+            if (binaryOriginProblems.isNotEmpty()) {
+                invalid = true
+                reasons += binaryOriginProblems
+            }
+            val literalProblems = directIntLiteralProblems(request, shard)
+            if (literalProblems.isNotEmpty()) {
+                invalid = true
+                reasons += literalProblems
+            }
+            // Origin survey unknowns do not redefine the original semantic vocabulary's
+            // completeness. Every optional survey row retains its own explicit unknown reason.
+            // Neither do literal UNKNOWN/UNSUPPORTED or absent outcomes: they are never evidence
+            // of complete expression coverage, a clean bound, or a fixed descriptor proof.
             if (shard.unknown.isNotEmpty()) reasons += "semantic_facts_unknown"
             val spans = shard.symbols.mapNotNull { it.source } + shard.calls.map { it.source } +
                 shard.calls.flatMap { call -> call.arguments.mapNotNull { it.source } } +
@@ -190,8 +246,53 @@ object SemanticFactsValidation {
             if (invalid) emptyList() else SemanticFactsFreeze.list(shards.sortedBy { it.input.path }), complete)
     }
 
+    /** Shape/binding validation only. A well-formed DTO never authenticates its FIR producer. */
+    private fun directIntLiteralProblems(request: SemanticRequestData, shard: SemanticFactShard): List<String> {
+        val problems = mutableSetOf<String>()
+        shard.calls.forEach { call ->
+            call.arguments.forEach argumentLoop@ { argument ->
+                val literal = argument.directIntLiteral ?: return@argumentLoop
+                if (request.directIntLiteralArgumentVersion != DIRECT_INT_LITERAL_ARGUMENT_VERSION) {
+                    problems += if (request.directIntLiteralArgumentVersion == null)
+                        "semantic_direct_int_literal_not_requested" else "semantic_direct_int_literal_request_version_unsupported"
+                }
+                if (literal.version != DIRECT_INT_LITERAL_ARGUMENT_VERSION) {
+                    problems += "semantic_direct_int_literal_observation_version_unsupported"
+                }
+                val validOutcome = when (literal.state) {
+                    DirectIntLiteralArgumentState.OBSERVED -> literal.value != null && literal.reason == null
+                    DirectIntLiteralArgumentState.UNSUPPORTED -> literal.value == null && literal.reason in setOf(
+                        DirectIntLiteralArgumentReason.NOT_DIRECT_FIR_LITERAL,
+                        DirectIntLiteralArgumentReason.LITERAL_KIND_NOT_INT,
+                        DirectIntLiteralArgumentReason.VALUE_NOT_INT,
+                        DirectIntLiteralArgumentReason.TYPE_NOT_EXACT_INT)
+                    DirectIntLiteralArgumentState.UNKNOWN -> literal.value == null && literal.reason in setOf(
+                        DirectIntLiteralArgumentReason.SOURCE_UNAVAILABLE,
+                        DirectIntLiteralArgumentReason.SOURCE_SYNTHETIC,
+                        DirectIntLiteralArgumentReason.TYPE_UNAVAILABLE)
+                }
+                if (!validOutcome) problems += "semantic_direct_int_literal_outcome_invalid"
+                if (call.kind != "function_call" || call.source.path != shard.input.path ||
+                    call.source.digest != shard.input.digest || call.source.sourceSet != shard.input.sourceSet) {
+                    problems += "semantic_direct_int_literal_binding_invalid"
+                }
+                val source = argument.source
+                val sourceValid = when (literal.reason) {
+                    DirectIntLiteralArgumentReason.SOURCE_UNAVAILABLE -> source == null
+                    DirectIntLiteralArgumentReason.SOURCE_SYNTHETIC -> source != null && (source.synthetic || call.source.synthetic)
+                    else -> source != null && !source.synthetic && !call.source.synthetic &&
+                        source.path == call.source.path && source.digest == call.source.digest &&
+                        source.sourceSet == call.source.sourceSet && source.startByte < source.endByte &&
+                        source.startByte >= call.source.startByte && source.endByte <= call.source.endByte
+                }
+                if (!sourceValid) problems += "semantic_direct_int_literal_source_invalid"
+            }
+        }
+        return problems.sorted()
+    }
+
     /** Compare actual FIR module refinement to the supplied graph, without name heuristics. */
-    private fun observedGraphProblems(request: SemanticFactsRequest, shards: List<SemanticFactShard>): List<String> {
+    private fun observedGraphProblems(request: SemanticRequestData, shards: List<SemanticFactShard>): List<String> {
         val modules = shards.groupBy { it.input.sourceSet }.mapValues { (_, rows) -> rows.map { it.compilerContext.moduleName }.toSet() }
         if (modules.values.any { it.size != 1 }) return listOf("semantic_source_set_context_ambiguous")
         val moduleToSet = modules.map { (set, names) -> names.single() to set }.toMap()

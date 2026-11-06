@@ -1,0 +1,159 @@
+// Private model build-data instrumentation only. No compiler/provider/native process or test is launched.
+// The runner supplies all three properties and a fresh private local build-cache directory.
+import groovy.json.JsonOutput
+import org.gradle.api.GradleException
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
+import org.gradle.api.tasks.compile.JavaCompile
+
+def gateProperties = gradle.startParameter.projectProperties
+def reportName = gateProperties['compilerModelBuildIsolationReport']
+def cacheName = gateProperties['compilerModelBuildIsolationLocalCache']
+def cacheOverride = gateProperties['compilerModelBuildIsolationEnableTestCache']
+if (!reportName || !cacheName || !(cacheOverride in ['true', 'false'])) {
+    throw new GradleException('Private model build gate properties are required')
+}
+def reportFile = new File(reportName)
+def localCache = new File(cacheName)
+if (!reportFile.isAbsolute() || !localCache.isAbsolute()) {
+    throw new GradleException('Private model build gate paths must be absolute')
+}
+def testCacheEnabled = cacheOverride == 'true'
+def reportTaskName = 'compilerModelBuildIsolationReport'
+def allowedTasks = [
+    ':worker-protocol:compileJava', ':worker-protocol:processResources',
+    ':worker-protocol:classes', ':worker-protocol:jar',
+    ':worker-protocol:compileModelWireJava', ':worker-protocol:processModelWireResources',
+    ':worker-protocol:modelWireClasses', ':worker-protocol:modelWireJar',
+    ':provider-compiler:checkKotlinGradlePluginConfigurationErrors',
+    ':provider-compiler:compileWorkerKotlin', ':provider-compiler:compileWorkerJava',
+    ':provider-compiler:processWorkerResources', ':provider-compiler:workerClasses',
+    ':provider-compiler:compilerApplicationWorkerJar',
+    ':provider-compiler:compileModelWorkerKotlin', ':provider-compiler:compileModelWorkerJava',
+    ':provider-compiler:processModelWorkerResources', ':provider-compiler:modelWorkerClasses',
+    ':provider-compiler:compilerModelApplicationWorkerJar',
+    ':provider-compiler:' + reportTaskName,
+] as Set
+
+gradle.settingsEvaluated { settings ->
+    settings.buildCache.local.enabled = true
+    settings.buildCache.local.directory = localCache
+    if (settings.buildCache.remote != null) {
+        settings.buildCache.remote.enabled = false
+    }
+}
+// The pinned compiler provider loader is not needed to configure or compile the Java-only bridges.
+gradle.beforeProject { project ->
+    if (project.path == ':provider-compiler') {
+        project.configurations.all { configuration ->
+            if (configuration.name == 'compilerToolchain') {
+                configuration.incoming.beforeResolve {
+                    throw new GradleException('Model build isolation must not resolve compilerToolchain')
+                }
+            }
+        }
+    }
+}
+gradle.taskGraph.whenReady { graph ->
+    def unexpected = graph.allTasks.collect { it.path }.findAll { !allowedTasks.contains(it) }
+    if (!unexpected.isEmpty()) {
+        throw new GradleException('Model build gate task graph escaped: ' + unexpected.sort())
+    }
+}
+
+gradle.projectsEvaluated {
+    def compiler = gradle.rootProject.project(':provider-compiler')
+    def protocol = gradle.rootProject.project(':worker-protocol')
+    def modelApplicationJar = compiler.tasks.named('compilerModelApplicationWorkerJar')
+    def oldApplicationJar = compiler.tasks.named('compilerApplicationWorkerJar')
+    def protocolJar = protocol.tasks.named('jar')
+    def modelWireJar = protocol.tasks.named('modelWireJar')
+    if (testCacheEnabled) {
+        // Model JAR only; never changes old M0 JAR or production cache policy.
+        modelApplicationJar.configure { task ->
+            task.outputs.cacheIf('Private model build gate cache exercise only') { true }
+        }
+    }
+    compiler.tasks.register(reportTaskName) { reportTask ->
+        reportTask.group = 'verification'
+        reportTask.description = 'Private actual model/M0 classpath/archive report; no provider or test execution.'
+        reportTask.dependsOn(modelApplicationJar, oldApplicationJar, protocolJar, modelWireJar)
+        reportTask.outputs.file(reportFile)
+        reportTask.outputs.upToDateWhen { false }
+        reportTask.outputs.doNotCacheIf('Per-invocation private model build-data report') { true }
+        reportTask.doLast {
+            def paths = { collection -> collection.files.collect { it.canonicalPath }.unique().sort() }
+            def sourceSetData = { sourceSet ->
+                [compile_classpath: paths(sourceSet.compileClasspath),
+                 runtime_classpath: paths(sourceSet.runtimeClasspath),
+                 output: paths(sourceSet.output),
+                 class_directories: paths(sourceSet.output.classesDirs),
+                 kotlin_sources: sourceSet.allSource.files.findAll { it.name.endsWith('.kt') }
+                     .collect { it.canonicalPath }.sort()]
+            }
+            def javaCompileData = { JavaCompile task ->
+                [classpath: paths(task.classpath),
+                 language_version: task.javaCompiler.get().metadata.languageVersion.asInt()]
+            }
+            def kotlinCompileData = { task ->
+                if (task == null || !task.hasProperty('libraries')) {
+                    throw new GradleException('Cannot inspect actual custom Kotlin task libraries')
+                }
+                def sources = task.hasProperty('sources') ? task.sources : (task.hasProperty('source') ? task.source : null)
+                if (sources == null) {
+                    throw new GradleException('Cannot inspect actual custom Kotlin task sources')
+                }
+                [enabled: task.enabled, sources: paths(sources), libraries: paths(task.libraries)]
+            }
+            def bridgeData = { configuration ->
+                def artifacts = configuration.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
+                    def component = artifact.id.componentIdentifier
+                    [file: artifact.file.canonicalPath,
+                     project_path: component instanceof ProjectComponentIdentifier ? component.projectPath : null,
+                     component: component.displayName]
+                }.sort { it.file }
+                [transitive: configuration.transitive, files: paths(configuration), artifacts: artifacts]
+            }
+            def protocolSets = protocol.extensions.getByName('sourceSets')
+            def compilerSets = compiler.extensions.getByName('sourceSets')
+            def modelElements = protocol.configurations.getByName('modelWireElements')
+            def hostModelDependencies = compiler.configurations.getByName('implementation').allDependencies
+                .findAll { it instanceof ProjectDependency && it.targetConfiguration == 'modelWireElements' }
+                .collect { [name: it.name, target_configuration: it.targetConfiguration] }
+            def document = [
+                schema: 'ktchecker.compiler-model-build-isolation-closure/v1',
+                scope: 'Actual isolated model/M0 build/classpath/archive data only; no provider/native execution or qualification',
+                test_only_model_jar_cache_override: testCacheEnabled,
+                production_cache_enablement_assessed: false,
+                m0_jar_cache_override: false,
+                task_graph: gradle.taskGraph.allTasks.collect { it.path }.sort(),
+                protocol_has_kotlin_plugin: protocol.plugins.hasPlugin('org.jetbrains.kotlin.jvm'),
+                protocol_main: sourceSetData(protocolSets.getByName('main')),
+                protocol_java_compile: javaCompileData(protocol.tasks.named('compileJava', JavaCompile).get()),
+                protocol_resolved_compile_files: paths(protocol.configurations.getByName('compileClasspath')),
+                protocol_resolved_runtime_files: paths(protocol.configurations.getByName('runtimeClasspath')),
+                model_wire: sourceSetData(protocolSets.getByName('modelWire')),
+                model_wire_java_compile: javaCompileData(protocol.tasks.named('compileModelWireJava', JavaCompile).get()),
+                m0_worker: sourceSetData(compilerSets.getByName('worker')),
+                m0_worker_java_compile: javaCompileData(compiler.tasks.named('compileWorkerJava', JavaCompile).get()),
+                m0_worker_kotlin: kotlinCompileData(compiler.tasks.findByName('compileWorkerKotlin')),
+                m0_wire_bridge: bridgeData(compiler.configurations.getByName('applicationWireBridge')),
+                model_worker: sourceSetData(compilerSets.getByName('modelWorker')),
+                model_worker_java_compile: javaCompileData(compiler.tasks.named('compileModelWorkerJava', JavaCompile).get()),
+                model_worker_kotlin: kotlinCompileData(compiler.tasks.findByName('compileModelWorkerKotlin')),
+                original_wire_bridge: bridgeData(compiler.configurations.getByName('applicationModelOriginalWireBridge')),
+                model_wire_bridge: bridgeData(compiler.configurations.getByName('applicationModelWireBridge')),
+                model_wire_elements: [consumed: modelElements.canBeConsumed, resolved: modelElements.canBeResolved,
+                                     transitive: modelElements.transitive, files: paths(modelElements.artifacts),
+                                     dependency_count: modelElements.allDependencies.size()],
+                host_model_dependencies: hostModelDependencies,
+                protocol_jar: protocolJar.get().archiveFile.get().asFile.canonicalPath,
+                model_wire_jar: modelWireJar.get().archiveFile.get().asFile.canonicalPath,
+                m0_application_jar: oldApplicationJar.get().archiveFile.get().asFile.canonicalPath,
+                model_application_jar: modelApplicationJar.get().archiveFile.get().asFile.canonicalPath,
+            ]
+            reportFile.parentFile.mkdirs()
+            reportFile.setText(JsonOutput.prettyPrint(JsonOutput.toJson(document)) + '\n', 'UTF-8')
+        }
+    }
+}

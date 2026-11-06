@@ -1,0 +1,128 @@
+{
+  "baseline": {
+    "bytes": 451784,
+    "path": "providers/coverage/baselines/catalog-1665-v1.json",
+    "sha256": "85d34032f495eeae536bc6bc3b7ee752cd02ea1d518e34229c0c5e4289f89d25"
+  },
+  "catalogs": [
+    {
+      "bytes": 4999909,
+      "path": "data/rules-core.json",
+      "sha256": "28860cb987390ff1f604488aba023fab08b614f497155b71a9760f326c009694"
+    },
+    {
+      "bytes": 93642,
+      "path": "data/rules-ecosystem.json",
+      "sha256": "261fb5c1fadbed7b9ae3b7768cba19e9716ba5067c4932e671183d13513fd2ac"
+    },
+    {
+      "bytes": 327350,
+      "path": "data/rules-libraries.json",
+      "sha256": "3e671d030bb1734242c4f51c2de8723c11abb002b9c8a743176e7cc957592c9e"
+    },
+    {
+      "bytes": 5367326,
+      "path": "data/rules-platform.json",
+      "sha256": "0bfffdd0749353cb5b9b41485e29456037a5c669e232c6915fa5ca91aa6127af"
+    }
+  ],
+  "contexts": [
+    {
+      "bytes": 854,
+      "context_id": "current-edited-detekt-coroutine-raw-jvm-unexecuted-native-preview1",
+      "context_sha256": "94912ebf56905d89484e11dc51af8e7887d92fdaec9db13db5af776943caf91f",
+      "path": "providers/coverage/contexts/01-94912ebf56905d89484e11dc51af8e7887d92fdaec9db13db5af776943caf91f.json",
+      "sha256": "87477b5379906989278f3eb0fc7b47e5b75fbd6a5a7841816694bbe96c594c91"
+    },
+    {
+      "bytes": 985,
+      "context_id": "detekt-coroutine-raw-fixtures-native-preview1",
+      "context_sha256": "f1160d18fa35a92f788a8f1cdb430ff8f8be724a21a2935fafb1ae47a0677242",
+      "path": "providers/coverage/contexts/02-f1160d18fa35a92f788a8f1cdb430ff8f8be724a21a2935fafb1ae47a0677242.json",
+      "sha256": "d00840064120669f516217e3d8180481d4fc8819af5a1f37971411a22bfc5eb2"
+    },
+    {
+      "bytes": 792,
+      "context_id": "current-edited-detekt-syntax-jvm-unexecuted-native-preview1",
+      "context_sha256": "8011124690347fa1d70b8b980a8dbf43ae7b6268223742626ef801a9b033cfcd",
+      "path": "providers/coverage/contexts/03-8011124690347fa1d70b8b980a8dbf43ae7b6268223742626ef801a9b033cfcd.json",
+      "sha256": "35e4533796a93729885ae3cbc34464208b9cfd59328170a874711a5cc28ebf38"
+    },
+    {
+      "bytes": 1039,
+      "context_id": "detekt-syntax-fixtures-native-preview1",
+      "context_sha256": "57467ee86e3c708733009baf9fbf12c01089de33bea47738d4f0f069c02d4400",
+      "path": "providers/coverage/contexts/04-57467ee86e3c708733009baf9fbf12c01089de33bea47738d4f0f069c02d4400.json",
+      "sha256": "7bcf2b172138184b68df80e36fbfbc4d5f53c52f9dca22e8484ed7a360bbb9c4"
+    },
+    {
+      "bytes": 1099,
+      "context_id": "bounded-type_boundaries-synthetic-jvm-jdk21-2026-11-04T13-39-44.288807198Z-type_boundaries-b57a9fc9-e61e-45c7-a9c9-60afaa83032b",
+      "context_sha256": "e3e18aef6515d7d7e46cc77f46f3a49f0c655e5cea684039a4f319b604c50a91",
+      "path": "providers/coverage/contexts/05-e3e18aef6515d7d7e46cc77f46f3a49f0c655e5cea684039a4f319b604c50a91.json",
+      "sha256": "02eebe9404126a9da60b1a581ff283b572c7e03ebb5aba8338e6f8a81ec2139b"
+    },
+    {
+      "bytes": 857,
+      "context_id": "current-edited-ktlint-syntax-jvm-unexecuted-native-preview1",
+      "context_sha256": "ee1e7854d2bd55474a766802d26a0912523565540d701aa8ba766c0645dd526f",
+      "path": "providers/coverage/contexts/06-ee1e7854d2bd55474a766802d26a0912523565540d701aa8ba766c0645dd526f.json",
+      "sha256": "3689df1534fa434c5875e458b6c4d6ffb7979cf5ebdd4218904eb31b7d2fbf8b"
+    },
+    {
+      "bytes": 1109,
+      "context_id": "ktlint-syntax-fixtures-native-preview1",
+      "context_sha256": "0da96fde4587a338e4d167b68cf02ff4c2ebc0a218cd750747890e66bb374359",
+      "path": "providers/coverage/contexts/07-0da96fde4587a338e4d167b68cf02ff4c2ebc0a218cd750747890e66bb374359.json",
+      "sha256": "ffb5bce6c7546cd6b3ad7a56a54f4dfcb563a60759fd2eca0193b4a8d3ca7700"
+    },
+    {
+      "bytes": 561,
+      "context_id": "isolated-lint32.3.1-xml-main",
+      "context_sha256": "764d9187526fb34921e03cf118e45fa8c6cd30ade244cca3291c4a8ba5f9fef3",
+      "path": "providers/coverage/contexts/08-764d9187526fb34921e03cf118e45fa8c6cd30ade244cca3291c4a8ba5f9fef3.json",
+      "sha256": "3e71207ce5161e181a3f3cdbf50fd6107486b589afcd5b2df8e758e6e2775b40"
+    }
+  ],
+  "contract_id": "ktchecker/owner-full-catalog/1665-u2/1",
+  "historical_inventory_reference": {
+    "bytes": 1108,
+    "path": "providers/coverage/historical-inventory-1663-c364.json",
+    "sha256": "1b4a0110a5fdabeb125e9f8a109e162f3d6c4c41f95d2ed454ca67e82170cc46"
+  },
+  "legacy_disposition": {
+    "bytes": 16069,
+    "path": "providers/coverage/legacy-evidence-1665-v1.json",
+    "sha256": "3f8f73a11e64bdc633936740706b9ed821242fcf8ec6378f80b3bb70f3dba816"
+  },
+  "legacy_selection": {
+    "bytes": 19723,
+    "path": "providers/coverage/current-inputs.json",
+    "sha256": "08d88559f95f86557efaa9b7663c8b16e66991f3548d119ec71af1b756f4b7a3"
+  },
+  "reporter": {
+    "bytes": 41658,
+    "path": "scripts/rule_coverage.py",
+    "sha256": "dacd925b0acf586b50f62efa14e76cb51811ccc5e2d9151f9c4f3b223888da44"
+  },
+  "runner": {
+    "bytes": 24575,
+    "path": "scripts/run_declared_coverage.py",
+    "sha256": "816ce53ac06dd4f99fd4922f933b133a7d922b5c0caed3aec51d6f268377b820"
+  },
+  "schema": "ktchecker/declared-coverage-ledger-selection/1",
+  "scope": {
+    "catalog_records": 1665,
+    "contexts": 8,
+    "rows": 13320,
+    "withdrawn_provider_rule_context_cells": 450
+  },
+  "selected_evidence": [],
+  "selected_reference_files": [],
+  "selection_note": "Explicit complete declared ledger only. All current evidence is unavailable, never measured zero or transferred historical stages. No legacy artifact target is a selected read. Requires separate whole-source/output receipt; not provider execution or release qualification.",
+  "withdrawals": {
+    "bytes": 509474,
+    "path": "providers/coverage/withdrawals.json",
+    "sha256": "0523bbc701772653c964b3983f5787864ea1e6733ff728a4e79b210af3662f92"
+  }
+}

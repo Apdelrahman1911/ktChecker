@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-expansion-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+  "upstream_id": "complexity:ComplexCondition",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "catalog_record_sha256": "263d90dbb76fe5d8370ee8f4ac61c0be8f6e0b9565f984082fb27526da13ccd5",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-complexity/src/main/kotlin/dev/detekt/rules/complexity/ComplexCondition.kt",
+    "source_file_sha256": "6846c7110fddfa53373586b4321d01d1c7ad5f00432ddee3019825a31e3059ef",
+    "predicate_line_numbers": [
+      42,
+      45,
+      63,
+      66,
+      70,
+      71,
+      72,
+      75,
+      84
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/complexity/ComplexCondition",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:977e541d7db81ff6ba23dd48665538c8898e6f93f981a980c56adcd214e7a0fc"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "For if/while/do-while condition syntax with more than one binary expression, count occurrences of && and || in the longest binary text plus one; report the whole condition when above allowedConditions (default 3).",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.conditions\n\nfun shouldAccept(available: Boolean, authenticated: Boolean, local: Boolean, cached: Boolean): Boolean {\n    if (available && authenticated && (local || cached)) return true\n    return false\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 8,
+        "end_line": 4,
+        "end_column": 55,
+        "span": "available && authenticated && (local || cached)",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Four Boolean terms exceed the explicitly selected default three-condition policy; this is not an invalid program."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.conditions\n\nfun shouldAccept(available: Boolean, local: Boolean, cached: Boolean): Boolean {\n    if (available && (local || cached)) return true\n    return false\n}\n"
+    },
+    "expected": [],
+    "intent": "Exactly three terms satisfy the same threshold with the rule still active; equality is the policy boundary."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.conditions\n\nfun shouldAccept(available: Boolean, authenticated: Boolean, local: Boolean, cached: Boolean): Boolean {\n    if (available && authenticated && (local || cached)) return true\n    return false\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"ComplexCondition\")\n\npackage suppressed.corpus.conditions\n\nfun shouldAccept(available: Boolean, authenticated: Boolean, local: Boolean, cached: Boolean): Boolean {\n    if (available && authenticated && (local || cached)) return true\n    return false\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 8,
+        "end_line": 4,
+        "end_column": 55,
+        "span": "available && authenticated && (local || cached)",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.conditions\n\nfun shouldAccept(available: Boolean, authenticated: Boolean, local: Boolean, cached: Boolean): Boolean {\n    if (available && authenticated && (local || cached)) return true\n    return false\n}\n"
+      },
+      "expected": [],
+      "intent": "Raise only the real allowedConditions option to four for the same four-term expression. The enabled rule must remain advertised; no rule disable or global scope change.",
+      "id": "owner-four-condition-threshold",
+      "case_kind": "configuration",
+      "assessment": "owner_configured_legal_alternative",
+      "options": {
+        "allowedConditions": 4
+      }
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.conditions\n\nfun acceptsLiteral(value: String, ready: Boolean): Boolean {\n    if (value == \"&&||\" && ready) return true\n    return false\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 8,
+          "end_line": 4,
+          "end_column": 32,
+          "span": "value == \"&&||\" && ready",
+          "occurrence": 0
+        }
+      ],
+      "intent": "There are only two actual tests. && and || inside a String contribute to the textual count, producing a retained metric false positive.",
+      "id": "literal-operator-text-is-not-four-decisions",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.conditions\n\nfun combinedValue(a: Boolean, b: Boolean, c: Boolean, d: Boolean): Boolean = a && b && (c || d)\n"
+      },
+      "expected": [],
+      "intent": "An expression-bodied Boolean helper has four terms but no if/while/do-while condition node. Absence is a declared metric boundary, not proof that all Boolean expressions are simple.",
+      "id": "non-condition-boolean-body-is-outside-predicate",
+      "case_kind": "regression",
+      "assessment": "shallow_predicate_limitation"
+    }
+  ],
+  "limitations": [
+    "Opt-in maintainability threshold only. Four terms are not a universal correctness defect and a higher owner threshold is not a scope reduction.",
+    "Operator frequency uses expression text, including literals/comments; it does not count resolved decisions or model logical paths.",
+    "Only if-expression examples are authored in this packet; while/do-while visitor parity and other threshold values remain untested.",
+    "No broad complexity, readability, parser-equivalence or rule qualification is claimed."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, performance, parser, semantic, model or release qualification."
+}

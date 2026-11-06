@@ -1,0 +1,49 @@
+{
+  "schema": "ktchecker/preview-benchmark-scenarios-1",
+  "scenarios": [
+    {
+      "id": "fresh-broker-sequential",
+      "warmthRequest": "fresh_broker_resident_dependencies",
+      "schedule": "sequential",
+      "baselineRounds": 0,
+      "measuredRounds": 1,
+      "workerCount": 1,
+      "filesPerPatch": 1,
+      "runTimeoutSeconds": 600,
+      "trialTimeoutSeconds": 240
+    },
+    {
+      "id": "fresh-broker-concurrent",
+      "warmthRequest": "fresh_broker_resident_dependencies",
+      "schedule": "concurrent",
+      "baselineRounds": 0,
+      "measuredRounds": 1,
+      "workerCount": 2,
+      "filesPerPatch": 1,
+      "runTimeoutSeconds": 600,
+      "trialTimeoutSeconds": 240
+    },
+    {
+      "id": "warm-history-sequential",
+      "warmthRequest": "persistent_broker_history",
+      "schedule": "sequential",
+      "baselineRounds": 1,
+      "measuredRounds": 2,
+      "workerCount": 1,
+      "filesPerPatch": 1,
+      "runTimeoutSeconds": 900,
+      "trialTimeoutSeconds": 240
+    },
+    {
+      "id": "warm-history-concurrent",
+      "warmthRequest": "persistent_broker_history",
+      "schedule": "concurrent",
+      "baselineRounds": 1,
+      "measuredRounds": 2,
+      "workerCount": 2,
+      "filesPerPatch": 1,
+      "runTimeoutSeconds": 900,
+      "trialTimeoutSeconds": 240
+    }
+  ]
+}

@@ -1,0 +1,366 @@
+// Owner-command observation, NOT model export data or a client-supplied capability.
+// Runs before the exporter action in the SAME owned Gradle invocation. It never reads
+// model-export.json. Project build code is owner-trusted; this is not a plugin sandbox.
+import groovy.json.JsonOutput
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import java.security.MessageDigest
+import java.lang.reflect.Modifier
+
+class KtCheckerOwnerModelObservation {
+    static void requireFact(boolean value) {
+        if (!value) throw new GradleException('owner_model_origin_scope_unsupported')
+    }
+    static Object get(Object value, String name) {
+        requireFact(value != null)
+        value.getClass().getMethod(name).invoke(value)
+    }
+    static List bounded(Object values, int maximum = 4096) {
+        requireFact(values instanceof Collection && values.size() <= maximum)
+        new ArrayList(values)
+    }
+    static List<String> strings(Object values, int maximum = 4096) {
+        def result = bounded(values, maximum)
+        requireFact(result.every { it instanceof String && it.length() <= 8192 && it.indexOf('\u0000') < 0 })
+        result
+    }
+    static Path path(File file, boolean regular = false) {
+        requireFact(file != null)
+        def result = file.toPath().toAbsolutePath().normalize()
+        requireFact(result.toString() == file.absolutePath && !Files.isSymbolicLink(result))
+        def existing = result
+        while (!Files.exists(existing, LinkOption.NOFOLLOW_LINKS)) {
+            existing = existing.parent
+            requireFact(existing != null)
+        }
+        requireFact(existing.toRealPath() == existing)
+        if (regular) requireFact(Files.isRegularFile(result, LinkOption.NOFOLLOW_LINKS))
+        result
+    }
+    static List<File> files(Object collection, int maximum = 4096) {
+        def result = bounded(get(collection, 'getFiles'), maximum)
+        requireFact(result.every { it instanceof File })
+        result
+    }
+    static String logical(Path root, File file) {
+        def value = path(file)
+        requireFact(value.startsWith(root))
+        root.relativize(value).toString()
+    }
+    static String digest(File file) {
+        path(file, true)
+        requireFact(file.length() >= 0 && file.length() <= 134217728)
+        def hash = MessageDigest.getInstance('SHA-256')
+        file.withInputStream { stream ->
+            byte[] buffer = new byte[65536]
+            long count = 0
+            for (int n = stream.read(buffer); n >= 0; n = stream.read(buffer)) {
+                count += n; requireFact(count <= 134217728)
+                if (n > 0) hash.update(buffer, 0, n)
+            }
+            requireFact(count == file.length())
+        }
+        'sha256:' + hash.digest().encodeHex().toString()
+    }
+    static Object projectOwner(Object project) {
+        def loader = project.getClass().classLoader
+        def type = loader.loadClass('org.gradle.api.internal.project.ProjectInternal')
+        def state = loader.loadClass('org.gradle.api.internal.project.ProjectState')
+        def getter = type.getMethod('getOwner')
+        requireFact(type.isInterface() && state.isInterface() && type.isInstance(project) &&
+            getter.declaringClass.is(type) && getter.returnType.is(state) && !Modifier.isStatic(getter.modifiers))
+        def owner = getter.invoke(project)
+        requireFact(state.isInstance(owner))
+        owner
+    }
+    static Map arguments(Object task) {
+        def loader = task.getClass().classLoader
+        def producer = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer')
+        def context = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer$CreateCompilerArgumentsContext')
+        def domain = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer$ArgumentType')
+        def common = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.CommonToolArguments')
+        def jvm = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments')
+        def taskType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.KotlinCompile')
+        def factory = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducerKt')
+            .getMethod('CreateCompilerArgumentsContext', Set.class, Boolean.TYPE)
+        def create = producer.getMethod('createCompilerArguments', context)
+        def serialize = loader.loadClass('org.jetbrains.kotlin.compilerRunner.ArgumentUtils')
+            .getMethod('convertArgumentsToStringList', common)
+        requireFact(producer.isInterface() && producer.isInstance(task) && taskType.isInstance(task) && domain.isEnum())
+        def all = domain.enumConstants.toList()
+        requireFact(all.collect { it.name() } == ['Primitive', 'PluginClasspath', 'DependencyClasspath', 'Sources'] &&
+            Modifier.isStatic(factory.modifiers) && factory.returnType.is(context) &&
+            create.returnType.is(common) && Modifier.isStatic(serialize.modifiers))
+        def value = create.invoke(task, factory.invoke(null, new LinkedHashSet(all), false))
+        requireFact(value != null && value.getClass().is(jvm))
+        def original = strings(serialize.invoke(null, value), 128)
+        def commonCompiler = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments')
+        def inputChanges = loader.loadClass('org.gradle.work.InputChanges')
+        def backup = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.TaskOutputsBackup')
+        def creates = task.getClass().methods.findAll { m ->
+            m.name == 'createCompilerArguments' && m.parameterTypes.toList() == [context]
+        }
+        def lowers = task.getClass().methods.findAll { m ->
+            m.name == 'callCompilerAsync$kotlin_gradle_plugin_common' && m.parameterCount == 3 &&
+                m.parameterTypes[1].is(inputChanges) && m.parameterTypes[2].is(backup)
+        }
+        requireFact(creates.size() == 2 && creates.collect { it.returnType }.toSet() == [jvm, common].toSet() &&
+            lowers.size() == 2 && lowers.collect { it.parameterTypes[0] }.toSet() == [jvm, commonCompiler].toSet() &&
+            (creates + lowers).every { m -> m.declaringClass.is(taskType) && !Modifier.isStatic(m.modifiers) && !Modifier.isAbstract(m.modifiers) } &&
+            lowers.every { it.returnType.is(Void.TYPE) })
+        def code = [taskType, jvm, producer].collect { type ->
+            def url = type.protectionDomain?.codeSource?.location
+            requireFact(url != null && url.protocol == 'file')
+            def file = path(new File(url.toURI()), true).toFile()
+            [className: type.name, path: file.absolutePath, digest: digest(file), size: file.length()]
+        }
+        [value: value, original: original, code: code]
+    }
+    static List<String> array(Object value) {
+        if (value == null) return []
+        requireFact(value instanceof String[])
+        strings(Arrays.asList((String[]) value), 16)
+    }
+    static String emptyPlugins(Object task, Map capture) {
+        def loader = task.getClass().classLoader
+        def base = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile')
+        def providerType = loader.loadClass('org.gradle.api.provider.Provider')
+        def dataType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.KotlinCompilerPluginData')
+        def stateType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.KotlinCompilerPluginData$InputsOutputsState')
+        def configType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig')
+        def optionsType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.CompilerPluginOptions')
+        def getter = task.getClass().getMethod('getKotlinPluginData$kotlin_gradle_plugin_common')
+        requireFact(getter.declaringClass.is(base) && getter.returnType.is(providerType) && Modifier.isFinal(getter.modifiers))
+        def provider = getter.invoke(task)
+        def data = provider == null ? null : get(provider, 'getOrNull')
+        requireFact(files(get(task, 'getPluginClasspath')).isEmpty())
+        ['getPluginClasspaths', 'getPluginOptions', 'getPluginConfigurations', 'getPluginOrderConstraints'].each { name ->
+            requireFact(array(get(capture.value, name)).isEmpty())
+        }
+        requireFact(get(capture.value, 'getIntellijPluginRoot') == null && !capture.original.any { token ->
+            token.startsWith('@') || token == '-P' || token.startsWith('-P=') || token.startsWith('-Xplugin') ||
+                token.startsWith('-Xcompiler-plugin') || token.startsWith('-Xintellij-plugin-root')
+        })
+        def emptyOptions = { options ->
+            requireFact(configType.isInstance(options))
+            def method = options.getClass().getMethod('allOptions')
+            requireFact(method.declaringClass.is(configType) && Modifier.isFinal(method.modifiers))
+            def map = method.invoke(options)
+            requireFact(map instanceof Map && map.size() <= 4096 && map.every { key, value ->
+                key instanceof String && key.length() <= 8192 && value instanceof List && value.isEmpty()
+            })
+            if (optionsType.isInstance(options)) requireFact(strings(get(options, 'getArguments')).isEmpty())
+        }
+        bounded(get(get(task, 'getPluginOptions'), 'get')).each(emptyOptions)
+        if (data != null) {
+            requireFact(data.getClass().is(dataType) && files(get(data, 'getClasspath')).isEmpty())
+            emptyOptions(get(data, 'getOptions'))
+            def state = get(data, 'getInputsOutputsState')
+            requireFact(state != null && state.getClass().is(stateType))
+            def inputs = get(state, 'getInputs')
+            requireFact(inputs instanceof Map && inputs.isEmpty() && bounded(get(state, 'getInputFiles')).isEmpty() &&
+                bounded(get(state, 'getOutputFiles')).isEmpty())
+        }
+        requireFact(get(get(task, 'getMultiPlatformEnabled'), 'get') == false &&
+            get(capture.value, 'getMultiPlatform') == false && get(capture.value, 'getScript') == false &&
+            get(capture.value, 'getRepl') == false && get(capture.value, 'getExpression') == null &&
+            get(capture.value, 'getBuildFile') == null && get(capture.value, 'getJavaPackagePrefix') == null &&
+            get(capture.value, 'getUseFirLT') == true)
+        provider == null ? 'provider_absent' : data == null ? 'value_absent' : 'available_empty'
+    }
+    /**
+     * Bounded DATA-ONLY failure inventory, emitted BEFORE the strict observer. Even successful
+     * enumeration is NOT a model, argument/output origin or complete applicability statement.
+     * Unsupported shapes still fail observe(); no prefix is imported or admitted.
+     */
+    static Map diagnosticInventory(Object gradle) {
+        def root = gradle.rootProject
+        def source = path(root.projectDir)
+        def output = path(new File(root.findProperty('ktcheckerOwnerOriginOutput').toString())).parent
+        def nonce = root.findProperty('ktcheckerOwnerOriginInvocation')
+        requireFact(nonce instanceof String && (nonce ==~ /[0-9a-f]{32}/))
+        def modules = []; def sourceSets = []; def compilations = []
+        def reasons = ['configuration_input_closure_unproven', 'new_context_applicability_unknown']
+        boolean enumerationReturned = false
+        try {
+            bounded(root.allprojects, 16).each { project ->
+                requireFact(modules.size() < 16)
+                modules << [id: project.path.toString(), directory: logical(source, project.projectDir)]
+                def kotlin = project.extensions.findByName('kotlin')
+                if (kotlin != null) {
+                    bounded(kotlin.sourceSets, 64).each { set ->
+                        requireFact(sourceSets.size() < 256)
+                        sourceSets << [id: "${project.path}|${set.name}".toString(), moduleId: project.path.toString(),
+                            name: set.name.toString(), dependsOn: bounded(set.dependsOn, 64).collect {
+                                "${project.path}|${it.name}".toString() }.sort(),
+                            sourcePaths: files(set.kotlin, 4096).collect { logical(source, it) }.sort(),
+                            resourcePaths: files(set.resources, 4096).collect { logical(source, it) }.sort()]
+                    }
+                    def targets = kotlin.hasProperty('targets') ? bounded(kotlin.targets, 16) : [kotlin.target]
+                    targets.each { target ->
+                        bounded(target.compilations, 64).each { compilation ->
+                            requireFact(compilations.size() < 256)
+                            def task = compilation.compileTaskProvider.get()
+                            compilations << [id: "${project.path}|${target.name}|${compilation.name}".toString(),
+                                moduleId: project.path.toString(), target: target.name.toString(),
+                                platform: target.platformType.toString(), name: compilation.name.toString(),
+                                compileTaskPath: get(task, 'getPath').toString(),
+                                sourceSetIds: bounded(compilation.allKotlinSourceSets, 64).collect {
+                                    "${project.path}|${it.name}".toString() }.sort()]
+                        }
+                    }
+                }
+            }
+            enumerationReturned = true
+        } catch (Exception ignored) {
+            // Retain what was observed as PARTIAL DATA. No exception text, invented row or model.
+            reasons << 'observed_inventory_enumeration_incomplete'
+        }
+        [schemaVersion: 1, adapter: 'ktchecker/owner-model-data-only-inventory/1', invocationId: nonce,
+            sourceRoot: source.toString(), ownerOutput: output.toString(), dataOnly: true,
+            complete: false, newApplicability: 'unknown', enumerationReturned: enumerationReturned,
+            reasons: reasons, modules: modules, sourceSets: sourceSets, compilations: compilations]
+    }
+    static Map observe(Object gradle, Object settings, Object selectedTask, Object taskGraph) {
+        def root = gradle.rootProject
+        def source = path(root.projectDir)
+        def report = path(new File(root.findProperty('ktcheckerOwnerOriginOutput').toString()))
+        def output = report.parent
+        def nonce = root.findProperty('ktcheckerOwnerOriginInvocation')
+        requireFact(nonce instanceof String && (nonce ==~ /[0-9a-f]{32}/) && report.fileName.toString() == 'owner-origin.json')
+        requireFact(File.separator == '/' && File.pathSeparator == ':' && settings != null &&
+            path(settings.settingsDir) == source && gradle.includedBuilds.isEmpty())
+        requireFact(bounded(taskGraph.allTasks, 1).size() == 1 && taskGraph.allTasks[0].is(selectedTask) &&
+            get(selectedTask, 'getPath') == ':ktCheckerModelExport')
+        def projects = bounded(root.allprojects, 1)
+        requireFact(projects.size() == 1 && projectOwner(projects[0]).is(projectOwner(root)) &&
+            root.path == ':' && !new File(root.projectDir, 'buildSrc').exists())
+        def kotlin = root.extensions.findByName('kotlin')
+        requireFact(kotlin != null && root.pluginManager.hasPlugin('org.jetbrains.kotlin.jvm') &&
+            !root.pluginManager.hasPlugin('org.jetbrains.kotlin.multiplatform') && root.extensions.findByName('android') == null)
+        def plugin = root.plugins.find { it.class.methods.any { method -> method.name == 'getPluginVersion' && method.parameterCount == 0 } }
+        requireFact(plugin != null && get(plugin, 'getPluginVersion') == '2.4.21')
+        def targets = kotlin.hasProperty('targets') ? bounded(kotlin.targets, 1) : [kotlin.target]
+        requireFact(targets.size() == 1 && targets[0].name == '' && targets[0].platformType.toString() == 'jvm')
+        def sourceSets = bounded(kotlin.sourceSets, 16).collect { s ->
+            def sources = files(s.kotlin).collect { file -> path(file, true); logical(source, file) }.sort()
+            def resources = files(s.resources).collect { file -> path(file, true); logical(source, file) }.sort()
+            requireFact(resources.isEmpty() && sources.every { it.endsWith('.kt') } &&
+                bounded(s.kotlin.sourceDirectories.buildDependencies.getDependencies(null)).isEmpty())
+            [id: "${root.path}|${s.name}".toString(), name: s.name,
+                dependsOn: bounded(s.dependsOn).collect { "${root.path}|${it.name}".toString() }.sort(),
+                sourceRoots: bounded(s.kotlin.srcDirs).collect { logical(source, it) }.unique().sort(),
+                resourceRoots: bounded(s.resources.srcDirs).collect { logical(source, it) }.unique().sort(),
+                sources: sources, resources: resources]
+        }.sort { it.id }
+        def actual = bounded(targets[0].compilations, 2)
+        requireFact(actual.size() == 2)
+        def rows = actual.collect { compilation ->
+            def task = compilation.compileTaskProvider.get()
+            requireFact(projectOwner(get(task, 'getProject')).is(projectOwner(root)) &&
+                projectOwner(compilation.project).is(projectOwner(root)) && compilation.target.is(targets[0]))
+            def capture = arguments(task)
+            def value = capture.value
+            def pluginDataState = emptyPlugins(task, capture)
+            def sources = files(get(get(task, 'getSources'), 'getAsFileTree'), 64)
+            requireFact(!sources.isEmpty() && sources.every { it.name.endsWith('.kt') } &&
+                strings(get(value, 'getFreeArgs'), 64) == sources.collect { path(it, true).toString() })
+            requireFact(files(get(task, 'getJavaSources')).isEmpty() &&
+                files(get(task, 'getScriptSources$kotlin_gradle_plugin_common')).isEmpty())
+            def libraries = files(get(task, 'getLibraries'), 16)
+            def associated = bounded(compilation.allAssociatedCompilations, 1)
+            requireFact(associated.every { other -> actual.any { it.is(other) } && !other.is(compilation) })
+            def destination = path(get(get(get(task, 'getDestinationDirectory'), 'get'), 'getAsFile'))
+            def selectedJvm = get(get(get(task, 'getDefaultKotlinJavaToolchain$kotlin_gradle_plugin_common'), 'get'),
+                'getBuildJvm$kotlin_gradle_plugin_common').get()
+            def jdk = path(selectedJvm.javaHome)
+            def moduleSuffix = MessageDigest.getInstance('SHA-256').digest(root.path.getBytes('UTF-8')).encodeHex().toString()
+            requireFact((compilation.name ==~ /[A-Za-z][A-Za-z0-9_]{0,63}/) &&
+                destination == output.resolve('gradle-build/' + moduleSuffix + '/classes/kotlin/' + compilation.name) &&
+                get(value, 'getDestination') == destination.toString() &&
+                (get(value, 'getJdkHome') == null || get(value, 'getJdkHome') == jdk.toString()))
+            def declaredFriends = bounded(get(task, 'getFriendPaths'), 1).collect { path(it).toString() }
+            def actualFriends = array(get(value, 'getFriendPaths'))
+            requireFact(declaredFriends == actualFriends &&
+                (get(value, 'getClasspath') == null ? libraries.findAll { it.exists() }.isEmpty() :
+                    get(value, 'getClasspath') == libraries.findAll { it.exists() }.collect { path(it).toString() }.join(':')))
+            [object: compilation, task: task, id: "${root.path}||${compilation.name}".toString(),
+                name: compilation.name, moduleId: root.path, compileTaskPath: get(task, 'getPath'),
+                sourceSetIds: bounded(compilation.allKotlinSourceSets).collect { "${root.path}|${it.name}".toString() }.sort(),
+                defaultSourceSetId: "${root.path}|${compilation.defaultSourceSet.name}".toString(),
+                sourcePaths: sources.collect { logical(source, it) }, compilerArguments: capture.original,
+                libraries: libraries.collect { path(it).toString() }, existingLibraries: libraries.collect { it.exists() },
+                destinationPath: destination.toString(), selectedJdkHome: jdk.toString(), jdkHomeOperand: get(value, 'getJdkHome'),
+                pluginDataState: pluginDataState, classpathOperand: get(value, 'getClasspath'), friendPaths: actualFriends, declaredFriendPaths: declaredFriends,
+                associated: associated, codeOrigins: capture.code,
+                compilerFiles: files(get(task, 'getDefaultCompilerClasspath$kotlin_gradle_plugin_common'), 16).collect { path(it, true).toString() },
+                dependencyConfiguration: compilation.compileDependencyConfigurationName,
+                languageVersion: task.compilerOptions.languageVersion.orNull?.version,
+                apiVersion: task.compilerOptions.apiVersion.orNull?.version]
+        }
+        def edges = []
+        rows.each { consumer ->
+            def candidates = rows.findAll { producer -> !producer.object.is(consumer.object) && consumer.libraries.contains(producer.destinationPath) }
+            requireFact(candidates.size() <= 1)
+            if (candidates.isEmpty()) {
+                requireFact(consumer.associated.isEmpty() && consumer.friendPaths.isEmpty())
+            } else {
+                def producer = candidates[0]
+                def ordinals = consumer.libraries.indices.findAll { consumer.libraries[it] == producer.destinationPath }
+                def friend = consumer.associated.size() == 1 && consumer.associated[0].is(producer.object)
+                requireFact(ordinals.size() == 1 && (consumer.associated.isEmpty() || friend) &&
+                    (consumer.friendPaths.isEmpty() || friend && consumer.friendPaths == [producer.destinationPath]))
+                edges << [producerCompilationId: producer.id, consumerCompilationId: consumer.id,
+                    producerCompileTaskPath: producer.compileTaskPath, outputPath: producer.destinationPath,
+                    classpathIndex: ordinals[0], originalClasspathPresent: consumer.existingLibraries[ordinals[0]],
+                    friend: friend, originalFriendPresent: !consumer.friendPaths.isEmpty(), declaredFriendPresent: !consumer.declaredFriendPaths.isEmpty()]
+            }
+        }
+        requireFact(edges.size() == 1)
+        def paths = []
+        Files.walk(source).withCloseable { stream -> stream.forEach { item ->
+            requireFact(!Files.isSymbolicLink(item) && item.toRealPath() == item)
+            if (Files.isRegularFile(item, LinkOption.NOFOLLOW_LINKS)) {
+                requireFact(paths.size() < 50000); paths << source.relativize(item).toString()
+            } else requireFact(Files.isDirectory(item, LinkOption.NOFOLLOW_LINKS))
+        } }
+        def built = root.buildscript.configurations.findByName('classpath')
+        def buildscriptFiles = built == null ? [] : files(built).collect { path(it, true).toString() }.sort()
+        def initScripts = bounded(gradle.startParameter.allInitScripts, 2).collect { path(it, true).toString() }
+        requireFact(initScripts.size() == 2)
+        [schemaVersion: 1, adapter: 'ktchecker/owner-model-actual-origin/1', invocationId: nonce,
+            sourceRoot: source.toString(), ownerOutput: output.toString(), gradleHome: path(gradle.gradleHomeDir).toString(),
+            gradleUserHome: path(gradle.gradleUserHomeDir).toString(), gradleVersion: gradle.gradleVersion,
+            javaHome: path(new File(System.getProperty('java.home'))).toString(), initScripts: initScripts,
+            modules: [[id: root.path, directory: '', buildFile: root.buildFile.exists() ? logical(source, root.buildFile) : null,
+                pluginIds: ['org.jetbrains.kotlin.multiplatform', 'org.jetbrains.kotlin.jvm', 'org.jetbrains.kotlin.android',
+                    'com.android.application', 'com.android.library', 'com.google.devtools.ksp',
+                    'org.jetbrains.kotlin.plugin.serialization', 'org.jetbrains.compose', 'org.jetbrains.kotlin.plugin.compose']
+                    .findAll { root.pluginManager.hasPlugin(it) }]],
+            snapshotPaths: paths.sort(), sourceSets: sourceSets, buildscriptFiles: buildscriptFiles,
+            compilations: rows.collect { row -> row.findAll { key, value -> !(key in ['object', 'task', 'associated']) } +
+                [associatedCompilationIds: row.associated.collect { other -> rows.find { it.object.is(other) }.id }.sort()] }.sort { it.id },
+            producedEdges: edges]
+    }
+}
+
+def ownerSettings = null
+gradle.settingsEvaluated { settings -> ownerSettings = settings }
+gradle.taskGraph.whenReady { graph ->
+    def exporter = gradle.rootProject.tasks.named('ktCheckerModelExport').get()
+    exporter.doFirst {
+        def data = KtCheckerOwnerModelObservation.diagnosticInventory(gradle)
+        byte[] inventory = JsonOutput.toJson(data).getBytes('UTF-8')
+        KtCheckerOwnerModelObservation.requireFact(inventory.length > 0 && inventory.length <= 4194304)
+        def ownerOutput = new File(gradle.rootProject.findProperty('ktcheckerOwnerOriginOutput').toString()).toPath().parent
+        Files.write(ownerOutput.resolve('owner-inventory.json'), inventory, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+        // Failure remains failure. The presence of inventory never authorizes the strict path.
+        def observed = KtCheckerOwnerModelObservation.observe(gradle, ownerSettings, exporter, graph)
+        byte[] bytes = JsonOutput.toJson(observed).getBytes('UTF-8')
+        KtCheckerOwnerModelObservation.requireFact(bytes.length > 0 && bytes.length <= 4194304)
+        def destination = new File(gradle.rootProject.findProperty('ktcheckerOwnerOriginOutput').toString()).toPath()
+        Files.write(destination, bytes, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+    }
+}

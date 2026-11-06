@@ -32,6 +32,7 @@ internal class CompilerFixtureProvenance private constructor(
     private val registryResourceUrl: String,
     private val nativeImage: NativeImage,
     private val includeNullabilitySourcePlan: Boolean,
+    private val diagnosticBreadthSelector: String?,
 ) {
     private data class Capture(val original: Path, val preserved: Path, val digest: String, val size: Long)
     private data class Artifact(val location: Path, val kind: String, val roles: List<String>, val files: List<Capture>, val digest: String)
@@ -82,11 +83,15 @@ internal class CompilerFixtureProvenance private constructor(
             "Executed class locations and exact installed native resources are checked before every compiler job and at run end; source drift is checked at run end.",
             "Every actual launched outcome must independently confirm exec and match the START native identity; a fork-child exit, inspector availability, or matching installed bytes alone is not execution proof.",
             "Synthetic compiler-provider results establish neither independent qualification nor current-code results after later edits."),
-    ) + if (includeNullabilitySourcePlan) mapOf(
+    ) + (if (includeNullabilitySourcePlan) mapOf(
         "conditional_nullability_source_v1_capture" to true,
         "exact_additional_fixture_paths" to CompilerFixtureNullabilityPlan.START_CAPTURE_PATHS,
         "conditional_source_capture_is_not_execution_authority" to true,
-    ) else emptyMap()
+    ) else emptyMap()) + (if (diagnosticBreadthSelector != null) mapOf(
+        "conditional_diagnostic_breadth_capture" to diagnosticBreadthSelector,
+        "exact_additional_diagnostic_breadth_paths" to CompilerFixtureDiagnosticBreadthPlan.START_CAPTURE_PATHS,
+        "conditional_source_capture_is_not_execution_authority" to true,
+    ) else emptyMap())
 
     fun implementationReferences(): List<Map<String, String>> = sources.filter {
         it.original.startsWith(repository.resolve("modules/provider-compiler/src/main/kotlin")) &&
@@ -114,7 +119,7 @@ internal class CompilerFixtureProvenance private constructor(
 
     fun drift(): List<Map<String, String>> {
         val drift = artifactDrift().toMutableList()
-        val currentPaths = runCatching { sourceFiles(repository, includeNullabilitySourcePlan) }.getOrElse {
+        val currentPaths = runCatching { sourceFiles(repository, includeNullabilitySourcePlan, diagnosticBreadthSelector) }.getOrElse {
             drift += mapOf("kind" to "source_inventory_unreadable_or_unsafe", "path" to "authored-source-inputs")
             emptyList()
         }
@@ -189,7 +194,20 @@ internal class CompilerFixtureProvenance private constructor(
 
         /** Only the trusted nullability selector requests its exact36 additional source-v1 files. */
         fun capture(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,
-            includeNullabilitySourcePlan: Boolean, checkpoint: () -> Unit = {}): CompilerFixtureProvenance {
+            includeNullabilitySourcePlan: Boolean, checkpoint: () -> Unit = {}): CompilerFixtureProvenance =
+            captureSelected(repositoryPath, runPath, evidence, includeNullabilitySourcePlan, null, checkpoint)
+
+        /** Only one of the three trusted closed breadth selectors can add its exact96 capture paths. */
+        fun capture(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,
+            diagnosticBreadthSelector: String, checkpoint: () -> Unit = {}): CompilerFixtureProvenance {
+            require(diagnosticBreadthSelector in CompilerFixtureDiagnosticBreadthPlan.SELECTORS)
+            return captureSelected(repositoryPath, runPath, evidence, false, diagnosticBreadthSelector, checkpoint)
+        }
+
+        private fun captureSelected(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,
+            includeNullabilitySourcePlan: Boolean, diagnosticBreadthSelector: String?, checkpoint: () -> Unit): CompilerFixtureProvenance {
+            require(diagnosticBreadthSelector == null || diagnosticBreadthSelector in CompilerFixtureDiagnosticBreadthPlan.SELECTORS)
+            require(!includeNullabilitySourcePlan || diagnosticBreadthSelector == null) { "Conditional source routes cannot be pooled" }
             val suppliedRepository = repositoryPath.toAbsolutePath().normalize()
             val repository = canonicalOuterDirectory(suppliedRepository)
             val suppliedRun = runPath.toAbsolutePath().normalize()
@@ -211,7 +229,7 @@ internal class CompilerFixtureProvenance private constructor(
                 checkpoint()
                 return Capture(original, destination, digest, bytes.size.toLong())
             }
-            val sources = sourceFiles(repository, includeNullabilitySourcePlan).map { original -> preserve(original,
+            val sources = sourceFiles(repository, includeNullabilitySourcePlan, diagnosticBreadthSelector).map { original -> preserve(original,
                 runRoot.resolve("captured-sources").resolve(repository.relativize(original)), MAX_SOURCE_BYTES) }
             // Bind the internal runtime loader's actual source, never a context-classloader first match.
             val supervisorClass = Class.forName("dev.ktchecker.providers.runtime.OwnedProcessSupervisor", false,
@@ -234,6 +252,10 @@ internal class CompilerFixtureProvenance private constructor(
             if (includeNullabilitySourcePlan) {
                 roleClasses["fixture_nullability_plan"] = CompilerFixtureNullabilityPlan::class.java
                 roleClasses["fixture_nullability_observation"] = CompilerFixtureNullabilityObservation::class.java
+            }
+            if (diagnosticBreadthSelector != null) {
+                roleClasses["fixture_diagnostic_breadth_plan"] = CompilerFixtureDiagnosticBreadthPlan::class.java
+                roleClasses["fixture_diagnostic_breadth_observation"] = CompilerFixtureDiagnosticBreadthObservation::class.java
             }
             val locations = roleClasses.entries.groupBy { entry ->
                 val url = checkNotNull(entry.value.protectionDomain.codeSource?.location) { "Missing actual class code source" }
@@ -325,7 +347,7 @@ internal class CompilerFixtureProvenance private constructor(
             checkpoint()
             val registryResource = Capture(registryPath, registryPath, Digests.sha256(registryBytes).removePrefix("sha256:"), registryBytes.size.toLong())
             return CompilerFixtureProvenance(repository, runRoot, capturedAt, sources, artifacts, anchors, strictUtf8(registryBytes),
-                registryResource, checkNotNull(CompilerRuleRegistry::class.java.getResource("/compiler-rule-map.json")).toString(), nativeImage, includeNullabilitySourcePlan)
+                registryResource, checkNotNull(CompilerRuleRegistry::class.java.getResource("/compiler-rule-map.json")).toString(), nativeImage, includeNullabilitySourcePlan, diagnosticBreadthSelector)
         }
 
         internal fun supervisorIdentityFields(identity: OwnedSupervisorIdentity): Map<String, String> = mapOf(
@@ -336,7 +358,8 @@ internal class CompilerFixtureProvenance private constructor(
         private fun registryBytes(): ByteArray = checkNotNull(CompilerRuleRegistry::class.java.getResourceAsStream("/compiler-rule-map.json"))
             .use { it.readNBytes(MAX_SOURCE_BYTES + 1) }.also { require(it.size <= MAX_SOURCE_BYTES) }
 
-        private fun sourceFiles(repository: Path, includeNullabilitySourcePlan: Boolean = false): List<Path> =
+        private fun sourceFiles(repository: Path, includeNullabilitySourcePlan: Boolean = false,
+            diagnosticBreadthSelector: String? = null): List<Path> =
             (SOURCE_ROOTS.flatMap { root -> regularFiles(repository.resolve(root)) } +
                 SOURCE_FILES.map { repository.resolve(it).also { path -> require(Files.isRegularFile(path, NOFOLLOW_LINKS)) } } +
                 (if (includeNullabilitySourcePlan) CompilerFixtureNullabilityPlan.START_CAPTURE_PATHS.map {
@@ -345,8 +368,20 @@ internal class CompilerFixtureProvenance private constructor(
                             "Unsafe exact additional nullability source-v1 capture path"
                         }
                     }
-                } else emptyList()))
+                } else emptyList()) + diagnosticBreadthSourceFiles(repository, diagnosticBreadthSelector))
                 .distinct().sorted().also { require(it.size <= MAX_FILES) }
+
+        private fun diagnosticBreadthSourceFiles(repository: Path, selector: String?): List<Path> {
+            if (selector == null) return emptyList()
+            require(selector in CompilerFixtureDiagnosticBreadthPlan.SELECTORS)
+            return CompilerFixtureDiagnosticBreadthPlan.START_CAPTURE_PATHS.map {
+                repository.resolve("providers/compiler-fixtures").resolve(CompilerSnapshot.relative(it)).also { path ->
+                    require(Files.isRegularFile(path, NOFOLLOW_LINKS) && path.toRealPath() == path.toAbsolutePath().normalize()) {
+                        "Unsafe exact additional diagnostic breadth capture path"
+                    }
+                }
+            }
+        }
 
         private fun artifactFiles(location: Path): List<Path> = (if (Files.isDirectory(location, NOFOLLOW_LINKS)) regularFiles(location) else
             listOf(location).also { require(Files.isRegularFile(location, NOFOLLOW_LINKS) && location.toString().endsWith(".jar")) })

@@ -191,6 +191,20 @@ class KotlinNativeProvider(
         if (activePlan.mode == "gradle" && ExactGradleTaskProof.hasUnrelatedFailure(
                 activePlan.requiredTasks, parsed?.tasks.orEmpty())) errors += "native_unrelated_task_failure"
         val certificate = Digests.sha256(input.analysisKey() + "\n" + attempt.stdout + "\n" + attempt.stderr)
+        return projectCompletedRun(input, requested, certificate, findings, errors, selectionGaps, taskGaps, raw,
+            exactSelectedOutput, attempt.metrics)
+    }
+
+    /**
+     * Post-success policy projection only. analyze retains all admission, execution and output checks.
+     * Supplied output digests/normalized data are not authority or Native qualification; synthetic tests
+     * may exercise this reduction without invoking a runner or asserting that any compilation occurred.
+     */
+    internal fun projectCompletedRun(
+        input: AnalysisInput, requested: Set<String>, certificate: String, findings: List<Finding>,
+        errors: List<String>, selectionGaps: List<String>, taskGaps: List<String>,
+        raw: List<RawDiagnostic>, exactSelectedOutput: Boolean, metrics: AnalysisMetrics,
+    ): ProviderResult {
         val rows = requested.map { ruleId ->
             val reason = when {
                 ruleId !in supportedRuleIds -> "native_rule_unknown"
@@ -203,7 +217,7 @@ class KotlinNativeProvider(
                 if (ruleId in supportedRuleIds && errors.isEmpty() && exactSelectedOutput && taskGaps.isEmpty()) certificate else null)
         }
         return ProviderResult(id, if (errors.isEmpty()) "incomplete" else "failed", findings.distinctBy { it.fingerprint }, rows,
-            (errors + selectionGaps + taskGaps + rows.mapNotNull { it.reason }).distinct(), raw, attempt.metrics, version)
+            (errors + selectionGaps + taskGaps + rows.mapNotNull { it.reason }).distinct(), raw, metrics, version)
     }
 
     private fun verifyArtifact(artifact: ArtifactIdentity) {

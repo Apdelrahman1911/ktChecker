@@ -3,6 +3,8 @@ package dev.ktchecker.contracts
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.util.concurrent.CancellationException
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
@@ -112,6 +114,15 @@ object Digests {
     val digest: String? = null,
 )
 
+/** Digest-linked retrieval metadata, never suppression identity, source proof or access authority.
+ * Consumers must retain the locator in full delivery/receipt bytes and verify content before use.
+ */
+@Serializable data class EvidenceRetrievalAttachment(
+    val kind: String,
+    val digest: String,
+    val artifactRef: String,
+)
+
 @Serializable data class Verification(
     val kind: String = "recheck",
     val expected: String,
@@ -119,6 +130,7 @@ object Digests {
     val state: String = "not_run",
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable data class Finding(
     val ruleId: String,
     val title: String,
@@ -139,7 +151,22 @@ object Digests {
     val semanticDigest: String? = null,
     val relatedLocations: List<SourceLocation> = emptyList(),
     val disposition: String = "open",
-)
+    // Do not add an empty field to legacy/default Finding bytes or their content checksums.
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val retrievalAttachments: List<EvidenceRetrievalAttachment> = emptyList(),
+) {
+    init {
+        // Direct construction, copy and decode validate the link. This is not collection
+        // immutability: publication must still detach and reject later caller-owned mutation.
+        if (retrievalAttachments.isNotEmpty()) require(retrievalAttachments.all { attachment ->
+            attachment.kind.isNotBlank() && '\u0000' !in attachment.kind &&
+                attachment.artifactRef.isNotBlank() && '\u0000' !in attachment.artifactRef &&
+                Digests.valid(attachment.digest) && evidence.any {
+                    it.kind == attachment.kind && it.digest == attachment.digest
+                }
+        }) { "finding_retrieval_attachment_invalid_or_unlinked" }
+    }
+}
 
 @Serializable data class Coverage(
     val ruleId: String,

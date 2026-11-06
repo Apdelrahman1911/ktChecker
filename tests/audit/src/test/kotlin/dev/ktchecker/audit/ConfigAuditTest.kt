@@ -2,8 +2,16 @@ package dev.ktchecker.audit
 
 import dev.ktchecker.config.*
 import dev.ktchecker.contracts.*
+import java.io.IOException
+import java.nio.channels.FileChannel
+import java.nio.file.AccessDeniedException
+import java.nio.file.FileSystemException
+import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption.READ
+import java.nio.file.StandardOpenOption.WRITE
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -16,6 +24,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.io.TempDir
 import kotlin.test.*
 
@@ -28,7 +37,40 @@ private class AuditPolicyClock(initial: Instant = Instant.parse("2026-11-04T00:0
     fun advance(millis: Long) { time.addAndGet(millis) }
 }
 
-/** Actual HMAC authority, policy files and locks. Finding/lifecycle inputs are explicitly fixtures. */
+private enum class AuditDirectorySync {
+    OBSERVED_SUPPORTED,
+    OPERATION_UNSUPPORTED,
+    WINDOWS_DIRECTORY_CHANNEL_DENIED,
+}
+
+/**
+ * Classify only an exception from the exact directory-channel operation after
+ * ordinary fixture I/O has succeeded. AccessDenied alone is NOT a portable
+ * unsupported-capability signal; only the observed default Windows NIO provider
+ * and that exact directory path are eligible. No os.name or message matching.
+ */
+private fun directorySyncUnavailability(
+    failure: Throwable,
+    directory: String,
+    provider: String,
+    defaultFileSystem: Boolean,
+): AuditDirectorySync? = when {
+    // use() may suppress an unexpected close failure behind a recognized primary.
+    // Composite/nested failures remain failures, not capability-abort evidence.
+    failure.cause != null || failure.suppressed.isNotEmpty() -> null
+    failure is UnsupportedOperationException -> AuditDirectorySync.OPERATION_UNSUPPORTED
+    failure is AccessDeniedException && defaultFileSystem &&
+        provider == "sun.nio.fs.WindowsFileSystemProvider" &&
+        failure.file == directory && failure.otherFile == null -> AuditDirectorySync.WINDOWS_DIRECTORY_CHANNEL_DENIED
+    else -> null
+}
+
+/**
+ * Actual HMAC authority, policy files and locks. Finding/lifecycle inputs are fixtures.
+ * A skipped durability-dependent method is unavailable coverage, never a durable
+ * policy/backend pass. The independent authority and real fail-closed controls run
+ * on every host; a successful probe alone does not qualify locks, CAS or durability.
+ */
 class ConfigAuditTest {
     @TempDir lateinit var temporary: Path
     private val binding = ConfigBinding("audit-owner", "project", "left", "lineage-a")
@@ -40,6 +82,39 @@ class ConfigAuditTest {
     private val authority = HmacOwnerAuthority(ByteArray(32) { (it + 1).toByte() },
         listOf(OwnerSessionRegistration(principal, setOf(binding, other))))
     private val ids = AtomicInteger()
+
+    private fun probeDirectorySync(): AuditDirectorySync {
+        // A separate fresh control directory: never precreate policy directories to
+        // bypass ConfigPersistence's first-write directory synchronization.
+        val directory = Files.createTempDirectory(temporary, "config-directory-sync-probe-").toAbsolutePath().normalize()
+        val fixture = directory.resolve("fixture.txt")
+        val bytes = "TEST-ONLY directory-channel capability fixture\n".toByteArray()
+        Files.write(fixture, bytes)
+        assertContentEquals(bytes, Files.readAllBytes(fixture))
+        FileChannel.open(fixture, WRITE).use { it.force(true) }
+        Files.newDirectoryStream(directory).use { entries ->
+            assertEquals(listOf(fixture.fileName), entries.map { it.fileName })
+        }
+        val provider = directory.fileSystem.provider().javaClass.name
+        val defaultFileSystem = directory.fileSystem === FileSystems.getDefault()
+        // All setup, regular-file force and listing failures remain test failures.
+        // These catches cover ONLY the actual READ+force(true) directory operation.
+        return try {
+            FileChannel.open(directory, READ).use { it.force(true) }
+            AuditDirectorySync.OBSERVED_SUPPORTED
+        } catch (failure: UnsupportedOperationException) {
+            directorySyncUnavailability(failure, directory.toString(), provider, defaultFileSystem) ?: throw failure
+        } catch (failure: AccessDeniedException) {
+            directorySyncUnavailability(failure, directory.toString(), provider, defaultFileSystem) ?: throw failure
+        }
+    }
+
+    private fun requireDirectorySyncForPolicyAudit() {
+        // Call at method entry, outside every negative/concurrency wrapper. A
+        // capability abort must not masquerade as a policy/authority rejection.
+        assumeTrue(probeDirectorySync() == AuditDirectorySync.OBSERVED_SUPPORTED,
+            "Directory synchronization unavailable on this fixture; no durable policy, lock or CAS execution coverage is claimed")
+    }
 
     private fun registry(version: String?): RuleAliases = RuleAliases(listOf(
         PolicyRule("audit/policy-rule", implementationDigest = version?.let(Digests::sha256)),
@@ -81,7 +156,119 @@ class ConfigAuditTest {
         "audit-provider", input.context.scope)
 
     @Test
+    fun directorySyncClassifierRejectsUnrelatedIoAndDenialsOutsideTheExactProbeDomain() {
+        // Synthetic classification only; not a Windows/provider execution receipt.
+        val directory = "synthetic-exact-fixture-directory"
+        val windows = "sun.nio.fs.WindowsFileSystemProvider"
+        assertEquals(AuditDirectorySync.OPERATION_UNSUPPORTED,
+            directorySyncUnavailability(UnsupportedOperationException(), directory, "synthetic-provider", false))
+        assertEquals(AuditDirectorySync.WINDOWS_DIRECTORY_CHANNEL_DENIED,
+            directorySyncUnavailability(AccessDeniedException(directory), directory, windows, true))
+        for (failure in listOf(
+            IOException("synthetic unrelated I/O"),
+            FileSystemException(directory, null, "Access denied"),
+            SecurityException("synthetic security denial"),
+            IllegalStateException("synthetic unrelated failure", UnsupportedOperationException()),
+            UnsupportedOperationException("synthetic nested failure", IOException("synthetic cause")),
+            AccessDeniedException(directory).apply { initCause(SecurityException("synthetic cause")) },
+            UnsupportedOperationException().apply { addSuppressed(IOException("synthetic close failure")) },
+            AccessDeniedException(directory).apply { addSuppressed(SecurityException("synthetic close failure")) },
+            AccessDeniedException("a-different-directory"),
+            AccessDeniedException(directory, "another-file", "synthetic denial"),
+        )) {
+            assertNull(directorySyncUnavailability(failure, directory, windows, true))
+        }
+        for (provider in listOf("sun.nio.fs.LinuxFileSystemProvider", "sun.nio.fs.MacOSXFileSystemProvider",
+            "synthetic.WindowsFileSystemProvider")) {
+            assertNull(directorySyncUnavailability(AccessDeniedException(directory), directory, provider, true))
+        }
+        assertNull(directorySyncUnavailability(AccessDeniedException(directory), directory, windows, false))
+    }
+
+    @Test
+    fun ownerHmacBindsSyntheticRequestsExactlyWithoutAnyConfigurationStorage() {
+        // Synthetic revisions prove HMAC binding only, not live policy/CAS state.
+        val layer = LayerRevision(0, null, Digests.sha256("SYNTHETIC absent layer; no stored policy"))
+        val token = ConfigRevisionToken(binding, layer, layer, Digests.sha256("SYNTHETIC authority-only policy"))
+        val request = ConfigMutationRequest(binding, ConfigLayer.LOCAL, token,
+            ConfigAction.SetRuleEnabled(rule, false), "synthetic-authority-only-request")
+        val now = clock.instant()
+        val permit = authority.issueForExplicitOwnerAction(principal, request, now)
+        assertEquals(principal, authority.verify(request, permit, now))
+        val alternate = request.copy(binding = other, expected = token.copy(binding = other))
+        assertEquals(principal, authority.verify(alternate, authority.issueForExplicitOwnerAction(principal, alternate, now), now))
+        for (changed in listOf(
+            alternate,
+            request.copy(layer = ConfigLayer.SHARED),
+            request.copy(action = ConfigAction.SetRuleEnabled(rule, true)),
+            request.copy(requestId = "another-synthetic-request"),
+            request.copy(expected = token.copy(shared = layer.copy(documentDigest = Digests.sha256("changed shared bytes")))),
+            request.copy(expected = token.copy(local = layer.copy(revision = 1))),
+            request.copy(expected = token.copy(policyDigest = Digests.sha256("changed effective policy"))),
+        )) {
+            assertEquals("Owner permit does not authorize this exact configuration request.",
+                assertFailsWith<ConfigAuthorizationException> { authority.verify(changed, permit, now) }.message)
+            assertEquals("Owner permit signature is invalid.", assertFailsWith<ConfigAuthorizationException> {
+                authority.verify(changed, permit.copy(requestDigest = changed.digest()), now)
+            }.message)
+        }
+        assertEquals("This principal/session has no owner authority for this project, worktree and lineage.",
+            assertFailsWith<ConfigAuthorizationException> {
+                authority.verify(request, permit.copy(principal = principal.copy(clientId = "ordinary-model")), now)
+            }.message)
+        assertEquals("Owner permit signature is invalid.", assertFailsWith<ConfigAuthorizationException> {
+            authority.verify(request, permit.copy(signature = "forged-synthetic-signature"), now)
+        }.message)
+        for (outsideValidity in listOf(now.minusMillis(1), Instant.ofEpochMilli(permit.expiresAtEpochMillis))) {
+            assertEquals("Owner permit is expired or not yet valid.", assertFailsWith<ConfigAuthorizationException> {
+                authority.verify(request, permit, outsideValidity)
+            }.message)
+        }
+        assertEquals("Only an explicit authorized owner action may change configuration.",
+            assertFailsWith<ConfigAuthorizationException> { MutationAuthority.DENY_ALL.verify(request, permit, now) }.message)
+    }
+
+    @Test
+    fun observedDirectorySyncRequiresRealPolicyRoundTripOrExactFailClosedFreshStore() {
+        // No assumption: the actual production path must either complete a policy
+        // round trip or fail closed at directory sync with the original exact cause.
+        val capability = probeDirectorySync()
+        val name = "fresh-capability-policy"
+        val stateRoot = temporary.resolve(name).toAbsolutePath().normalize()
+        assertFalse(Files.exists(stateRoot, NOFOLLOW_LINKS))
+        val before = AtomicInteger()
+        val after = AtomicInteger()
+        val observer = object : ConfigWriteObserver {
+            override fun beforeAtomicReplace(temporary: Path, destination: Path) { before.incrementAndGet() }
+            override fun afterAtomicReplace(destination: Path) { after.incrementAndGet() }
+        }
+        if (capability == AuditDirectorySync.OBSERVED_SUPPORTED) {
+            val actual = store(name, observer = observer)
+            val initial = actual.capture(binding)
+            val changed = apply(actual, initial, ConfigAction.SetRuleEnabled(rule, false))
+            assertEquals(initial.shared.revision, changed.shared.revision)
+            assertEquals(initial.local.revision.revision + 1, changed.local.revision.revision)
+            assertEquals(false, changed.ruleSettings.getValue(rule).enabled)
+            assertEquals(changed.revisionToken, store(name).capture(binding).revisionToken)
+            assertEquals(1, before.get())
+            assertEquals(1, after.get())
+        } else {
+            val failure = assertFailsWith<ConfigReadException> { store(name, observer = observer) }
+            assertEquals("Configuration directory synchronization failed; durability is unconfirmed.", failure.message)
+            assertEquals(capability, directorySyncUnavailability(assertNotNull(failure.cause), stateRoot.toString(),
+                stateRoot.fileSystem.provider().javaClass.name, stateRoot.fileSystem === FileSystems.getDefault()))
+            assertEquals(0, before.get())
+            assertEquals(0, after.get())
+            // Creation may leave an empty directory. It must not produce a policy,
+            // lock, audit event, or completed mutation. Never retry/preseed this root.
+            assertTrue(Files.isDirectory(stateRoot, NOFOLLOW_LINKS))
+            Files.newDirectoryStream(stateRoot).use { assertFalse(it.iterator().hasNext()) }
+        }
+    }
+
+    @Test
     fun racingSharedAndLocalWritersCasTheWholePairAndCommitExactlyOneLayer() {
+        requireDirectorySyncForPolicyAudit()
         val left = store()
         val right = store()
         val initial = left.capture(binding)
@@ -112,6 +299,7 @@ class ConfigAuditTest {
 
     @Test
     fun ownerPermitIsRecheckedAfterWaitingForAnotherStoreInstancesFence() {
+        requireDirectorySyncForPolicyAudit()
         val initial = store().capture(binding)
         val request = mutation(initial, ConfigAction.SetRuleEnabled(rule, false))
         val permit = authority.issueForExplicitOwnerAction(principal, request, clock.instant(), Duration.ofMillis(100))
@@ -152,6 +340,7 @@ class ConfigAuditTest {
 
     @Test
     fun permitsCannotRetargetEvenAnotherEnrolledBindingOrAlterOnePayloadField() {
+        requireDirectorySyncForPolicyAudit()
         val actual = store()
         val original = actual.capture(binding)
         val alternate = actual.capture(other)
@@ -176,6 +365,7 @@ class ConfigAuditTest {
 
     @Test
     fun stalePolicyWrongScopeAndAnotherLineageCannotAuthorizeFindingSuppression() {
+        requireDirectorySyncForPolicyAudit()
         val actual = store()
         val before = actual.capture(binding)
         val oldInput = input(before)
@@ -199,6 +389,7 @@ class ConfigAuditTest {
 
     @Test
     fun editableLifecycleLabelsNeedFreshBoundTrustedProofAndCannotSkipIdentityChecks() {
+        requireDirectorySyncForPolicyAudit()
         val defaultStore = store()
         val empty = defaultStore.capture(binding)
         val analysis = input(empty)
@@ -227,6 +418,7 @@ class ConfigAuditTest {
 
     @Test
     fun expirationChangesTheLiveFenceButRestartRestoresTheExactHistoricalPolicy() {
+        requireDirectorySyncForPolicyAudit()
         val actual = store()
         val policy = apply(actual, actual.capture(binding), ConfigAction.AddSuppression(
             suppression("temporary", expires = clock.millis() + 100)))
@@ -254,6 +446,7 @@ class ConfigAuditTest {
 
     @Test
     fun sameRevisionByteChangesInvalidateTheFullTokenWithoutAlteringFrozenReviewEvidence() {
+        requireDirectorySyncForPolicyAudit()
         val actual = store()
         val policy = apply(actual, actual.capture(binding), ConfigAction.SetRuleEnabled(rule, false), ConfigLayer.SHARED)
         val archived = actual.exportSnapshot(policy)
@@ -275,6 +468,7 @@ class ConfigAuditTest {
 
     @Test
     fun atomicReplacementFailuresDistinguishUnappliedFromUnknownAndNeverHalfCommitLayers() {
+        requireDirectorySyncForPolicyAudit()
         val base = store().capture(binding)
         val request = mutation(base, ConfigAction.SetRuleEnabled(rule, false))
         val permit = authority.issueForExplicitOwnerAction(principal, request, clock.instant())
@@ -297,6 +491,7 @@ class ConfigAuditTest {
 
     @Test
     fun implementationUpgradeOrMissingIdentityReopensExactSuppressionDespiteUnchangedDisplayFingerprint() {
+        requireDirectorySyncForPolicyAudit()
         val v1 = store()
         val before = v1.capture(binding)
         val originalInput = input(before)

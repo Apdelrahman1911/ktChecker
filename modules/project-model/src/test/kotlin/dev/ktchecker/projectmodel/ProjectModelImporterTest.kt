@@ -72,7 +72,7 @@ class ProjectModelImporterTest {
             consumer.copy(associatedCompilationIds = listOf(":lib|jvm|main")) to "model_reference_invalid",
             consumer.copy(associatedCompilationIds = listOf(consumer.id)) to "model_reference_invalid",
         )) {
-            assertEquals(code, assertFailsWith<ProjectModelException> { fixture.import(capture, graph.copy(compilations = graph.compilations.map { if (it.id == change.id) change else it })) }.code)
+            assertEquals(code, assertOwnerFixtureModelFailure(fixture.work) { fixture.import(capture, graph.copy(compilations = graph.compilations.map { if (it.id == change.id) change else it })) }.code)
         }
     }
 
@@ -88,7 +88,7 @@ class ProjectModelImporterTest {
             graph.copy(sourceSets = graph.sourceSets.map { if (it.id == common.id) it.copy(dependsOn = listOf(":lib|sharedMain")) else it }) to "model_refinement_cycle",
             graph.copy(issues = listOf(ModelIssue("model_gap", "concealed-unknown-scope", "Cannot hide this gap"))) to "model_issue_scope_invalid",
         )
-        cases.forEach { (invalid, code) -> assertEquals(code, assertFailsWith<ProjectModelException> { fixture.import(capture, invalid) }.code) }
+        cases.forEach { (invalid, code) -> assertEquals(code, assertOwnerFixtureModelFailure(fixture.work) { fixture.import(capture, invalid) }.code) }
     }
 
     @Test fun unavailableCompilerArtifactAndMissingConfigurationNeverGiveFullProject(): Unit {

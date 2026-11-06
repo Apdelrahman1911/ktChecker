@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.SecureDirectoryStream
 import java.util.UUID
+import kotlin.test.assertFailsWith
 
 /** Unit-test owner capability: registered producer overlays, not untrusted report flags. */
 internal class ModelFixtures {
@@ -120,6 +121,20 @@ internal fun ownerFixtureAnchoredReadsSupported(path: Path): Boolean =
 internal fun assumeOwnerFixtureAnchoredReads(path: Path) {
     assumeTrue(ownerFixtureAnchoredReadsSupported(path),
         "Anchored no-follow model reads unavailable on this filesystem; no successful model import coverage is claimed")
+}
+
+/**
+ * Keep fixture applicability outside the exact domain-failure assertion. Otherwise a genuine
+ * JUnit abort is caught as the wrong exception and becomes a false model-rejection failure.
+ * The injected probe is only for inert assertion-boundary controls, not a capability substitute.
+ */
+internal fun assertOwnerFixtureModelFailure(
+    path: Path,
+    assumeAnchoredReads: (Path) -> Unit = ::assumeOwnerFixtureAnchoredReads,
+    block: () -> Unit,
+): ProjectModelException {
+    assumeAnchoredReads(path)
+    return assertFailsWith<ProjectModelException>(block = block)
 }
 
 internal fun createOwnerFixtureSymbolicLink(link: Path, target: Path) {

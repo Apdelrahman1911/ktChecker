@@ -23,7 +23,8 @@ else:
 
 PATH_VARIABLES = ("JAVA_HOME", "ANDROID_HOME", "ANDROID_SDK_ROOT", "DEVELOPER_DIR")
 RUNNER_VARIABLES = ("RUNNER_OS", "RUNNER_ARCH", "RUNNER_ENVIRONMENT", "ImageOS", "ImageVersion")
-GITHUB_VARIABLES = ("GITHUB_REPOSITORY", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_JOB", "GITHUB_EVENT_NAME")
+GITHUB_VARIABLES = ("GITHUB_ACTIONS", "GITHUB_REPOSITORY", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_JOB",
+                    "GITHUB_EVENT_NAME", "GITHUB_SHA", "GITHUB_WORKFLOW_SHA", "GITHUB_WORKFLOW_REF")
 SIMCTL_JSON_MAX_BYTES = 1024 * 1024
 JSON_MAX_DEPTH = 32
 JSON_MAX_TOKENS = 32768
@@ -313,6 +314,48 @@ def observe_xcode(*, include_simulator_inventory: bool = True) -> dict:
     return result
 
 
+def ci_context_errors(source: dict, host: dict, runner: dict, ci: dict) -> list[str]:
+    """Validate public provenance completeness/joins, not hosted-run authentication."""
+    errors = []
+    token = r"[A-Za-z0-9_.-]{1,128}"
+    repository = token + "/" + token
+    fields = (
+        (runner, "RUNNER_ENVIRONMENT", r"github-hosted"),
+        (runner, "RUNNER_OS", r"Linux|Windows|macOS"),
+        (runner, "RUNNER_ARCH", r"X86|X64|ARM|ARM64"),
+        (runner, "ImageOS", r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}"),
+        (runner, "ImageVersion", r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}"),
+        (ci, "GITHUB_ACTIONS", r"true"),
+        (ci, "GITHUB_REPOSITORY", repository),
+        (ci, "GITHUB_JOB", token),
+        (ci, "GITHUB_EVENT_NAME", token),
+        (ci, "GITHUB_SHA", r"[0-9a-f]{40}"),
+        (ci, "GITHUB_WORKFLOW_SHA", r"[0-9a-f]{40}"),
+    )
+    for values, key, pattern in fields:
+        value = values.get(key)
+        if not isinstance(value, str) or re.fullmatch(pattern, value) is None:
+            errors.append(f"Missing or invalid required CI context: {key}")
+    for key in ("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT"):
+        value = ci.get(key)
+        if not (isinstance(value, str) and re.fullmatch(r"[0-9]{1,20}", value) and int(value) > 0):
+            errors.append(f"Missing or invalid required CI context: {key}")
+    workflow_ref = ci.get("GITHUB_WORKFLOW_REF")
+    if not (isinstance(workflow_ref, str) and 1 <= len(workflow_ref) <= 1024 and workflow_ref.isprintable()
+            and re.fullmatch(repository + r"/\.github/workflows/[^/]+@.+", workflow_ref)):
+        errors.append("Missing or invalid required CI context: GITHUB_WORKFLOW_REF")
+    runner_os = runner.get("RUNNER_OS")
+    expected_host = {"Linux": "Linux", "Windows": "Windows", "macOS": "Darwin"}.get(runner_os) \
+        if isinstance(runner_os, str) else None
+    if expected_host is not None and host.get("os") != expected_host:
+        errors.append("Required CI RUNNER_OS does not match observed host OS")
+    candidate = ci.get("GITHUB_SHA")
+    if isinstance(candidate, str) and re.fullmatch(r"[0-9a-f]{40}", candidate) and candidate != source.get("commit"):
+        errors.append("Required CI GITHUB_SHA does not match observed checkout commit")
+    # Workflow and candidate commits can legitimately differ; retain both.
+    return errors
+
+
 def record(args: argparse.Namespace) -> dict:
     java_home = os.environ.get("JAVA_HOME")
     java = str(Path(java_home) / "bin" / ("java.exe" if os.name == "nt" else "java")) if java_home else shutil.which("java")
@@ -353,13 +396,18 @@ def record(args: argparse.Namespace) -> dict:
                "compile_sdk_37_installed": any(row["package"] == PACKAGES[0] and row["installed"] for row in android_packages),
                "build_tools_36_0_0_installed": any(row["package"] == PACKAGES[1] and row["installed"] for row in android_packages),
                "packages": android_packages}
+    source = source_identity()
+    host = {"os": platform.system(), "release": platform.release(), "arch": platform.machine(),
+            "python": platform.python_version()}
+    runner = {key: os.environ[key] for key in RUNNER_VARIABLES if key in os.environ}
+    ci = {key: os.environ[key] for key in GITHUB_VARIABLES if key in os.environ}
+    require_ci_context = getattr(args, "require_ci_context", False)
+    if require_ci_context:
+        errors.extend(ci_context_errors(source, host, runner, ci))
     return {"schema_version": 1, "evidence_kind": "observed_environment", "recorded_at": utc_now(),
             "state": "passed" if not errors else "failed", "errors": errors,
-            "source": source_identity(),
-            "host": {"os": platform.system(), "release": platform.release(), "arch": platform.machine(),
-                     "python": platform.python_version()},
-            "runner": {key: os.environ[key] for key in RUNNER_VARIABLES if key in os.environ},
-            "ci": {key: os.environ[key] for key in GITHUB_VARIABLES if key in os.environ},
+            "source": source, "host": host, "runner": runner, "ci": ci,
+            "ci_context_required": require_ci_context,
             "tool_paths": {key: os.environ[key] for key in PATH_VARIABLES if key in os.environ},
             "java": {"path": java, "version": java_version, "major": java_major,
                      "launcher_digest": digest_file(Path(java).resolve()) if java and Path(java).is_file() else None,
@@ -382,6 +430,8 @@ def main() -> int:
     parser.add_argument("--require-gradle")
     parser.add_argument("--require-xcode")
     parser.add_argument("--require-xcode-build")
+    parser.add_argument("--require-ci-context", action="store_true",
+                        help="Require complete hosted runner/image and GitHub source/workflow provenance")
     args = parser.parse_args()
     try:
         result = record(args)

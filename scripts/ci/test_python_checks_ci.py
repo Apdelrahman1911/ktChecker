@@ -171,6 +171,9 @@ class PythonReporterControls(unittest.TestCase):
         return {node.attrib["name"]: node.attrib["value"] for node in tree.findall("properties/property")}
 
     def test_all_unittest_outcomes_and_subtests_are_actual_callbacks_not_console_text(self):
+        # Eight cases and every outcome fsync a real checkpoint. This checks
+        # callback accounting, not three-second process/filesystem throughput.
+        # Genuine deadline controls below retain their explicit short budgets.
         report = self.execute(f"""
             import os, sys, unittest
             class PrivateLabel:
@@ -203,7 +206,7 @@ class PythonReporterControls(unittest.TestCase):
                         raise unittest.SkipTest({CANARY!r})
                 def test_h_runtime_skip(self):
                     raise unittest.SkipTest({CANARY!r})
-        """)
+        """, config=replace(self.config, timeout=10.0))
         self.assertEqual("failed", report["state"])
         self.assertEqual({"tests_run": 8, "successful_tests": 1, "failures": 2, "errors": 2, "skipped": 3,
             "expected_failures": 1, "unexpected_successes": 1}, report["counts"])
@@ -1337,6 +1340,64 @@ class PythonReporterControls(unittest.TestCase):
             return path in paths or real_is_symlink(path)
 
         return patch.object(type(self.base), "is_symlink", autospec=True, side_effect=is_symlink)
+
+    def marked_junctions(self, *paths):
+        """Portable junction-detection seam; no native junction or ACL proof."""
+        real_is_junction = type(self.base).is_junction
+
+        def is_junction(path):
+            return path in paths or real_is_junction(path)
+
+        return patch.object(type(self.base), "is_junction", autospec=True, side_effect=is_junction)
+
+    def test_portable_checkout_junction_is_rejected_before_reading_metadata(self):
+        git = self.config.root / ".git"
+        with self.marked_junctions(git), patch.object(runner, "read_small") as read:
+            with self.assertRaises(runner.GuardError) as caught:
+                runner.checkout_commit(self.config.root)
+        self.assertEqual("unsupported_checkout_metadata", caught.exception.code)
+        read.assert_not_called()
+
+    def test_portable_checkout_ref_junction_is_rejected_without_reading_ref(self):
+        git = self.config.root / ".git"
+        (git / "HEAD").write_text("ref: refs/heads/synthetic\n", encoding="ascii")
+        heads = git / "refs" / "heads"
+        heads.mkdir(parents=True)
+        (heads / "synthetic").write_text(COMMIT, encoding="ascii")
+        with self.marked_junctions(heads), patch.object(runner, "read_small", wraps=runner.read_small) as read:
+            with self.assertRaises(runner.GuardError) as caught:
+                runner.checkout_commit(self.config.root)
+        self.assertEqual("junctioned_path_ancestor", caught.exception.code)
+        read.assert_called_once_with(git / "HEAD", 4096)
+
+    def test_portable_selected_path_junction_seams_never_follow_aliases(self):
+        for kind, code in (("start", "junctioned_path_ancestor"),
+                           ("directory", "junctioned_test_directory"), ("output", "junctioned_path_ancestor")):
+            with self.subTest(kind=kind):
+                config = self.fixture()
+                self.source(config, PASS_SOURCE)
+                if kind == "start":
+                    marked, call = config.start, lambda: runner.normalized(config)
+                elif kind == "directory":
+                    marked = config.start / "marked_directory"
+                    marked.mkdir()
+                    (marked / "foreign.py").write_bytes(b"foreign source must not be enrolled\n")
+                    call = lambda: runner.source_snapshot(config)
+                else:
+                    marked = config.output.parent
+                    marked.mkdir(parents=True)
+                    config.output.write_bytes(b"owner bytes remain")
+                    call = lambda: runner.normalized(config)
+                with self.marked_junctions(marked), patch.object(runner, "read_small", wraps=runner.read_small) as read:
+                    with self.assertRaises(runner.GuardError) as caught:
+                        call()
+                self.assertEqual(code, caught.exception.code)
+                if kind == "directory":
+                    read.assert_called_once_with(config.root / ".git" / "HEAD", 4096)
+                else:
+                    read.assert_not_called()
+                if kind == "output":
+                    self.assertEqual(b"owner bytes remain", config.output.read_bytes())
 
     def test_symlink_helper_propagates_unrelated_errors_instead_of_skipping(self):
         errors = (OSError(5, CANARY), FileExistsError(CANARY), PermissionError(CANARY), NotImplementedError(CANARY))

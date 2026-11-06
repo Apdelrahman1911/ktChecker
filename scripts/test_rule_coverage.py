@@ -22,6 +22,32 @@ QUALIFIED_CONTEXT = {
 }
 
 
+def frozen_1663_catalog_root(test):
+    """Exact old catalog SOURCE DATA, not a current selector or artifact reader."""
+    repository = Path(__file__).resolve().parents[1]
+    frozen = repository / "providers/compiler-fixtures/mapping-contracts/legacy443-data"
+    selector_bytes = (frozen / "current-inputs.json.txt").read_bytes()
+    test.assertEqual("08d88559f95f86557efaa9b7663c8b16e66991f3548d119ec71af1b756f4b7a3", digest(selector_bytes))
+    selection = json.loads(selector_bytes)
+    catalog_paths = {"data/rules-core.json", "data/rules-ecosystem.json",
+                     "data/rules-libraries.json", "data/rules-platform.json"}
+    test.assertEqual(catalog_paths, {item["path"] for item in selection["catalogs"]})
+    temporary = tempfile.TemporaryDirectory(prefix="frozen1663-catalog-data-")
+    test.addCleanup(temporary.cleanup)
+    root = Path(temporary.name)
+    # Only these four catalog bodies are copied. All evidence, mapping, context
+    # and reference fields in the frozen selector remain opaque metadata.
+    for item in selection["catalogs"]:
+        relative = item["path"]
+        source = frozen / "rules-core.json.txt" if relative == "data/rules-core.json" else repository / relative
+        body = source.read_bytes()
+        test.assertEqual((item["bytes"], item["sha256"]), (len(body), digest(body)))
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(body)
+    return root
+
+
 class CoverageTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -469,8 +495,8 @@ class CoverageTests(unittest.TestCase):
         self.assertIn("rule coverage error", error.getvalue())
 
     def test_repository_inventory_retains_all_1663_records(self):
-        root = Path(__file__).resolve().parents[1]
-        # Ignore transient worker sidecars in this structural count test.
+        # Frozen predecessor regression, deliberately NOT current1665 admission.
+        root = frozen_1663_catalog_root(self)
         output = generate_coverage(root, mapping_paths=[], evidence_paths=[])
         self.assertEqual(1663, output["catalog_records"])
         self.assertEqual(1663, output["row_count"])
@@ -737,7 +763,8 @@ class CoverageTests(unittest.TestCase):
         projection.assert_not_called()
 
     def test_full_declared_catalog_counts_are_real_records_not_context_multiplication(self):
-        root = Path(__file__).resolve().parents[1]
+        # Preserve the old1663 arithmetic instead of silently rebasing its oracle.
+        root = frozen_1663_catalog_root(self)
         contexts = [CONTEXT, {**CONTEXT, "kotlin_version": "2.4.10"}]
         visibility = catalog_visibility(root, evidence_paths=[], contexts=contexts)
         self.assertEqual((1663, 46, 1617), tuple(visibility[field] for field in ("catalog_records", "excluded_records", "candidate_records")))
@@ -750,6 +777,309 @@ class CoverageTests(unittest.TestCase):
             self.assertFalse(row["implemented"] or row["tested"] or row["qualified"])
         self.assertEqual(2, len(by_context))
         self.assertTrue(all(ids == rule_ids for ids in by_context.values()))
+
+    def failed_mapping_report(self, *extra):
+        self.failed_visibility(*extra)
+        report = read_json(self.root / "failed-coverage.json")
+        diagnostics = report["failure_diagnostics"]
+        self.assertEqual("incomplete", diagnostics["status"])
+        self.assertFalse(diagnostics["current_coverage_known"])
+        errors = diagnostics["mapping_reference_errors"]
+        self.assertEqual(len(errors), diagnostics["mapping_reference_error_count"])
+        self.assertEqual(list(range(len(errors))), [error["error_index"] for error in errors])
+        for error in errors:
+            for field in ("error_index", "mapping_input_index", "mapping_index", "reference_index"):
+                self.assertTrue(error[field] is None or type(error[field]) is int)
+        for row in report["catalog_visibility"]["rows"] or []:
+            self.assertEqual("incomplete", row["evaluation_state"])
+            for index in row["mapping_reference_error_indexes"]:
+                self.assertIs(type(index), int)
+                self.assertLess(index, len(errors))
+                self.assertEqual(row["rule_id"], errors[index]["rule_id"])
+        return report, diagnostics
+
+    def test_invalid_mapping_diagnostics_preserve_all_rows_and_multiple_mismatches_per_context(self):
+        self.catalog += [
+            {"id": "ktc.example.opt-in", "default_activation": "opt_in"},
+            {"id": "ktc.example.excluded", "default_activation": "excluded"},
+        ]
+        self.write("data/rules-example.json", self.catalog)
+        first = self.artifact("src/first-adapter.kt", b"// first bound adapter\n")
+        second = self.artifact("src/second-adapter.kt", b"// second bound adapter\n")
+        self.map["mappings"][0]["implementation_evidence"] = [first, second]
+        self.emit()
+        (self.root / first["path"]).write_bytes(b"// first changed\n")
+        (self.root / second["path"]).write_bytes(b"// second changed\n")
+        other_context = {**CONTEXT, "kotlin_version": "2.4.10", "opaque_identity": {"retained": True}}
+        contexts = [self.write("first-context.json", CONTEXT), self.write("second-context.json", other_context)]
+        unchanged_paths = [self.mapping_path, self.evidence_path, self.root / first["path"], self.root / second["path"]]
+        before = {path: path.read_bytes() for path in unchanged_paths}
+        report, diagnostics = self.failed_mapping_report("--context", str(contexts[0]), "--context", str(contexts[1]))
+        self.assertTrue(diagnostics["mapping_reference_scan_complete"])
+        self.assertEqual((3, 2, 6), tuple(diagnostics[field] for field in ("declared_catalog_records", "declared_context_count", "declared_row_count")))
+        errors = diagnostics["mapping_reference_errors"]
+        self.assertEqual(["reference_digest_mismatch", "reference_digest_mismatch"], [error["code"] for error in errors])
+        self.assertEqual([first["path"], second["path"]], [error["reference_path"] for error in errors])
+        self.assertEqual([0, 1], [error["reference_index"] for error in errors])
+        visibility = report["catalog_visibility"]
+        self.assertEqual({json.dumps(context, sort_keys=True) for context in (CONTEXT, other_context)},
+                         {json.dumps(context, sort_keys=True) for context in visibility["contexts"]})
+        self.assertEqual(6, len(visibility["rows"]))
+        self.assertEqual(2, sum(row["state"] == "excluded" for row in visibility["rows"]))
+        for row in visibility["rows"]:
+            expected = [0, 1] if row["rule_id"] == "ktc.example.rule" else []
+            self.assertEqual(expected, row["mapping_reference_error_indexes"])
+        self.assertEqual(before, {path: path.read_bytes() for path in unchanged_paths})
+        with self.assertRaisesRegex(CoverageError, "digest mismatch"):
+            generate_coverage(self.root)
+
+    def test_invalid_mapping_diagnostics_continue_into_later_manifest(self):
+        early = self.artifact("src/early-adapter.kt", b"// early\n")
+        late = self.artifact("src/late-adapter.kt", b"// late\n")
+        self.map["mappings"][0]["implementation_evidence"] = [early]
+        self.emit()
+        later = {**self.map, "provider_id": "later", "mappings": [
+            {"rule_id": "ktc.example.rule", "relation": "exact", "implementation_evidence": [late]},
+        ]}
+        later_path = self.write("modules/provider-zlater/src/main/resources/later-rule-map.json", later)
+        (self.root / early["path"]).write_text("changed early adapter")
+        (self.root / late["path"]).write_text("changed late adapter")
+        _, diagnostics = self.failed_mapping_report()
+        self.assertTrue(diagnostics["mapping_reference_scan_complete"])
+        self.assertEqual(2, diagnostics["mapping_manifest_count"])
+        self.assertEqual(2, diagnostics["mapping_reference_error_count"])
+        self.assertEqual({self.mapping_path.relative_to(self.root).as_posix(), later_path.relative_to(self.root).as_posix()},
+                         {error["mapping_manifest"] for error in diagnostics["mapping_reference_errors"]})
+        self.assertEqual([0, 1], [error["mapping_input_index"] for error in diagnostics["mapping_reference_errors"]])
+
+    def test_invalid_mapping_diagnostics_windows_drive_paths_are_redacted(self):
+        self.emit()
+        bad_paths = ("C:/PRIVATE-drive-absolute", "C:PRIVATE-drive-relative",
+                     "z:/PRIVATE-drive-absolute", "z:PRIVATE-drive-relative")
+        self.map["mappings"][0]["implementation_evidence"] = [{"path": path, "sha256": "a" * 64} for path in bad_paths]
+        self.write(self.mapping_path.relative_to(self.root), self.map)
+        report, diagnostics = self.failed_mapping_report()
+        self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+        self.assertEqual(len(bad_paths), diagnostics["mapping_reference_error_count"])
+        self.assertTrue(all(error["code"] == "reference_path_invalid" and error["reference_path"] is None
+                            for error in diagnostics["mapping_reference_errors"]))
+        self.assertNotIn("PRIVATE", json.dumps(report))
+        self.assertEqual(list(range(len(bad_paths))), report["catalog_visibility"]["rows"][0]["mapping_reference_error_indexes"])
+
+    def test_invalid_mapping_diagnostics_unc_paths_are_redacted(self):
+        self.emit()
+        bad_paths = ("//PRIVATE-server/share/file", r"\\PRIVATE-server\share\file",
+                     "//?/C:/PRIVATE-extended", r"\\?\C:\PRIVATE-extended")
+        self.map["mappings"][0]["implementation_evidence"] = [{"path": path, "sha256": "a" * 64} for path in bad_paths]
+        self.write(self.mapping_path.relative_to(self.root), self.map)
+        report, diagnostics = self.failed_mapping_report()
+        self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+        self.assertEqual(len(bad_paths), diagnostics["mapping_reference_error_count"])
+        self.assertTrue(all(error["code"] == "reference_path_invalid" and error["reference_path"] is None
+                            for error in diagnostics["mapping_reference_errors"]))
+        self.assertNotIn("PRIVATE", json.dumps(report))
+        self.assertEqual(list(range(len(bad_paths))), report["catalog_visibility"]["rows"][0]["mapping_reference_error_indexes"])
+
+    def test_invalid_mapping_diagnostics_traversal_and_absolute_paths_are_redacted(self):
+        self.emit()
+        bad_paths = ("../PRIVATE-outside", "/PRIVATE-absolute", "src/../PRIVATE-traversal", "src\\PRIVATE-backslash", "PRIVATE\x00nul")
+        self.map["mappings"][0]["implementation_evidence"] = [{"path": path, "sha256": "a" * 64} for path in bad_paths]
+        self.write(self.mapping_path.relative_to(self.root), self.map)
+        report, diagnostics = self.failed_mapping_report()
+        self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+        self.assertEqual(len(bad_paths), diagnostics["mapping_reference_error_count"])
+        self.assertTrue(all(error["code"] == "reference_path_invalid" and error["reference_path"] is None
+                            for error in diagnostics["mapping_reference_errors"]))
+        self.assertNotIn("PRIVATE", json.dumps(report))
+        self.assertEqual(list(range(len(bad_paths))), report["catalog_visibility"]["rows"][0]["mapping_reference_error_indexes"])
+
+    def test_invalid_mapping_diagnostics_broken_reference_objects_and_digests_are_typed(self):
+        self.emit()
+        safe = self.artifact("src/safe-adapter.kt", b"// safe\n")
+        references = [None, ["PRIVATE-list"], "PRIVATE-scalar", {**safe, "sha256": None}, {**safe, "sha256": "PRIVATE-hash"}, 42]
+        self.map["mappings"][0]["implementation_evidence"] = references
+        self.write(self.mapping_path.relative_to(self.root), self.map)
+        report, diagnostics = self.failed_mapping_report()
+        self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+        self.assertEqual(6, diagnostics["mapping_reference_count"])
+        self.assertCountEqual(["reference_object_invalid"] * 4 + ["reference_digest_invalid"] * 2,
+                              [error["code"] for error in diagnostics["mapping_reference_errors"]])
+        self.assertNotIn("PRIVATE", json.dumps(report))
+        self.assertEqual(list(range(6)), report["catalog_visibility"]["rows"][0]["mapping_reference_error_indexes"])
+
+    def test_invalid_mapping_diagnostics_broken_reference_array_is_not_a_zero_error_scan(self):
+        self.emit()
+        self.map["mappings"][0]["implementation_evidence"] = {"PRIVATE": "not an array"}
+        self.write(self.mapping_path.relative_to(self.root), self.map)
+        report, diagnostics = self.failed_mapping_report()
+        self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+        self.assertEqual(0, diagnostics["mapping_reference_count"])
+        self.assertEqual(1, diagnostics["mapping_reference_error_count"])
+        error = diagnostics["mapping_reference_errors"][0]
+        self.assertEqual("reference_array_invalid", error["code"])
+        self.assertIsNone(error["reference_index"])
+        self.assertEqual([0], report["catalog_visibility"]["rows"][0]["mapping_reference_error_indexes"])
+        self.assertNotIn("PRIVATE", json.dumps(report))
+
+    def test_invalid_mapping_diagnostics_malformed_manifest_does_not_hide_later_mismatch(self):
+        self.emit()
+        late = self.artifact("src/later-clean-input.kt", b"// sealed later input\n")
+        self.write("modules/provider-zlater/src/main/resources/later-rule-map.json", {
+            "schema_version": 1, "provider_id": "later", "provider_version": "1.0",
+            "mappings": [{"rule_id": "ktc.example.rule", "relation": "exact", "implementation_evidence": [late]}],
+        })
+        (self.root / late["path"]).write_text("changed later input")
+        bad_manifests = (
+            b"PRIVATE malformed JSON",
+            b'{"schema_version":1,"mappings":[],"mappings":[]}',
+            b"[]",
+            json.dumps({**self.map, "mappings": {"PRIVATE": "not an array"}}).encode(),
+        )
+        for bad in bad_manifests:
+            with self.subTest(manifest_kind=type(bad).__name__):
+                self.mapping_path.write_bytes(bad)
+                report, diagnostics = self.failed_mapping_report()
+                self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+                codes = [error["code"] for error in diagnostics["mapping_reference_errors"]]
+                self.assertIn("reference_digest_mismatch", codes)
+                self.assertEqual(2, len(codes))
+                self.assertTrue(any(code in {"mapping_manifest_unavailable", "mapping_manifest_invalid", "mapping_records_invalid"} for code in codes))
+                self.assertNotIn("PRIVATE", json.dumps(report))
+                self.assertEqual(1, report["catalog_visibility"]["row_count"])
+
+    def test_invalid_mapping_diagnostics_unknown_rule_and_catalog_drift_never_echo_raw_values(self):
+        self.emit()
+        self.map["mappings"][0]["catalog_record_sha256"] = "0" * 64
+        self.map["mappings"].append({"rule_id": "PRIVATE-unknown-rule", "relation": "PRIVATE-invalid-relation"})
+        self.write(self.mapping_path.relative_to(self.root), self.map)
+        before = self.mapping_path.read_bytes()
+        report, diagnostics = self.failed_mapping_report()
+        self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+        codes = [error["code"] for error in diagnostics["mapping_reference_errors"]]
+        self.assertCountEqual(["catalog_reference_digest_mismatch", "mapping_rule_invalid", "mapping_relation_invalid"], codes)
+        self.assertEqual([0], report["catalog_visibility"]["rows"][0]["mapping_reference_error_indexes"])
+        self.assertTrue(all(error["rule_id"] is None for error in diagnostics["mapping_reference_errors"][1:]))
+        self.assertNotIn("PRIVATE", json.dumps(report))
+        self.assertEqual(before, self.mapping_path.read_bytes())
+
+    def test_invalid_mapping_diagnostics_outside_input_path_has_no_arbitrary_label(self):
+        self.emit()
+        report, diagnostics = self.failed_mapping_report("--mapping", "../PRIVATE-mapping.json")
+        self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+        self.assertEqual(1, diagnostics["mapping_reference_error_count"])
+        error = diagnostics["mapping_reference_errors"][0]
+        self.assertEqual("mapping_manifest_unavailable", error["code"])
+        self.assertIsNone(error["mapping_manifest"])
+        self.assertIsNone(error["reference_path"])
+        self.assertIsNone(error["rule_id"])
+        self.assertEqual([], report["catalog_visibility"]["rows"][0]["mapping_reference_error_indexes"])
+        self.assertNotIn("PRIVATE", json.dumps(report))
+
+    def test_invalid_mapping_diagnostics_unknown_catalog_or_context_keeps_unknown_denominators(self):
+        self.emit()
+        self.write("data/rules-example.json", self.catalog + self.catalog)
+        report, diagnostics = self.failed_mapping_report()
+        self.assertFalse(diagnostics["mapping_reference_scan_complete"])
+        for field in ("declared_catalog_records", "declared_context_count", "declared_row_count"):
+            self.assertIsNone(diagnostics[field])
+        self.assertIsNone(report["catalog_visibility"]["rows"])
+        self.write("data/rules-example.json", self.catalog)
+        report, diagnostics = self.failed_mapping_report("--context", str(self.root / "missing-context.json"))
+        self.assertEqual(1, diagnostics["declared_catalog_records"])
+        self.assertIsNone(diagnostics["declared_context_count"])
+        self.assertIsNone(diagnostics["declared_row_count"])
+        self.assertIsNone(report["catalog_visibility"]["rows"])
+
+    def test_valid_and_pending_inventory_never_runs_failure_mapping_diagnostics(self):
+        self.emit()
+        output = self.root / "coverage.json"
+        with patch("rule_coverage.mapping_reference_diagnostics", side_effect=AssertionError("failure-only collector called")) as probe:
+            self.assertEqual(0, main(["--root", str(self.root), "--output", str(output)]))
+            report = read_json(output)
+            self.assertTrue(report["inventory_valid"])
+            self.assertNotIn("failure_diagnostics", report)
+            self.assertEqual(1, main(["--root", str(self.root), "--require-qualified", "--output", str(output)]))
+            with patch("rule_coverage.generate_coverage", side_effect=KeyboardInterrupt):
+                with self.assertRaises(KeyboardInterrupt):
+                    main(["--root", str(self.root), "--output", str(output)])
+            probe.assert_not_called()
+        pending = read_json(output)
+        self.assertEqual("pending", pending["inventory_status"])
+        self.assertNotIn("failure_diagnostics", pending)
+        self.assertIsNone(pending["catalog_visibility"])
+
+    def test_no_output_failure_never_collects_mapping_diagnostics(self):
+        self.emit()
+        (self.root / "src/implementation.kt").write_text("stale sidecar source")
+        with patch("rule_coverage.mapping_reference_diagnostics") as probe, \
+                contextlib.redirect_stdout(io.StringIO()) as out, contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(2, main(["--root", str(self.root)]))
+        probe.assert_not_called()
+        self.assertEqual("", out.getvalue())
+
+
+class Successor1665CoverageTests(unittest.TestCase):
+    """New-generation SOURCE/declared-ledger bookkeeping, not old-report validation."""
+
+    def test_current_1665_vector_is_explicit_and_legacy1663_stays_frozen(self):
+        root = Path(__file__).resolve().parents[1]
+        old = (root / "modules/kernel/src/test/resources/joint-completion-full-catalog-1663.txt").read_bytes()
+        new = (root / "modules/kernel/src/test/resources/joint-completion-full-catalog-1665.txt").read_bytes()
+        self.assertEqual("4c00ec83059325b8ee2fac672e6c53948746bda6920d900a9d1942ce1b03520d", digest(old))
+        self.assertEqual("f7bc5eb975499c10ced7fc10ec7938984f98eb19079f9fcce32d451a8a5de431", digest(new))
+        old_ids, new_ids = old.decode().splitlines(), new.decode().splitlines()
+        self.assertEqual((1663, 1665), (len(old_ids), len(new_ids)))
+        self.assertEqual(sorted(set(new_ids)), new_ids)
+        self.assertEqual({"ktc.compiler.common.error_suppression", "ktc.compiler.common.inapplicable_operator_modifier"},
+                         set(new_ids) - set(old_ids))
+        self.assertTrue(set(old_ids) < set(new_ids))
+        compact = json.dumps(new_ids, separators=(",", ":"), ensure_ascii=False).encode()
+        self.assertEqual("121660fc2a5aed084688d0c549f9e1bece2ec514e9ace4748211b55fa87cc1c5", digest(compact))
+
+    def test_current_1665_keeps_all_frozen_records_and_two_planned_additions(self):
+        root = Path(__file__).resolve().parents[1]
+        frozen = frozen_1663_catalog_root(self)
+        before, after = {}, {}
+        for name in ("core", "ecosystem", "libraries", "platform"):
+            relative = "data/rules-" + name + ".json"
+            before.update({record["id"]: record for record in json.loads((frozen / relative).read_bytes())})
+            after.update({record["id"]: record for record in json.loads((root / relative).read_bytes())})
+        self.assertEqual((1663, 1665), (len(before), len(after)))
+        self.assertEqual(before, {key: after[key] for key in before})
+        additions = {
+            "ktc.compiler.common.error_suppression": ("advisory", "probable_defect", "intent_dependent", "warning"),
+            "ktc.compiler.common.inapplicable_operator_modifier": ("enabled_when_validated", "correctness", "high", "error"),
+        }
+        self.assertEqual(set(additions), set(after) - set(before))
+        for identifier, expected in additions.items():
+            record = after[identifier]
+            self.assertEqual("planned", record["status"])
+            self.assertEqual(expected, tuple(record[key] for key in ("default_activation", "kind", "certainty", "severity")))
+
+    def test_current_1665_declared_eight_contexts_retain_all_obligations_without_credit(self):
+        root = Path(__file__).resolve().parents[1]
+        selection = json.loads((root / "providers/coverage/current-inputs-1665-v1.json").read_bytes())
+        self.assertEqual("ktchecker/owner-full-catalog/1665-u2/1", selection["contract_id"])
+        contexts = []
+        for item in selection["contexts"]:
+            body = (root / item["path"]).read_bytes()
+            self.assertEqual((item["bytes"], item["sha256"]), (len(body), digest(body)))
+            contexts.append(json.loads(body))
+        # This explicit SOURCE metadata projection never reads provider envelopes,
+        # strict mapping references, historical reports or case artifacts.
+        visible = catalog_visibility(root, evidence_paths=[], contexts=contexts)
+        self.assertEqual((1665, 46, 1619), tuple(visible[key] for key in ("catalog_records", "excluded_records", "candidate_records")))
+        self.assertEqual((8, 13320, 368, 12952), tuple(visible[key] for key in ("context_count", "row_count", "excluded_cells", "candidate_cells")))
+        ids = {record["rule_id"] for record in visible["catalog_rules"]}
+        by_context = {}
+        for row in visible["rows"]:
+            by_context.setdefault(row["context_sha256"], set()).add(row["rule_id"])
+            self.assertIsNone(row["mapped"])
+            self.assertFalse(row["implemented"] or row["tested"] or row["qualified"] or row["runtime_default_enabled"])
+            self.assertEqual("unavailable", row["evidence_status"])
+        self.assertEqual(8, len(by_context))
+        self.assertTrue(all(identifiers == ids for identifiers in by_context.values()))
+        self.assertFalse(visible["current_coverage_known"] or visible["release_qualified"])
 
 
 if __name__ == "__main__":

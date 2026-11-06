@@ -32,6 +32,7 @@ class KernelService private constructor(
     private val resultPolicy: ResultPolicy,
     planAuthority: ReviewPlanAuthority,
     routingAuthority: ReviewPlanRoutingAuthority,
+    policyReassessmentAuthority: PolicyReassessmentAuthority,
 ) : AutoCloseable {
     internal val policyEvaluatorIdentity = capturePolicyEvaluatorIdentity(resultPolicy)
     internal val admittedPolicyCertificate = canonical(PolicyCertificate(policyEvaluatorIdentity, PolicyCertificate.ADMITTED))
@@ -42,12 +43,18 @@ class KernelService private constructor(
     internal val providerVersion = provider.version
     internal val supportedRules = provider.supportedRuleIds.toSortedSet().toSet()
     internal val authorizedFindingProviders = findingProviders.mapValues { it.value.toSet() }.toMap()
-    internal val providerKey = Digests.sha256(canonical(listOf(providerId, providerVersion,
+    // A new raw-publication contract cannot reuse a pre-fence execution certificate. Old rows
+    // remain audited under their old key; upgrading never invents historical deadline evidence.
+    private val rawPublicationValidationProfile = "ktchecker/kernel/raw-publication-validation/4"
+    internal val providerKey = Digests.sha256(canonical(listOf(rawPublicationValidationProfile, providerId, providerVersion,
         canonical(supportedRules.toList()), canonical(authorizedFindingProviders.mapValues { it.value.sorted() }))))
     private val stopped = AtomicBoolean(false)
     internal val ingestion = Semaphore(maxOf(1, config.workerCount))
     private val cursorSecret: ByteArray
     private val scheduler: WorkScheduler
+    internal val instanceId: String = UUID.randomUUID().toString()
+    internal val policyReassessments = PolicyReassessments(this, policyReassessmentAuthority)
+    internal val producedPlans = ProducedPlans(this, planAuthority)
     internal val plans = ParentPlans(this, planAuthority, routingAuthority)
 
     init {
@@ -75,8 +82,9 @@ class KernelService private constructor(
             resultPolicy: ResultPolicy = ResultPolicy.NONE,
             planAuthority: ReviewPlanAuthority = ReviewPlanAuthority.DENY,
             routingAuthority: ReviewPlanRoutingAuthority = ReviewPlanRoutingAuthority.DENY,
+            policyReassessmentAuthority: PolicyReassessmentAuthority = PolicyReassessmentAuthority.DENY,
         ): KernelService = KernelService(dataDir, provider, ContractJson.decodeFromString<KernelConfig>(canonical(config)),
-            snapshotGate, preparedInputObserver, findingProviders, resultPolicy, planAuthority, routingAuthority)
+            snapshotGate, preparedInputObserver, findingProviders, resultPolicy, planAuthority, routingAuthority, policyReassessmentAuthority)
     }
 
     fun registerClient(binding: ClientBinding): ClientRegistration = registerClient(ClientRegistration(binding,
@@ -158,20 +166,18 @@ class KernelService private constructor(
                         c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=? AND patch_id=?", binding.clientId, normalized.patchId) != 0L) {
                         fail("patch_id_conflict", "Patch ID already has a distinct accepted request in this client lineage")
                     }
-                    val workExists = c.count("SELECT COUNT(*) FROM work WHERE work_key=?", key) != 0L
-                    if (!workExists) {
+                    val workDomain = c.one("SELECT provider_key,fair_key FROM work WHERE work_key=?", key) { it.getString(1) to it.getString(2) }
+                    val fairKey = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
+                    if (workDomain != null && workDomain != (providerKey to fairKey)) fail("ledger_corrupt", "Retained work has a different provider or physical worktree")
+                    ledger.admitProviderFairness(c, workDomain?.first ?: providerKey, workDomain?.second ?: fairKey, binding.clientId)
+                    if (workDomain == null) {
                         val ready = staged ?: fail("archive_missing", "Prepared input is unavailable")
-                        if (c.count("SELECT COUNT(*) FROM work WHERE state='queued'") >= config.maxQueuedWork) {
+                        if (queuedCapacityUsed(c) >= config.maxQueuedWork) {
                             fail("queue_full", "Durable work queue is full; request was not accepted")
                         }
-                        val stored = c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM work")
+                        val stored = archiveBytesUsed(c)
                         if (ready.bytes > config.maxArchiveBytes - stored) fail("archive_full", "Durable archive quota is full; request was not accepted")
-                        val fairKey = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
                         ready.install()
-                        // New queues join the current round, rather than jumping in front of all
-                        // previously served queues with an artificial service age of zero.
-                        c.execute("""INSERT OR IGNORE INTO fair_queues(fair_key,last_served)
-                            VALUES(?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", fairKey)
                         c.execute("""INSERT INTO work(work_key,input_json,frozen_json,provider_key,fair_key,state,archive_bytes,created_at)
                             VALUES(?,?,?,?,?,'queued',?,?)""", key, canonical(normalized.input), canonical(ready.input),
                             providerKey, fairKey, ready.bytes, System.currentTimeMillis())
@@ -182,9 +188,6 @@ class KernelService private constructor(
                         input_json,work_key,sequence,policy_certificate,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
                         reviewId, binding.clientId, normalized.patchId, normalized.idempotencyKey, requestHash, requestJson,
                         canonical(normalized.input), key, sequence, admittedPolicyCertificate, System.currentTimeMillis())
-                    c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
-                        SELECT ?,fair_key,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter')
-                        FROM work WHERE work_key=?""", binding.clientId, key)
                     c.execute("UPDATE clients SET next_review=next_review+1,epoch=epoch+1 WHERE client_id=?", binding.clientId)
                     val raw = c.one("SELECT result_json FROM work WHERE work_key=? AND state='complete'", key) {
                         it.getString(1)?.let { json -> ContractJson.decodeFromString<ProviderResult>(json) }
@@ -214,6 +217,13 @@ class KernelService private constructor(
             readStatus(c, reviewId, binding.clientId)
         }
     }
+
+    /** Same certified raw execution, separate captured policy view; never a new provider submission. */
+    fun reassessPolicy(credential: ClientCredential, request: PolicyReassessmentRequest): PolicyReassessmentView =
+        policyReassessments.reassess(credential, request)
+
+    fun policyReassessmentStatus(credential: ClientCredential, idempotencyKey: String): PolicyReassessmentView =
+        policyReassessments.status(credential, idempotencyKey)
 
     fun submitPlan(credential: ClientCredential, request: SubmitPlanRequest): ParentPlanStatus = plans.submit(credential, request)
     fun planStatus(credential: ClientCredential, planId: String): ParentPlanStatus = plans.status(credential, planId)
@@ -330,7 +340,7 @@ class KernelService private constructor(
                     reasons += "lineage_changed_during_prepare"
                 }
                 reasons += expected.reasons
-                reasons += sourceReasons(input, check)
+                reasons += sourceReasons(input, check, expected.policy.active?.capture?.currentPolicyDigest ?: input?.context?.configurationDigest)
                 reasons += planSourceReasons(expected, check)
                 if (c.one("SELECT gate_state FROM clients WHERE client_id=?", binding.clientId) { it.getString(1) } != "open") {
                     reasons += "lineage_finalization_already_claimed"
@@ -416,13 +426,14 @@ class KernelService private constructor(
     }
 
     private data class LineageFacts(val input: AnalysisInput?, val epoch: Long, val reasons: List<String>,
-        val plan: ParentPlans.Stored?, val reviewFrontier: Long)
+        val plan: ParentPlans.Stored?, val reviewFrontier: Long, val policy: PolicyReassessments.Selection)
     private fun lineageFacts(c: Connection, binding: ClientBinding): LineageFacts {
         val input = latestInput(c, binding.clientId)
         val plan = plans.latest(c, binding.clientId)
+        val policy = policyReassessments.selection(c, binding, input)
         return LineageFacts(input, c.count("SELECT epoch FROM clients WHERE client_id=?", binding.clientId),
-            lineageReasons(c, binding, input, plan) + plans.lineageReasons(c, binding.clientId), plan,
-            c.count("SELECT next_review-1 FROM clients WHERE client_id=?", binding.clientId))
+            lineageReasons(c, binding, input, plan, policy) + plans.lineageReasons(c, binding.clientId), plan,
+            c.count("SELECT next_review-1 FROM clients WHERE client_id=?", binding.clientId), policy)
     }
 
     private fun gateReasons(c: Connection, binding: ClientBinding, saved: SavedCut, check: SnapshotCheck, facts: LineageFacts): List<String> = buildList {
@@ -436,7 +447,7 @@ class KernelService private constructor(
         addAll(facts.reasons)
         addAll(deliveryReasons(c, binding.clientId, saved.cut.requiredEventIds, saved.cut.eventFrontier))
         // Check expiry last, immediately before the guarded action, not before a possibly long DB wait.
-        addAll(sourceReasons(saved.input, check))
+        addAll(sourceReasons(saved.input, check, facts.policy.active?.capture?.currentPolicyDigest ?: saved.input?.context?.configurationDigest))
         addAll(planSourceReasons(facts, check))
     }
 
@@ -447,10 +458,13 @@ class KernelService private constructor(
     internal fun isStopped(): Boolean = stopped.get()
     internal fun ensureOpen() { if (stopped.get()) fail("service_closed", "Kernel service is closed") }
 
-    internal fun validateInput(binding: ClientBinding, request: SubmitRequest) {
+    internal fun validateInput(binding: ClientBinding, request: SubmitRequest, allowObserved: Boolean = false) {
         identifier(request.patchId, "patch ID")
         identifier(request.idempotencyKey, "idempotency key")
         val input = request.input
+        if (!allowObserved && observedExportReasons(input).isNotEmpty()) {
+            fail("observed_export_typed_plan_required", "Observed one-shot inputs cannot be submitted as ordinary or downgraded reusable work")
+        }
         if (input.snapshot.ownerId != binding.ownerId || input.snapshot.workspaceId != binding.workspaceId || input.snapshot.worktreeId != binding.worktreeId) {
             fail("snapshot_scope_mismatch", "Snapshot does not belong to the bound owner/workspace/worktree")
         }
@@ -480,9 +494,22 @@ class KernelService private constructor(
         if (pendingReviews(c, clientId) >= config.maxPendingPerClient) fail("client_queue_full", "Client's pending obligation limit is reached")
     }
 
-    internal fun pendingReviews(c: Connection, clientId: String): Long = c.count("""SELECT COUNT(*) FROM reviews r
-        JOIN work w ON w.work_key=r.work_key WHERE r.client_id=?
-        AND (w.state IN ('queued','running') OR r.effective_result_json IS NULL)""", clientId)
+    internal fun archiveBytesUsed(c: Connection): Long {
+        val work = c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM work")
+        val declarations = c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM produced_plan_admissions")
+        val reservations = c.count("SELECT COALESCE(SUM(reserved_archive_bytes),0) FROM plan_slot_resolution_claims")
+        if (work < 0 || declarations < 0 || reservations < 0 || declarations > Long.MAX_VALUE - work ||
+            reservations > Long.MAX_VALUE - work - declarations) fail("archive_accounting_corrupt", "Retained archive totals overflowed")
+        return work + declarations + reservations // Conservative cap remains charged, including actual ready K.
+    }
+
+    internal fun queuedCapacityUsed(c: Connection): Long = c.count("SELECT COUNT(*) FROM work WHERE state='queued'") +
+        c.count("""SELECT COUNT(*) FROM produced_plan_admissions a WHERE NOT EXISTS(
+            SELECT 1 FROM plan_slot_resolutions r WHERE r.plan_id=a.plan_id AND r.slot_id=a.consumer_slot_id)""")
+
+    internal fun pendingReviews(c: Connection, clientId: String): Long = c.count("""SELECT COUNT(*) FROM review_executions r
+        LEFT JOIN work w ON w.work_key=r.work_key WHERE r.client_id=? AND r.resolution_state<>'unavailable'
+        AND (w.work_key IS NULL OR w.state IN ('queued','running') OR r.effective_result_json IS NULL)""", clientId)
 
     private fun idempotent(c: Connection, clientId: String, key: String, hash: String): ReviewStatus? {
         if (c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=? AND idempotency_key=?", clientId, key) != 0L) {
@@ -495,17 +522,25 @@ class KernelService private constructor(
         return readStatus(c, prior.first, clientId)
     }
 
-    internal fun readStatus(c: Connection, reviewId: String, clientId: String): ReviewStatus =
-        c.one("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM reviews r JOIN work w
+    internal fun readStatus(c: Connection, reviewId: String, clientId: String): ReviewStatus {
+        producedPlans.requireReviewRelation(c, reviewId)
+        return c.one("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM review_executions r LEFT JOIN work w
             ON w.work_key=r.work_key WHERE r.review_id=? AND r.client_id=?""", reviewId, clientId, map = ::statusRow)
             ?: fail("review_not_found", "Review is not available to this client")
+    }
 
     private fun statusRow(row: ResultSet): ReviewStatus {
         val input = ContractJson.decodeFromString<AnalysisInput>(row.getString("input_json"))
+        val unsupportedProducedCatalog = row.getString("kind") == "produced" && !OwnerFullCatalog1665.accepts(input.requiredRuleIds)
         val rawJson = row.getString("result_json")
         val effectiveJson = row.getString("effective_result_json")
         val result = (effectiveJson ?: rawJson)?.let { ContractJson.decodeFromString<ProviderResult>(it) }
-        val validation = ContractJson.decodeFromString<List<String>>(row.getString("validation_json")) +
+        val validation = ContractJson.decodeFromString<List<String>>(row.getString("validation_json") ?: "[]") +
+            observedExportReasons(input) +
+            ContractJson.decodeFromString<List<String>>(row.getString("resolution_reasons_json")) +
+            (if (row.getString("kind") == "produced") listOf("produced_plan_preview_unqualified") else emptyList()) +
+            (if (unsupportedProducedCatalog) listOf(PRODUCED_CATALOG_GENERATION_UNSUPPORTED) else emptyList()) +
+            (if (row.getString("resolution_state") == "deferred") listOf("produced_slot_deferred") else emptyList()) +
             ContractJson.decodeFromString<List<String>>(row.getString("policy_validation_json")) +
             evaluatorReasons(row.getString("policy_certificate")) +
             (if (rawJson != null && effectiveJson == null) listOf("policy_evaluation_missing") else emptyList()) +
@@ -514,6 +549,10 @@ class KernelService private constructor(
         val cancelled = row.getInt("cancelled") != 0
         val state = when {
             cancelled -> "cancelled"
+            unsupportedProducedCatalog -> "incomplete"
+            row.getString("resolution_state") == "deferred" -> "deferred"
+            row.getString("resolution_state") == "unavailable" -> "incomplete"
+            row.getString("work_state") == null -> "incomplete"
             row.getString("work_state") != "complete" -> row.getString("work_state")
             validation.isNotEmpty() -> "incomplete"
             else -> "complete"
@@ -549,6 +588,20 @@ class KernelService private constructor(
         raw to listOf("result_policy_unavailable")
     }
 
+    // Intrinsic failure evidence cannot be waived by either disposition or severity policy.
+    // These signals need no catalog/config lookup under publication/final-gate transactions.
+    // Keep them aligned with config's isProtectedFailure; registered protected rules remain the
+    // trusted policy adapter's responsibility. Comparable successful absence is checked separately.
+    internal fun currentExecutionFailure(finding: Finding): Boolean {
+        val kinds = finding.evidence.map { it.kind.lowercase() }
+        if (kinds.any { it in setOf("build_failure", "execution_failure", "compiler_failure", "test_failure", "worker_failure") }) return true
+        if (finding.verification.any { it.state.lowercase() in setOf("failed", "error", "crashed") }) return true
+        return finding.severity.lowercase() in setOf("error", "fatal") && (
+            kinds.any { it in setOf("compiler_diagnostic", "build_result", "test_result", "execution_result") } ||
+                finding.providerId.lowercase().let { "compiler" in it || "native" in it || "build" in it || "runtime" in it }
+            )
+    }
+
     private fun evaluateResultPolicy(binding: ClientBinding, input: AnalysisInput, raw: ProviderResult): Pair<ProviderResult, List<String>> {
         val rawJson = canonical(raw)
         val issues = mutableListOf<String>()
@@ -558,7 +611,8 @@ class KernelService private constructor(
             val proposed = ContractJson.decodeFromString<ProviderResult>(canonical(resultPolicy.apply(binding, input, detached)))
             val restored = proposed.copy(findings = proposed.findings.map { it.copy(disposition = "open") })
             if (raw.findings.any { it.disposition != "open" } || canonical(restored) != rawJson ||
-                proposed.findings.any { it.disposition !in setOf("open", "accepted", "suppressed", "disabled", "baselined", "unavailable") }) {
+                proposed.findings.any { it.disposition !in setOf("open", "accepted", "suppressed", "disabled", "baselined", "unavailable") ||
+                    (it.disposition != "open" && currentExecutionFailure(it)) }) {
                 issues += "result_policy_changed_protected_evidence"
                 raw
             } else proposed
@@ -613,7 +667,7 @@ class KernelService private constructor(
         for (id in pending) {
             if (isStopped()) break
             // The read closes before any adapter restoration I/O or config/source locks begin.
-            val captured = ledger.read { c -> c.one("""SELECT r.work_key,r.input_json,client.binding_json FROM reviews r
+            val captured = ledger.read { c -> c.one("""SELECT r.work_key,r.input_json,client.binding_json FROM review_executions r
                 JOIN work w ON w.work_key=r.work_key JOIN clients client ON client.client_id=r.client_id
                 WHERE r.review_id=? AND w.provider_key=? AND w.state='complete' AND w.result_json IS NOT NULL
                     AND r.effective_result_json IS NULL AND r.policy_certificate=?""", id, providerKey, admittedPolicyCertificate) {
@@ -637,7 +691,7 @@ class KernelService private constructor(
                 if (isStopped()) return@transaction
                 // Re-read and detach after restoration. The adapter cannot mutate an input or bind
                 // a different consumer, evaluator, provider or raw work between the two phases.
-                val raw = c.one("""SELECT w.result_json FROM reviews r JOIN work w ON w.work_key=r.work_key
+                val raw = c.one("""SELECT w.result_json FROM review_executions r JOIN work w ON w.work_key=r.work_key
                     JOIN clients client ON client.client_id=r.client_id WHERE r.review_id=? AND r.work_key=?
                         AND r.input_json=? AND client.binding_json=? AND w.provider_key=? AND w.state='complete'
                         AND w.result_json IS NOT NULL AND r.effective_result_json IS NULL AND r.policy_certificate=?""",
@@ -661,7 +715,7 @@ class KernelService private constructor(
         if (isStopped()) return emptyList()
         val key = "policy_recovery_cursor:" + Digests.sha256(canonical(listOf(providerKey, policyEvaluatorIdentity)))
         val cursor = c.one("SELECT value FROM metadata WHERE key=?", key) { it.getString(1).toLongOrNull() } ?: 0L
-        fun select(after: Boolean, limit: Int): List<Pair<Long, String>> = c.query("""SELECT r.rowid,r.review_id FROM reviews r
+        fun select(after: Boolean, limit: Int): List<Pair<Long, String>> = c.query("""SELECT r.rowid,r.review_id FROM review_executions r
             JOIN work w ON w.work_key=r.work_key WHERE r.rowid ${if (after) ">" else "<="} ?
                 AND w.provider_key=? AND w.state='complete' AND w.result_json IS NOT NULL
                 AND r.effective_result_json IS NULL AND r.policy_certificate=? ORDER BY r.rowid LIMIT ?""",
@@ -760,6 +814,8 @@ class KernelService private constructor(
         if (input == null) return action(SnapshotCheck(false, reasons = listOf("no_review_input")))
         // Do not catch the callback: DB/auth/action failures must not execute it for a second time.
         val detached: (SnapshotCheck) -> T = { check -> action(ContractJson.decodeFromString(canonical(check))) }
+        val policy = facts.policy.active
+        if (facts.plan == null && policy != null) return policyReassessments.withCurrent(policy, detached)
         return if (facts.plan == null) snapshotGate.withCurrentSnapshot(input, detached)
         else snapshotGate.withCurrentSnapshots(facts.plan.definition.slots.asReversed().map { it.input }, detached)
     }
@@ -777,14 +833,15 @@ class KernelService private constructor(
             check.contextIdentities.toSet() != required.toSet()) add("plan_context_vector_authority_mismatch")
     }
 
-    private fun sourceReasons(input: AnalysisInput?, check: SnapshotCheck): List<String> = buildList {
+    private fun sourceReasons(input: AnalysisInput?, check: SnapshotCheck,
+                              expectedConfiguration: String? = input?.context?.configurationDigest): List<String> = buildList {
         if (input == null) { add("no_accepted_reviews"); return@buildList }
         if (!check.authoritative || !check.current) add("current_source_configuration_authority_unavailable")
         if (check.validUntilEpochMillis != null && System.currentTimeMillis() >= check.validUntilEpochMillis) add("configuration_authority_expired")
         if (check.snapshotId != input.snapshot.snapshotId) add("current_snapshot_mismatch")
         if (check.sourceEpoch == null || check.sourceEpoch < 0 || check.analysisEpoch.isNullOrBlank()) add("authority_epoch_unavailable")
         val context = input.context
-        listOf("configuration" to (context.configurationDigest to check.configurationDigest),
+        listOf("configuration" to (expectedConfiguration to check.configurationDigest),
             "model" to (context.modelDigest to check.modelDigest), "dependency" to (context.dependencyDigest to check.dependencyDigest),
             "toolchain" to (context.toolchainDigest to check.toolchainDigest)).forEach { (name, pair) ->
             if (pair.first == null || !Digests.valid(pair.first!!) || pair.first != pair.second) add("${name}_authority_mismatch_or_unknown")
@@ -795,10 +852,40 @@ class KernelService private constructor(
     }
 
     private data class ReviewRecord(val status: ReviewStatus, val input: AnalysisInput, val certificateValid: Boolean)
-    private fun lineageReasons(c: Connection, binding: ClientBinding, latest: AnalysisInput?, plan: ParentPlans.Stored?): List<String> {
-        val records = c.query("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM reviews r JOIN work w
+
+    /**
+     * Fresh current-policy accounting is not a proof of absence or a rewrite of historical policy.
+     * The accepted input must be exactly equal except for configurationDigest; paths, execution,
+     * the full manifest and every other context/policy field remain part of the comparison. In
+     * particular, this does not equate Workbench activation/execution-plan tokens across policies
+     * or its fresh per-prepare materialized roots.
+     * A provider fingerprint alone is not evidence identity: retain every Finding field other than
+     * the policy-owned disposition. `current` already contains only full-scope complete certificates.
+     */
+    private fun accountedByCurrentPolicy(record: ReviewRecord, finding: Finding, current: List<ReviewRecord>): Boolean {
+        if (record.status.state != "complete" || !record.certificateValid || currentExecutionFailure(finding)) return false
+        val oldConfiguration = record.input.context.configurationDigest ?: return false
+        if (!Digests.valid(oldConfiguration)) return false
+        val evidence = finding.copy(disposition = "open")
+        return current.any { candidate ->
+            val configuration = candidate.input.context.configurationDigest
+            candidate.status.sequence > record.status.sequence && configuration != null &&
+                configuration != oldConfiguration && Digests.valid(configuration) &&
+                candidate.input == record.input.copy(context = record.input.context.copy(configurationDigest = configuration)) &&
+                candidate.status.result?.findings.orEmpty().any {
+                    it.disposition in setOf("accepted", "suppressed", "disabled", "baselined") &&
+                        it.copy(disposition = "open") == evidence
+                }
+        }
+    }
+
+    internal fun lineageReasons(c: Connection, binding: ClientBinding, latest: AnalysisInput?, plan: ParentPlans.Stored?,
+                                policy: PolicyReassessments.Selection = policyReassessments.selection(c, binding, latest)): List<String> {
+        val records = c.query("""SELECT r.*,w.state work_state,w.result_json,w.validation_json FROM review_executions r LEFT JOIN work w
             ON w.work_key=r.work_key WHERE r.client_id=? ORDER BY r.sequence""", binding.clientId) {
+            producedPlans.requireReviewRelation(c, it.getString("review_id"))
             val input = ContractJson.decodeFromString<AnalysisInput>(it.getString("input_json"))
+            val executionInput = ContractJson.decodeFromString<AnalysisInput>(it.getString("execution_input_json"))
             val rawJson = it.getString("result_json")
             val effectiveJson = it.getString("effective_result_json")
             val raw = rawJson?.let { text -> ContractJson.decodeFromString<ProviderResult>(text) }
@@ -809,20 +896,25 @@ class KernelService private constructor(
             val workCertificate = c.one("SELECT * FROM work_certificates WHERE work_key=?", it.getString("work_key")) { cert ->
                 val expected = Digests.sha256(canonical(listOf(cert.getString("input_key"), cert.getString("effective_key"),
                     cert.getString("result_digest"), cert.getString("provider_key"))))
-                cert.getString("certificate_id") == expected && cert.getString("input_key") == input.analysisKey() &&
+                cert.getString("certificate_id") == expected && cert.getString("input_key") == executionInput.analysisKey() &&
                     rawJson != null && cert.getString("result_digest") == Digests.sha256(rawJson) &&
                     cert.getString("provider_key") == providerKey
             } ?: false
-            ReviewRecord(statusRow(it), input, workCertificate && certificate?.evaluatorIdentity == policyEvaluatorIdentity &&
+            val relationValid = it.getString("kind") != "produced" || producedPlans.executionCertificateValid(c, it.getString("review_id"), executionInput)
+            ReviewRecord(statusRow(it), input, workCertificate && relationValid && certificate?.evaluatorIdentity == policyEvaluatorIdentity &&
                 policyDigest != null && policyDigest == certificate?.digest)
         }
         val reasons = mutableListOf<String>()
-        if (records.isEmpty() || latest == null) return listOf("no_accepted_reviews")
+        reasons += policy.reasons
+        if (policy.active?.auditOnly == true) reasons += "policy_reassessment_audit_only:${policy.active.viewId}"
+        if (records.isEmpty() || latest == null) return (reasons + "no_accepted_reviews").distinct().sorted()
+        val scalarConfiguration = policy.active?.capture?.currentPolicyDigest ?: latest.context.configurationDigest
         for (record in records) {
+            if (observedExportReasons(record.input).isNotEmpty()) reasons += "$OBSERVED_EXPORT_CONFIGURATION_GAP:${record.status.reviewId}"
             record.status.reasons.filter { it in setOf("policy_evaluator_identity_unknown", "policy_evaluator_mismatch") }
                 .forEach { reasons += "$it:${record.status.reviewId}" }
             when (record.status.state) {
-                "queued", "running" -> reasons += "review_pending:${record.status.reviewId}"
+                "queued", "running", "deferred" -> reasons += "review_pending:${record.status.reviewId}"
                 "cancelled" -> reasons += "review_cancelled:${record.status.reviewId}"
                 "complete" -> if (!record.certificateValid) reasons += "review_certificate_invalid:${record.status.reviewId}"
                 else -> reasons += "review_incomplete:${record.status.reviewId}"
@@ -830,16 +922,26 @@ class KernelService private constructor(
         }
         val current = records.filter { record ->
             record.status.state == "complete" && record.certificateValid && record.input.snapshot.snapshotId == latest.snapshot.snapshotId &&
-                (if (plan == null) record.input.context.configurationDigest == latest.context.configurationDigest &&
+                (if (plan == null) record.input.context.configurationDigest == scalarConfiguration &&
                     record.input.context.modelDigest == latest.context.modelDigest &&
                     record.input.context.dependencyDigest == latest.context.dependencyDigest &&
                     record.input.context.toolchainDigest == latest.context.toolchainDigest
                 else plan.definition.slots.any { it.state == "pending" && it.identity == contextIdentity(record.input) }) &&
                 record.input.context.fullProject && record.input.snapshot.scopeExclusions.isEmpty() && record.input.snapshot.unknownInputs.isEmpty()
         }
+        // Same-raw views carry original certified coverage, never fresh execution/absence authority.
+        // Require the full original accepted input, not a configuration-rewritten synthetic input.
+        val reassessed = if (plan != null || policy.active == null) emptyList() else records.filter { record ->
+            val view = policy.byReview[record.status.reviewId]
+            record.status.state == "complete" && record.certificateValid && record.input == latest &&
+                record.input.context.fullProject && record.input.snapshot.scopeExclusions.isEmpty() && record.input.snapshot.unknownInputs.isEmpty() &&
+                view != null && !view.auditOnly && view.capture.currentPolicyDigest == scalarConfiguration &&
+                view.capture.analysisAuthorityDigest == policy.active.capture.analysisAuthorityDigest
+        }
+        val reassessedIds = reassessed.map { it.status.reviewId }.toSet()
         val obligations = records.flatMap { record -> record.input.requiredRuleIds.map { record.input.context.scope to it } }.distinct()
         for ((context, rule) in obligations) {
-            if (current.none { it.input.context.scope == context && rule in it.input.requiredRuleIds }) reasons += "current_coverage_missing:${context.id}:$rule"
+            if ((current + reassessed).none { it.input.context.scope == context && rule in it.input.requiredRuleIds }) reasons += "current_coverage_missing:${context.id}:$rule"
         }
         val snapshots = records.associate { it.input.snapshot.snapshotId to it.input.snapshot.parentSnapshotId }
         fun descends(new: String, old: String): Boolean {
@@ -855,16 +957,28 @@ class KernelService private constructor(
         // later full-scope complete certificate in the same context/rule and proven ancestry closes
         // absence; incomplete/cancelled/different-policy/different-context reports never resolve it.
         for (record in records) {
-            for (finding in record.status.result?.findings.orEmpty()) {
+            for ((findingIndex, finding) in record.status.result?.findings.orEmpty().withIndex()) {
                 if (finding.disposition == "unavailable") {
                     reasons += "finding_unavailable:${finding.fingerprint}"
                     continue
                 }
-                if (finding.severity !in config.blockingSeverities) continue
-                val currentConfiguration = if (plan == null) latest.context.configurationDigest else
+                // An advisory label or owner severity threshold is not proof an execution passed.
+                // Retain the same comparable-descendant resolution path as other open findings.
+                if (finding.severity !in config.blockingSeverities && !currentExecutionFailure(finding)) continue
+                val view = policy.byReview[record.status.reviewId]?.takeIf { record.status.reviewId in reassessedIds }
+                if (view != null) {
+                    val classified = view.result.findings.getOrNull(findingIndex)
+                    if (!currentExecutionFailure(finding) && classified?.disposition in setOf("accepted", "suppressed", "baselined") &&
+                        classified?.copy(disposition = "open") == finding.copy(disposition = "open")) continue
+                    // Reopening is explicit; no older accepted label or absence path overrides it.
+                    reasons += "open_finding:${finding.fingerprint}"
+                    continue
+                }
+                val currentConfiguration = if (plan == null) scalarConfiguration else
                     plan.definition.slots.firstOrNull { it.identity?.context == record.input.context.scope }?.identity?.configurationDigest
                 if (finding.disposition in setOf("accepted", "suppressed", "disabled", "baselined") &&
                     record.certificateValid && record.input.context.configurationDigest == currentConfiguration) continue
+                if (accountedByCurrentPolicy(record, finding, current)) continue
                 val recheck = current.lastOrNull {
                     it.status.sequence >= record.status.sequence && it.input.context.scope == finding.context &&
                         finding.ruleId in it.input.requiredRuleIds &&

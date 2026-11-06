@@ -435,6 +435,299 @@ os._exit(17)  # actual owner death, no explicit close or cancellation write
         self.assertFalse(marker.exists())
 
 
+# This is a deterministic C state model, not an OS syscall experiment. System
+# headers are loaded before selecting the production read-only group branch;
+# every wait/signal and clock observation is replaced, on every actual host.
+# The production entry point, fork, and exec are never invoked.
+MOCKED_SHUTDOWN_SOURCE = r"""
+#define _POSIX_C_SOURCE 200809L
+#define _DARWIN_C_SOURCE 1
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <poll.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
+static int mock_clock(clockid_t id, struct timespec *value);
+static int mock_kill(pid_t pid, int number);
+static int mock_waitid(idtype_t kind, id_t id, siginfo_t *info, int options);
+static pid_t mock_waitpid(pid_t pid, int *status, int options);
+static pid_t forbidden_fork(void);
+static int forbidden_execv(const char *path, char *const arguments[]);
+#define clock_gettime mock_clock
+#define kill mock_kill
+#define waitid mock_waitid
+#define waitpid mock_waitpid
+#define fork forbidden_fork
+#define execv forbidden_execv
+#define main uncalled_owned_supervisor_main
+/* Select algorithm code only, never pretend this binary has a Darwin ABI. */
+#ifdef __linux__
+#undef __linux__
+#endif
+#ifndef __APPLE__
+#define __APPLE__ 1
+#endif
+#include "owned_process_supervisor.c"
+#undef main
+#undef clock_gettime
+#undef kill
+#undef waitid
+#undef waitpid
+#undef fork
+#undef execv
+
+#define REQUIRE(value, code) do { if (!(value)) return (code); } while (0)
+static const pid_t held_child = 41; /* synthetic identity: never a real signal */
+static uint64_t clock_value;
+static int signal_error, query_error, observe_error, reap_error, reap_status;
+static int signals, queries, observations, waits, bad_order;
+static bool reap_pending, did_reap;
+
+static int mock_clock(clockid_t id, struct timespec *value) {
+    if (id != CLOCK_MONOTONIC) bad_order = 1;
+    if (clock_value == UINT64_MAX) { errno = EIO; return -1; }
+    value->tv_sec = (time_t)(clock_value / 1000u);
+    value->tv_nsec = (long)(clock_value % 1000u) * 1000000L;
+    return 0;
+}
+static int mock_kill(pid_t pid, int number) {
+    if (pid != -held_child) bad_order = 1;
+    if (number == 0) {
+        if (!did_reap) bad_order = 1;
+        ++queries;
+        if (query_error) { errno = query_error; return -1; }
+        return 0; /* could be the original or a reused group: never empty */
+    }
+    if (waits || (number != SIGTERM && number != SIGKILL)) bad_order = 1;
+    if ((signals == 0 && number != SIGTERM) || (signals == 1 && number != SIGKILL) || signals > 1) bad_order = 1;
+    ++signals;
+    if (signal_error) { errno = signal_error; return -1; }
+    return 0;
+}
+static int mock_waitid(idtype_t kind, id_t id, siginfo_t *info, int options) {
+    if (waits || kind != P_PID || id != (id_t)held_child || options != (WEXITED | WNOHANG | WNOWAIT)) bad_order = 1;
+    ++observations;
+    memset(info, 0, sizeof(*info));
+    if (observe_error) { errno = observe_error; return -1; }
+    info->si_pid = held_child; info->si_code = CLD_EXITED; info->si_status = 0;
+    return 0;
+}
+static pid_t mock_waitpid(pid_t pid, int *status, int options) {
+    if (pid != held_child || options != WNOHANG || did_reap) bad_order = 1;
+    ++waits;
+    if (reap_error) { errno = reap_error; return -1; }
+    if (reap_pending) return 0;
+    *status = reap_status; did_reap = true; return held_child;
+}
+static pid_t forbidden_fork(void) { _exit(120); }
+static int forbidden_execv(const char *path, char *const arguments[]) {
+    (void)path; (void)arguments; _exit(121);
+}
+static void reset_state(struct supervisor *s) {
+    memset(s, 0, sizeof(*s));
+    s->child = held_child; s->child_exit = -1;
+    s->out = s->err = s->ready = s->gate = -1;
+    s->owned = s->group = s->granted = s->ready_seen = true;
+    s->flags = F_GROUP;
+    clock_value = 100;
+    signal_error = query_error = observe_error = reap_error = reap_status = 0;
+    signals = queries = observations = waits = bad_order = 0;
+    reap_pending = did_reap = false;
+}
+static void stop_signals(struct supervisor *s) {
+    begin_stop(s, 100);
+    finish_signals(s);
+}
+static int signal_uncertainty(void) {
+    struct supervisor s; reset_state(&s);
+    signal_error = EPERM; query_error = ESRCH;
+    stop_signals(&s);
+    REQUIRE(signals == 2 && waits == 0 && observations == 2 && !bad_order, 10);
+    REQUIRE(s.signal_delivery_uncertain && !s.group_observation_uncertain, 11);
+    REQUIRE(s.cause == COMPLETED && !(s.flags & (F_QUIESCENT | F_SHUTDOWN | F_OWNERSHIP)), 12);
+    reap_after_last_signal(&s);
+    REQUIRE(did_reap && waits == 1 && queries == 1 && !bad_order, 13);
+    REQUIRE((s.flags & (F_EXIT | F_REAPED | F_QUIESCENT)) == (F_EXIT | F_REAPED | F_QUIESCENT), 14);
+    REQUIRE(s.signal_delivery_uncertain && !s.wait_failed && !(s.flags & (F_SHUTDOWN | F_OWNERSHIP)), 15);
+    return 0;
+}
+static int observation_uncertainty(void) {
+    struct supervisor s; reset_state(&s); stop_signals(&s);
+    query_error = EPERM;
+    reap_after_last_signal(&s);
+    REQUIRE(did_reap && s.group_observation_uncertain && !s.wait_failed && !bad_order, 20);
+    REQUIRE(!(s.flags & (F_QUIESCENT | F_SHUTDOWN)) && s.cause == COMPLETED, 21);
+    query_error = EIO; clock_value = 300;
+    reap_after_last_signal(&s);
+    REQUIRE(queries == 2 && !(s.flags & F_QUIESCENT), 22);
+    query_error = ESRCH; clock_value = 400;
+    reap_after_last_signal(&s);
+    REQUIRE(queries == 3 && waits == 1 && signals == 2 && !bad_order, 23);
+    REQUIRE((s.flags & F_QUIESCENT) && s.group_observation_uncertain && !(s.flags & F_SHUTDOWN), 24);
+    return 0;
+}
+static int unresolved_group(void) {
+    const int errors[] = {0, EPERM, EIO, EINTR};
+    for (size_t index = 0; index < sizeof(errors) / sizeof(errors[0]); ++index) {
+        struct supervisor s; reset_state(&s); signal_error = EPERM; stop_signals(&s);
+        uint64_t deadline = s.deadline;
+        REQUIRE(deadline == 100 + CLEANUP_MS, 30);
+        query_error = errors[index];
+        for (int turn = 0; turn < 3; ++turn) {
+            clock_value = 200 + (uint64_t)turn * 500;
+            reap_after_last_signal(&s); begin_stop(&s, clock_value);
+            REQUIRE(!cleanup_done(&s, clock_value) && s.deadline == deadline, 31);
+            REQUIRE(!(s.flags & (F_QUIESCENT | F_SHUTDOWN)) && !s.wait_failed, 32);
+        }
+        REQUIRE(s.signal_delivery_uncertain && s.group_observation_uncertain == (errors[index] != 0), 33);
+        clock_value = deadline;
+        REQUIRE(cleanup_done(&s, clock_value) && s.cause == SHUTDOWN_UNVERIFIED && (s.flags & F_SHUTDOWN), 34);
+        query_error = ESRCH; clock_value = deadline - 1;
+        reap_after_last_signal(&s);
+        REQUIRE(!(s.flags & F_QUIESCENT) && (s.flags & F_SHUTDOWN) && signals == 2 && waits == 1 && !bad_order, 35);
+    }
+    return 0;
+}
+static int custody_failures(void) {
+    for (int failure = 0; failure < 3; ++failure) {
+        struct supervisor s; reset_state(&s);
+        if (failure == 0) observe_error = ECHILD;
+        if (failure == 1) reap_error = ECHILD;
+        if (failure == 2) reap_status = 1 << 8; /* contradict retained exit 0 */
+        stop_signals(&s); query_error = ESRCH;
+        reap_after_last_signal(&s);
+        REQUIRE(s.wait_failed && (s.flags & F_SHUTDOWN) && !(s.flags & F_QUIESCENT), 40);
+        int prior_signals = signals;
+        observe_error = reap_error = 0;
+        reap_after_last_signal(&s); signal_owned(&s, SIGKILL);
+        REQUIRE(s.wait_failed && (s.flags & F_SHUTDOWN) && !(s.flags & F_QUIESCENT), 41);
+        REQUIRE(queries == 0 && signals == prior_signals && !bad_order, 42);
+    }
+    return 0;
+}
+static int no_post_reap_signals(void) {
+    struct supervisor s; reset_state(&s); stop_signals(&s);
+    reap_pending = true; reap_after_last_signal(&s);
+    REQUIRE(s.reaping_started && !did_reap && queries == 0 && waits == 1, 50);
+    signal_owned(&s, SIGTERM); finish_signals(&s);
+    REQUIRE(signals == 2 && !bad_order, 51);
+    reap_pending = false; reap_after_last_signal(&s); /* group exists/reused */
+    signal_owned(&s, SIGKILL); begin_stop(&s, 900);
+    REQUIRE(did_reap && signals == 2 && queries == 1 && !(s.flags & F_QUIESCENT) && !bad_order, 52);
+    REQUIRE(cleanup_done(&s, s.deadline) && (s.flags & F_SHUTDOWN), 53);
+    return 0;
+}
+static int proof_deadline(void) {
+    for (int offset = -1; offset <= 1; ++offset) {
+        struct supervisor s; reset_state(&s); stop_signals(&s); query_error = ESRCH;
+        clock_value = (uint64_t)((int64_t)s.deadline + offset);
+        reap_after_last_signal(&s);
+        REQUIRE(did_reap && !bad_order && s.deadline == 100 + CLEANUP_MS, 60);
+        if (offset < 0) {
+            REQUIRE((s.flags & F_QUIESCENT) && !(s.flags & F_SHUTDOWN), 61);
+            int prior_queries = queries; clock_value = UINT64_MAX;
+            reap_after_last_signal(&s);
+            REQUIRE(queries == prior_queries && (s.flags & F_QUIESCENT) && !(s.flags & (F_SHUTDOWN | F_IO)), 62);
+        } else {
+            REQUIRE(!(s.flags & F_QUIESCENT) && (s.flags & F_SHUTDOWN), 63);
+            clock_value = s.deadline - 1; reap_after_last_signal(&s);
+            REQUIRE(!(s.flags & F_QUIESCENT) && (s.flags & F_SHUTDOWN), 64);
+        }
+    }
+    struct supervisor s; reset_state(&s); stop_signals(&s); query_error = ESRCH;
+    clock_value = UINT64_MAX; reap_after_last_signal(&s);
+    REQUIRE(s.cause == IO_FAILURE && (s.flags & (F_IO | F_SHUTDOWN)) == (F_IO | F_SHUTDOWN) && !(s.flags & F_QUIESCENT), 65);
+    clock_value = 101; reap_after_last_signal(&s);
+    REQUIRE(!(s.flags & F_QUIESCENT) && (s.flags & F_SHUTDOWN) && !bad_order, 66);
+    return 0;
+}
+static int substantive_flags(void) {
+    const uint32_t flags[] = {F_IO, F_PROTOCOL, F_OWNERSHIP | F_SHUTDOWN, F_SHUTDOWN};
+    for (size_t index = 0; index < sizeof(flags) / sizeof(flags[0]); ++index) {
+        struct supervisor s; reset_state(&s);
+        note(&s, IO_FAILURE, flags[index]); signal_error = EPERM;
+        stop_signals(&s); query_error = ESRCH; reap_after_last_signal(&s);
+        REQUIRE(s.cause == IO_FAILURE && (s.flags & flags[index]) == flags[index] && s.signal_delivery_uncertain, 70);
+        REQUIRE(!!(s.flags & F_QUIESCENT) == !(flags[index] & (F_OWNERSHIP | F_SHUTDOWN)) && !bad_order, 71);
+    }
+    return 0;
+}
+int main(int argc, char **argv) {
+    struct sigaction action; memset(&action, 0, sizeof(action)); action.sa_handler = SIG_DFL;
+    sigset_t unblocked;
+    if (sigemptyset(&action.sa_mask) != 0 || sigemptyset(&unblocked) != 0 || sigaddset(&unblocked, SIGALRM) != 0 ||
+        sigaction(SIGALRM, &action, NULL) != 0 || sigprocmask(SIG_UNBLOCK, &unblocked, NULL) != 0) return 119;
+    (void)alarm(3); /* owned no-child mock worker self-expiry, not target cleanup */
+    if (argc != 2) return 64;
+    int result = 64;
+    if (strcmp(argv[1], "signal") == 0) result = signal_uncertainty();
+    else if (strcmp(argv[1], "observation") == 0) result = observation_uncertainty();
+    else if (strcmp(argv[1], "unresolved") == 0) result = unresolved_group();
+    else if (strcmp(argv[1], "custody") == 0) result = custody_failures();
+    else if (strcmp(argv[1], "ordering") == 0) result = no_post_reap_signals();
+    else if (strcmp(argv[1], "deadline") == 0) result = proof_deadline();
+    else if (strcmp(argv[1], "flags") == 0) result = substantive_flags();
+    if (result == 0) (void)puts("mocked-shutdown-state-pass");
+    return result;
+}
+"""
+
+
+@unittest.skipUnless(builder.host_identity()["target"] in builder.SUPPORTED, "native supervisor unavailable on this host")
+class MockedShutdownStateTest(unittest.TestCase):
+    """Portable modeled syscall outcomes, never Darwin or actual child proof."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temporary = tempfile.TemporaryDirectory(prefix="ktchecker-shutdown-model-")
+        cls.addClassCleanup(cls.temporary.cleanup)
+        cls.root = Path(cls.temporary.name)
+        source = cls.root / "shutdown-model.c"
+        source.write_text(MOCKED_SHUTDOWN_SOURCE, encoding="utf-8")
+        cls.worker = cls.root / "shutdown-model"
+        builder.bounded_command([str(CC), *builder.FLAGS, "-I", str(Path(__file__).resolve().parent),
+                                 str(source), "-o", str(cls.worker)], 30)
+
+    def check_state(self, scenario):
+        # subprocess owns only this newly-created no-child model worker. Timeout
+        # cleanup never discovers or signals a target PID/process group.
+        result = subprocess.run([str(self.worker), scenario], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, timeout=5, env=builder.COMPILER_ENVIRONMENT)
+        self.assertEqual(0, result.returncode, "mocked shutdown state assertion failed")
+        self.assertEqual(b"", result.stderr)
+        self.assertEqual(b"mocked-shutdown-state-pass\n", result.stdout)
+
+    def test_mocked_signal_uncertainty_preserves_history_until_independent_empty_group(self):
+        self.check_state("signal")
+
+    def test_mocked_observation_uncertainty_can_resolve_only_after_empty_group(self):
+        self.check_state("observation")
+
+    def test_mocked_live_or_inaccessible_group_expires_without_quiescence(self):
+        self.check_state("unresolved")
+
+    def test_mocked_wait_and_ownership_failures_cannot_recover(self):
+        self.check_state("custody")
+
+    def test_mocked_no_real_signal_after_reaping_even_for_reused_group(self):
+        self.check_state("ordering")
+
+    def test_mocked_quiescence_cannot_be_confirmed_at_or_after_deadline(self):
+        self.check_state("deadline")
+
+    def test_mocked_other_failure_flags_are_not_cleared_by_quiescence(self):
+        self.check_state("flags")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--cc", type=Path, required=True)

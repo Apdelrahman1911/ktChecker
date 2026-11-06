@@ -154,13 +154,17 @@ for name, (positive_common, positive_jvm, negative_common, negative_jvm, alterna
 
 # Authorship is independent of the mutable actual-run aggregate and immutable
 # receipts. Never read, reset or replace evidence/, runs/ or unit-evidence/ here.
+# Frozen catalog size of this legacy authored source-plan inventory, not the
+# active445 catalog or the separate current445 route. Live rule lookup above
+# still includes every current compiler mapping.
+LEGACY_AUTHORED_CATALOG_MAPPINGS = 443
 inventory = {
     'schema_version': 1,
     'kind': 'authored_input_inventory_source_plan',
     'kotlin_version': '2.4.21',
     'source_only': True,
     'execution_or_project_policy_authority': False,
-    'catalog_mappings': len(rules),
+    'catalog_mappings': LEGACY_AUTHORED_CATALOG_MAPPINGS,
     'ordinary_pairs': len(manifest),
     'original_ordinary_pairs': sum('authored_cohort' not in row for row in manifest),
     'expanded_ordinary_pairs': sum('authored_cohort' in row for row in manifest),

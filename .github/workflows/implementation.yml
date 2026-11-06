@@ -10,18 +10,21 @@ permissions:
   contents: read
 
 concurrency:
-  group: implementation-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: implementation-${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   checker-host:
     name: JVM 21 checker build and installed launcher (${{ matrix.os }})
+    # Provisional Windows headroom; POSIX bounds and required checks are unchanged.
     strategy:
       fail-fast: false
       max-parallel: 3
       matrix:
         include:
           - os: ubuntu-24.04
+            python_timeout_seconds: 480
+            job_timeout_minutes: 30
             supervisor_python: python3
             supervisor_cc_argument: '--cc /usr/bin/cc'
             supervisor_cc_property: '-PnativeSupervisorCc=/usr/bin/cc'
@@ -29,6 +32,8 @@ jobs:
             library_opt_in: 'true'
             evidence_profile: checker-host-supported-library-controls
           - os: windows-2025
+            python_timeout_seconds: 1200
+            job_timeout_minutes: 60
             supervisor_python: python
             supervisor_cc_argument: ''
             supervisor_cc_property: ''
@@ -36,6 +41,8 @@ jobs:
             library_opt_in: 'false'
             evidence_profile: checker-host-windows-portability
           - os: macos-26
+            python_timeout_seconds: 480
+            job_timeout_minutes: 30
             supervisor_python: python3
             supervisor_cc_argument: '--cc /usr/bin/cc'
             supervisor_cc_property: '-PnativeSupervisorCc=/usr/bin/cc'
@@ -43,7 +50,7 @@ jobs:
             library_opt_in: 'true'
             evidence_profile: checker-host-supported-library-controls
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: ${{ matrix.job_timeout_minutes }}
     steps:
       - name: Enable Windows long paths before checkout
         if: runner.os == 'Windows'
@@ -70,19 +77,133 @@ jobs:
           python scripts/ci/run_python_checks.py --start-directory scripts/ci
           --output build/ci-evidence/python/python-checks.json
           --junit build/ci-evidence/python/python-checks.xml
-          --host "${{ matrix.os }}" --require-ci-context --timeout 480
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Verify compiler diagnostic breadth source controls
+        if: always()
+        # Additive fixture-source controls outside scripts/ci, not a provider cohort.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_diagnostic_breadth*.py"
+          --output build/ci-evidence/compiler-breadth/python-checks.json
+          --junit build/ci-evidence/compiler-breadth/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler breadth source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-breadth-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-breadth/python-checks.json
+            build/ci-evidence/compiler-breadth/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler checker activation source controls
+        if: always()
+        # Additive registration/source controls, not a compiler/provider execution cohort.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_checker_activation*.py"
+          --output build/ci-evidence/checker-activation/python-checks.json
+          --junit build/ci-evidence/checker-activation/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain checker activation source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-checker-activation-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/checker-activation/python-checks.json
+            build/ci-evidence/checker-activation/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler mapping contract source controls
+        if: always()
+        # Explicit mapping SOURCE contracts, not a compiler/provider execution cohort.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_compiler_mapping_contracts.py"
+          --output build/ci-evidence/compiler-mapping-contracts/python-checks.json
+          --junit build/ci-evidence/compiler-mapping-contracts/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler mapping contract source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-mapping-contracts-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-mapping-contracts/python-checks.json
+            build/ci-evidence/compiler-mapping-contracts/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler nullability protocol source controls
+        if: always()
+        # Both authored protocol modules remain selected; no compiler is invoked here.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_nullability_protocols*.py"
+          --output build/ci-evidence/compiler-nullability-protocols/python-checks.json
+          --junit build/ci-evidence/compiler-nullability-protocols/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler nullability protocol source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-nullability-protocols-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-nullability-protocols/python-checks.json
+            build/ci-evidence/compiler-nullability-protocols/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler original42 selector source controls
+        if: always()
+        # Literal legacy selector SOURCE checks do not replay any historical evidence.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_original42_selectors.py"
+          --output build/ci-evidence/compiler-original42-selectors/python-checks.json
+          --junit build/ci-evidence/compiler-original42-selectors/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler original42 selector source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-original42-selectors-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-original42-selectors/python-checks.json
+            build/ci-evidence/compiler-original42-selectors/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler type-boundary supplemental source controls
+        if: always()
+        # Supplemental SOURCE contracts remain separate from provider/runtime qualification.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_type_boundaries_supplemental.py"
+          --output build/ci-evidence/compiler-type-boundaries-supplemental/python-checks.json
+          --junit build/ci-evidence/compiler-type-boundaries-supplemental/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler type-boundary supplemental source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-type-boundaries-supplemental-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-type-boundaries-supplemental/python-checks.json
+            build/ci-evidence/compiler-type-boundaries-supplemental/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify synthetic Lint receipt privacy without relying on Python assertions
         if: runner.os == 'Linux'
         run: |
           python providers/platform-fixtures/test_retain_lint_evidence.py -q
           python -O providers/platform-fixtures/test_retain_lint_evidence.py -q
       - name: Record initial host and pinned wrapper
-        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment-initial.json --require-java-major 21
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment-initial.json --require-java-major 21 --require-ci-context
       - name: Execute the checksum-pinned Gradle wrapper
         run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
       - name: Bind observed Gradle to the selected JVM
         if: always()
-        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 21 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 21 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json --require-ci-context
       - name: Observe exact helper build inputs and compiler or explicit unsupported host
         if: always()
         # Version probes only, under the builder's minimal environment. No
@@ -142,14 +263,82 @@ jobs:
           --require-task :contracts:test --require-task :audit:test
           --require-task :kernel:test --require-task :project-model:test
           --require-task :provider-architecture:test --require-task :review-controller:test
+          --require-task :worker-protocol:test --require-task :provider-compiler:test
+          --require-task :provider-compiler:workerTest
+          --require-task :worker-protocol:modelWireTest --require-task :provider-compiler:modelWorkerTest
+          --require-task :provider-compiler:compilerModelApplicationWorkerJar
+          --require-task :provider-build-contracts:test
           --require-task :provider-runtime:buildOwnedProcessSupervisor --require-task :provider-runtime:test
           --require-task :provider-runtime:buildOwnedLiveProcessSupervisor
           --require-task :provider-detekt:test --require-task :provider-ktlint:test
           --require-task :cli:installDist --require-task :cli:distZip --require-task :cli:distTar
-          -- --rerun-tasks --no-build-cache test :cli:installDist :cli:distZip :cli:distTar
+          -- --rerun-tasks --no-build-cache test :worker-protocol:modelWireTest :provider-compiler:modelWorkerTest
+          :provider-build-contracts:test :cli:installDist :cli:distZip :cli:distTar
           -PdetektIntegration=${{ matrix.library_opt_in }} -PktlintIntegration=${{ matrix.library_opt_in }}
           -PlibraryFixtureEvidenceRoot=build/ci-evidence/raw/library-fixtures
           -PnativeSupervisorPython=${{ matrix.supervisor_python }} ${{ matrix.supervisor_cc_property }}
+      - name: Select exact audited Node runtime for real broker interoperability
+        if: success() && runner.os == 'Linux'
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.20.0'
+          check-latest: false
+      - name: Build locked MCP bridge for real broker interoperability
+        if: success() && runner.os == 'Linux'
+        working-directory: bridges/mcp
+        shell: bash
+        env:
+          NODE_OPTIONS: ''
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.20.0
+          npm ci --include=dev --ignore-scripts --no-audit --no-fund
+          npm run build --ignore-scripts
+      - name: Require real broker wire interoperability from the fresh installation
+        if: success() && runner.os == 'Linux'
+        working-directory: bridges/mcp
+        shell: bash
+        timeout-minutes: 8
+        env:
+          KTC_TEST_CLI_DISTRIBUTION: ${{ github.workspace }}/modules/cli/build/install/ktchecker
+          NODE_OPTIONS: ''
+        # Local Linux broker wire only; no provider/model or publication claim.
+        # The same-job installDist above is required and forced, not an old image.
+        # Raw reporter bytes stay in owned runner temp files, never artifact globs.
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.20.0
+          test -d "$KTC_TEST_CLI_DISTRIBUTION"
+          test -x "$KTC_TEST_CLI_DISTRIBUTION/bin/ktchecker"
+          test -f dist/test/real-broker-wire.test.js
+          umask 077
+          report_dir="$(mktemp -d "${RUNNER_TEMP:?}/ktc-real-broker-wire.XXXXXX")"
+          trap 'rm -rf -- "$report_dir"' EXIT
+          if node --test --test-concurrency=1 --test-reporter=tap dist/test/real-broker-wire.test.js >"$report_dir/results.tap" 2>"$report_dir/stderr.txt"; then
+            :
+          else
+            status=$?
+            echo "::error::Real broker interoperability tests failed (Node exit $status); no qualification."
+            exit "$status"
+          fi
+          python - "$report_dir/results.tap" <<'PYTHON'
+          import re
+          import sys
+          with open(sys.argv[1], encoding="utf-8") as report:
+              body = report.read(1_048_577)
+          if len(body) > 1_048_576:
+              raise SystemExit("Real broker TAP report exceeds its bound; no qualification")
+          observed = re.findall(r"^# (tests|suites|pass|fail|cancelled|skipped|todo) ([0-9]+)$", body, re.MULTILINE)
+          expected = {"tests": "3", "suites": "0", "pass": "3", "fail": "0", "cancelled": "0", "skipped": "0", "todo": "0"}
+          if len(observed) != len(expected) or dict(observed) != expected:
+              raise SystemExit("Real broker gate requires exactly three passes and zero skips/failures/cancellations/todos")
+          print("Real Linux broker wire interoperability: 3 passed, 0 skipped; not provider/model or publication qualification.")
+          PYTHON
+      - name: Declare real broker interoperability unavailable on non-Linux hosts
+        if: always() && runner.os != 'Linux'
+        # Informational only: these rows do not pass or qualify the Linux gate.
+        run: >-
+          echo "Real broker interoperability is unavailable on non-Linux hosts; these rows do not qualify the broker wire."
       - name: Verify exact genuine library controls or visible Windows opt-out skips
         if: always()
         run: >-
@@ -188,6 +377,26 @@ jobs:
           --output build/ci-evidence/package-report.json
           --sbom build/ci-evidence/distribution.cdx.json
           --notice build/ci-evidence/NOTICE.dependency-report.txt
+      - name: Compare actual ZIP and TAR manifests with staged installation
+        id: distribution_archive_integrity
+        if: success() && (runner.os == 'Linux' || runner.os == 'macOS')
+        timeout-minutes: 3
+        # Exact Gradle distributionBaseName/version, not a wildcard selection.
+        # Read-only decoded bytes/names/executable flags; no extraction/runtime,
+        # license approval, historical build binding or atomic upload snapshot.
+        run: >-
+          python scripts/ci/verify_distribution_archives.py
+          --installation modules/cli/build/install/ktchecker
+          --expected-prefix ktchecker-0.1.0-dev.1
+          --archive modules/cli/build/distributions/ktchecker-0.1.0-dev.1.zip
+          --archive modules/cli/build/distributions/ktchecker-0.1.0-dev.1.tar
+          --output build/ci-evidence/distribution-archives.json
+      - name: Declare Windows archive verification unavailable and upload blocked
+        if: always() && runner.os == 'Windows'
+        # Informational only: the verifier step stays skipped, not successful.
+        # Windows build/test/package scope is unchanged; no emulated POSIX pass.
+        run: >-
+          echo "Archive verification unavailable on Windows: POSIX no-follow required; preview archive upload remains blocked."
       - name: Require reviewed licenses before owner-approved preview distribution upload
         id: distribution_upload_license_review
         if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true'
@@ -213,16 +422,38 @@ jobs:
           --require-report "modules/contracts/build/test-results/test/*.xml"
           --require-report "tests/audit/build/test-results/test/*.xml"
           --require-report "modules/kernel/build/test-results/test/*.xml"
+          --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionBarrierTest.xml"
+          --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.IntegratedCompletionAuditCodecTest.xml"
           --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelPlanIntegrationTest.xml"
           --require-report "modules/kernel/build/test-results/test/TEST-dev.ktchecker.kernel.KernelStressTest.xml"
           --require-report "modules/project-model/build/test-results/test/*.xml"
           --require-report "modules/provider-architecture/build/test-results/test/*.xml"
           --require-report "modules/review-controller/build/test-results/test/*.xml"
+          --require-report "modules/review-controller/build/test-results/test/TEST-dev.ktchecker.reviewcontroller.OwnerIntegratedCompletionRegistryTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.GradleWrapperChecksumProviderTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.InstalledWrapperContextTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperActivationPolicyBoundsTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperPropertiesTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperChecksumConsumerIntegrationTest.xml"
+          --require-report "modules/provider-build-contracts/build/test-results/test/TEST-dev.ktchecker.providers.buildcontracts.WrapperRulePolicyIntegrationTest.xml"
           --require-report "modules/provider-runtime/build/test-results/test/*.xml"
+          --require-report "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.ApplicationWireTest.xml"
+          --require-report "modules/worker-protocol/build/test-results/test/TEST-dev.ktchecker.workerprotocol.CompilerJobWireTest.xml"
+          --require-report "modules/worker-protocol/build/test-results/modelWireTest/TEST-dev.ktchecker.workerprotocol.CompilerModelWireTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerApplicationLifecycleTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerLiveHostAuthorityTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/test/TEST-dev.ktchecker.compiler.live.CompilerLiveRenderingTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/workerTest/TEST-dev.ktchecker.compilerworker.live.CompilerApplicationLifecycleTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/workerTest/TEST-dev.ktchecker.compilerworker.live.CompilerApplicationFilesystemTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationFilesystemTest.xml"
+          --require-report "modules/provider-compiler/build/test-results/modelWorkerTest/TEST-dev.ktchecker.compilerworker.live.CompilerModelApplicationLifecycleTest.xml"
+          --require-report "modules/provider-runtime/build/test-results/test/TEST-dev.ktchecker.providers.runtime.OwnedApplicationSessionsTest.xml"
+          --require-report "modules/provider-runtime/build/test-results/test/TEST-dev.ktchecker.providers.runtime.OwnedApplicationTypesTest.xml"
           --require-tests
           --require-artifact "modules/kernel/build/reports/stress/kernel-100-patches.json"
           --require-artifact "modules/cli/build/distributions/*.zip"
           --require-artifact "modules/cli/build/distributions/*.tar"
+          --artifact build/ci-evidence/distribution-archives.json
           --command-result build/ci-evidence/gradle-version.json
           --command-result build/ci-evidence/supervisor-prerequisites.json
           --command-result build/ci-evidence/supervisor-controls.json
@@ -262,13 +493,14 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Retain the actual tested unsigned preview distribution
-        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true' && steps.distribution_upload_license_review.outcome == 'success'
+        if: success() && vars.KTC_PREVIEW_DISTRIBUTION_UPLOAD_APPROVED == 'true' && steps.distribution_upload_license_review.outcome == 'success' && steps.distribution_archive_integrity.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: unsigned-preview-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            modules/cli/build/distributions/*.zip
-            modules/cli/build/distributions/*.tar
+            modules/cli/build/distributions/ktchecker-0.1.0-dev.1.zip
+            modules/cli/build/distributions/ktchecker-0.1.0-dev.1.tar
+            build/ci-evidence/distribution-archives.json
             build/ci-evidence/package-report.json
             build/ci-evidence/distribution.cdx.json
             build/ci-evidence/NOTICE.dependency-report.txt

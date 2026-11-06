@@ -1,0 +1,1212 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "published_SOURCE_and_module_DATA_review_not_runtime_or_typecheck",
+  "compose_rules_tag": "v0.6.8",
+  "compose_rules_commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+  "sample_selection": {
+    "source": "gradle/libs.versions.toml:10-11",
+    "bom": {
+      "coordinate": "androidx.compose:compose-bom:2026.09.00",
+      "kind": "published_BOM_DATA",
+      "path": "compose-bom-2026.09.00.pom",
+      "url": "https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/2026.09.00/compose-bom-2026.09.00.pom",
+      "bytes": 41126,
+      "sha256": "74791c31313009659bd0bf09008bd514a163aa04452dd4cb82df2fb971c757c3"
+    },
+    "runtime_version": "1.12.1",
+    "jvm_compile_route": [
+      "androidx.compose.runtime:runtime:1.12.1",
+      "desktopApiElements-published",
+      "androidx.compose.runtime:runtime-desktop:1.12.1"
+    ],
+    "jvm_annotations_route": [
+      "androidx.compose.runtime:runtime-annotation:1.12.1",
+      "jvmApiElements-published",
+      "androidx.compose.runtime:runtime-annotation-jvm:1.12.1"
+    ],
+    "lifecycle_or_circuit_version_selected": null,
+    "qualification": "This tagged sample selection is a bounded SOURCE review baseline, not the actual project owner selection."
+  },
+  "reviewed_jvm_binary_metadata": [
+    {
+      "coordinate": "androidx.compose.runtime:runtime-desktop:1.12.1",
+      "variant": "desktopApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "metadata": {
+        "coordinate": "androidx.compose.runtime:runtime-desktop:1.12.1",
+        "kind": "published_module_DATA",
+        "path": "runtime-desktop-1.12.1.module",
+        "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-desktop/1.12.1/runtime-desktop-1.12.1.module",
+        "bytes": 12204,
+        "sha256": "2920ed8534406d1206e40faaa733521a8cea7c202993dec5e49b132ebf89d8a4"
+      },
+      "advertised_binary": {
+        "name": "runtime-desktop-1.12.1.jar",
+        "size": 1948637,
+        "sha256": "ed390d7bf7bdba951359d127f4c1ddd223f535f5a6a63078c5c5ac6b6924eb08"
+      },
+      "binary_downloaded": false,
+      "binary_read_or_verified": false,
+      "owner_authority": false,
+      "declared_compile_dependencies": [
+        {
+          "group": "androidx.compose.runtime",
+          "module": "runtime-annotation",
+          "version": {
+            "requires": "1.12.1"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.20"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.9.0"
+          }
+        }
+      ],
+      "interpretation": "Published metadata is an expected binary pin only. Future trusted-owner preparation must verify actual regular binary bytes and the complete ordered compilation dependency vector."
+    },
+    {
+      "coordinate": "androidx.compose.runtime:runtime-annotation-jvm:1.12.1",
+      "variant": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "metadata": {
+        "coordinate": "androidx.compose.runtime:runtime-annotation-jvm:1.12.1",
+        "kind": "published_module_DATA",
+        "path": "runtime-annotation-jvm-1.12.1.module",
+        "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation-jvm/1.12.1/runtime-annotation-jvm-1.12.1.module",
+        "bytes": 11456,
+        "sha256": "a6f8f1750e9ca881b16c8823008f7c5167eb955e7df34ef691874cbbd2221e8d"
+      },
+      "advertised_binary": {
+        "name": "runtime-annotation-jvm-1.12.1.jar",
+        "size": 9379,
+        "sha256": "e291a6ae01ab71a7f48a568ec9744c6bf9b3f46ef72fbcdeb28c3407ae531c5e"
+      },
+      "binary_downloaded": false,
+      "binary_read_or_verified": false,
+      "owner_authority": false,
+      "declared_compile_dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.1.20"
+          }
+        }
+      ],
+      "interpretation": "Published metadata is an expected binary pin only. Future trusted-owner preparation must verify actual regular binary bytes and the complete ordered compilation dependency vector."
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.3.8",
+      "variant": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "metadata": {
+        "coordinate": "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm:0.3.8",
+        "kind": "published_module_DATA",
+        "path": "kotlinx-collections-immutable-jvm-0.3.8.module",
+        "url": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-collections-immutable-jvm/0.3.8/kotlinx-collections-immutable-jvm-0.3.8.module",
+        "bytes": 3402,
+        "sha256": "6a4d3a8eb74221b43b08fe21bf955cabd69138977dcf78f86fd0ef6220b711f7"
+      },
+      "advertised_binary": {
+        "name": "kotlinx-collections-immutable-jvm-0.3.8.jar",
+        "size": 246751,
+        "sha256": "72e9a9b0003ec5254b638186f7ca1675b08006bdde4c9c4c589970342ccd2e77"
+      },
+      "binary_downloaded": false,
+      "binary_read_or_verified": false,
+      "owner_authority": false,
+      "declared_compile_dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "1.9.21"
+          }
+        }
+      ],
+      "interpretation": "Published metadata is an expected binary pin only. Future trusted-owner preparation must verify actual regular binary bytes and the complete ordered compilation dependency vector."
+    },
+    {
+      "coordinate": "androidx.collection:collection-jvm:1.5.0",
+      "variant": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "metadata": {
+        "coordinate": "androidx.collection:collection-jvm:1.5.0",
+        "kind": "published_module_DATA",
+        "path": "collection-jvm-1.5.0.module",
+        "url": "https://dl.google.com/dl/android/maven2/androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0.module",
+        "bytes": 4660,
+        "sha256": "dde85e292509231b5471bb091b575099d4f43161eb281e87385038a0161072e6"
+      },
+      "advertised_binary": {
+        "name": "collection-jvm-1.5.0.jar",
+        "size": 877998,
+        "sha256": "70b35924e4babcdffa37d0e575ee039c56a2d97123342624c48b603233704341"
+      },
+      "binary_downloaded": false,
+      "binary_read_or_verified": false,
+      "owner_authority": false,
+      "declared_compile_dependencies": [
+        {
+          "group": "androidx.annotation",
+          "module": "annotation",
+          "version": {
+            "requires": "1.9.1"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib"
+        }
+      ],
+      "interpretation": "Published metadata is an expected binary pin only. Future trusted-owner preparation must verify actual regular binary bytes and the complete ordered compilation dependency vector."
+    }
+  ],
+  "api_families": [
+    {
+      "family": "composition",
+      "state": "reviewed_present_in_published_source",
+      "sources": [
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/Composable.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/Composable.kt",
+          "bytes": 2303,
+          "sha256": "bef4745cf81e7e047e852fd16a5c672726fb01dd20569b829ffc627fb6aadd4c",
+          "line_ranges": [
+            [
+              19,
+              58
+            ]
+          ]
+        }
+      ],
+      "facts": "Composable is the runtime-desktop function/type annotation. Its name is not proof that a particular PSI annotation resolves to this API."
+    },
+    {
+      "family": "generic_state",
+      "state": "reviewed_present_in_published_source",
+      "sources": [
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/SnapshotState.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/SnapshotState.kt",
+          "bytes": 12030,
+          "sha256": "0a0c2a46d51bf67e7b4e4da0260d042e63283d74beb1a22c7cf24f7b46566872",
+          "line_ranges": [
+            [
+              42,
+              104
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/DerivedState.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/DerivedState.kt",
+          "bytes": 16654,
+          "sha256": "fccf993a872d72d08c787f68d5a9b70bdd9268b89a8833f2c01039f555088039",
+          "line_ranges": [
+            [
+              332,
+              380
+            ]
+          ]
+        }
+      ],
+      "facts": "State/MutableState/mutableStateOf and derivedStateOf carry Compose read-observation/snapshot semantics."
+    },
+    {
+      "family": "scalar_state",
+      "state": "reviewed_present_in_published_source",
+      "sources": [
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/SnapshotIntState.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/SnapshotIntState.kt",
+          "bytes": 6950,
+          "sha256": "9aaaa9d4f42f8235b2ea508848d3109107ad4b70835a1b1bf926b98a6a60ce10",
+          "line_ranges": [
+            [
+              40,
+              102
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/SnapshotLongState.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/SnapshotLongState.kt",
+          "bytes": 6764,
+          "sha256": "f789b4ab102071af8e78be37b3ad09a9751c56bae2877091b2aa6fa6eeef1ca3",
+          "line_ranges": [
+            [
+              40,
+              102
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/SnapshotFloatState.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/SnapshotFloatState.kt",
+          "bytes": 6843,
+          "sha256": "74af44ffa38c8b62d38006ed9699da6eb08fa1c7df9c87c21aaee8d9adc0ab2d",
+          "line_ranges": [
+            [
+              40,
+              102
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/SnapshotDoubleState.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/SnapshotDoubleState.kt",
+          "bytes": 6887,
+          "sha256": "c2916401ce89a7b822e5f0c6ba7042a9539fe1d6a6f9ec007aca9359a32ef92e",
+          "line_ranges": [
+            [
+              40,
+              102
+            ]
+          ]
+        }
+      ],
+      "facts": "Four mutable primitive factories and read-only/mutable primitive state interfaces. JVM primitive representation avoids generic boxing; this is not a measured application performance claim."
+    },
+    {
+      "family": "movable_content_and_remember",
+      "state": "reviewed_present_in_published_source",
+      "sources": [
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/MovableContent.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/MovableContent.kt",
+          "bytes": 12827,
+          "sha256": "1dd7d5450840806eb2d3b67042caccc9522740a68760bc9ba343d3c9e1046511",
+          "line_ranges": [
+            [
+              21,
+              41
+            ],
+            [
+              60,
+              64
+            ],
+            [
+              83,
+              89
+            ],
+            [
+              108,
+              117
+            ],
+            [
+              136,
+              150
+            ],
+            [
+              152,
+              256
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/Composables.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/Composables.kt",
+          "bytes": 20740,
+          "sha256": "36abefa429f54144b7f8353425cda969f8c3a5f56b4560942855cd3ff8b6e00b",
+          "line_ranges": [
+            [
+              19,
+              89
+            ]
+          ]
+        }
+      ],
+      "facts": "Both movableContentOf and movableContentWithReceiverOf families plus keyed/unkeyed remember exist. Remember aliases and arbitrary remember-prefixed helpers remain syntax precision gaps."
+    },
+    {
+      "family": "runtime_effects",
+      "state": "reviewed_present_in_published_source",
+      "sources": [
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/Effects.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/Effects.kt",
+          "bytes": 35562,
+          "sha256": "6c793de822cad485fdcf7cf281063bcdc72c3b0ab574d21176406eb867a6ef3f",
+          "line_ranges": [
+            [
+              254,
+              422
+            ],
+            [
+              455,
+              568
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/ProduceState.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/ProduceState.kt",
+          "bytes": 8501,
+          "sha256": "5d81254019a8138c9ba27268538b64b98435b7b967dd997ecccb9945b286bb96",
+          "line_ranges": [
+            [
+              56,
+              88
+            ],
+            [
+              179,
+              206
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/SnapshotState.kt",
+          "retained_path": "runtime-desktop-1.12.1-source/commonMain/androidx/compose/runtime/SnapshotState.kt",
+          "bytes": 12030,
+          "sha256": "0a0c2a46d51bf67e7b4e4da0260d042e63283d74beb1a22c7cf24f7b46566872",
+          "line_ranges": [
+            [
+              310,
+              340
+            ]
+          ]
+        }
+      ],
+      "facts": "LaunchedEffect, DisposableEffect, produceState and rememberUpdatedState exist. Updating a captured callback and restarting when callback keys change have different semantics."
+    },
+    {
+      "family": "primitive_collections",
+      "state": "declarations_exist_but_observable_state_equivalence_unproven",
+      "factory_names": [
+        "mutableIntListOf",
+        "mutableLongListOf",
+        "mutableFloatListOf",
+        "mutableIntSetOf",
+        "mutableLongSetOf",
+        "mutableFloatSetOf",
+        "mutableIntIntMapOf",
+        "mutableIntLongMapOf",
+        "mutableIntFloatMapOf",
+        "mutableLongIntMapOf",
+        "mutableLongLongMapOf",
+        "mutableLongFloatMapOf",
+        "mutableFloatIntMapOf",
+        "mutableFloatLongMapOf",
+        "mutableFloatFloatMapOf"
+      ],
+      "holder_names": [
+        "MutableIntList",
+        "MutableLongList",
+        "MutableFloatList",
+        "MutableIntSet",
+        "MutableLongSet",
+        "MutableFloatSet",
+        "MutableIntIntMap",
+        "MutableIntLongMap",
+        "MutableIntFloatMap",
+        "MutableLongIntMap",
+        "MutableLongLongMap",
+        "MutableLongFloatMap",
+        "MutableFloatIntMap",
+        "MutableFloatLongMap",
+        "MutableFloatFloatMap"
+      ],
+      "sources": [
+        {
+          "archive_member": "commonMain/androidx/collection/IntList.kt",
+          "retained_path": "collection-jvm-1.5.0-source/commonMain/androidx/collection/IntList.kt",
+          "bytes": 33678,
+          "sha256": "41ec7c8b70cb9db4c2d0e97a760b2df1e47e4da9fb76810a9cb299fdd799382f",
+          "line_ranges": [
+            [
+              19,
+              60
+            ],
+            [
+              537,
+              563
+            ],
+            [
+              902,
+              939
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/collection/IntSet.kt",
+          "retained_path": "collection-jvm-1.5.0-source/commonMain/androidx/collection/IntSet.kt",
+          "bytes": 31364,
+          "sha256": "4ca0e4f9ee2061b11dd479d12e806aaebde38076b4cec2cb0426088187e97614",
+          "line_ranges": [
+            [
+              19,
+              29
+            ],
+            [
+              77,
+              104
+            ],
+            [
+              459,
+              485
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/androidx/collection/IntIntMap.kt",
+          "retained_path": "collection-jvm-1.5.0-source/commonMain/androidx/collection/IntIntMap.kt",
+          "bytes": 35250,
+          "sha256": "5502a3bd0be9bab91bae1f26f623fa8bf096b62dc7e267f3fd349bd71cd704c5",
+          "line_ranges": [
+            [
+              19,
+              35
+            ],
+            [
+              133,
+              163
+            ]
+          ]
+        }
+      ],
+      "facts": "All 15 factories and 15 holders belong to androidx.collection, not androidx.compose.runtime. IntList storage uses primitive arrays; MutableIntList.add writes array/size directly. No reviewed SOURCE proves replacement of MutableState<List/...> with these containers preserves Compose observation or type/ownership contracts.",
+      "prohibited_inference": "A primitive collection short-name match is not a reviewed observable Compose state API; scalar1.5.0 or scalar1.12.1 cannot license the whole collection recommendation surface."
+    },
+    {
+      "family": "lifecycle_circuit_and_conventional_effects",
+      "state": "unknown_unselected",
+      "upstream_source": "rules/common/src/main/kotlin/io/nlopez/compose/core/util/Composables.kt:352-366",
+      "names": [
+        "LifecycleEventEffect",
+        "LifecycleResumeEffect",
+        "LifecycleStartEffect",
+        "produceRetainedState",
+        "KeyedEffect"
+      ],
+      "facts": "Tag helper includes three lifecycle effects, Circuit produceRetainedState, and a conventional arbitrary project-local KeyedEffect name. Runtime SOURCE alone cannot prove these contracts. No selected lifecycle/Circuit version was supplied; no lifecycle/Circuit or local KeyedEffect semantics is fabricated. Missing imports do not prove absence across exact compilation/dependencies."
+    },
+    {
+      "family": "immutable_contract",
+      "state": "reviewed_present_in_published_source",
+      "sources": [
+        {
+          "archive_member": "commonMain/androidx/compose/runtime/Immutable.kt",
+          "retained_path": "runtime-annotation-jvm-1.12.1-source/commonMain/androidx/compose/runtime/Immutable.kt",
+          "bytes": 1926,
+          "sha256": "9526d9550d494bb097f7edd6a2ff18cc5b53a0166554a0eb19c186463fe60ae2",
+          "line_ranges": [
+            [
+              17,
+              44
+            ]
+          ]
+        }
+      ],
+      "facts": "Immutable is a programmer promise; the annotation does not validate immutability. Version1.12.1 splits this into runtime-annotation-jvm."
+    },
+    {
+      "family": "immutable_collections",
+      "state": "reviewed_present_in_published_source",
+      "sources": [
+        {
+          "archive_member": "commonMain/ImmutableCollection.kt",
+          "retained_path": "immutable-jvm-0.3.8-source/commonMain/ImmutableCollection.kt",
+          "bytes": 5752,
+          "sha256": "cf2f17ae2b9204849335d9efcb83074b8a53d5d2fa51ba5aa2a0b6a20a2aeb1b",
+          "line_ranges": [
+            [
+              6,
+              27
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/ImmutableList.kt",
+          "retained_path": "immutable-jvm-0.3.8-source/commonMain/ImmutableList.kt",
+          "bytes": 7760,
+          "sha256": "8673c4b0ecf78f162bfc8bca2f89091c0d1308232d0719900f91845ea1579088",
+          "line_ranges": [
+            [
+              6,
+              27
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/ImmutableSet.kt",
+          "retained_path": "immutable-jvm-0.3.8-source/commonMain/ImmutableSet.kt",
+          "bytes": 4911,
+          "sha256": "3cce16eafe317c698d5033b5029f22712addde516f2391b0c141f267bc225a64",
+          "line_ranges": [
+            [
+              6,
+              27
+            ]
+          ]
+        },
+        {
+          "archive_member": "commonMain/ImmutableMap.kt",
+          "retained_path": "immutable-jvm-0.3.8-source/commonMain/ImmutableMap.kt",
+          "bytes": 5592,
+          "sha256": "c691a9910b4b98d40ff1f79f61bac16f4a96ee4f0d68fedc0c00115870248c89",
+          "line_ranges": [
+            [
+              6,
+              27
+            ]
+          ]
+        }
+      ],
+      "facts": "Actual kotlinx immutable/persistent interface family0.3.8, not locally renamed substitutes. No strong-skipping, compiler-inference compatibility, recomposition count or real-world precision is established."
+    }
+  ],
+  "literal_primitive_declaration_inventories": [
+    {
+      "archive": {
+        "coordinate": "androidx.compose.runtime:runtime-desktop:1.12.1",
+        "kind": "published_SOURCE_archive",
+        "path": "runtime-desktop-1.12.1-sources.jar",
+        "url": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-desktop/1.12.1/runtime-desktop-1.12.1-sources.jar",
+        "bytes": 580590,
+        "sha256": "45f2757069be7d7f99cf4692bac068ef23a0e84a7a27d28fc9c12b8610c4ccdd"
+      },
+      "scope": "all commonMain and jvmMain Kotlin SOURCE members only",
+      "source_file_count": 188,
+      "mechanism": "literal textual declaration inventory, not symbol resolution or a Kotlin/compiler/detector run",
+      "declarations": {
+        "mutableIntListOf": [],
+        "mutableLongListOf": [],
+        "mutableFloatListOf": [],
+        "mutableIntSetOf": [],
+        "mutableLongSetOf": [],
+        "mutableFloatSetOf": [],
+        "mutableIntIntMapOf": [],
+        "mutableIntLongMapOf": [],
+        "mutableIntFloatMapOf": [],
+        "mutableLongIntMapOf": [],
+        "mutableLongLongMapOf": [],
+        "mutableLongFloatMapOf": [],
+        "mutableFloatIntMapOf": [],
+        "mutableFloatLongMapOf": [],
+        "mutableFloatFloatMapOf": [],
+        "MutableIntList": [],
+        "MutableLongList": [],
+        "MutableFloatList": [],
+        "MutableIntSet": [],
+        "MutableLongSet": [],
+        "MutableFloatSet": [],
+        "MutableIntIntMap": [],
+        "MutableIntLongMap": [],
+        "MutableIntFloatMap": [],
+        "MutableLongIntMap": [],
+        "MutableLongLongMap": [],
+        "MutableLongFloatMap": [],
+        "MutableFloatIntMap": [],
+        "MutableFloatLongMap": [],
+        "MutableFloatFloatMap": []
+      }
+    },
+    {
+      "archive": {
+        "coordinate": "androidx.collection:collection-jvm:1.5.0",
+        "kind": "published_SOURCE_archive",
+        "path": "collection-jvm-1.5.0-sources.jar",
+        "url": "https://dl.google.com/dl/android/maven2/androidx/collection/collection-jvm/1.5.0/collection-jvm-1.5.0-sources.jar",
+        "bytes": 288386,
+        "sha256": "bcc6197ec5fb349e86ae3ba6c94b164d3a9ac5a03d9f9c235d7c4eb24e5878b3"
+      },
+      "scope": "all commonMain and jvmMain Kotlin SOURCE members only",
+      "source_file_count": 56,
+      "mechanism": "literal textual declaration inventory, not symbol resolution or a Kotlin/compiler/detector run",
+      "declarations": {
+        "mutableIntListOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntList.kt",
+            "line": 905,
+            "source_sha256": "41ec7c8b70cb9db4c2d0e97a760b2df1e47e4da9fb76810a9cb299fdd799382f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntList.kt",
+            "line": 908,
+            "source_sha256": "41ec7c8b70cb9db4c2d0e97a760b2df1e47e4da9fb76810a9cb299fdd799382f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntList.kt",
+            "line": 915,
+            "source_sha256": "41ec7c8b70cb9db4c2d0e97a760b2df1e47e4da9fb76810a9cb299fdd799382f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntList.kt",
+            "line": 925,
+            "source_sha256": "41ec7c8b70cb9db4c2d0e97a760b2df1e47e4da9fb76810a9cb299fdd799382f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntList.kt",
+            "line": 934,
+            "source_sha256": "41ec7c8b70cb9db4c2d0e97a760b2df1e47e4da9fb76810a9cb299fdd799382f"
+          }
+        ],
+        "mutableLongListOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongList.kt",
+            "line": 908,
+            "source_sha256": "e38e0f8f8d320f51dd64e9b11cd48e93aa0ba748bc9cf38474c2593bd9ebcb0d"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongList.kt",
+            "line": 911,
+            "source_sha256": "e38e0f8f8d320f51dd64e9b11cd48e93aa0ba748bc9cf38474c2593bd9ebcb0d"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongList.kt",
+            "line": 918,
+            "source_sha256": "e38e0f8f8d320f51dd64e9b11cd48e93aa0ba748bc9cf38474c2593bd9ebcb0d"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongList.kt",
+            "line": 929,
+            "source_sha256": "e38e0f8f8d320f51dd64e9b11cd48e93aa0ba748bc9cf38474c2593bd9ebcb0d"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongList.kt",
+            "line": 938,
+            "source_sha256": "e38e0f8f8d320f51dd64e9b11cd48e93aa0ba748bc9cf38474c2593bd9ebcb0d"
+          }
+        ],
+        "mutableFloatListOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatList.kt",
+            "line": 912,
+            "source_sha256": "336437b39d1987eef21b89341a1553ad828dbaa3e76ee70e4bfca52db66355a2"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatList.kt",
+            "line": 915,
+            "source_sha256": "336437b39d1987eef21b89341a1553ad828dbaa3e76ee70e4bfca52db66355a2"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatList.kt",
+            "line": 922,
+            "source_sha256": "336437b39d1987eef21b89341a1553ad828dbaa3e76ee70e4bfca52db66355a2"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatList.kt",
+            "line": 933,
+            "source_sha256": "336437b39d1987eef21b89341a1553ad828dbaa3e76ee70e4bfca52db66355a2"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatList.kt",
+            "line": 942,
+            "source_sha256": "336437b39d1987eef21b89341a1553ad828dbaa3e76ee70e4bfca52db66355a2"
+          }
+        ],
+        "mutableIntSetOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntSet.kt",
+            "line": 78,
+            "source_sha256": "4ca0e4f9ee2061b11dd479d12e806aaebde38076b4cec2cb0426088187e97614"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntSet.kt",
+            "line": 81,
+            "source_sha256": "4ca0e4f9ee2061b11dd479d12e806aaebde38076b4cec2cb0426088187e97614"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntSet.kt",
+            "line": 85,
+            "source_sha256": "4ca0e4f9ee2061b11dd479d12e806aaebde38076b4cec2cb0426088187e97614"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntSet.kt",
+            "line": 92,
+            "source_sha256": "4ca0e4f9ee2061b11dd479d12e806aaebde38076b4cec2cb0426088187e97614"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntSet.kt",
+            "line": 100,
+            "source_sha256": "4ca0e4f9ee2061b11dd479d12e806aaebde38076b4cec2cb0426088187e97614"
+          }
+        ],
+        "mutableLongSetOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongSet.kt",
+            "line": 79,
+            "source_sha256": "d356e6505c1953d235b5583236d775f6cf80ac7553d37e362678ca2222d03ece"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongSet.kt",
+            "line": 82,
+            "source_sha256": "d356e6505c1953d235b5583236d775f6cf80ac7553d37e362678ca2222d03ece"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongSet.kt",
+            "line": 86,
+            "source_sha256": "d356e6505c1953d235b5583236d775f6cf80ac7553d37e362678ca2222d03ece"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongSet.kt",
+            "line": 93,
+            "source_sha256": "d356e6505c1953d235b5583236d775f6cf80ac7553d37e362678ca2222d03ece"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongSet.kt",
+            "line": 101,
+            "source_sha256": "d356e6505c1953d235b5583236d775f6cf80ac7553d37e362678ca2222d03ece"
+          }
+        ],
+        "mutableFloatSetOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatSet.kt",
+            "line": 80,
+            "source_sha256": "9917f21fa5369438c7ecf0a17726f2348f3a0b8ad9fb7813d9be7b14752334aa"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatSet.kt",
+            "line": 83,
+            "source_sha256": "9917f21fa5369438c7ecf0a17726f2348f3a0b8ad9fb7813d9be7b14752334aa"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatSet.kt",
+            "line": 87,
+            "source_sha256": "9917f21fa5369438c7ecf0a17726f2348f3a0b8ad9fb7813d9be7b14752334aa"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatSet.kt",
+            "line": 94,
+            "source_sha256": "9917f21fa5369438c7ecf0a17726f2348f3a0b8ad9fb7813d9be7b14752334aa"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatSet.kt",
+            "line": 102,
+            "source_sha256": "9917f21fa5369438c7ecf0a17726f2348f3a0b8ad9fb7813d9be7b14752334aa"
+          }
+        ],
+        "mutableIntIntMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntIntMap.kt",
+            "line": 134,
+            "source_sha256": "5502a3bd0be9bab91bae1f26f623fa8bf096b62dc7e267f3fd349bd71cd704c5"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntIntMap.kt",
+            "line": 137,
+            "source_sha256": "5502a3bd0be9bab91bae1f26f623fa8bf096b62dc7e267f3fd349bd71cd704c5"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntIntMap.kt",
+            "line": 144,
+            "source_sha256": "5502a3bd0be9bab91bae1f26f623fa8bf096b62dc7e267f3fd349bd71cd704c5"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntIntMap.kt",
+            "line": 159,
+            "source_sha256": "5502a3bd0be9bab91bae1f26f623fa8bf096b62dc7e267f3fd349bd71cd704c5"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntIntMap.kt",
+            "line": 177,
+            "source_sha256": "5502a3bd0be9bab91bae1f26f623fa8bf096b62dc7e267f3fd349bd71cd704c5"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntIntMap.kt",
+            "line": 198,
+            "source_sha256": "5502a3bd0be9bab91bae1f26f623fa8bf096b62dc7e267f3fd349bd71cd704c5"
+          }
+        ],
+        "mutableIntLongMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntLongMap.kt",
+            "line": 134,
+            "source_sha256": "8553c7ba9825c265b2f8348b43d9ca8eaa77ee2cdb25905965f9ac66cd65f42f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntLongMap.kt",
+            "line": 137,
+            "source_sha256": "8553c7ba9825c265b2f8348b43d9ca8eaa77ee2cdb25905965f9ac66cd65f42f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntLongMap.kt",
+            "line": 144,
+            "source_sha256": "8553c7ba9825c265b2f8348b43d9ca8eaa77ee2cdb25905965f9ac66cd65f42f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntLongMap.kt",
+            "line": 159,
+            "source_sha256": "8553c7ba9825c265b2f8348b43d9ca8eaa77ee2cdb25905965f9ac66cd65f42f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntLongMap.kt",
+            "line": 177,
+            "source_sha256": "8553c7ba9825c265b2f8348b43d9ca8eaa77ee2cdb25905965f9ac66cd65f42f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntLongMap.kt",
+            "line": 198,
+            "source_sha256": "8553c7ba9825c265b2f8348b43d9ca8eaa77ee2cdb25905965f9ac66cd65f42f"
+          }
+        ],
+        "mutableIntFloatMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntFloatMap.kt",
+            "line": 134,
+            "source_sha256": "0dd9b05cd26979fe9e39a006e66632009a599aab3433fe8ce7b84f4ebc03216f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntFloatMap.kt",
+            "line": 137,
+            "source_sha256": "0dd9b05cd26979fe9e39a006e66632009a599aab3433fe8ce7b84f4ebc03216f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntFloatMap.kt",
+            "line": 144,
+            "source_sha256": "0dd9b05cd26979fe9e39a006e66632009a599aab3433fe8ce7b84f4ebc03216f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntFloatMap.kt",
+            "line": 159,
+            "source_sha256": "0dd9b05cd26979fe9e39a006e66632009a599aab3433fe8ce7b84f4ebc03216f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntFloatMap.kt",
+            "line": 177,
+            "source_sha256": "0dd9b05cd26979fe9e39a006e66632009a599aab3433fe8ce7b84f4ebc03216f"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/IntFloatMap.kt",
+            "line": 198,
+            "source_sha256": "0dd9b05cd26979fe9e39a006e66632009a599aab3433fe8ce7b84f4ebc03216f"
+          }
+        ],
+        "mutableLongIntMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongIntMap.kt",
+            "line": 134,
+            "source_sha256": "eea3886483ae6e4b9c22a4f11dca0d7d5576f18573ad70b9a4aab77d9c0ac871"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongIntMap.kt",
+            "line": 137,
+            "source_sha256": "eea3886483ae6e4b9c22a4f11dca0d7d5576f18573ad70b9a4aab77d9c0ac871"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongIntMap.kt",
+            "line": 144,
+            "source_sha256": "eea3886483ae6e4b9c22a4f11dca0d7d5576f18573ad70b9a4aab77d9c0ac871"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongIntMap.kt",
+            "line": 159,
+            "source_sha256": "eea3886483ae6e4b9c22a4f11dca0d7d5576f18573ad70b9a4aab77d9c0ac871"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongIntMap.kt",
+            "line": 177,
+            "source_sha256": "eea3886483ae6e4b9c22a4f11dca0d7d5576f18573ad70b9a4aab77d9c0ac871"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongIntMap.kt",
+            "line": 198,
+            "source_sha256": "eea3886483ae6e4b9c22a4f11dca0d7d5576f18573ad70b9a4aab77d9c0ac871"
+          }
+        ],
+        "mutableLongLongMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongLongMap.kt",
+            "line": 134,
+            "source_sha256": "541d55e0eadcf315d76fe422be8a48c523b14fcaa467b20af9847f8b84cb8295"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongLongMap.kt",
+            "line": 137,
+            "source_sha256": "541d55e0eadcf315d76fe422be8a48c523b14fcaa467b20af9847f8b84cb8295"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongLongMap.kt",
+            "line": 144,
+            "source_sha256": "541d55e0eadcf315d76fe422be8a48c523b14fcaa467b20af9847f8b84cb8295"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongLongMap.kt",
+            "line": 159,
+            "source_sha256": "541d55e0eadcf315d76fe422be8a48c523b14fcaa467b20af9847f8b84cb8295"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongLongMap.kt",
+            "line": 177,
+            "source_sha256": "541d55e0eadcf315d76fe422be8a48c523b14fcaa467b20af9847f8b84cb8295"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongLongMap.kt",
+            "line": 198,
+            "source_sha256": "541d55e0eadcf315d76fe422be8a48c523b14fcaa467b20af9847f8b84cb8295"
+          }
+        ],
+        "mutableLongFloatMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongFloatMap.kt",
+            "line": 134,
+            "source_sha256": "bd48e8affffdad316e54afa71a5a79426c1ec016546cb1a705afdaa29d34ef11"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongFloatMap.kt",
+            "line": 137,
+            "source_sha256": "bd48e8affffdad316e54afa71a5a79426c1ec016546cb1a705afdaa29d34ef11"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongFloatMap.kt",
+            "line": 144,
+            "source_sha256": "bd48e8affffdad316e54afa71a5a79426c1ec016546cb1a705afdaa29d34ef11"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongFloatMap.kt",
+            "line": 159,
+            "source_sha256": "bd48e8affffdad316e54afa71a5a79426c1ec016546cb1a705afdaa29d34ef11"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongFloatMap.kt",
+            "line": 177,
+            "source_sha256": "bd48e8affffdad316e54afa71a5a79426c1ec016546cb1a705afdaa29d34ef11"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/LongFloatMap.kt",
+            "line": 198,
+            "source_sha256": "bd48e8affffdad316e54afa71a5a79426c1ec016546cb1a705afdaa29d34ef11"
+          }
+        ],
+        "mutableFloatIntMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatIntMap.kt",
+            "line": 134,
+            "source_sha256": "b78d17dc28c9a394a54c0e90c8f553c1b670d981931a943c154cd1ceef1204fc"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatIntMap.kt",
+            "line": 137,
+            "source_sha256": "b78d17dc28c9a394a54c0e90c8f553c1b670d981931a943c154cd1ceef1204fc"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatIntMap.kt",
+            "line": 144,
+            "source_sha256": "b78d17dc28c9a394a54c0e90c8f553c1b670d981931a943c154cd1ceef1204fc"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatIntMap.kt",
+            "line": 159,
+            "source_sha256": "b78d17dc28c9a394a54c0e90c8f553c1b670d981931a943c154cd1ceef1204fc"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatIntMap.kt",
+            "line": 177,
+            "source_sha256": "b78d17dc28c9a394a54c0e90c8f553c1b670d981931a943c154cd1ceef1204fc"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatIntMap.kt",
+            "line": 198,
+            "source_sha256": "b78d17dc28c9a394a54c0e90c8f553c1b670d981931a943c154cd1ceef1204fc"
+          }
+        ],
+        "mutableFloatLongMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatLongMap.kt",
+            "line": 134,
+            "source_sha256": "ab31622d4defe4ffac9e55c8ec9257dc3e7f1a37a0c9df4ef0a4ec499eddbcb6"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatLongMap.kt",
+            "line": 137,
+            "source_sha256": "ab31622d4defe4ffac9e55c8ec9257dc3e7f1a37a0c9df4ef0a4ec499eddbcb6"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatLongMap.kt",
+            "line": 144,
+            "source_sha256": "ab31622d4defe4ffac9e55c8ec9257dc3e7f1a37a0c9df4ef0a4ec499eddbcb6"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatLongMap.kt",
+            "line": 159,
+            "source_sha256": "ab31622d4defe4ffac9e55c8ec9257dc3e7f1a37a0c9df4ef0a4ec499eddbcb6"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatLongMap.kt",
+            "line": 177,
+            "source_sha256": "ab31622d4defe4ffac9e55c8ec9257dc3e7f1a37a0c9df4ef0a4ec499eddbcb6"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatLongMap.kt",
+            "line": 198,
+            "source_sha256": "ab31622d4defe4ffac9e55c8ec9257dc3e7f1a37a0c9df4ef0a4ec499eddbcb6"
+          }
+        ],
+        "mutableFloatFloatMapOf": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatFloatMap.kt",
+            "line": 134,
+            "source_sha256": "d40fa340635af0d0af3419aefb901bf6ac229420679b24a34d5f57733e542425"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatFloatMap.kt",
+            "line": 137,
+            "source_sha256": "d40fa340635af0d0af3419aefb901bf6ac229420679b24a34d5f57733e542425"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatFloatMap.kt",
+            "line": 144,
+            "source_sha256": "d40fa340635af0d0af3419aefb901bf6ac229420679b24a34d5f57733e542425"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatFloatMap.kt",
+            "line": 159,
+            "source_sha256": "d40fa340635af0d0af3419aefb901bf6ac229420679b24a34d5f57733e542425"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatFloatMap.kt",
+            "line": 177,
+            "source_sha256": "d40fa340635af0d0af3419aefb901bf6ac229420679b24a34d5f57733e542425"
+          },
+          {
+            "archive_member": "commonMain/androidx/collection/FloatFloatMap.kt",
+            "line": 198,
+            "source_sha256": "d40fa340635af0d0af3419aefb901bf6ac229420679b24a34d5f57733e542425"
+          }
+        ],
+        "MutableIntList": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntList.kt",
+            "line": 549,
+            "source_sha256": "41ec7c8b70cb9db4c2d0e97a760b2df1e47e4da9fb76810a9cb299fdd799382f"
+          }
+        ],
+        "MutableLongList": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongList.kt",
+            "line": 550,
+            "source_sha256": "e38e0f8f8d320f51dd64e9b11cd48e93aa0ba748bc9cf38474c2593bd9ebcb0d"
+          }
+        ],
+        "MutableFloatList": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatList.kt",
+            "line": 551,
+            "source_sha256": "336437b39d1987eef21b89341a1553ad828dbaa3e76ee70e4bfca52db66355a2"
+          }
+        ],
+        "MutableIntSet": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntSet.kt",
+            "line": 472,
+            "source_sha256": "4ca0e4f9ee2061b11dd479d12e806aaebde38076b4cec2cb0426088187e97614"
+          }
+        ],
+        "MutableLongSet": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongSet.kt",
+            "line": 473,
+            "source_sha256": "d356e6505c1953d235b5583236d775f6cf80ac7553d37e362678ca2222d03ece"
+          }
+        ],
+        "MutableFloatSet": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatSet.kt",
+            "line": 474,
+            "source_sha256": "9917f21fa5369438c7ecf0a17726f2348f3a0b8ad9fb7813d9be7b14752334aa"
+          }
+        ],
+        "MutableIntIntMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntIntMap.kt",
+            "line": 634,
+            "source_sha256": "5502a3bd0be9bab91bae1f26f623fa8bf096b62dc7e267f3fd349bd71cd704c5"
+          }
+        ],
+        "MutableIntLongMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntLongMap.kt",
+            "line": 634,
+            "source_sha256": "8553c7ba9825c265b2f8348b43d9ca8eaa77ee2cdb25905965f9ac66cd65f42f"
+          }
+        ],
+        "MutableIntFloatMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/IntFloatMap.kt",
+            "line": 634,
+            "source_sha256": "0dd9b05cd26979fe9e39a006e66632009a599aab3433fe8ce7b84f4ebc03216f"
+          }
+        ],
+        "MutableLongIntMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongIntMap.kt",
+            "line": 634,
+            "source_sha256": "eea3886483ae6e4b9c22a4f11dca0d7d5576f18573ad70b9a4aab77d9c0ac871"
+          }
+        ],
+        "MutableLongLongMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongLongMap.kt",
+            "line": 634,
+            "source_sha256": "541d55e0eadcf315d76fe422be8a48c523b14fcaa467b20af9847f8b84cb8295"
+          }
+        ],
+        "MutableLongFloatMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/LongFloatMap.kt",
+            "line": 636,
+            "source_sha256": "bd48e8affffdad316e54afa71a5a79426c1ec016546cb1a705afdaa29d34ef11"
+          }
+        ],
+        "MutableFloatIntMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatIntMap.kt",
+            "line": 634,
+            "source_sha256": "b78d17dc28c9a394a54c0e90c8f553c1b670d981931a943c154cd1ceef1204fc"
+          }
+        ],
+        "MutableFloatLongMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatLongMap.kt",
+            "line": 636,
+            "source_sha256": "ab31622d4defe4ffac9e55c8ec9257dc3e7f1a37a0c9df4ef0a4ec499eddbcb6"
+          }
+        ],
+        "MutableFloatFloatMap": [
+          {
+            "archive_member": "commonMain/androidx/collection/FloatFloatMap.kt",
+            "line": 636,
+            "source_sha256": "d40fa340635af0d0af3419aefb901bf6ac229420679b24a34d5f57733e542425"
+          }
+        ]
+      }
+    }
+  ],
+  "source_archives_are_never_classpath_artifacts": true,
+  "actual_binary_verification": null,
+  "actual_detector_execution": null,
+  "tested": false,
+  "qualified": false
+}

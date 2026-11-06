@@ -30,6 +30,7 @@ CONTAINMENT_SOURCE = "sha256:" + "3" * 64
 CONTAINMENT_BINARY = "sha256:" + "4" * 64
 SECRET = "Z" * 43
 PRIVATE_TEXT = "private-owner-reason-and-source-marker"
+FINDING_WIRE_PROFILE = "ktchecker/finding-retrieval-attachments-1"
 REVIEW_IDS = {"agent-a": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "agent-b": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"}
 
 
@@ -65,7 +66,7 @@ def provider_document():
                          "runtimeRequirement": "complete_link_free_jdk21_image", "reason": PRIVATE_TEXT}}
 
 
-def client_document(name="agent-a"):
+def client_document(name="agent-a", *, execution_authorized=True):
     binding = {"ownerId": "owner-cccccccc-cccc-cccc-cccc-cccccccccccc", "workspaceId": "example-project",
                "worktreeId": "shared-overlay", "clientId": name, "sessionId": "session-" + name,
                "lineageId": "task-" + name, "generation": 1}
@@ -75,7 +76,7 @@ def client_document(name="agent-a"):
                 "captureKind": "immutable_overlay", "unknownInputs": [],
                 "files": [{"path": name + "/Main.kt", "digest": "sha256:" + hashlib.sha256(data).hexdigest(), "size": len(data)}]}
     prepared = {"contractVersion": example.CONTRACT, "binding": binding, "patchId": "patch-1", "idempotencyKey": "request-1",
-                "coverageScope": "explicit-rule-subset-not-full-release", "executionAuthorized": True,
+                "coverageScope": "explicit-rule-subset-not-full-release", "executionAuthorized": execution_authorized,
                 "input": {"snapshot": snapshot, "requiredRuleIds": [example.RULE],
                           "context": {"scope": example.scope_for(name), "fullProject": False, "compilerVersion": "2.4.21",
                                       "compilationFiles": [name + "/Main.kt"], "toolchainDigest": TOOLCHAIN}}}
@@ -134,6 +135,12 @@ class SafeFailureMixin:
 
 
 class JsonTests(SafeFailureMixin, unittest.TestCase):
+    def test_absolute_owner_deadline_is_checked_before_any_process_start(self):
+        with mock.patch.object(example.time, "monotonic", return_value=100.0), mock.patch.object(example, "BoundedProcess") as process:
+            for deadline in (True, 100.0, 99.0, float("nan"), float("inf")):
+                self.fails("invalid_timeout", example.run_json_command, [SECRET], deadline=deadline)
+            process.assert_not_called()
+
     def test_utf8_limits_are_bytes_not_characters(self):
         data = example.encode_json({"value": "é" * 50})
         self.assertGreater(len(data), len(data.decode("utf-8")))
@@ -164,6 +171,133 @@ class JsonTests(SafeFailureMixin, unittest.TestCase):
             self.fails("invalid_timeout", example.BoundedProcess.deadline, value)
 
 
+class NdjsonWireProfileTests(SafeFailureMixin, unittest.TestCase):
+    """In-memory exchanges only; replacement clients model reconnect, not processes."""
+
+    @staticmethod
+    def success(identifier="1", result=None):
+        return {"contractVersion": example.CONTRACT, "id": identifier,
+                "findingWireProfile": FINDING_WIRE_PROFILE, "result": {} if result is None else result}
+
+    @staticmethod
+    def transport(responses):
+        transport = mock.Mock()
+        transport.limits = example.PipeLimits()
+        transport.deadline.side_effect = lambda seconds: time.monotonic() + seconds
+        transport.read_frame.side_effect = [json.dumps(response).encode("utf-8") for response in responses]
+        return transport
+
+    @staticmethod
+    def requests(transport):
+        return [json.loads(call.args[0]) for call in transport.write_frame.call_args_list]
+
+    def test_literal_profile_is_sent_on_every_call_without_changing_params_or_ids(self):
+        self.assertEqual(FINDING_WIRE_PROFILE, example.FINDING_WIRE_PROFILE)
+        cases = [("doctor", {}, None, "1"),
+                 ("review.submit", {"idempotencyKey": "one-request", "findingWireProfile": "nested-not-envelope"},
+                  "owner-id", "owner-id"),
+                 ("review.events", {"cursor": "old-cursor", "limit": 50}, None, "3")]
+        responses = [self.success(identifier, {"value": index}) for index, (_, _, _, identifier) in enumerate(cases)]
+        transport = self.transport(responses)
+        client = example.NdjsonClient(transport)
+        for index, (method, params, request_id, _) in enumerate(cases):
+            self.assertEqual({"value": index}, client.call(method, params, request_id=request_id))
+        self.assertEqual([{"id": identifier, "method": method, "params": params,
+                           "findingWireProfile": FINDING_WIRE_PROFILE}
+                          for method, params, _, identifier in cases], self.requests(transport))
+        self.assertEqual(len(cases), transport.read_frame.call_count)
+
+    def test_missing_malformed_and_mismatched_success_markers_never_expose_result(self):
+        cases = [("missing", None), ("null", None), ("boolean", True), ("number", 1),
+                 ("array", [FINDING_WIRE_PROFILE]), ("object", {"profile": FINDING_WIRE_PROFILE}),
+                 ("empty", ""), ("old", "ktchecker/finding-retrieval-attachments-0"),
+                 ("case", FINDING_WIRE_PROFILE.upper()), ("space", FINDING_WIRE_PROFILE + " "),
+                 ("private", PRIVATE_TEXT + SECRET)]
+        for label, profile in cases:
+            with self.subTest(profile_kind=label):
+                response = self.success(result={"private": PRIVATE_TEXT, "token": SECRET})
+                if label == "missing":
+                    del response["findingWireProfile"]
+                else:
+                    response["findingWireProfile"] = profile
+                transport = self.transport([response])
+                client = example.NdjsonClient(transport)
+                expose = mock.Mock()
+                self.fails("finding_wire_profile_outcome_uncertain",
+                           lambda: expose(client.call("review.submit", {"idempotencyKey": "no-replay"})))
+                expose.assert_not_called()
+                transport.write_frame.assert_called_once()
+                transport.read_frame.assert_called_once()
+                self.assertEqual(FINDING_WIRE_PROFILE, self.requests(transport)[0]["findingWireProfile"])
+
+    def test_matching_profile_does_not_bypass_success_envelope_validation(self):
+        for response in (dict(self.success(), extra=SECRET), self.success(result=[])):
+            transport = self.transport([response])
+            self.fails("invalid_response", example.NdjsonClient(transport).call, "doctor", {})
+            transport.write_frame.assert_called_once()
+            transport.read_frame.assert_called_once()
+
+    def test_prior_success_is_not_a_handshake_for_later_successes(self):
+        unmarked = self.success("2", {"events": [], "cursor": "untrusted-cursor"})
+        del unmarked["findingWireProfile"]
+        transport = self.transport([self.success(result={"ready": True}), unmarked])
+        client = example.NdjsonClient(transport)
+        self.assertEqual({"ready": True}, client.call("doctor", {}))
+        expose = mock.Mock()
+        self.fails("finding_wire_profile_outcome_uncertain",
+                   lambda: expose(client.call("review.events", {"cursor": "old-cursor"})))
+        expose.assert_not_called()
+        self.assertEqual(["1", "2"], [request["id"] for request in self.requests(transport)])
+        self.assertTrue(all(request["findingWireProfile"] == FINDING_WIRE_PROFILE
+                            for request in self.requests(transport)))
+        self.assertEqual(2, transport.read_frame.call_count)
+
+    def test_replacement_client_rechecks_old_peer_even_for_default_empty_findings(self):
+        prior = self.transport([self.success(result={"reviewId": "already-accepted"})])
+        self.assertEqual({"reviewId": "already-accepted"},
+                         example.NdjsonClient(prior).call("review.submit", {"idempotencyKey": "already-sent"}))
+        for result in ({}, {"findings": []}, {"findings": [], "findingWireProfile": FINDING_WIRE_PROFILE}):
+            # An old peer can ignore the new request field and return a default or
+            # empty result. Neither prior success nor a nested marker is an echo.
+            legacy = {"contractVersion": example.CONTRACT, "id": "1", "result": result}
+            replacement = self.transport([legacy])
+            self.fails("finding_wire_profile_outcome_uncertain",
+                       example.NdjsonClient(replacement).call, "doctor", {})
+            self.assertEqual([{"id": "1", "method": "doctor", "params": {},
+                               "findingWireProfile": FINDING_WIRE_PROFILE}], self.requests(replacement))
+            replacement.read_frame.assert_called_once()
+        self.assertEqual(1, prior.write_frame.call_count)  # No old mutation was replayed.
+
+    def test_bad_success_after_synthetic_commit_is_uncertain_not_rollback_or_replay(self):
+        response = dict(self.success(result={"reviewId": "committed-before-response"}),
+                        findingWireProfile="foreign-profile")
+        transport = self.transport([response])
+        committed = []
+        transport.write_frame.side_effect = lambda data, _deadline: committed.append(json.loads(data))
+        self.fails("finding_wire_profile_outcome_uncertain", example.NdjsonClient(transport).call,
+                   "review.submit", {"idempotencyKey": "one-attempt"})
+        self.assertEqual([{"id": "1", "method": "review.submit", "params": {"idempotencyKey": "one-attempt"},
+                           "findingWireProfile": FINDING_WIRE_PROFILE}], committed)
+        transport.write_frame.assert_called_once()
+        transport.read_frame.assert_called_once()
+
+    def test_error_envelopes_keep_sanitized_rejection_and_existing_identity_precedence(self):
+        error = {"contractVersion": example.CONTRACT, "id": "1",
+                 "error": {"code": SECRET, "message": PRIVATE_TEXT}}
+        cases = [(error, "rpc_rejected"),
+                 (dict(error, findingWireProfile=None), "rpc_rejected"),
+                 (dict(error, findingWireProfile="foreign-profile", result={}), "rpc_rejected"),
+                 (dict(error, findingWireProfile=FINDING_WIRE_PROFILE), "rpc_rejected"),
+                 (dict(error, id="wrong-id"), "wrong_response_id"),
+                 (dict(error, contractVersion="foreign"), "wrong_contract")]
+        for response, code in cases:
+            with self.subTest(code=code):
+                transport = self.transport([response])
+                self.fails(code, example.NdjsonClient(transport).call, "doctor", {})
+                transport.write_frame.assert_called_once()
+                transport.read_frame.assert_called_once()
+
+
 @unittest.skipUnless(HAS_GUARD, "POSIX unreaped leader/pipe support required")
 class TransportTests(SafeFailureMixin, unittest.TestCase):
     def process(self, source, **kwargs):
@@ -185,7 +319,9 @@ class TransportTests(SafeFailureMixin, unittest.TestCase):
 import json,sys
 for line in sys.stdin.buffer:
     request=json.loads(line)
-    print(json.dumps({'contractVersion':'ktchecker/preview-1','id':request['id'],'result':{'value':'é💡'}}),flush=True)
+    assert request.get('findingWireProfile')=='ktchecker/finding-retrieval-attachments-1'
+    print(json.dumps({'contractVersion':'ktchecker/preview-1','id':request['id'],
+                      'findingWireProfile':'ktchecker/finding-retrieval-attachments-1','result':{'value':'é💡'}}),flush=True)
 """
         with self.process(source) as transport:
             client = example.NdjsonClient(transport)
@@ -219,13 +355,15 @@ for line in sys.stdin.buffer:
             self.assert_closed(transport)
 
     def test_response_at_exact_byte_limit_with_lf_passes(self):
-        data = example.encode_json({"contractVersion": example.CONTRACT, "id": "1", "result": {"value": "é" * 25}})
+        data = example.encode_json({"contractVersion": example.CONTRACT, "id": "1",
+                                    "findingWireProfile": FINDING_WIRE_PROFILE, "result": {"value": "é" * 25}})
         with self.reply(data + b"\n", frame_bytes=len(data)) as transport:
             self.assertEqual({"value": "é" * 25}, example.NdjsonClient(transport).call("doctor", {}))
             self.assertEqual(len(data) + 1, transport.stdout_bytes)
 
     def test_malformed_response_contract_id_envelope_and_private_error(self):
-        base = {"contractVersion": example.CONTRACT, "id": "1", "result": {}}
+        base = {"contractVersion": example.CONTRACT, "id": "1",
+                "findingWireProfile": FINDING_WIRE_PROFILE, "result": {}}
         cases = [(b'{"id":', "invalid_json"),
                  (b'{"contractVersion":"ktchecker/preview-1","id":"1","id":"1","result":{}}', "invalid_json")]
         for field, value, code in (("id", "2", "wrong_response_id"), ("id", 1, "wrong_response_id"),
@@ -241,12 +379,14 @@ for line in sys.stdin.buffer:
                 self.assert_closed(transport)
 
     def test_multiple_response_frames_are_not_accepted(self):
-        data = example.encode_json({"contractVersion": example.CONTRACT, "id": "1", "result": {}})
+        data = example.encode_json({"contractVersion": example.CONTRACT, "id": "1",
+                                    "findingWireProfile": FINDING_WIRE_PROFILE, "result": {}})
         with self.reply(data + b"\n" + data + b"\n") as transport:
             self.fails("unexpected_output", example.NdjsonClient(transport).call, "doctor", {})
 
     def test_response_parsing_does_not_restart_or_escape_request_deadline(self):
-        data = example.encode_json({"contractVersion": example.CONTRACT, "id": "1", "result": {}})
+        data = example.encode_json({"contractVersion": example.CONTRACT, "id": "1",
+                                    "findingWireProfile": FINDING_WIRE_PROFILE, "result": {}})
         original = example.parse_json
 
         def delayed(*args, **kwargs):
@@ -287,14 +427,21 @@ for line in sys.stdin.buffer:
 import json,sys
 for line in sys.stdin.buffer:
     r=json.loads(line)
-    print(json.dumps({'contractVersion':'ktchecker/preview-1','id':r['id'],'result':{}}),flush=True)
+    assert r.get('findingWireProfile')=='ktchecker/finding-retrieval-attachments-1'
+    print(json.dumps({'contractVersion':'ktchecker/preview-1','id':r['id'],
+                      'findingWireProfile':'ktchecker/finding-retrieval-attachments-1','result':{}}),flush=True)
 """
-        with self.process(source, stdout_bytes=110) as transport:
+        reply = {"contractVersion": example.CONTRACT, "id": "1",
+                 "findingWireProfile": FINDING_WIRE_PROFILE, "result": {}}
+        stdout_budget = len((json.dumps(reply) + "\n").encode("utf-8"))
+        with self.process(source, stdout_bytes=stdout_budget) as transport:
             client = example.NdjsonClient(transport)
             client.call("doctor", {})
             self.fails("stdout_limit", client.call, "doctor", {})
-            self.assertEqual(111, transport.stdout_bytes)
-        with self.process(source, stdin_bytes=60) as transport:
+            self.assertEqual(stdout_budget + 1, transport.stdout_bytes)
+        request = {"id": "1", "method": "doctor", "params": {}, "findingWireProfile": FINDING_WIRE_PROFILE}
+        stdin_budget = len(example.encode_json(request)) + 1
+        with self.process(source, stdin_bytes=stdin_budget) as transport:
             client = example.NdjsonClient(transport)
             client.call("doctor", {})
             self.fails("stdin_limit", client.call, "doctor", {})
@@ -504,6 +651,31 @@ class PrivateDirectoryTests(SafeFailureMixin, unittest.TestCase):
         self.assertNotIn(str(self.base), stderr.getvalue())
         self.assertEqual("preview_example_compiler_java_home_missing", json.loads(stderr.getvalue())["code"])
 
+    def test_benchmark_selection_is_explicit_paired_and_incompatible_with_prepare_only(self):
+        for extra in (["--benchmark-scenario", "fresh-broker-concurrent"],
+                      ["--benchmark-scenarios", str(self.base / SECRET)],
+                      ["--benchmark-scenarios", str(self.base / SECRET), "--benchmark-scenario", "fresh-broker-concurrent", "--prepare-only"]):
+            errors = io.StringIO()
+            with contextlib.redirect_stderr(errors), mock.patch.object(example.subprocess, "Popen") as popen:
+                self.assertEqual(1, example.main(["--output", str(self.base / "new"), "--compiler-java-home", str(self.base), *extra]))
+            self.assertEqual("preview_example_benchmark_arguments_invalid", json.loads(errors.getvalue())["code"])
+            self.assertNotIn(SECRET, errors.getvalue())
+            self.assertFalse((self.base / "new").exists())
+            popen.assert_not_called()
+
+    def test_benchmark_data_read_is_bounded_link_free_and_does_not_execute_scenario_code(self):
+        selected = example.benchmark.Scenario("probe", "fresh_broker_resident_dependencies", "concurrent", 0, 1, 2, 1, 600, 240)
+        path = self.base / "scenario.json"
+        path.write_text(json.dumps({"schema": example.benchmark.SCHEMA, "scenarios": [example.benchmark.asdict(selected)]}))
+        with mock.patch.object(example.subprocess, "Popen") as popen:
+            self.assertEqual(selected, example.read_benchmark_scenario(path, "probe"))
+            link = self.base / "link.json"
+            link.symlink_to(path)
+            self.fails("benchmark_scenarios_unavailable", example.read_benchmark_scenario, link, "probe")
+            path.write_bytes(b" " * 65_537)
+            self.fails("benchmark_scenarios_invalid", example.read_benchmark_scenario, path, "probe")
+            popen.assert_not_called()
+
 
 class ObservationTests(SafeFailureMixin, unittest.TestCase):
     def test_provider_inspection_requires_explicit_selection_and_does_not_claim_execution(self):
@@ -544,7 +716,7 @@ class ObservationTests(SafeFailureMixin, unittest.TestCase):
                     else:
                         document["processContainment"] = containment
                     with mock.patch.object(controller, "call", return_value=document) as call:
-                        self.fails("process_containment_unavailable", controller.prepare)
+                        self.fails("process_containment_unavailable", controller.prepare, authorize_execution=False)
                     call.assert_called_once_with("providers")
                     self.assertFalse(list(root.path.iterdir()))
 
@@ -570,15 +742,69 @@ class ObservationTests(SafeFailureMixin, unittest.TestCase):
         self.assertNotEqual(example.provider_inspection(document), example.provider_inspection(changed))
 
     def test_prepared_input_scope_exact_file_and_toolchain_binding(self):
-        example.validate_prepared(client_document(), "agent-a", TOOLCHAIN)
-        for field, value in (("fullProject", True), ("compilationFiles", ["agent-b/Main.kt"]),
-                             ("compilerVersion", "2.4.20"), ("toolchainDigest", CERTIFICATE)):
-            client = client_document()
-            client["prepared"]["input"]["context"][field] = value
-            self.fails("invalid_prepared_binding", example.validate_prepared, client, "agent-a", TOOLCHAIN)
+        for authorized in (False, True):
+            options = {"execution_authorized": authorized}
+            example.validate_prepared(client_document(execution_authorized=authorized), "agent-a", TOOLCHAIN, **options)
+            for field, value in (("fullProject", True), ("compilationFiles", ["agent-b/Main.kt"]),
+                                 ("compilerVersion", "2.4.20"), ("toolchainDigest", CERTIFICATE),
+                                 ("scope", example.scope_for("agent-b"))):
+                client = client_document(execution_authorized=authorized)
+                client["prepared"]["input"]["context"][field] = value
+                self.fails("invalid_prepared_binding", example.validate_prepared, client, "agent-a", TOOLCHAIN, **options)
+            client = client_document(execution_authorized=authorized)
+            client["prepared"]["input"]["snapshot"]["files"][0]["digest"] = CERTIFICATE
+            self.fails("invalid_prepared_binding", example.validate_prepared, client, "agent-a", TOOLCHAIN, **options)
+            client = client_document(execution_authorized=authorized)
+            client["prepared"]["input"]["requiredRuleIds"] = []
+            self.fails("invalid_prepared_binding", example.validate_prepared, client, "agent-a", TOOLCHAIN, **options)
+
+    def test_prepared_authorization_requires_the_exact_selected_boolean(self):
+        for authorized in (False, True):
+            options = {"execution_authorized": authorized}
+            for name in example.SOURCES:
+                example.validate_prepared(client_document(name, execution_authorized=authorized), name, TOOLCHAIN, **options)
+            for value in (not authorized, None, 0, 1, "false", "true", [], {}):
+                with self.subTest(expected=authorized, retained=value):
+                    client = client_document(execution_authorized=value)
+                    self.fails("invalid_prepared_binding", example.validate_prepared, client, "agent-a", TOOLCHAIN, **options)
+            client = client_document(execution_authorized=authorized)
+            del client["prepared"]["executionAuthorized"]
+            self.fails("invalid_prepared_binding", example.validate_prepared, client, "agent-a", TOOLCHAIN, **options)
+        for value in (None, 0, 1, "false", "true", [], {}):
+            self.fails("invalid_prepared_binding", example.validate_prepared, client_document(), "agent-a", TOOLCHAIN,
+                       execution_authorized=value)
+
+    def test_preparation_rejects_nonboolean_owner_choice_before_any_owner_command(self):
+        controller = object.__new__(example.Controller)
+        with mock.patch.object(controller, "call") as call:
+            for value in (None, 0, 1, "false", "true", [], {}):
+                self.fails("invalid_execution_authorization", controller.prepare, authorize_execution=value)
+            call.assert_not_called()
+
+    def test_review_rejects_non_authorized_preparation_before_broker_start(self):
+        controller = object.__new__(example.Controller)
+        controller.inspection = example.provider_inspection(provider_document())
+        controller.root = mock.Mock(spec=example.PrivateDirectory)
+        for name in example.SOURCES:
+            clients = [client_document(other, execution_authorized=other != name) for other in example.SOURCES]
+            unchanged = copy.deepcopy(clients)
+            with mock.patch.object(example, "BoundedProcess") as process:
+                self.fails("invalid_prepared_binding", controller.review, clients)
+                process.assert_not_called()
+            controller.root.verify.assert_not_called()
+            self.assertEqual(unchanged, clients)  # No implicit grant repair or request mutation.
+
+    def test_benchmark_patch_variant_uses_exact_explicit_source_and_ids_not_legacy_defaults(self):
         client = client_document()
-        client["prepared"]["input"]["snapshot"]["files"][0]["digest"] = CERTIFICATE
+        source = "interface Contract2 { fun answer(): Int }\nclass Broken2 : Contract2\n"
+        client["prepared"].update(patchId="benchmark-measured-r2-agent-a", idempotencyKey="request-measured-r2-agent-a")
+        file = client["prepared"]["input"]["snapshot"]["files"][0]
+        file.update(digest="sha256:" + hashlib.sha256(source.encode()).hexdigest(), size=len(source.encode()))
         self.fails("invalid_prepared_binding", example.validate_prepared, client, "agent-a", TOOLCHAIN)
+        options = {"source": source, "patch_id": client["prepared"]["patchId"], "idempotency_key": client["prepared"]["idempotencyKey"]}
+        example.validate_prepared(client, "agent-a", TOOLCHAIN, **options)
+        options["source"] = example.SOURCES["agent-a"]
+        self.fails("invalid_prepared_binding", example.validate_prepared, client, "agent-a", TOOLCHAIN, **options)
 
     def test_status_binding_checks_client_review_patch_snapshot_and_sequence(self):
         item = item_document()
@@ -666,8 +892,15 @@ class ObservationTests(SafeFailureMixin, unittest.TestCase):
 @unittest.skipUnless(HAS_GUARD, "POSIX fake broker support required")
 class FakeBrokerReportTests(unittest.TestCase):
     def test_prepare_only_with_fake_owner_initializes_empty_root_before_private_requests(self):
-        fixture = {"providers": provider_document(), "clients": {name: client_document(name) for name in example.SOURCES},
-                   "sources": example.SOURCES}
+        self.exercise_owner_preparation(authorize_execution=False)
+
+    def test_actual_run_preparation_keeps_explicit_authorization_and_enters_review(self):
+        self.exercise_owner_preparation(authorize_execution=True)
+
+    def exercise_owner_preparation(self, *, authorize_execution):
+        fixture = {"providers": provider_document(),
+                   "clients": {name: client_document(name, execution_authorized=authorize_execution) for name in example.SOURCES},
+                   "sources": example.SOURCES, "authorizeExecution": authorize_execution}
         source = "fixture=" + repr(fixture) + "\n" + r'''
 import json,os,pathlib,sys
 args=sys.argv[1:]
@@ -713,7 +946,7 @@ elif method=='overlay':
 elif method=='prepare':
     request=json.loads(pathlib.Path(options['--request']).read_text())
     name=request['clientId']
-    assert options['--authorize-execution'] is True
+    assert ('--authorize-execution' in options) is fixture['authorizeExecution']
     assert request['compilationFiles']==[name+'/Main.kt']
     assert request['compilerVersion']=='2.4.21'
     assert request['requiredRuleIds']==fixture['clients'][name]['prepared']['input']['requiredRuleIds']
@@ -735,23 +968,41 @@ print(json.dumps(result),flush=True)
             (base / "compiler" / "bin").mkdir(parents=True)
             (base / "compiler" / "bin" / "java").write_text("synthetic, never executed")
             output, errors = io.StringIO(), io.StringIO()
-            with tiny_cleanup_processes(), mock.patch.object(example.Controller, "__init__", new=fake_init), contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            # Only tiny Python owner fakes execute. The ordinary mode's review handoff
+            # is observed here, not substituted for real compiler/provider evidence.
+            with (tiny_cleanup_processes(), mock.patch.object(example.Controller, "__init__", new=fake_init),
+                  mock.patch.object(example.Controller, "review", autospec=True,
+                                    return_value={"state": "review-entered", "releaseQualified": False}) as review,
+                  contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors)):
                 status = example.main(["--distribution", str(base / "distribution"), "--output", str(base / "new"),
-                                       "--compiler-java-home", str(base / "compiler"), "--prepare-only"])
+                                       "--compiler-java-home", str(base / "compiler"),
+                                       *([] if authorize_execution else ["--prepare-only"])])
             self.assertEqual(0, status, errors.getvalue())
             report = json.loads(output.getvalue())
-            self.assertEqual("prepared", report["state"])
-            self.assertEqual(2, report["clientCount"])
-            self.assertFalse(report["compilerExecutionObserved"])
             self.assertFalse(report["releaseQualified"])
-            self.assertEqual(example.provider_inspection(provider_document()), report["compilerInspection"])
-            self.assertGreater(report["cleanup"]["ownerCommandObservedMillisTotal"], 0)
-            self.assertFalse(report["cleanup"]["forcedHelperLossGuaranteed"])
-            self.assertEqual("not_attempted", report["contextDelivery"]["state"])
+            if authorize_execution:
+                self.assertEqual("review-entered", report["state"])
+                review.assert_called_once()
+                self.assertEqual([fixture["clients"][name] for name in example.SOURCES], review.call_args.args[1])
+            else:
+                review.assert_not_called()
+                self.assertEqual("prepared", report["state"])
+                self.assertEqual(2, report["clientCount"])
+                self.assertIs(report["executionAuthorized"], False)
+                self.assertFalse(report["compilerExecutionObserved"])
+                self.assertEqual(example.provider_inspection(provider_document()), report["compilerInspection"])
+                self.assertGreater(report["cleanup"]["ownerCommandObservedMillisTotal"], 0)
+                self.assertFalse(report["cleanup"]["forcedHelperLossGuaranteed"])
+                self.assertEqual("not_attempted", report["contextDelivery"]["state"])
             self.assertFalse((base / "new" / "observations.json").exists())
             for name in example.SOURCES:
                 credential = base / "new" / (name + "-credentials.json")
                 self.assertEqual(0o600, stat.S_IMODE(credential.stat().st_mode))
+                prepared_file = base / "new" / (name + "-prepared.json")
+                self.assertEqual(0o600, stat.S_IMODE(prepared_file.stat().st_mode))
+                retained = json.loads(prepared_file.read_text(encoding="utf-8"))
+                self.assertIs(retained["executionAuthorized"], authorize_execution)
+                self.assertEqual(fixture["clients"][name]["prepared"], retained)
             self.assertNotIn(PRIVATE_TEXT, output.getvalue() + errors.getvalue())
             self.assertNotIn(SECRET, output.getvalue() + errors.getvalue())
 
@@ -765,6 +1016,7 @@ polls={name:0 for name in fixture['statuses']}
 events={name:0 for name in fixture['statuses']}
 for line in sys.stdin.buffer:
     request=json.loads(line)
+    assert request.get('findingWireProfile')=='ktchecker/finding-retrieval-attachments-1'
     method,params=request['method'],request['params']
     error=None
     if method=='doctor':
@@ -799,6 +1051,8 @@ for line in sys.stdin.buffer:
             raise SystemExit(5)
     response={'contractVersion':'ktchecker/preview-1','id':request['id']}
     response['error' if error else 'result']=error if error else result
+    if not error:
+        response['findingWireProfile']='ktchecker/finding-retrieval-attachments-1'
     print(json.dumps(response,separators=(',',':')),flush=True)
 '''
         with tempfile.TemporaryDirectory(prefix="ktchecker-fake-broker-") as temporary:

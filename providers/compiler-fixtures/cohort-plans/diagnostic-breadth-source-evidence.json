@@ -1,0 +1,863 @@
+{
+  "schema_version": 1,
+  "kotlin_version": "2.4.21",
+  "status": "authored_primary_source_oracles_not_execution",
+  "primary_archive": {
+    "url": "https://codeload.github.com/JetBrains/kotlin/tar.gz/refs/tags/v2.4.21",
+    "sha256": "6ee2c2026ab8fdde96e6f14b84262dfa3ac22ea7510e82b42489d846735b9202",
+    "bytes": 48793351,
+    "read_policy": "Exact regular entries, data only, bounded reads; no upstream harness executed.",
+    "acquisition_receipt_sha256": "329e50eda4cf590f649ae27d6939e2c6b302847dc9bca7456c846295003f5318"
+  },
+  "upstream_license": {
+    "name": "Apache-2.0",
+    "path": "license/LICENSE.txt",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "project_license_decision": false,
+    "purpose": "Attribution for private primary-source references only."
+  },
+  "rules": [
+    {
+      "rule_id": "ktc.compiler.common.has_next_missing",
+      "upstream_id": "HAS_NEXT_MISSING",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L980-L980",
+          "line_start": 980,
+          "line_end": 980,
+          "quote": "    val HAS_NEXT_MISSING: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"HAS_NEXT_MISSING\", ERROR, SourceElementPositioningStrategies.DEFAULT, KtExpression::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/testsWithStdLib/diagnostics/forLoopChecker.kt",
+          "sha256": "ae9f070168a0aee1e8357243b1e025f2e0e1a33b449635d1cb3b06685a290bcc",
+          "bytes": 2876,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/testsWithStdLib/diagnostics/forLoopChecker.kt#L100-L104",
+          "line_start": 100,
+          "line_end": 104,
+          "quote": ") {\n    for (i in <!ITERATOR_MISSING!>notRange1<!>);\n    for (i in <!HAS_NEXT_MISSING, NEXT_MISSING!>notRange2<!>);\n    for (i in <!NEXT_MISSING!>notRange3<!>);\n    for (i in <!HAS_NEXT_MISSING!>notRange4<!>);",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt",
+          "sha256": "3edfd76af0912244460fff26d3744a55744098a2c2f0950052209ea4408bec2f",
+          "bytes": 8932,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt#L16-L24",
+          "line_start": 16,
+          "line_end": 24,
+          "quote": "import org.jetbrains.kotlin.fir.analysis.checkers.valOrVarKeyword\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.HAS_NEXT_FUNCTION_AMBIGUITY\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.HAS_NEXT_FUNCTION_NONE_APPLICABLE\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.HAS_NEXT_MISSING\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.ITERATOR_AMBIGUITY\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.ITERATOR_MISSING\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.ITERATOR_ON_NULLABLE\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.NEXT_AMBIGUITY",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "Resolved extension hasNext supplies the protocol; missing member alone is not a defect.",
+      "applicability_scope": "A direct next call does not request the for-loop hasNext protocol.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.has_next_function_type_mismatch",
+      "upstream_id": "HAS_NEXT_FUNCTION_TYPE_MISMATCH",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L516-L516",
+          "line_start": 516,
+          "line_end": 516,
+          "quote": "    val HAS_NEXT_FUNCTION_TYPE_MISMATCH: KtDiagnosticFactory1<ConeKotlinType> = KtDiagnosticFactory1(\"HAS_NEXT_FUNCTION_TYPE_MISMATCH\", ERROR, SourceElementPositioningStrategies.DEFAULT, KtExpression::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/testsWithStdLib/diagnostics/forLoopChecker.kt",
+          "sha256": "ae9f070168a0aee1e8357243b1e025f2e0e1a33b449635d1cb3b06685a290bcc",
+          "bytes": 2876,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/testsWithStdLib/diagnostics/forLoopChecker.kt#L103-L107",
+          "line_start": 103,
+          "line_end": 107,
+          "quote": "    for (i in <!NEXT_MISSING!>notRange3<!>);\n    for (i in <!HAS_NEXT_MISSING!>notRange4<!>);\n    for (i in <!HAS_NEXT_FUNCTION_TYPE_MISMATCH!>notRange5<!>);\n    for (i in notRange6);\n    for (i in <!HAS_NEXT_FUNCTION_TYPE_MISMATCH!>notRange7<!>);",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt",
+          "sha256": "3edfd76af0912244460fff26d3744a55744098a2c2f0950052209ea4408bec2f",
+          "bytes": 8932,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirForLoopChecker.kt#L9-L17",
+          "line_start": 9,
+          "line_end": 17,
+          "quote": "import org.jetbrains.kotlin.KtSourceElement\nimport org.jetbrains.kotlin.diagnostics.DiagnosticReporter\nimport org.jetbrains.kotlin.diagnostics.KtDiagnosticFactory0\nimport org.jetbrains.kotlin.diagnostics.KtDiagnosticFactory1\nimport org.jetbrains.kotlin.diagnostics.reportOn\nimport org.jetbrains.kotlin.fir.analysis.checkers.MppCheckerKind\nimport org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext\nimport org.jetbrains.kotlin.fir.analysis.checkers.valOrVarKeyword\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "A Boolean typealias is a valid protocol return type, not a name-based mismatch.",
+      "applicability_scope": "An ordinary Int-returning same-name method outside a loop is not a Boolean protocol request.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.delegate_special_function_missing",
+      "upstream_id": "DELEGATE_SPECIAL_FUNCTION_MISSING",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L983-L983",
+          "line_start": 983,
+          "line_end": 983,
+          "quote": "    val DELEGATE_SPECIAL_FUNCTION_MISSING: KtDiagnosticFactory3<String, ConeKotlinType, String> = KtDiagnosticFactory3(\"DELEGATE_SPECIAL_FUNCTION_MISSING\", ERROR, SourceElementPositioningStrategies.PROPERTY_DELEGATE_BY_KEYWORD, KtExpression::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/delegatedProperty/missedGetter.kt",
+          "sha256": "f2dd282bceb908eacb385b396fb33173b3947f0bbe5ae543478427d1a6ac0ec9",
+          "bytes": 211,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/delegatedProperty/missedGetter.kt#L1-L4",
+          "line_start": 1,
+          "line_end": 4,
+          "quote": "// RUN_PIPELINE_TILL: FRONTEND\nval a: Int <!DELEGATE_SPECIAL_FUNCTION_MISSING!>by<!> A()\n\nclass A",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirDelegatedPropertyChecker.kt",
+          "sha256": "d19a2a705f0c483966fb4ab56a04a22f34a8cae0466fcf4792b215aede4a7182",
+          "bytes": 6978,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirDelegatedPropertyChecker.kt#L82-L90",
+          "line_start": 82,
+          "line_end": 90,
+          "quote": "                var errorReported = true\n                when (diagnostic) {\n                    is ConeUnresolvedNameError -> reporter.reportOn(\n                        source,\n                        FirErrors.DELEGATE_SPECIAL_FUNCTION_MISSING,\n                        expectedFunctionSignature,\n                        delegateType,\n                        delegateDescription\n                    )",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "An extension getValue can supply the delegation convention.",
+      "applicability_scope": "A plain object-valued property does not require getValue.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.delegate_special_function_return_type_mismatch",
+      "upstream_id": "DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L518-L518",
+          "line_start": 518,
+          "line_end": 518,
+          "quote": "    val DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH: KtDiagnosticFactory3<String, ConeKotlinType, ConeKotlinType> = KtDiagnosticFactory3(\"DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH\", ERROR, SourceElementPositioningStrategies.PROPERTY_DELEGATE_BY_KEYWORD, KtExpression::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/delegatedProperty/typeMismatchForGetReturnType.kt",
+          "sha256": "45a6fafd56072136a75a3f5b2cdf85bb61f9dea77f5b9f1c67208400703626dd",
+          "bytes": 434,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/delegatedProperty/typeMismatchForGetReturnType.kt#L4-L8",
+          "line_start": 4,
+          "line_end": 8,
+          "quote": "import kotlin.reflect.KProperty\n\nval c: Int <!DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH!>by<!> Delegate()\n\nclass Delegate {",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirDelegatedPropertyChecker.kt",
+          "sha256": "d19a2a705f0c483966fb4ab56a04a22f34a8cae0466fcf4792b215aede4a7182",
+          "bytes": 6978,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirDelegatedPropertyChecker.kt#L126-L134",
+          "line_start": 126,
+          "line_end": 134,
+          "quote": "                val propertyType = declaration.returnTypeRef.coneType\n                if (!AbstractTypeChecker.isSubtypeOf(context.session.typeContext, returnType, propertyType)) {\n                    reporter.reportOn(\n                        source,\n                        FirErrors.DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH,\n                        \"getValue\",\n                        propertyType,\n                        returnType\n                    )",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "String is a valid subtype of the declared CharSequence property type; names need not be identical.",
+      "applicability_scope": "A stored delegate object without by has no delegation return-type constraint.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.dsl_scope_violation",
+      "upstream_id": "DSL_SCOPE_VIOLATION",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1000-L1000",
+          "line_start": 1000,
+          "line_end": 1000,
+          "quote": "    val DSL_SCOPE_VIOLATION: KtDiagnosticFactory1<FirBasedSymbol<*>> = KtDiagnosticFactory1(\"DSL_SCOPE_VIOLATION\", ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/resolve/dslMarker/simpleAnnotatedClasses.kt",
+          "sha256": "1e309cbf362dbd23e4e3c86f82174084c2ca4cf2e7aa602fb82a0f3b6029bd92",
+          "bytes": 543,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/resolve/dslMarker/simpleAnnotatedClasses.kt#L21-L25",
+          "line_start": 21,
+          "line_end": 25,
+          "quote": "        a()\n        bar {\n            <!DSL_SCOPE_VIOLATION!>a<!>()\n            this@foo.a()\n            b()",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt",
+          "sha256": "ad11eaac89712806f4f7e4ad3cad5c6d64ac3987b8e7c3b5529634bb106c69c7",
+          "bytes": 58909,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/coneDiagnosticToFirDiagnostic.kt#L300-L302",
+          "line_start": 300,
+          "line_end": 302,
+          "quote": "\n            is DslScopeViolation -> FirErrors.DSL_SCOPE_VIOLATION.createOn(source, rootCause.calleeSymbol, session)\n            is ReceiverShadowedByContextParameter -> {",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/stages/ResolutionStages.kt",
+          "sha256": "8af91e95ad260e8aff2a3c48e00215cd9c70fe006fab8a83a70ede4eae73bdb7",
+          "bytes": 57009,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/stages/ResolutionStages.kt#L537-L549",
+          "line_start": 537,
+          "line_end": 549,
+          "quote": "            getDslMarkersOfImplicitValue(boundSymbolOfReceiverToCheck, receiverValueExpression.resolvedType).ifEmpty { return }\n\n        if (closerOrOnTheSameLevelImplicitValues.any {\n                !it.isSameImplicitReceiverInstance(receiverValueExpression)\n                        && it.containsAnyOfGivenDslMarkers(dslMarkers)\n            }) {\n            sink.reportDiagnostic(DslScopeViolation(candidate.symbol))\n        }\n    }\n\n    context(context: ResolutionContext)\n    private fun ImplicitValue<*>.containsAnyOfGivenDslMarkers(otherDslMarkers: Set<ClassId>): Boolean {\n        return getDslMarkersOfImplicitValue(boundSymbol, type).any { it in otherDslMarkers }",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "Different DSL markers do not hide the outer implicit receiver.",
+      "applicability_scope": "Explicit receiver arguments are outside implicit receiver shadowing.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.senseless_comparison",
+      "upstream_id": "SENSELESS_COMPARISON",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L910-L910",
+          "line_start": 910,
+          "line_end": 910,
+          "quote": "    val SENSELESS_COMPARISON: KtDiagnosticFactory1<Boolean> = KtDiagnosticFactory1(\"SENSELESS_COMPARISON\", WARNING, SourceElementPositioningStrategies.DEFAULT, KtExpression::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/senselessComparison/noExplicitType.kt",
+          "sha256": "32c9ec9f5c53b28e7b2bb20e6cda7571152a18f7132a632822322b9ca27f0d86",
+          "bytes": 424,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/senselessComparison/noExplicitType.kt#L5-L9",
+          "line_start": 5,
+          "line_end": 9,
+          "quote": "    var line = \"\"\n\n    while (<!SENSELESS_COMPARISON!>line != null<!>) {\n        line = readLine()\n",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirEqualityCompatibilityChecker.kt",
+          "sha256": "85a29bcd938725d3de55f17bbc027013ff794700485f988a995daee3d4bdf3b9",
+          "bytes": 13887,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirEqualityCompatibilityChecker.kt#L282-L290",
+          "line_start": 282,
+          "line_end": 290,
+          "quote": "        // says the value is *never* equal to null, so we can't report it if the value is *always* equal to null.\n        if (expression.source?.elementType != KtNodeTypes.BINARY_EXPRESSION && type === lType && !compareResult) {\n            reporter.reportOn(expression.source, FirErrors.SENSELESS_NULL_IN_WHEN)\n        } else {\n            reporter.reportOn(expression.source, FirErrors.SENSELESS_COMPARISON, compareResult)\n        }\n    }\n}\n",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "An unconstrained type parameter can be nullable; null comparison is not senseless from its name.",
+      "applicability_scope": "Ordinary value equality does not compare a nonnull value against null.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.duplicate_branch_condition_in_when",
+      "upstream_id": "DUPLICATE_BRANCH_CONDITION_IN_WHEN",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L959-L959",
+          "line_start": 959,
+          "line_end": 959,
+          "quote": "    val DUPLICATE_BRANCH_CONDITION_IN_WHEN: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"DUPLICATE_BRANCH_CONDITION_IN_WHEN\", WARNING, SourceElementPositioningStrategies.DEFAULT, KtElement::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/when/DuplicatedLabels.kt",
+          "sha256": "07ddd0565ff4ae6f84842e7789775e131b2c71a4ead238e92462a3c7ba5553e7",
+          "bytes": 2037,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/when/DuplicatedLabels.kt#L17-L21",
+          "line_start": 17,
+          "line_end": 21,
+          "quote": "    1 -> 2\n    2 -> 3\n    <!DUPLICATE_BRANCH_CONDITION_IN_WHEN!>1<!> -> 4\n    4 -> 5\n    <!DUPLICATE_BRANCH_CONDITION_IN_WHEN!>1<!> -> 6",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirWhenConditionChecker.kt",
+          "sha256": "1a6a2da10daa534628476048ceaebf870658ccce25abbc8925fdd817f3ddcf5a",
+          "bytes": 3683,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirWhenConditionChecker.kt#L52-L60",
+          "line_start": 52,
+          "line_end": 60,
+          "quote": "                        }\n                        else -> continue\n                    }\n                    if (!checkedConstants.add(value)) {\n                        reporter.reportOn(condition.source, FirErrors.DUPLICATE_BRANCH_CONDITION_IN_WHEN)\n                    }\n                }\n                is FirTypeOperatorCall if condition.isArgumentWhenSubject() -> {\n                    val coneType = condition.conversionTypeRef.coneType",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "Known literal-versus-const-alias blind spot retained as an abstaining boundary, not a valid duplicate-free alternative (KT-11971).",
+      "applicability_scope": "Ordered overlapping subjectless predicates are not duplicate subject labels.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.trim_margin_blank_prefix",
+      "upstream_id": "TRIM_MARGIN_BLANK_PREFIX",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L191-L191",
+          "line_start": 191,
+          "line_end": 191,
+          "quote": "    val TRIM_MARGIN_BLANK_PREFIX: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"TRIM_MARGIN_BLANK_PREFIX\", WARNING, SourceElementPositioningStrategies.DEFAULT, KtExpression::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/evaluate/trimMarginBlankPrefix.kt",
+          "sha256": "142395da47ed8edd327db1bea2c2a89b2abb581819f19d8313e0a10761a05a40",
+          "bytes": 664,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/evaluate/trimMarginBlankPrefix.kt#L5-L9",
+          "line_start": 5,
+          "line_end": 9,
+          "quote": "const val blank = \" \"\n\nval s1 = <!TRIM_MARGIN_BLANK_PREFIX!>\"\".trimMargin(\" \")<!>\nval s2 = \"\".trimMargin(blank)\nval s3 = <!TRIM_MARGIN_BLANK_PREFIX!>\"\".trimMargin(",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirTrimMarginBlankPrefixChecker.kt",
+          "sha256": "8c01c8a96cfc62a0d3de618e6259f8170b24c8c205dc4ac04a0609c93503496b",
+          "bytes": 1759,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirTrimMarginBlankPrefixChecker.kt#L26-L34",
+          "line_start": 26,
+          "line_end": 34,
+          "quote": "        val callableId = expression.calleeReference.toResolvedNamedFunctionSymbol()?.callableId\n        if (callableId == trimMarginCallableId) {\n            val firstValue = (expression.arguments.singleOrNull() as? FirLiteralExpression)?.value\n            if (firstValue != null && firstValue is String && firstValue.isBlank()) {\n                reporter.reportOn(expression.source, FirErrors.TRIM_MARGIN_BLANK_PREFIX)\n            }\n        }\n    }\n}",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "A const-valued blank prefix is a documented literal-only blind spot, not safe trimMargin behavior.",
+      "applicability_scope": "A user-defined same-name member is not the resolved kotlin.text.trimMargin function.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.array_equality_operator_can_be_replaced_with_content_equals",
+      "upstream_id": "ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1020-L1020",
+          "line_start": 1020,
+          "line_end": 1020,
+          "quote": "    val ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS: KtDiagnosticFactory2<String, String> = KtDiagnosticFactory2(\"ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS\", WARNING, SourceElementPositioningStrategies.OPERATOR, KtExpression::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/extraCheckers/ArrayEqualityCanBeReplacedWithEquals.kt",
+          "sha256": "ea8a874f245dabd315eb8f41e5a48e89967309642f85260409544712a1dfb3c2",
+          "bytes": 2020,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/extraCheckers/ArrayEqualityCanBeReplacedWithEquals.kt#L16-L20",
+          "line_start": 16,
+          "line_end": 20,
+          "quote": "    val c : A<Int> = arrayOf(3, 2, 1)\n\n    if (a <!ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS!>==<!> b) { }\n    if (a <!ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS!>==<!> c) { }\n}",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/ArrayEqualityCanBeReplacedWithContentEquals.kt",
+          "sha256": "cd2d8877a7e8a327f84eb9ab8a0d980c8e52468c6e37e388af59f97fdd952c1b",
+          "bytes": 2737,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/ArrayEqualityCanBeReplacedWithContentEquals.kt#L10-L18",
+          "line_start": 10,
+          "line_end": 18,
+          "quote": "import org.jetbrains.kotlin.fir.analysis.checkers.MppCheckerKind\nimport org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext\nimport org.jetbrains.kotlin.fir.analysis.checkers.forEachClassId\nimport org.jetbrains.kotlin.fir.analysis.checkers.fullyExpandedClassId\nimport org.jetbrains.kotlin.fir.analysis.diagnostics.FirErrors.ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS\nimport org.jetbrains.kotlin.fir.expressions.FirEqualityOperatorCall\nimport org.jetbrains.kotlin.fir.expressions.FirOperation\nimport org.jetbrains.kotlin.fir.expressions.FirStatement\nimport org.jetbrains.kotlin.fir.expressions.arguments",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "Explicit identity comparison is intentional and excluded; this advisory does not forbid array identity semantics.",
+      "applicability_scope": "List structural equality is not same-family array equality.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.assigned_value_is_never_read",
+      "upstream_id": "ASSIGNED_VALUE_IS_NEVER_READ",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1024-L1024",
+          "line_start": 1024,
+          "line_end": 1024,
+          "quote": "    val ASSIGNED_VALUE_IS_NEVER_READ: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"ASSIGNED_VALUE_IS_NEVER_READ\", WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/extraCheckers/unused/valueIsNeverRead.kt",
+          "sha256": "d6f50b02e0a95c84dd92fbb6fa55593970150df072804ccd83b3f856f292e4b8",
+          "bytes": 330,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/extraCheckers/unused/valueIsNeverRead.kt#L2-L6",
+          "line_start": 2,
+          "line_end": 6,
+          "quote": "fun foo() {\n    var a = <!VARIABLE_INITIALIZER_IS_REDUNDANT!>1<!>\n    <!ASSIGNED_VALUE_IS_NEVER_READ!>a<!> = 2\n    a = 3\n    <!ASSIGNED_VALUE_IS_NEVER_READ!>a<!> += 1",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/extra/UnusedVariableAssignmentChecker.kt",
+          "sha256": "29d46fdff0bd3648d88d8d23462630b5757d9cecdbad0fa2336f73bd999505ea",
+          "bytes": 11550,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/extra/UnusedVariableAssignmentChecker.kt#L96-L104",
+          "line_start": 96,
+          "line_end": 104,
+          "quote": "                variablesWithUnobservedWrites.add(variableSymbol)\n                if (!variableSymbol.isDelegatedProperty) {\n                    // Writes to delegated properties may not be local and may be read somewhere else.\n                    // TODO, KT-59831: report case like \"a += 1\" where `a` `doesn't writes` different way (special for Idea)\n                    reporter.reportOn(statement.lValue.source, FirErrors.ASSIGNED_VALUE_IS_NEVER_READ)\n                }\n            } else if (statement is FirProperty) {\n                if (statement.symbol !in ownData.variablesWithoutReads && !statement.symbol.ignoreWarnings) {\n                    reporter.reportOn(statement.initializer?.source, FirErrors.VARIABLE_INITIALIZER_IS_REDUNDANT)",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "Delegated writes may execute observers and are excluded rather than treated as dead ordinary-local writes.",
+      "applicability_scope": "Member setter calls may have externally observable effects; this local assignment checker does not prove them redundant.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.can_be_val",
+      "upstream_id": "CAN_BE_VAL",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1016-L1016",
+          "line_start": 1016,
+          "line_end": 1016,
+          "quote": "    val CAN_BE_VAL: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"CAN_BE_VAL\", WARNING, SourceElementPositioningStrategies.VAL_OR_VAR_NODE, KtDeclaration::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/extraCheckers/CanBeValChecker.kt",
+          "sha256": "ea09a0cf36cd975b8ff020549ac82b80049976d4db34d609a01eb564de74f800",
+          "bytes": 5606,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/extraCheckers/CanBeValChecker.kt#L26-L30",
+          "line_start": 26,
+          "line_end": 30,
+          "quote": "    val c = C()\n    c += \"\"\n    <!CAN_BE_VAL!>var<!> c1 = C()\n    c1 <!ASSIGN_OPERATOR_AMBIGUITY!>+=<!> \"\"\n",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/extra/CanBeValChecker.kt",
+          "sha256": "23335ba1dab45a6659e39e89404675822ac07aef80126f45dfe5d7a61fdb54ea",
+          "bytes": 4612,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/extra/CanBeValChecker.kt#L44-L52",
+          "line_start": 44,
+          "line_end": 52,
+          "quote": "                collector.canBeVal(symbol)\n            }\n            if (canBeVal) {\n                val diagnostic = when {\n                    symbol is FirPropertySymbol && !symbol.requiresInitialization(isForInitialization) -> FirErrors.CAN_BE_VAL\n                    symbol.isLateInit -> FirErrors.CAN_BE_VAL_LATEINIT\n                    else -> FirErrors.CAN_BE_VAL_DELAYED_INITIALIZATION\n                }\n                reporter.reportOn(source, diagnostic)",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "Delegated var can have observable setValue semantics and is excluded by the checker.",
+      "applicability_scope": "An immutable parameter without a local var gives no local mutability advice.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.redundant_call_of_conversion_method",
+      "upstream_id": "REDUNDANT_CALL_OF_CONVERSION_METHOD",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1019-L1019",
+          "line_start": 1019,
+          "line_end": 1019,
+          "quote": "    val REDUNDANT_CALL_OF_CONVERSION_METHOD: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"REDUNDANT_CALL_OF_CONVERSION_METHOD\", WARNING, SourceElementPositioningStrategies.SELECTOR_BY_QUALIFIED, PsiElement::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/extraCheckers/RedundantCallOfConversionMethod/int.kt",
+          "sha256": "5c861283e77078cffd78339fd6547de4a94bdecb215eb2076a0423bddb42a346",
+          "bytes": 271,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/extraCheckers/RedundantCallOfConversionMethod/int.kt#L6-L10",
+          "line_start": 6,
+          "line_end": 10,
+          "quote": "val aliased: IntAlias = 1\n\nval bar = aliased.<!REDUNDANT_CALL_OF_CONVERSION_METHOD!>toInt()<!>\n\n/* GENERATED_FIR_TAGS: integerLiteral, propertyDeclaration, typeAliasDeclaration */",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/RedundantCallOfConversionMethodChecker.kt",
+          "sha256": "c476d1bca3dc9810a26d0d1a111a5da4a0466e4f1a7fb6671678c4992e33658e",
+          "bytes": 3835,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/RedundantCallOfConversionMethodChecker.kt#L37-L45",
+          "line_start": 37,
+          "line_end": 45,
+          "quote": "        val functionName = expression.calleeReference.name\n        val qualifiedTypeId = targetClassMap[functionName] ?: return\n\n        if (expression.dispatchReceiver?.isRedundant(qualifiedTypeId, context.session) == true) {\n            reporter.reportOn(expression.source, FirErrors.REDUNDANT_CALL_OF_CONVERSION_METHOD)\n        }\n    }\n\n    context(context: CheckerContext)",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "Ambiguous integer literals are an explicit exclusion, not an inferred redundant-conversion proof.",
+      "applicability_scope": "A custom extension converter is excluded; same method name is not a builtin dispatch-type match.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.useless_call_on_not_null",
+      "upstream_id": "USELESS_CALL_ON_NOT_NULL",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L1027-L1027",
+          "line_start": 1027,
+          "line_end": 1027,
+          "quote": "    val USELESS_CALL_ON_NOT_NULL: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"USELESS_CALL_ON_NOT_NULL\", WARNING, SourceElementPositioningStrategies.SELECTOR_BY_QUALIFIED, PsiElement::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/extraCheckers/UselessCallOnNotNullChecker/Basic.kt",
+          "sha256": "d7906010b81002ca279034c2c88be8f8f3aaf4a72efb3bf3c6eabd8af721c9b9",
+          "bytes": 200,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/extraCheckers/UselessCallOnNotNullChecker/Basic.kt#L3-L7",
+          "line_start": 3,
+          "line_end": 7,
+          "quote": "\nval list1: List<Int> = listOf(1)\nval list = list1.<!USELESS_CALL_ON_NOT_NULL!>orEmpty()<!>\n\n/* GENERATED_FIR_TAGS: integerLiteral, propertyDeclaration */",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/extra/UselessCallOnNotNullChecker.kt",
+          "sha256": "aec1de0fe60ea8cbda0029c47dd332518ac25c59661fca272400b3248864201c",
+          "bytes": 2635,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/extra/UselessCallOnNotNullChecker.kt#L26-L34",
+          "line_start": 26,
+          "line_end": 34,
+          "quote": "        val method = expression.getCallableId() ?: return\n        if (method !in triggerOn) return\n        val calleeOn = expression.explicitReceiver ?: return\n        if (!calleeOn.resolvedType.canBeNull(context.session)) {\n            reporter.reportOn(expression.source, FirErrors.USELESS_CALL_ON_NOT_NULL)\n        }\n    }\n\n    private fun FirQualifiedAccessExpression.getCallableId(): CallableId? {",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "After a null guard the actual smartcast receiver is nonnull, so this boundary still expects the warning.",
+      "applicability_scope": "A custom same-name extension is not one of the exact kotlin stdlib callable IDs.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.no_explicit_return_type_in_api_mode",
+      "upstream_id": "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L446-L446",
+          "line_start": 446,
+          "line_end": 446,
+          "quote": "    val NO_EXPLICIT_RETURN_TYPE_IN_API_MODE: KtDiagnosticFactory0 = KtDiagnosticFactory0(\"NO_EXPLICIT_RETURN_TYPE_IN_API_MODE\", ERROR, SourceElementPositioningStrategies.DECLARATION_NAME, KtDeclaration::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/testsWithExplicitApi/toplevel.kt",
+          "sha256": "3dfef421fd1abbf96b5c098ff37653587c1d06d3c7a9910a7d85821dbfe7eadd",
+          "bytes": 383,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/testsWithExplicitApi/toplevel.kt#L8-L12",
+          "line_start": 8,
+          "line_end": 12,
+          "quote": "public fun foo2() {}\n\n<!NO_EXPLICIT_VISIBILITY_IN_API_MODE!>fun <!NO_EXPLICIT_RETURN_TYPE_IN_API_MODE!>bar<!><!>() = 10\npublic fun <!NO_EXPLICIT_RETURN_TYPE_IN_API_MODE!>bar2<!>() = 10\npublic fun bar3(): Int = 10",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/syntax/FirExplicitApiDeclarationChecker.kt",
+          "sha256": "433d3969f7b22c4be2a7e8451009cb9c954e52ad6bbf185dfc698d06d976e5fa",
+          "bytes": 7541,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/syntax/FirExplicitApiDeclarationChecker.kt#L138-L146",
+          "line_start": 138,
+          "line_end": 146,
+          "quote": "        if (!declaration.returnTypeCheckIsApplicable()) return\n\n        val factory =\n            if (state == ExplicitApiMode.STRICT)\n                FirErrors.NO_EXPLICIT_RETURN_TYPE_IN_API_MODE\n            else\n                FirErrors.NO_EXPLICIT_RETURN_TYPE_IN_API_MODE_WARNING\n        reporter.reportOn(source, factory)\n    }",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "Internal declarations without PublishedApi are not effective public API.",
+      "applicability_scope": "A public block-bodied Unit function is an intentional explicit-return-type exemption.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    },
+    {
+      "rule_id": "ktc.compiler.common.return_value_not_used",
+      "upstream_id": "RETURN_VALUE_NOT_USED",
+      "references": [
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt",
+          "sha256": "56f9e23f2f1c85e48861d04f2f6fd65e58f33bbca4f9145f20fb03c950ccfb45",
+          "bytes": 228957,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L913-L913",
+          "line_start": 913,
+          "line_end": 913,
+          "quote": "    val RETURN_VALUE_NOT_USED: KtDiagnosticFactory1<Name?> = KtDiagnosticFactory1(\"RETURN_VALUE_NOT_USED\", WARNING, SourceElementPositioningStrategies.REFERENCE_BY_QUALIFIED, KtElement::class, getRendererFactory())",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/testData/diagnostics/tests/crvFull/basic.kt",
+          "sha256": "0da958735aaa5eb3c3bf09001306c0a16c2452437854452b8372585ca1a29c7e",
+          "bytes": 1510,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/crvFull/basic.kt#L27-L31",
+          "line_start": 27,
+          "line_end": 31,
+          "quote": "\nfun foo(): String {\n    <!RETURN_VALUE_NOT_USED!>Lib<!>()\n    Lib().<!RETURN_VALUE_NOT_USED!>getStuff<!>()\n    Lib().<!RETURN_VALUE_NOT_USED!>prop<!>",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        },
+        {
+          "tag": "v2.4.21",
+          "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/crv/FirUnusedReturnValueChecker.kt",
+          "sha256": "316b9af80ee9b5c8917ee759d2f8edb72c628fa02e82c6f7a378f3418c1f017a",
+          "bytes": 10304,
+          "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/crv/FirUnusedReturnValueChecker.kt#L130-L138",
+          "line_start": 130,
+          "line_end": 138,
+          "quote": "            expression\n        }\n        reporter.reportOn(\n            targetExpression.source,\n            if (data != UsageState.UnusedFromCoercion) FirErrors.RETURN_VALUE_NOT_USED else FirErrors.RETURN_VALUE_NOT_USED_COERCION,\n            functionName\n        )\n    }\n",
+          "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+        }
+      ],
+      "boundary_scope": "IgnorableReturnValue intentionally exempts a non-Unit result, only in full enabled mode.",
+      "applicability_scope": "Unit-returning effects have no required value to consume.",
+      "oracle_authoring": "Source, documented compiler predicates and factory positioning only; no actual or historical diagnostic output used."
+    }
+  ],
+  "shared_primary_references": [
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/cli/cli-base/gen/org/jetbrains/kotlin/cli/common/arguments/CommonToolArguments.kt",
+      "sha256": "7bb8d80536f357aa5ac87c46fe5a54f91eb8ac2040e503b2ee6e7588978a6448",
+      "bytes": 2655,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/cli/cli-base/gen/org/jetbrains/kotlin/cli/common/arguments/CommonToolArguments.kt#L22-L28",
+      "line_start": 22,
+      "line_end": 28,
+      "quote": "        }\n\n    @Argument(\n        value = \"-Wextra\",\n        description = \"Enable extra checkers for K2.\",\n    )\n    var extraWarnings: Boolean = false",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/cli/cli-base/gen/org/jetbrains/kotlin/cli/common/arguments/CommonCompilerArguments.kt",
+      "sha256": "0275c209b02a57a5ac856ea6693406597dc31362c631f92616261ff67ceed253",
+      "bytes": 42637,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/cli/cli-base/gen/org/jetbrains/kotlin/cli/common/arguments/CommonCompilerArguments.kt#L1119-L1133",
+      "line_start": 1119,
+      "line_end": 1133,
+      "quote": "    var verifyIr: String? = null\n        set(value) {\n            checkFrozen()\n            field = if (value.isNullOrEmpty()) null else value\n        }\n\n    @Argument(\n        value = \"-Xwarning-level\",\n        valueDescription = \"<WARNING_NAME>:(error|warning|disabled)\",\n        description = \"\"\"Set the severity of the given warning.\n- `error` level raises the severity of a warning to error level (similar to -Werror but more granular)\n- `disabled` level suppresses reporting of a warning (similar to -nowarn but more granular)\n- `warning` level overrides -nowarn and -Werror for this specific warning (the warning will be reported/won't be considered as an error)\"\"\",\n    )\n    var warningLevels: Array<String> = emptyArray()",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/cli/cli-base/gen/org/jetbrains/kotlin/cli/common/arguments/CommonCompilerArguments.kt",
+      "sha256": "0275c209b02a57a5ac856ea6693406597dc31362c631f92616261ff67ceed253",
+      "bytes": 42637,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/cli/cli-base/gen/org/jetbrains/kotlin/cli/common/arguments/CommonCompilerArguments.kt#L494-L506",
+      "line_start": 494,
+      "line_end": 506,
+      "quote": "        set(value) {\n            checkFrozen()\n            field = value\n        }\n\n    @Argument(\n        value = \"-Xexplicit-api\",\n        valueDescription = \"{strict|warning|disable}\",\n        description = \"\"\"Force the compiler to report errors on all public API declarations without an explicit visibility or a return type.\nUse the 'warning' level to issue warnings instead of errors.\"\"\",\n    )\n    var explicitApi: String = \"disable\"\n        set(value) {",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/cli/cli-base/gen/org/jetbrains/kotlin/cli/common/arguments/CommonCompilerArguments.kt",
+      "sha256": "0275c209b02a57a5ac856ea6693406597dc31362c631f92616261ff67ceed253",
+      "bytes": 42637,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/cli/cli-base/gen/org/jetbrains/kotlin/cli/common/arguments/CommonCompilerArguments.kt#L970-L982",
+      "line_start": 970,
+      "line_end": 982,
+      "quote": "        set(value) {\n            checkFrozen()\n            field = value\n        }\n\n    @Argument(\n        value = \"-Xreturn-value-checker\",\n        valueDescription = \"{check|full|disable}\",\n        description = \"Set improved unused return value checker mode. Use 'check' to run checker only and use 'full' to also enable automatic annotation insertion.\",\n    )\n    var returnValueChecker: String = \"disable\"\n        set(value) {\n            checkFrozen()",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/cli/cli-base/src/org/jetbrains/kotlin/cli/common/arguments/CommonCompilerArgumentsConfigurator.kt",
+      "sha256": "e312ec8754417a97dad5780e88a7429a0cbe144b717aa0cb6b634c53a44d1284",
+      "bytes": 20871,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/cli/cli-base/src/org/jetbrains/kotlin/cli/common/arguments/CommonCompilerArgumentsConfigurator.kt#L67-L73",
+      "line_start": 67,
+      "line_end": 73,
+      "quote": "            putAnalysisFlag(AnalysisFlags.hierarchicalMultiplatformCompilation, separateKmpCompilationScheme && multiPlatform)\n            putAnalysisFlag(AnalysisFlags.kmpJvmIncrementalCompilationEnabled, fragmentIncrementalClasspath.isNotEmpty() && multiPlatform)\n            fillWarningLevelMap(arguments, reporter)\n            ReturnValueCheckerMode.fromString(returnValueChecker)?.also { putAnalysisFlag(AnalysisFlags.returnValueCheckerMode, it) }\n                ?: reporter.reportError(\n                    \"Unknown value for parameter -Xreturn-value-checker: '$returnValueChecker'. Value should be one of ${ReturnValueCheckerMode.availableValues()}\"\n                )",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/CommonExpressionCheckers.kt",
+      "sha256": "82ea468f1614d83c91dffac3211067fe0409091e18a567ef6f7a0c5a8dbdadd0",
+      "bytes": 8460,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/CommonExpressionCheckers.kt#L30-L34",
+      "line_start": 30,
+      "line_end": 34,
+      "quote": "        FirExpressionWithErrorTypeChecker,\n        FirInlineBodyResolvableExpressionChecker,\n        ArrayEqualityCanBeReplacedWithContentEquals,\n    )\n",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/CommonExpressionCheckers.kt",
+      "sha256": "82ea468f1614d83c91dffac3211067fe0409091e18a567ef6f7a0c5a8dbdadd0",
+      "bytes": 8460,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/CommonExpressionCheckers.kt#L85-L89",
+      "line_start": 85,
+      "line_end": 89,
+      "quote": "        FirVarargWithNonTrivialUpperBoundInferredToNothingChecker,\n        PlatformClassMappedToKotlinConstructorCallChecker,\n        RedundantCallOfConversionMethodChecker,\n        FirImplicitPropertyTypeMakesBehaviorOrderDependantChecker,\n        FirUnsupportedCollectionLiteralWithCollectionLiteralResolutionChecker,",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/ExtraExpressionCheckers.kt",
+      "sha256": "7a182280a3407a13e97042552974b5ce6dd32ae5bd204f624768253040750f61",
+      "bytes": 748,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/ExtraExpressionCheckers.kt#L11-L15",
+      "line_start": 11,
+      "line_end": 15,
+      "quote": "object ExtraExpressionCheckers : ExpressionCheckers() {\n    override val qualifiedAccessExpressionCheckers: Set<FirQualifiedAccessExpressionChecker> = setOf(\n        UselessCallOnNotNullChecker,\n    )\n",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/ExtraDeclarationCheckers.kt",
+      "sha256": "2d8c96e70ab8256e7705198a02aef9076fe8fe0c36c9f3789ea02e098a6ce0b2",
+      "bytes": 1520,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/ExtraDeclarationCheckers.kt#L26-L30",
+      "line_start": 26,
+      "line_end": 30,
+      "quote": "\n    override val variableAssignmentCfaBasedCheckers: Set<AbstractFirPropertyInitializationChecker> = setOf(\n        CanBeValChecker,\n        UnusedVariableAssignmentChecker,\n        FirCapturedVariableStabilityFunctionChecker",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/ExtraDeclarationCheckers.kt",
+      "sha256": "2d8c96e70ab8256e7705198a02aef9076fe8fe0c36c9f3789ea02e098a6ce0b2",
+      "bytes": 1520,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/ExtraDeclarationCheckers.kt#L27-L31",
+      "line_start": 27,
+      "line_end": 31,
+      "quote": "    override val variableAssignmentCfaBasedCheckers: Set<AbstractFirPropertyInitializationChecker> = setOf(\n        CanBeValChecker,\n        UnusedVariableAssignmentChecker,\n        FirCapturedVariableStabilityFunctionChecker\n    )",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/context/CheckerContext.kt",
+      "sha256": "606108f1fd341d1f6040665d5dc57873e333cd198437e12185a1f4a8ee741adb",
+      "bytes": 4677,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/context/CheckerContext.kt#L64-L70",
+      "line_start": 64,
+      "line_end": 70,
+      "quote": "        val factory = diagnostic.factory\n        val name = factory.name\n\n        if (name == FirErrors.ERROR_SUPPRESSION.name) {\n            // Can't suppress warning about suppressed error\n            return false\n        }",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt",
+      "sha256": "b2af8973bb7bff186f5da6749761cf1fa41a4e0476365d5903816843b5d741b4",
+      "bytes": 249261,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L1030-L1034",
+      "line_start": 1030,
+      "line_end": 1034,
+      "quote": "        map.put(\n            ERROR_SUPPRESSION,\n            \"Suppression of error ''{0}'' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue\",\n            TO_STRING\n        )",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/testData/diagnostics/testsWithStdLib/diagnostics/forLoopChecker.kt",
+      "sha256": "ae9f070168a0aee1e8357243b1e025f2e0e1a33b449635d1cb3b06685a290bcc",
+      "bytes": 2876,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/testsWithStdLib/diagnostics/forLoopChecker.kt#L27-L31",
+      "line_start": 27,
+      "line_end": 31,
+      "quote": "\nabstract class ImproperIterator3 {\n    abstract <!INAPPLICABLE_OPERATOR_MODIFIER!>operator<!> fun hasNext() : Int\n    abstract operator fun next() : Int\n}",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/testData/diagnostics/tests/when/DuplicatedLabels.kt",
+      "sha256": "07ddd0565ff4ae6f84842e7789775e131b2c71a4ead238e92462a3c7ba5553e7",
+      "bytes": 2037,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/when/DuplicatedLabels.kt#L21-L25",
+      "line_start": 21,
+      "line_end": 25,
+      "quote": "    <!DUPLICATE_BRANCH_CONDITION_IN_WHEN!>1<!> -> 6\n    <!DUPLICATE_BRANCH_CONDITION_IN_WHEN!>2<!> -> 7\n    // Error should be here: see KT-11971\n    four -> 8\n    else -> 0",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "compiler/testData/diagnostics/tests/evaluate/trimMarginBlankPrefix.kt",
+      "sha256": "142395da47ed8edd327db1bea2c2a89b2abb581819f19d8313e0a10761a05a40",
+      "bytes": 664,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/compiler/testData/diagnostics/tests/evaluate/trimMarginBlankPrefix.kt#L3-L7",
+      "line_start": 3,
+      "line_end": 7,
+      "quote": "// WITH_STDLIB\n\nconst val blank = \" \"\n\nval s1 = <!TRIM_MARGIN_BLANK_PREFIX!>\"\".trimMargin(\" \")<!>",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    },
+    {
+      "tag": "v2.4.21",
+      "path": "libraries/stdlib/src/kotlin/annotations/ReturnValue.kt",
+      "sha256": "295a06df52e5b5e4f0915efb771927c2287dd48e474eb345532febc7f17b804a",
+      "bytes": 1905,
+      "url": "https://github.com/JetBrains/kotlin/blob/v2.4.21/libraries/stdlib/src/kotlin/annotations/ReturnValue.kt#L16-L26",
+      "line_start": 16,
+      "line_end": 26,
+      "quote": " * or deprecation cycle. This, in particular, concerns annotation's target list.\n */\n@Target(AnnotationTarget.FUNCTION)\n@MustBeDocumented\n@SinceKotlin(\"2.2\")\npublic annotation class IgnorableReturnValue\n\n/**\n * Marks the *scope* (file or class) in which all the functions are non-ignorable.\n * Kotlin's return value checker would report a warning in case the result of a non-ignorable function call is not used.\n *",
+      "evidence_kind": "tagged_primary_source_not_observed_compiler_output"
+    }
+  ],
+  "activation_caveat": "Current production map classifies some factory Extra-section IDs as -Wextra. Tagged CommonExpressionCheckers also registers array equality and conversion. This addition does not edit that map or infer missing-Wextra absence. Exact diagnostic warning-level disabled flags provide the option-off controls.",
+  "mandatory_unmapped_companion": {
+    "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+    "severity": "ERROR",
+    "selected_rule": "HAS_NEXT_FUNCTION_TYPE_MISMATCH",
+    "mapped_in_current_443_registry": false,
+    "extra_breadth_rule_credit": false,
+    "required_for_kinds": [
+      "positive",
+      "regression"
+    ],
+    "policy": "Require exact named raw ERROR at independently declared operator region, retain it in raw evidence; only the selected error is mapped. Actual compilation/provider remains failed."
+  },
+  "return_value_mode_caveat": "Full-mode positives are unannotated single-file source, so exact unchanged positive bytes under disable can compile. IgnorableReturnValue boundary is scheduled only under full. Disabled annotation acceptance is not assumed.",
+  "scope": [
+    "90 authored single-file sources, 15 pre-existing IDs, three separate fixed closed routes.",
+    "No Java suite, KMP graph, Native/iOS, project-scale or real-world precision qualification.",
+    "All non-error diagnostics retained and allowed; malformed/unparsed status retained independently, never a clean compilation or coverage assertion.",
+    "Six hard-error suppression source expectations remain unknown and unvalidated, including exit0."
+  ],
+  "current_execution_count": 0,
+  "historical_stage_transfer": false,
+  "qualification": "none"
+}

@@ -1,0 +1,1719 @@
+{
+  "schema": "ktchecker/private-detekt-coroutine-differential-fixtures/1",
+  "authoredAtUtc": "2026-11-05T13:51:07.265821+00:00",
+  "author": "/root/astra_rules",
+  "status": "CONCRETE_FIXTURE_AND_DATA_ASSETS_AUTHORED_NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+  "sourceEvidence": {
+    "path": "/tmp/ktc-detekt-coroutine-resource-selection-r1-20261105-eR7gnyYB",
+    "manifestSha256": "8c716008440cb72fd786202025fef7a7e0f636ca4d6df82134831f35dbb11954",
+    "proposalSha256": "cb658ed6597b55d9e7255d04f184c8eda5e79fd480575c398c27583d2c74ea48",
+    "coroutinesSourceArchiveSha256": "8df3eca7ba978bb00e07daf56be73de511d5f12a43fea2e5a4917222d454068a"
+  },
+  "scope": {
+    "concreteCaseRecords": 19,
+    "authoredMainSourceCases": 15,
+    "authoredTestSourceCases": 4,
+    "distinctUnavailableCanonicalIds": 4,
+    "distinctRawUpstreamRules": 3,
+    "rawSourcePredictedFindingObservations": 10,
+    "rawSourcePredictedCounts": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0
+    ],
+    "canonicalDesignFindingCases": 7,
+    "canonicalDesignValidAlternativeCases": 11,
+    "canonicalDesignUnknownCases": 1,
+    "currentCanonicalAvailabilityCount": 0,
+    "authoredDataOracleTestMethods": 6
+  },
+  "columnConvention": {
+    "lineBase": 1,
+    "columnBase": 0,
+    "endExclusive": true,
+    "allSourceAsciiFinalLf": true
+  },
+  "cases": [
+    {
+      "id": "sleep_direct_suspend",
+      "sources": {
+        "src/main/kotlin/SleepContext.kt": "package fixture.sleep.context\n\nsuspend fun waiting() {\n    java.lang.Thread.sleep(1L)\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SleepInsteadOfDelay",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/main/kotlin/SleepContext.kt",
+          "line": 4,
+          "column": 21,
+          "endLine": 4,
+          "endColumn": 30,
+          "expression": "sleep(1L)"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.sleep-in-coroutine",
+        "outcome": "FINDING_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 1,
+        "anchors": [
+          {
+            "path": "src/main/kotlin/SleepContext.kt",
+            "line": 4,
+            "column": 21,
+            "endLine": 4,
+            "endColumn": 30,
+            "expression": "sleep(1L)"
+          }
+        ],
+        "requiredFacts": [
+          "Resolve exactly java.lang.Thread.sleep or a proven nonmatching callee.",
+          "Identify actual JVM suspension context without inferring shared/Main dispatcher from a name.",
+          "Apply complete explicitly selected blocking-bridge exclusions; fixture policy facts are not real project policy."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Direct genuine JDK sleep in a suspend function; no dispatcher sharing is inferred. The closed fixture exclusion policy grants no blocking-bridge exception."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image"
+        ],
+        "fixtureContractFacts": {
+          "blockingBridgePolicy": "closed_fixture_policy_no_exception_for_fixture.sleep.context.waiting"
+        },
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SleepInsteadOfDelay.kt",
+          "sha256": "17e435dd7ff65460fb9c32681c1ba1412e3590bca25f936a3546e387720dcca2",
+          "lineRangesInclusive": [
+            [
+              48,
+              91
+            ],
+            [
+              94,
+              158
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Direct genuine JDK sleep in a suspend function; no dispatcher sharing is inferred. The closed fixture exclusion policy grants no blocking-bridge exception.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/SleepContext.kt",
+          "fixturePath": "fixtures/sleep_direct_suspend/src/main/kotlin/SleepContext.kt",
+          "sha256": "c64d43b3e1d4e935f1f03970868dd92498da8268aad44d44461637ffcb08aa9a",
+          "bytes": 88
+        }
+      ]
+    },
+    {
+      "id": "sleep_imported_static_alias",
+      "sources": {
+        "src/main/kotlin/SleepAlias.kt": "package fixture.sleep.alias\n\nimport java.lang.Thread.sleep as pause\n\nsuspend fun waiting() {\n    pause(1L)\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SleepInsteadOfDelay",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/main/kotlin/SleepAlias.kt",
+          "line": 6,
+          "column": 4,
+          "endLine": 6,
+          "endColumn": 13,
+          "expression": "pause(1L)"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.sleep-in-coroutine",
+        "outcome": "FINDING_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 1,
+        "anchors": [
+          {
+            "path": "src/main/kotlin/SleepAlias.kt",
+            "line": 6,
+            "column": 4,
+            "endLine": 6,
+            "endColumn": 13,
+            "expression": "pause(1L)"
+          }
+        ],
+        "requiredFacts": [
+          "Resolve exactly java.lang.Thread.sleep or a proven nonmatching callee.",
+          "Identify actual JVM suspension context without inferring shared/Main dispatcher from a name.",
+          "Apply complete explicitly selected blocking-bridge exclusions; fixture policy facts are not real project policy."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "The imported static alias must resolve to java.lang.Thread.sleep; matching only the spelling sleep is insufficient."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image"
+        ],
+        "fixtureContractFacts": {
+          "blockingBridgePolicy": "closed_fixture_policy_no_exception_for_fixture.sleep.alias.waiting"
+        },
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SleepInsteadOfDelay.kt",
+          "sha256": "17e435dd7ff65460fb9c32681c1ba1412e3590bca25f936a3546e387720dcca2",
+          "lineRangesInclusive": [
+            [
+              48,
+              91
+            ],
+            [
+              94,
+              158
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "The imported static alias must resolve to java.lang.Thread.sleep; matching only the spelling sleep is insufficient.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/SleepAlias.kt",
+          "fixturePath": "fixtures/sleep_imported_static_alias/src/main/kotlin/SleepAlias.kt",
+          "sha256": "d08e593e7d8e5e291bc75db5dacf4a940fef85765de3f694adcd878b36d9b84f",
+          "bytes": 109
+        }
+      ]
+    },
+    {
+      "id": "sleep_ordinary_synchronous_context",
+      "sources": {
+        "src/main/kotlin/SleepContext.kt": "package fixture.sleep.context\n\nfun waiting() {\n    java.lang.Thread.sleep(1L)\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SleepInsteadOfDelay",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.sleep-in-coroutine",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve exactly java.lang.Thread.sleep or a proven nonmatching callee.",
+          "Identify actual JVM suspension context without inferring shared/Main dispatcher from a name.",
+          "Apply complete explicitly selected blocking-bridge exclusions; fixture policy facts are not real project policy."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Exactly the direct source with the suspend modifier removed. This checks the immediate synchronous context only, not callers or global absence of blocking."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SleepInsteadOfDelay.kt",
+          "sha256": "17e435dd7ff65460fb9c32681c1ba1412e3590bca25f936a3546e387720dcca2",
+          "lineRangesInclusive": [
+            [
+              48,
+              91
+            ],
+            [
+              94,
+              158
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Exactly the direct source with the suspend modifier removed. This checks the immediate synchronous context only, not callers or global absence of blocking.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/SleepContext.kt",
+          "fixturePath": "fixtures/sleep_ordinary_synchronous_context/src/main/kotlin/SleepContext.kt",
+          "sha256": "72249d1305fb3b5d342bd33a1003a8dc3edf68e7af78b4e35480a437217db810",
+          "bytes": 80
+        }
+      ]
+    },
+    {
+      "id": "sleep_local_thread_homonym",
+      "sources": {
+        "src/main/kotlin/SleepHomonym.kt": "package fixture.sleep.homonym\n\nprivate object Thread {\n    fun sleep(milliseconds: Long): Long = milliseconds\n}\n\nsuspend fun waiting(): Long = Thread.sleep(1L)\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SleepInsteadOfDelay",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.sleep-in-coroutine",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve exactly java.lang.Thread.sleep or a proven nonmatching callee.",
+          "Identify actual JVM suspension context without inferring shared/Main dispatcher from a name.",
+          "Apply complete explicitly selected blocking-bridge exclusions; fixture policy facts are not real project policy."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Local Thread.sleep returns a scalar and is not java.lang.Thread.sleep; a name-only match would be a false positive."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SleepInsteadOfDelay.kt",
+          "sha256": "17e435dd7ff65460fb9c32681c1ba1412e3590bca25f936a3546e387720dcca2",
+          "lineRangesInclusive": [
+            [
+              48,
+              91
+            ],
+            [
+              94,
+              158
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Local Thread.sleep returns a scalar and is not java.lang.Thread.sleep; a name-only match would be a false positive.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/SleepHomonym.kt",
+          "fixturePath": "fixtures/sleep_local_thread_homonym/src/main/kotlin/SleepHomonym.kt",
+          "sha256": "8d460c28c2a984e90c9b69fa012f662485b43aab51098b158efc9a37139bef20",
+          "bytes": 160
+        }
+      ]
+    },
+    {
+      "id": "sleep_real_delay_alternative",
+      "sources": {
+        "src/main/kotlin/SleepContext.kt": "package fixture.sleep.context\n\nsuspend fun waiting() {\n    kotlinx.coroutines.delay(1L)\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SleepInsteadOfDelay",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.sleep-in-coroutine",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve exactly java.lang.Thread.sleep or a proven nonmatching callee.",
+          "Identify actual JVM suspension context without inferring shared/Main dispatcher from a name.",
+          "Apply complete explicitly selected blocking-bridge exclusions; fixture policy facts are not real project policy."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Same suspension context with genuine kotlinx.coroutines.delay. Missing core resolution cannot stand in for this valid alternative."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SleepInsteadOfDelay.kt",
+          "sha256": "17e435dd7ff65460fb9c32681c1ba1412e3590bca25f936a3546e387720dcca2",
+          "lineRangesInclusive": [
+            [
+              48,
+              91
+            ],
+            [
+              94,
+              158
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Same suspension context with genuine kotlinx.coroutines.delay. Missing core resolution cannot stand in for this valid alternative.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/SleepContext.kt",
+          "fixturePath": "fixtures/sleep_real_delay_alternative/src/main/kotlin/SleepContext.kt",
+          "sha256": "752cdeff3db1c19e9ab7dd8358ce9d324f469bb8953abeec83d9a54bf90d6def",
+          "bytes": 90
+        }
+      ]
+    },
+    {
+      "id": "sleep_approved_blocking_bridge_policy",
+      "sources": {
+        "src/main/kotlin/SleepContext.kt": "package fixture.sleep.context\n\nsuspend fun waiting() {\n    java.lang.Thread.sleep(1L)\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SleepInsteadOfDelay",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/main/kotlin/SleepContext.kt",
+          "line": 4,
+          "column": 21,
+          "endLine": 4,
+          "endColumn": 30,
+          "expression": "sleep(1L)"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.sleep-in-coroutine",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve exactly java.lang.Thread.sleep or a proven nonmatching callee.",
+          "Identify actual JVM suspension context without inferring shared/Main dispatcher from a name.",
+          "Apply complete explicitly selected blocking-bridge exclusions; fixture policy facts are not real project policy."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "IDENTICAL raw-positive source; an explicit fixture policy approves this exact callable as an intentional blocking bridge. Raw has no policy gate; canonical must honor a real approved exclusion only after adapter/configuration implementation."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image"
+        ],
+        "fixtureContractFacts": {
+          "blockingBridgePolicy": "explicit_fixture_only_approval",
+          "approvedCallable": "fixture.sleep.context.waiting",
+          "policyIsActualOwnerConfiguration": "false"
+        },
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SleepInsteadOfDelay.kt",
+          "sha256": "17e435dd7ff65460fb9c32681c1ba1412e3590bca25f936a3546e387720dcca2",
+          "lineRangesInclusive": [
+            [
+              48,
+              91
+            ],
+            [
+              94,
+              158
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "IDENTICAL raw-positive source; an explicit fixture policy approves this exact callable as an intentional blocking bridge. Raw has no policy gate; canonical must honor a real approved exclusion only after adapter/configuration implementation.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/SleepContext.kt",
+          "fixturePath": "fixtures/sleep_approved_blocking_bridge_policy/src/main/kotlin/SleepContext.kt",
+          "sha256": "c64d43b3e1d4e935f1f03970868dd92498da8268aad44d44461637ffcb08aa9a",
+          "bytes": 88
+        }
+      ]
+    },
+    {
+      "id": "result_terminal_consumes_cancellation",
+      "sources": {
+        "src/main/kotlin/ResultFlow.kt": "package fixture.cancellation.resultflow\n\nimport kotlinx.coroutines.delay\n\nsuspend fun recoverOrPropagate(): Int =\n    runCatching {\n        delay(1L)\n        7\n    }.getOrElse { 0 }\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/main/kotlin/ResultFlow.kt",
+          "line": 6,
+          "column": 4,
+          "endLine": 6,
+          "endColumn": 15,
+          "expression": "runCatching"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.result-swallowing-cancellation",
+        "outcome": "FINDING_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 1,
+        "anchors": [
+          {
+            "path": "src/main/kotlin/ResultFlow.kt",
+            "line": 9,
+            "column": 6,
+            "endLine": 9,
+            "endColumn": 21,
+            "expression": "getOrElse { 0 }"
+          }
+        ],
+        "requiredFacts": [
+          "Resolve kotlin.runCatching and every relevant Result combinator/terminal edge.",
+          "Prove the selected suspension is cancellable under the pinned coroutine API/effect contract.",
+          "Follow all local Result consumption/preservation/escape edges; opaque escape must abstain.",
+          "Preserve separately-owned child/caller-active cancellation boundaries when actually established."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Genuine runCatching captures cancellable delay and terminal getOrElse returns an ordinary fallback. Proposed canonical site is the consuming recovery edge, not the upstream runCatching token."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              137,
+              185
+            ],
+            [
+              214,
+              289
+            ],
+            [
+              372,
+              402
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Genuine runCatching captures cancellable delay and terminal getOrElse returns an ordinary fallback. Proposed canonical site is the consuming recovery edge, not the upstream runCatching token.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/ResultFlow.kt",
+          "fixturePath": "fixtures/result_terminal_consumes_cancellation/src/main/kotlin/ResultFlow.kt",
+          "sha256": "b5459fb2f4d7f6f75e4674112b4950fd8c1ace175f3c9e1e533f33965b0f57aa",
+          "bytes": 182
+        }
+      ]
+    },
+    {
+      "id": "result_get_or_throw_preserves_cancellation",
+      "sources": {
+        "src/main/kotlin/ResultFlow.kt": "package fixture.cancellation.resultflow\n\nimport kotlinx.coroutines.delay\n\nsuspend fun recoverOrPropagate(): Int =\n    runCatching {\n        delay(1L)\n        7\n    }.getOrThrow()\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/main/kotlin/ResultFlow.kt",
+          "line": 6,
+          "column": 4,
+          "endLine": 6,
+          "endColumn": 15,
+          "expression": "runCatching"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.result-swallowing-cancellation",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve kotlin.runCatching and every relevant Result combinator/terminal edge.",
+          "Prove the selected suspension is cancellable under the pinned coroutine API/effect contract.",
+          "Follow all local Result consumption/preservation/escape edges; opaque escape must abstain.",
+          "Preserve separately-owned child/caller-active cancellation boundaries when actually established."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Only the terminal combinator changes from the consuming case. Raw still reports runCatching; getOrThrow preserves the captured cancellation and must be a canonical valid alternative."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              137,
+              185
+            ],
+            [
+              214,
+              289
+            ],
+            [
+              372,
+              402
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Only the terminal combinator changes from the consuming case. Raw still reports runCatching; getOrThrow preserves the captured cancellation and must be a canonical valid alternative.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/ResultFlow.kt",
+          "fixturePath": "fixtures/result_get_or_throw_preserves_cancellation/src/main/kotlin/ResultFlow.kt",
+          "sha256": "5083128dbb03cb67b8b885558d19f040c8ad524ba6a8134f7336db864524d631",
+          "bytes": 179
+        }
+      ]
+    },
+    {
+      "id": "result_local_preserving_homonym",
+      "sources": {
+        "src/main/kotlin/ResultHomonym.kt": "package fixture.cancellation.resulthomonym\n\nimport kotlinx.coroutines.delay\n\nprivate suspend fun <T> runCatching(block: suspend () -> T): T = block()\n\nsuspend fun recoverOrPropagate(): Int =\n    runCatching {\n        delay(1L)\n        7\n    }\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.result-swallowing-cancellation",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve kotlin.runCatching and every relevant Result combinator/terminal edge.",
+          "Prove the selected suspension is cancellable under the pinned coroutine API/effect contract.",
+          "Follow all local Result consumption/preservation/escape edges; opaque escape must abstain.",
+          "Preserve separately-owned child/caller-active cancellation boundaries when actually established."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "A same-package suspend function named runCatching calls its block without catching anything. Its resolved identity is not kotlin.runCatching and its closed body preserves cancellation."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              137,
+              185
+            ],
+            [
+              214,
+              289
+            ],
+            [
+              372,
+              402
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "A same-package suspend function named runCatching calls its block without catching anything. Its resolved identity is not kotlin.runCatching and its closed body preserves cancellation.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/ResultHomonym.kt",
+          "fixturePath": "fixtures/result_local_preserving_homonym/src/main/kotlin/ResultHomonym.kt",
+          "sha256": "78339c16f53b0388e6b64005d57d325b694533705da11bf9a3a7563c015677c6",
+          "bytes": 243
+        }
+      ]
+    },
+    {
+      "id": "result_opaque_escape_abstains",
+      "sources": {
+        "src/main/kotlin/ResultFlow.kt": "package fixture.cancellation.resultflow\n\nimport kotlinx.coroutines.delay\n\nsuspend fun recoverOrPropagate(): Result<Int> =\n    runCatching {\n        delay(1L)\n        7\n    }\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/main/kotlin/ResultFlow.kt",
+          "line": 6,
+          "column": 4,
+          "endLine": 6,
+          "endColumn": 15,
+          "expression": "runCatching"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.result-swallowing-cancellation",
+        "outcome": "UNKNOWN_ABSTAIN",
+        "expectedFindingCountUnderContract": null,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve kotlin.runCatching and every relevant Result combinator/terminal edge.",
+          "Prove the selected suspension is cancellable under the pinned coroutine API/effect contract.",
+          "Follow all local Result consumption/preservation/escape edges; opaque escape must abstain.",
+          "Preserve separately-owned child/caller-active cancellation boundaries when actually established."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "The genuine runCatching Result escapes to an unknown caller. Raw warns, but no consuming terminal edge is established; canonical must abstain rather than count a clean negative or a delivered finding."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {
+          "terminalResultFlow": "opaque_return_no_downstream_contract"
+        },
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              137,
+              185
+            ],
+            [
+              214,
+              289
+            ],
+            [
+              372,
+              402
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "The genuine runCatching Result escapes to an unknown caller. Raw warns, but no consuming terminal edge is established; canonical must abstain rather than count a clean negative or a delivered finding.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/ResultFlow.kt",
+          "fixturePath": "fixtures/result_opaque_escape_abstains/src/main/kotlin/ResultFlow.kt",
+          "sha256": "9edd79f4b95f65e351c090a157a7ef0b4b8089b9bcc53ea666a2e176418d70c7",
+          "bytes": 174
+        }
+      ]
+    },
+    {
+      "id": "catch_consumes_cancellable_delay",
+      "sources": {
+        "src/main/kotlin/CatchFlow.kt": "package fixture.cancellation.catchflow\n\nimport kotlinx.coroutines.delay\n\nsuspend fun recoverOrPropagate(): Int {\n    try {\n        delay(1L)\n        return 7\n    } catch (failure: Exception) {\n        return 0\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/main/kotlin/CatchFlow.kt",
+          "line": 9,
+          "column": 6,
+          "endLine": 11,
+          "endColumn": 5,
+          "expression": "catch (failure: Exception) {\n        return 0\n    }"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.swallowed-cancellation",
+        "outcome": "FINDING_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 1,
+        "anchors": [
+          {
+            "path": "src/main/kotlin/CatchFlow.kt",
+            "line": 10,
+            "column": 8,
+            "endLine": 10,
+            "endColumn": 16,
+            "expression": "return 0"
+          }
+        ],
+        "requiredFacts": [
+          "Resolve genuine kotlinx.coroutines.CancellationException alias and the caught exception hierarchy.",
+          "Inspect actual cancellable effects and all catch exits, not only suspend modifier/name.",
+          "Resolve context/ensureActive identities and branch polarity in the same cancellation context.",
+          "A pure constant-return suspend leaf has no cancellable operation in this closed source fixture."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "The first Exception catch includes the genuine cancellation type and returns normally after a cancellable delay. Canonical consumes the return edge; upstream reports the whole catch."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              187,
+              211
+            ],
+            [
+              291,
+              350
+            ],
+            [
+              354,
+              369
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "The first Exception catch includes the genuine cancellation type and returns normally after a cancellable delay. Canonical consumes the return edge; upstream reports the whole catch.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/CatchFlow.kt",
+          "fixturePath": "fixtures/catch_consumes_cancellable_delay/src/main/kotlin/CatchFlow.kt",
+          "sha256": "e3d8758d9e45b5eabcc4540296649a6d404ffe43b2888f6662321834dbd71b47",
+          "bytes": 218
+        }
+      ]
+    },
+    {
+      "id": "catch_immediate_same_exception_rethrow",
+      "sources": {
+        "src/main/kotlin/CatchRethrow.kt": "package fixture.cancellation.catchrethrow\n\nimport kotlinx.coroutines.CancellationException\nimport kotlinx.coroutines.delay\n\nsuspend fun recoverOrPropagate(): Int {\n    try {\n        delay(1L)\n        return 7\n    } catch (failure: CancellationException) {\n        throw failure\n    } catch (failure: Exception) {\n        return 0\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.swallowed-cancellation",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve genuine kotlinx.coroutines.CancellationException alias and the caught exception hierarchy.",
+          "Inspect actual cancellable effects and all catch exits, not only suspend modifier/name.",
+          "Resolve context/ensureActive identities and branch polarity in the same cancellation context.",
+          "A pure constant-return suspend leaf has no cancellable operation in this closed source fixture."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "The first genuine CancellationException catch immediately rethrows the same symbol. The later ordinary Exception fallback cannot consume a cancellation already matched by that earlier catch."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              187,
+              211
+            ],
+            [
+              291,
+              350
+            ],
+            [
+              354,
+              369
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "The first genuine CancellationException catch immediately rethrows the same symbol. The later ordinary Exception fallback cannot consume a cancellation already matched by that earlier catch.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/CatchRethrow.kt",
+          "fixturePath": "fixtures/catch_immediate_same_exception_rethrow/src/main/kotlin/CatchRethrow.kt",
+          "sha256": "67536ed97cc69c2500049f442cc38b0949dc0f21eaac3b5a647a91226f544a82",
+          "bytes": 338
+        }
+      ]
+    },
+    {
+      "id": "catch_resolved_positive_cancellation_guard",
+      "sources": {
+        "src/main/kotlin/CatchGuard.kt": "package fixture.cancellation.catchguard\n\nimport kotlinx.coroutines.CancellationException\nimport kotlinx.coroutines.currentCoroutineContext\nimport kotlinx.coroutines.delay\nimport kotlinx.coroutines.ensureActive\n\nsuspend fun recoverOrPropagate(): Int {\n    try {\n        delay(1L)\n        return 7\n    } catch (failure: Exception) {\n        if (failure is CancellationException) currentCoroutineContext().ensureActive()\n        return 0\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.swallowed-cancellation",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve genuine kotlinx.coroutines.CancellationException alias and the caught exception hierarchy.",
+          "Inspect actual cancellable effects and all catch exits, not only suspend modifier/name.",
+          "Resolve context/ensureActive identities and branch polarity in the same cancellation context.",
+          "A pure constant-return suspend leaf has no cancellable operation in this closed source fixture."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "The positive type check invokes the genuine current-context ensureActive before normal recovery. This valid alternative depends on resolved same-context/cancellable-delay contracts, not helper spelling alone."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              187,
+              211
+            ],
+            [
+              291,
+              350
+            ],
+            [
+              354,
+              369
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "The positive type check invokes the genuine current-context ensureActive before normal recovery. This valid alternative depends on resolved same-context/cancellable-delay contracts, not helper spelling alone.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/CatchGuard.kt",
+          "fixturePath": "fixtures/catch_resolved_positive_cancellation_guard/src/main/kotlin/CatchGuard.kt",
+          "sha256": "e4a68cca34374eb01cb5302e9be24749a3a922b6635731e5c3d3ecb8f132ecf7",
+          "bytes": 443
+        }
+      ]
+    },
+    {
+      "id": "catch_negated_guard_still_consumes",
+      "sources": {
+        "src/main/kotlin/CatchGuard.kt": "package fixture.cancellation.catchguard\n\nimport kotlinx.coroutines.CancellationException\nimport kotlinx.coroutines.currentCoroutineContext\nimport kotlinx.coroutines.delay\nimport kotlinx.coroutines.ensureActive\n\nsuspend fun recoverOrPropagate(): Int {\n    try {\n        delay(1L)\n        return 7\n    } catch (failure: Exception) {\n        if (failure !is CancellationException) currentCoroutineContext().ensureActive()\n        return 0\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.swallowed-cancellation",
+        "outcome": "FINDING_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 1,
+        "anchors": [
+          {
+            "path": "src/main/kotlin/CatchGuard.kt",
+            "line": 14,
+            "column": 8,
+            "endLine": 14,
+            "endColumn": 16,
+            "expression": "return 0"
+          }
+        ],
+        "requiredFacts": [
+          "Resolve genuine kotlinx.coroutines.CancellationException alias and the caught exception hierarchy.",
+          "Inspect actual cancellable effects and all catch exits, not only suspend modifier/name.",
+          "Resolve context/ensureActive identities and branch polarity in the same cancellation context.",
+          "A pure constant-return suspend leaf has no cancellable operation in this closed source fixture."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Only condition polarity differs from the positive guard. A CancellationException skips ensureActive and reaches return 0. Upstream source omits the is-negated check and predicts zero; canonical must not grant that exemption."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              187,
+              211
+            ],
+            [
+              291,
+              350
+            ],
+            [
+              354,
+              369
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Only condition polarity differs from the positive guard. A CancellationException skips ensureActive and reaches return 0. Upstream source omits the is-negated check and predicts zero; canonical must not grant that exemption.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/CatchGuard.kt",
+          "fixturePath": "fixtures/catch_negated_guard_still_consumes/src/main/kotlin/CatchGuard.kt",
+          "sha256": "d2383a58fc4d855de3b988d97badbdc2546421357d79c504863d80336c0d2777",
+          "bytes": 444
+        }
+      ]
+    },
+    {
+      "id": "catch_non_cancellable_suspend_leaf",
+      "sources": {
+        "src/main/kotlin/CatchPureSuspendLeaf.kt": "package fixture.cancellation.catchleaf\n\nprivate suspend fun immediateValue(): Int = 7\n\nsuspend fun recoverOrPropagate(): Int {\n    try {\n        return immediateValue()\n    } catch (failure: Exception) {\n        return 0\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:SuspendFunSwallowedCancellation",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/main/kotlin/CatchPureSuspendLeaf.kt",
+          "line": 8,
+          "column": 6,
+          "endLine": 10,
+          "endColumn": 5,
+          "expression": "catch (failure: Exception) {\n        return 0\n    }"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.coroutines.swallowed-cancellation",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve genuine kotlinx.coroutines.CancellationException alias and the caught exception hierarchy.",
+          "Inspect actual cancellable effects and all catch exits, not only suspend modifier/name.",
+          "Resolve context/ensureActive identities and branch polarity in the same cancellation context.",
+          "A pure constant-return suspend leaf has no cancellable operation in this closed source fixture."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Closed source leaf only returns constant 7 and cannot suspend or throw cancellation. Upstream sees isSuspend and warns. Core remains a required analysis dependency even without an import because the raw catch rule resolves its CancellationException alias."
+      },
+      "prerequisites": {
+        "sourceSetRole": "main",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm"
+        ],
+        "fixtureContractFacts": {},
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/SuspendFunSwallowedCancellation.kt",
+          "sha256": "7e9673d8e602058303204a72798c9258d6e01b175c1a9642ac7f6696c2e5aa73",
+          "lineRangesInclusive": [
+            [
+              187,
+              211
+            ],
+            [
+              291,
+              350
+            ],
+            [
+              354,
+              369
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Closed source leaf only returns constant 7 and cannot suspend or throw cancellation. Upstream sees isSuspend and warns. Core remains a required analysis dependency even without an import because the raw catch rule resolves its CancellationException alias.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/main/kotlin/CatchPureSuspendLeaf.kt",
+          "fixturePath": "fixtures/catch_non_cancellable_suspend_leaf/src/main/kotlin/CatchPureSuspendLeaf.kt",
+          "sha256": "bd5d76595c962be0eab5b9e762780acfd933ae30646b62173eb15d47e0a922f1",
+          "bytes": 229
+        }
+      ]
+    },
+    {
+      "id": "test_independent_scope_escapes",
+      "sources": {
+        "src/test/kotlin/UnmanagedOwnershipTest.kt": "package fixture.coroutines.unmanagedtest\n\nimport kotlinx.coroutines.CoroutineScope\nimport kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.awaitCancellation\nimport kotlinx.coroutines.launch\nimport org.junit.jupiter.api.Test\n\nclass UnmanagedOwnershipTest {\n    @Test\n    fun unmanaged(): Unit {\n        CoroutineScope(Dispatchers.Default).launch {\n            awaitCancellation()\n        }\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:CoroutineLaunchedInTestWithoutRunTest",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/test/kotlin/UnmanagedOwnershipTest.kt",
+          "line": 10,
+          "column": 4,
+          "endLine": 15,
+          "endColumn": 5,
+          "expression": "@Test\n    fun unmanaged(): Unit {\n        CoroutineScope(Dispatchers.Default).launch {\n            awaitCancellation()\n        }\n    }"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.librarytest.test-coroutine-ownership-policy",
+        "outcome": "FINDING_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 1,
+        "anchors": [
+          {
+            "path": "src/test/kotlin/UnmanagedOwnershipTest.kt",
+            "line": 12,
+            "column": 8,
+            "endLine": 14,
+            "endColumn": 9,
+            "expression": "CoroutineScope(Dispatchers.Default).launch {\n            awaitCancellation()\n        }"
+          }
+        ],
+        "requiredFacts": [
+          "Resolve genuine selected JUnit Test annotation and actual test source-set membership.",
+          "Select an explicit test-lifecycle policy; the supplied facts are fixture contract data, not accepted provider configuration.",
+          "Resolve builder/launch and owner Job identities, joined completion, failure observation and delegated cleanup.",
+          "Expression-body runTest does not own a separately constructed scope; runBlocking structured children can be valid."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Genuine JUnit-shaped test creates a separate CoroutineScope/Job, launches indefinite work and returns without a join, cancel or delegated owner. Actual test membership/policy are still prerequisites; never execute this source method."
+      },
+      "prerequisites": {
+        "sourceSetRole": "test",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm",
+          "genuine_pinned_kotlinx_coroutines_test_jvm",
+          "genuine_pinned_junit_jupiter_api",
+          "all_declared_transitive_test_compile_dependencies"
+        ],
+        "fixtureContractFacts": {
+          "testLifecyclePolicy": "explicit_fixture_policy_forbids_independent_unjoined_unmanaged_jobs",
+          "policyIsActualOwnerConfiguration": "false",
+          "expectedCompilationRole": "test"
+        },
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/CoroutineLaunchedInTestWithoutRunTest.kt",
+          "sha256": "b37ed07465e7b359a24163ea1b481bcfd95fffce140b3c5e6f21abbf05962535",
+          "lineRangesInclusive": [
+            [
+              50,
+              83
+            ],
+            [
+              87,
+              142
+            ]
+          ]
+        },
+        {
+          "entry": "dev/detekt/rules/coroutines/utils/TypeUtils.kt",
+          "sha256": "f7616625e1980008ad2b7afc24ae8a1617cf694be3067793793f006627b63860",
+          "lineRangesInclusive": [
+            [
+              11,
+              35
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Genuine JUnit-shaped test creates a separate CoroutineScope/Job, launches indefinite work and returns without a join, cancel or delegated owner. Actual test membership/policy are still prerequisites; never execute this source method.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/test/kotlin/UnmanagedOwnershipTest.kt",
+          "fixturePath": "fixtures/test_independent_scope_escapes/src/test/kotlin/UnmanagedOwnershipTest.kt",
+          "sha256": "3b9e9bcb194772618bdc3fac1cc70aabc27f6038030033ff2df5049c63c6502b",
+          "bytes": 405
+        }
+      ]
+    },
+    {
+      "id": "test_run_test_structured_child",
+      "sources": {
+        "src/test/kotlin/StructuredOwnershipTest.kt": "package fixture.coroutines.structuredtest\n\nimport kotlinx.coroutines.delay\nimport kotlinx.coroutines.launch\nimport kotlinx.coroutines.test.runTest\nimport org.junit.jupiter.api.Test\n\nclass StructuredOwnershipTest {\n    @Test\n    fun ownsChild(): Unit = runTest {\n        this.launch {\n            delay(1L)\n        }\n        Unit\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:CoroutineLaunchedInTestWithoutRunTest",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.librarytest.test-coroutine-ownership-policy",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve genuine selected JUnit Test annotation and actual test source-set membership.",
+          "Select an explicit test-lifecycle policy; the supplied facts are fixture contract data, not accepted provider configuration.",
+          "Resolve builder/launch and owner Job identities, joined completion, failure observation and delegated cleanup.",
+          "Expression-body runTest does not own a separately constructed scope; runBlocking structured children can be valid."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Genuine runTest owns its this.launch child and observes completion/failure under the pinned test API. Raw zero is independently contingent on resolving the genuine runTest body call."
+      },
+      "prerequisites": {
+        "sourceSetRole": "test",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm",
+          "genuine_pinned_kotlinx_coroutines_test_jvm",
+          "genuine_pinned_junit_jupiter_api",
+          "all_declared_transitive_test_compile_dependencies"
+        ],
+        "fixtureContractFacts": {
+          "testLifecyclePolicy": "explicit_fixture_policy_forbids_independent_unjoined_unmanaged_jobs",
+          "policyIsActualOwnerConfiguration": "false",
+          "expectedCompilationRole": "test"
+        },
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/CoroutineLaunchedInTestWithoutRunTest.kt",
+          "sha256": "b37ed07465e7b359a24163ea1b481bcfd95fffce140b3c5e6f21abbf05962535",
+          "lineRangesInclusive": [
+            [
+              50,
+              83
+            ],
+            [
+              87,
+              142
+            ]
+          ]
+        },
+        {
+          "entry": "dev/detekt/rules/coroutines/utils/TypeUtils.kt",
+          "sha256": "f7616625e1980008ad2b7afc24ae8a1617cf694be3067793793f006627b63860",
+          "lineRangesInclusive": [
+            [
+              11,
+              35
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Genuine runTest owns its this.launch child and observes completion/failure under the pinned test API. Raw zero is independently contingent on resolving the genuine runTest body call.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/test/kotlin/StructuredOwnershipTest.kt",
+          "fixturePath": "fixtures/test_run_test_structured_child/src/test/kotlin/StructuredOwnershipTest.kt",
+          "sha256": "07ef289fe45b814e101efe338e131efc5d70739529d26eae60c275ab7ce76ca1",
+          "bytes": 337
+        }
+      ]
+    },
+    {
+      "id": "test_run_blocking_structured_child",
+      "sources": {
+        "src/test/kotlin/StructuredOwnershipTest.kt": "package fixture.coroutines.structuredtest\n\nimport kotlinx.coroutines.delay\nimport kotlinx.coroutines.launch\nimport kotlinx.coroutines.runBlocking\nimport org.junit.jupiter.api.Test\n\nclass StructuredOwnershipTest {\n    @Test\n    fun ownsChild(): Unit = runBlocking {\n        this.launch {\n            delay(1L)\n        }\n        Unit\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:CoroutineLaunchedInTestWithoutRunTest",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [
+        {
+          "path": "src/test/kotlin/StructuredOwnershipTest.kt",
+          "line": 9,
+          "column": 4,
+          "endLine": 15,
+          "endColumn": 5,
+          "expression": "@Test\n    fun ownsChild(): Unit = runBlocking {\n        this.launch {\n            delay(1L)\n        }\n        Unit\n    }"
+        }
+      ],
+      "rawExpectedFindingCount": 1,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.librarytest.test-coroutine-ownership-policy",
+        "outcome": "VALID_ALTERNATIVE_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 0,
+        "anchors": [],
+        "requiredFacts": [
+          "Resolve genuine selected JUnit Test annotation and actual test source-set membership.",
+          "Select an explicit test-lifecycle policy; the supplied facts are fixture contract data, not accepted provider configuration.",
+          "Resolve builder/launch and owner Job identities, joined completion, failure observation and delegated cleanup.",
+          "Expression-body runTest does not own a separately constructed scope; runBlocking structured children can be valid."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Only builder/import differs from the structured runTest source. Explicit this.launch lets raw find the genuine CoroutineScope receiver; raw warns because the body is not runTest, although runBlocking joins/observes its structured child."
+      },
+      "prerequisites": {
+        "sourceSetRole": "test",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm",
+          "genuine_pinned_kotlinx_coroutines_test_jvm",
+          "genuine_pinned_junit_jupiter_api",
+          "all_declared_transitive_test_compile_dependencies"
+        ],
+        "fixtureContractFacts": {
+          "testLifecyclePolicy": "explicit_fixture_policy_forbids_independent_unjoined_unmanaged_jobs",
+          "policyIsActualOwnerConfiguration": "false",
+          "expectedCompilationRole": "test"
+        },
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/CoroutineLaunchedInTestWithoutRunTest.kt",
+          "sha256": "b37ed07465e7b359a24163ea1b481bcfd95fffce140b3c5e6f21abbf05962535",
+          "lineRangesInclusive": [
+            [
+              50,
+              83
+            ],
+            [
+              87,
+              142
+            ]
+          ]
+        },
+        {
+          "entry": "dev/detekt/rules/coroutines/utils/TypeUtils.kt",
+          "sha256": "f7616625e1980008ad2b7afc24ae8a1617cf694be3067793793f006627b63860",
+          "lineRangesInclusive": [
+            [
+              11,
+              35
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Only builder/import differs from the structured runTest source. Explicit this.launch lets raw find the genuine CoroutineScope receiver; raw warns because the body is not runTest, although runBlocking joins/observes its structured child.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/test/kotlin/StructuredOwnershipTest.kt",
+          "fixturePath": "fixtures/test_run_blocking_structured_child/src/test/kotlin/StructuredOwnershipTest.kt",
+          "sha256": "2f05150fe044622e566329002ca585ec3321a768325c09696a38799692b0cb19",
+          "bytes": 340
+        }
+      ]
+    },
+    {
+      "id": "test_run_test_does_not_own_independent_scope",
+      "sources": {
+        "src/test/kotlin/UnmanagedOwnershipTest.kt": "package fixture.coroutines.unmanagedtest\n\nimport kotlinx.coroutines.CoroutineScope\nimport kotlinx.coroutines.Dispatchers\nimport kotlinx.coroutines.awaitCancellation\nimport kotlinx.coroutines.launch\nimport kotlinx.coroutines.test.runTest\nimport org.junit.jupiter.api.Test\n\nclass UnmanagedOwnershipTest {\n    @Test\n    fun unmanaged(): Unit = runTest {\n        CoroutineScope(Dispatchers.Default).launch {\n            awaitCancellation()\n        }\n        Unit\n    }\n}\n"
+      },
+      "rawUpstreamRuleId": "coroutines:CoroutineLaunchedInTestWithoutRunTest",
+      "rawMode": "FULL_REQUIRES_ANALYSIS_API",
+      "rawSettings": {
+        "ruleSetActive": true,
+        "ruleActive": true,
+        "otherRulesMayBeActivated": false
+      },
+      "rawExpected": [],
+      "rawExpectedFindingCount": 0,
+      "rawExpectationStatus": "INDEPENDENT_PRE_EXECUTION_SOURCE_ORACLE_NOT_AN_OBSERVED_RESULT",
+      "canonical": {
+        "ruleId": "ktc.librarytest.test-coroutine-ownership-policy",
+        "outcome": "FINDING_IF_REQUIRED_FACTS_COMPLETE",
+        "expectedFindingCountUnderContract": 1,
+        "anchors": [
+          {
+            "path": "src/test/kotlin/UnmanagedOwnershipTest.kt",
+            "line": 13,
+            "column": 8,
+            "endLine": 15,
+            "endColumn": 9,
+            "expression": "CoroutineScope(Dispatchers.Default).launch {\n            awaitCancellation()\n        }"
+          }
+        ],
+        "requiredFacts": [
+          "Resolve genuine selected JUnit Test annotation and actual test source-set membership.",
+          "Select an explicit test-lifecycle policy; the supplied facts are fixture contract data, not accepted provider configuration.",
+          "Resolve builder/launch and owner Job identities, joined completion, failure observation and delegated cleanup.",
+          "Expression-body runTest does not own a separately constructed scope; runBlocking structured children can be valid."
+        ],
+        "currentAvailability": "UNAVAILABLE_REQUIRES_REFINEMENT",
+        "actualCanonicalFindingCount": null,
+        "rationale": "Expression-body genuine runTest short-circuits the raw rule but the separately constructed CoroutineScope/Job is still not owned/joined/cancelled by TestScope. The explicit lifecycle contract therefore still intends one escape finding; do not run the fixture method."
+      },
+      "prerequisites": {
+        "sourceSetRole": "test",
+        "platform": "JVM_ONLY_UNQUALIFIED",
+        "dependencyRoles": [
+          "matched_kotlin_stdlib",
+          "whole_link_free_jdk_image",
+          "genuine_pinned_kotlinx_coroutines_core_jvm",
+          "genuine_pinned_kotlinx_coroutines_test_jvm",
+          "genuine_pinned_junit_jupiter_api",
+          "all_declared_transitive_test_compile_dependencies"
+        ],
+        "fixtureContractFacts": {
+          "testLifecyclePolicy": "explicit_fixture_policy_forbids_independent_unjoined_unmanaged_jobs",
+          "policyIsActualOwnerConfiguration": "false",
+          "expectedCompilationRole": "test"
+        },
+        "admittedExecutionTuple": null,
+        "missingPrerequisiteDisposition": "UNKNOWN_OR_UNSUPPORTED_ABSTAIN",
+        "sourceSetMembershipEstablishedByThisPacket": false,
+        "fixtureSourceMustNeverBeInvokedAsApplicationOrJUnitTest": true
+      },
+      "upstreamSourceEvidence": [
+        {
+          "entry": "dev/detekt/rules/coroutines/CoroutineLaunchedInTestWithoutRunTest.kt",
+          "sha256": "b37ed07465e7b359a24163ea1b481bcfd95fffce140b3c5e6f21abbf05962535",
+          "lineRangesInclusive": [
+            [
+              50,
+              83
+            ],
+            [
+              87,
+              142
+            ]
+          ]
+        },
+        {
+          "entry": "dev/detekt/rules/coroutines/utils/TypeUtils.kt",
+          "sha256": "f7616625e1980008ad2b7afc24ae8a1617cf694be3067793793f006627b63860",
+          "lineRangesInclusive": [
+            [
+              11,
+              35
+            ]
+          ]
+        }
+      ],
+      "semanticControl": "Expression-body genuine runTest short-circuits the raw rule but the separately constructed CoroutineScope/Job is still not owned/joined/cancelled by TestScope. The explicit lifecycle contract therefore still intends one escape finding; do not run the fixture method.",
+      "executionStatus": "NOT_COMPILED_NOT_EXECUTED_NOT_ADMITTED",
+      "syntheticFixtureFactsQualifyRealProject": false,
+      "sourceEntries": [
+        {
+          "path": "src/test/kotlin/UnmanagedOwnershipTest.kt",
+          "fixturePath": "fixtures/test_run_test_does_not_own_independent_scope/src/test/kotlin/UnmanagedOwnershipTest.kt",
+          "sha256": "c2b33e697f0d76bdbd8c9aafb75595a102897c8c85481554bb721e3804978e47",
+          "bytes": 467
+        }
+      ]
+    }
+  ],
+  "unadmittedDependencyVersionProposals": {
+    "detektRuleSources": "2.0.0-alpha.6",
+    "coroutinesCoreAndTest": "catalog observed1.11.0; genuine binary/source/compiler compatibility pins NOT supplied or qualified",
+    "testFramework": "catalog JUnit6.1.3 reference; actual selected Jupiter/framework+transitive tuple NOT supplied or qualified",
+    "currentSeparateFullDesign": "synthetic modeled/embedded Kotlin2.4.10 language/API2.4 JVM21 stdlib2.4.10 and whole JDK21; NOT an admitted hook for these3 rules",
+    "actualExporter": "2.4.21 remains distinct/gapped; no synthetic-as-real qualification"
+  },
+  "integrationGates": [
+    "No additional FULL provider hook is currently admitted. Correctness fixed MissingUseCall-only allowlist and seven-case native schedule MUST remain unchanged.",
+    "Root owns future provider hook, dependency/model/source-set/argv/JDK/deadline review, explicit lane authorization and admission; these source/data files do not grant it.",
+    "Per case select only the specified raw upstream rule in FULL after a future exact tuple is admitted; mode LIGHT or absent/invalid dependencies is unsupported/unknown, not a zero-finding negative.",
+    "Canonical expectations are independently specified design contracts. All four canonical IDs currently remain unavailable/requires_refinement; do not emit them by reusing raw counts or names.",
+    "Test path spelling is not actual test compilation evidence. Genuine resolved JUnit/core/test dependencies and source-set membership must come from the real selected build model.",
+    "Fixture policy/effect/ownership assumptions are not production owner decisions or exporter output. Missing actual prerequisites must abstain.",
+    "Fixture input methods intentionally contain unowned awaiting work; never invoke them as application/JUnit tests. Future integration analyzes their SOURCE with the provider.",
+    "Six data-oracle JUnit methods are authored but uncompiled/unexecuted. Passing them later would verify data only, not detector/compiler/canonical delivery.",
+    "Expected ranges were authored before any report exists. Multi-line raw whole-function/catch ranges and proposed canonical consuming-edge anchors are distinct.",
+    "Current1663 IDs/eight contexts and gaps, zero historical-stage transfer, existing22 rules/199 admitted-to-authoring analyses remain untouched. Nineteen private case records are NOT an adopted cohort or19 completed analyses."
+  ],
+  "remainingGaps": [
+    "Three-rule FULL provider/runner hook",
+    "Exact compiler/JDK/core/test/JUnit transitive artifact pins and real source-set/model provenance",
+    "Independent Kotlin syntax/oracle source review and actual compilation",
+    "Actual raw engine observations and suppression/neighbor/configuration controls",
+    "Canonical policy/effect/Result/catch/test-ownership adapter implementations",
+    "Actual canonical precision, natural-project, incremental, native and target qualification"
+  ],
+  "executions": {
+    "candidateTests": 0,
+    "kotlinCompiles": 0,
+    "gradleInvocations": 0,
+    "jvmInvocations": 0,
+    "providerInvocations": 0,
+    "nativeInvocations": 0,
+    "modelExecutions": 0,
+    "fixtureMethodsInvoked": 0,
+    "canonicalAdmittedFindings": 0,
+    "sharedFilesChanged": 0,
+    "newHttpRequests": 0,
+    "futureRawEngineInvocationsAuthorized": 0
+  }
+}

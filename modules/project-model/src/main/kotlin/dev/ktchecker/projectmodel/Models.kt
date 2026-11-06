@@ -107,6 +107,10 @@ data class ModelCompilation(
     /** Java sources and compiler/plugin auxiliary inputs captured in the same source snapshot. */
     val auxiliaryInputFiles: List<ModelFile> = emptyList(),
     val auxiliaryArtifacts: List<ModelArtifact> = emptyList(),
+    /** Optional full-original-vector facts. Absent legacy fields never infer path-role authority. */
+    val jvmArgumentRoles: ModelJvmArgumentRoles? = null,
+    /** Deferred producer obligations never become externally enrolled artifacts after import. */
+    val deferredJvmOutputs: List<ModelJvmProducedOutputReference> = emptyList(),
 )
 
 @Serializable
@@ -166,7 +170,15 @@ class VerifiedProjectModel internal constructor(
     val identity: ProjectModelIdentity,
     issues: List<ModelIssue>,
     val ingressCertificate: String,
+    jvmArgumentLayouts: Map<String, VerifiedJvmArgumentLayout> = emptyMap(),
+    jvmArgumentRejections: Map<String, String> = emptyMap(),
+    /** Explicit incomplete-graph preview only; normal context/completeness is unchanged. */
+    val jvmProducedGraph: VerifiedJvmProducedGraph? = null,
 ) {
+    private val jvmArgumentLayouts: Map<String, VerifiedJvmArgumentLayout> = immutableMap(jvmArgumentLayouts)
+    /** Execution-layout eligibility is separate from unchanged whole-graph completeness issues. */
+    val jvmArgumentRejections: Map<String, String> = immutableMap(jvmArgumentRejections)
+    fun jvmArgumentLayout(compilationId: String): VerifiedJvmArgumentLayout? = jvmArgumentLayouts[compilationId]
     val issues: List<ModelIssue> = immutable(issues)
     val compilationIds: List<String> = immutable(export.compilations.map { it.id })
     fun context(scope: RuleContext, configurationDigest: String): VerifiedCompilationContext = compilationContext(this, scope, configurationDigest)

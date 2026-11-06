@@ -330,6 +330,98 @@ class ReportTests(unittest.TestCase):
             self.assertEqual("incomplete", value["state"])
             self.assertTrue(any("same actual source" in error for error in value["errors"]))
 
+    def collect_source_control(self, environment, command):
+        """Owned synthetic JSON/JUnit only; no tool, target or hosted execution."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            environment_path = root / "environment.json"
+            environment_path.write_text(json.dumps(environment), encoding="utf-8")
+            command_path = root / "command.json"
+            command_path.write_text(json.dumps(command), encoding="utf-8")
+            (root / "test.xml").write_text(
+                '<testsuite tests="1"><testcase name="synthetic-source-binding-control"/></testsuite>',
+                encoding="utf-8")
+            args = argparse.Namespace(profile="synthetic-source-binding", environment=environment_path,
+                                      reports=["test.xml"], require_report=["test.xml"], require_tests=True,
+                                      artifact=[], require_artifact=[], command_result=[command_path])
+            with patch.object(collect_evidence, "source_identity", return_value=IDENTITY), \
+                 patch.dict(os.environ, {"KT_CI_JOB_STATUS": "success"}):
+                return collect_evidence.collect(args, root)
+
+    def test_collector_exact_commit_and_bytes_positive_control(self):
+        value = self.collect_source_control({"state": "passed", "source": IDENTITY},
+                                            {"state": "passed", "source": IDENTITY})
+        self.assertEqual("passed", value["state"])
+        self.assertEqual(1, value["counts"]["passed"])
+        self.assertEqual([], value["errors"])
+        self.assertEqual([], value["missing_evidence"])
+        self.assertEqual(IDENTITY, value["source"])
+        self.assertEqual(IDENTITY, value["command_results"][0]["source"])
+
+    def test_collector_different_commit_with_identical_bytes_is_incomplete(self):
+        stale = {**IDENTITY, "commit": "3" * 40}
+        self.assertEqual(IDENTITY["working_tree_digest"], stale["working_tree_digest"])
+        for role in ("environment", "command"):
+            with self.subTest(role=role):
+                environment = {"state": "passed", "source": stale if role == "environment" else IDENTITY}
+                command = {"state": "passed", "source": stale if role == "command" else IDENTITY}
+                value = self.collect_source_control(environment, command)
+                self.assertEqual("incomplete", value["state"])
+                self.assertEqual(1, value["counts"]["passed"])
+                self.assertEqual([], value["missing_evidence"])
+                expected = "Environment and reports do not bind the same actual source tree" if role == "environment" \
+                    else "Command evidence source differs from the tested tree: command.json"
+                self.assertEqual([expected], value["errors"])
+
+    def test_collector_present_identity_requires_nonmissing_commit(self):
+        for commit in (None, "", "omitted"):
+            invalid = {**IDENTITY, "commit": commit}
+            if commit == "omitted":
+                invalid.pop("commit")
+            for role in ("environment", "command"):
+                with self.subTest(role=role, commit=commit):
+                    environment = {"state": "passed", "source": invalid if role == "environment" else IDENTITY}
+                    command = {"state": "passed", "source": invalid if role == "command" else IDENTITY}
+                    value = self.collect_source_control(environment, command)
+                    self.assertEqual("incomplete", value["state"])
+                    self.assertEqual(1, value["counts"]["passed"])
+                    self.assertEqual(1, len(value["errors"]))
+                    self.assertEqual([], value["missing_evidence"])
+
+    def test_collector_same_commit_still_rejects_different_source_bytes(self):
+        changed = {**IDENTITY, "working_tree_digest": "sha256:" + "4" * 64}
+        for role in ("environment", "command"):
+            with self.subTest(role=role):
+                environment = {"state": "passed", "source": changed if role == "environment" else IDENTITY}
+                command = {"state": "passed", "source": changed if role == "command" else IDENTITY}
+                value = self.collect_source_control(environment, command)
+                self.assertEqual("incomplete", value["state"])
+                self.assertEqual(1, value["counts"]["passed"])
+                self.assertEqual(1, len(value["errors"]))
+                self.assertEqual([], value["missing_evidence"])
+
+    def test_collector_unbound_sdk_availability_does_not_gain_a_source_claim(self):
+        for explicit_null in (False, True):
+            with self.subTest(explicit_null=explicit_null):
+                command = {"state": "passed", "evidence_kind": "sdk_provisioning",
+                           "qualification": "SDK availability, not Android target execution"}
+                if explicit_null:
+                    command["source"] = None
+                value = self.collect_source_control({"state": "passed", "source": IDENTITY}, command)
+                self.assertEqual("passed", value["state"])
+                self.assertEqual([command], value["command_results"])
+                self.assertEqual(explicit_null, "source" in value["command_results"][0])
+                self.assertIsNone(value["command_results"][0].get("source"))
+
+    def test_collector_unavailable_or_skipped_commands_never_pass_with_matching_source(self):
+        for state in ("unavailable", "skipped", "failed", "incomplete"):
+            with self.subTest(state=state):
+                value = self.collect_source_control({"state": "passed", "source": IDENTITY},
+                                                    {"state": state, "source": IDENTITY})
+                self.assertEqual("incomplete", value["state"])
+                self.assertEqual(["Command/smoke evidence did not pass: command.json"], value["errors"])
+                self.assertEqual([], value["missing_evidence"])
+
 
 class SmokeAndEnvironmentTests(unittest.TestCase):
     def test_doctor_must_explicitly_be_preview(self):
@@ -733,6 +825,34 @@ class StructuredJsonProbeTests(unittest.TestCase):
 class FixtureDslSourceTests(unittest.TestCase):
     """Authored source guards only, not Kotlin compilation or AGP execution."""
 
+    def test_ios_negative_source_sets_are_configured_lazily_for_exact_ios_main_only(self):
+        source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
+        for label, replacement in (
+            ("missing-actual", "emptyList<String>()"),
+            ("wrong-actual", 'listOf("negative/wrong-actual/iosMain")'),
+        ):
+            with self.subTest(label=label):
+                self.assertIn(
+                    f'"{label}" -> matching {{ sourceSet -> sourceSet.name == "iosMain" }}.configureEach {{\n'
+                    f'                kotlin.setSrcDirs({replacement})\n'
+                    '            }', source,
+                )
+        self.assertEqual(2, source.count('sourceSet.name == "iosMain"'))
+        for eager in ('getByName("iosMain")', 'named("iosMain")', 'create("iosMain")', 'maybeCreate("iosMain")'):
+            self.assertNotIn(eager, source)
+        self.assertIn('"new-api" -> getByName("androidMain").kotlin.srcDir("negative/new-api/androidMain")', source)
+        self.assertEqual(2, source.count("kotlin.setSrcDirs("))
+
+    def test_ios_negative_inputs_still_remove_or_incompatibly_replace_the_actual(self):
+        root = ci_common.REPO_ROOT / "fixtures/kmp"
+        common = (root / "src/commonMain/kotlin/dev/ktchecker/fixture/Envelope.kt").read_text(encoding="utf-8")
+        actual = (root / "src/iosMain/kotlin/dev/ktchecker/fixture/Platform.kt").read_text(encoding="utf-8")
+        wrong = (root / "negative/wrong-actual/iosMain/dev/ktchecker/fixture/Platform.kt").read_text(encoding="utf-8")
+        self.assertIn("expect fun platformFamily(): String", common)
+        self.assertIn('actual fun platformFamily(): String = "ios"', actual)
+        self.assertIn("actual fun platformFamily(): Int = 1", wrong)
+        self.assertNotIn("actual fun platformFamily(): String", wrong)
+
     def test_fixture_uses_supported_compiler_receiver_and_named_custom_source_set(self):
         source = (ci_common.REPO_ROOT / "fixtures/kmp/build.gradle.kts").read_text(encoding="utf-8")
         self.assertIn("compilerOptions.jvmTarget.set(JvmTarget.JVM_17)", source)
@@ -785,23 +905,52 @@ class FixtureDslSourceTests(unittest.TestCase):
 
 
 class SimulatorTests(unittest.TestCase):
-    def inventory(self, version="26.4", available=True):
-        identifier = "com.apple.CoreSimulator.SimRuntime.iOS-" + version.replace(".", "-")
-        runtime = {"identifier": identifier, "version": version, "isAvailable": available, "buildversion": "fixture-build"}
+    def inventory(self, version="26.4.1", available=True, *,
+                  identifier="com.apple.CoreSimulator.SimRuntime.iOS-26-4", build="23E254a"):
+        # Synthetic observed fields, not an assertion about Apple's installed
+        # identifier/version pairing. Never manufacture an identifier from version.
+        runtime = {"identifier": identifier, "version": version, "isAvailable": available, "buildversion": build}
         device = {"name": "iPhone 17", "isAvailable": True, "udid": "12345678-1234-1234-1234-123456789abc", "state": "Shutdown"}
         return {"runtimes": [runtime]}, {"devices": {identifier: [device]}}
 
     def test_selects_uuid_from_exact_runtime_not_ambiguous_name(self):
         value = run_platform_checks.select_simulator(*self.inventory())
-        self.assertEqual("26.4", value["runtime_version"])
+        self.assertEqual("26.4.1", value["runtime_version"])
+        self.assertEqual("23E254a", value["runtime_build"])
         self.assertEqual("12345678-1234-1234-1234-123456789abc", value["udid"])
 
     def test_wrong_runtime_unavailable_device_and_untrusted_id_fail(self):
-        for version, available in (("26.5", True), ("26.4", False)):
+        for version, available in (("26.5", True), ("26.4.1", False)):
             with self.assertRaises(ValueError):
                 run_platform_checks.select_simulator(*self.inventory(version, available))
         runtimes, devices = self.inventory()
         devices["devices"][runtimes["runtimes"][0]["identifier"]][0]["udid"] = "$(untrusted-command)"
+        with self.assertRaises(ValueError):
+            run_platform_checks.select_simulator(runtimes, devices)
+
+    def test_runtime_version_and_build_are_exact_no_patch_fallback(self):
+        for version in ("26.4", "26.4.0", "26.4.2", "26.4.10", "26.5", "26.4.1.0"):
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                run_platform_checks.select_simulator(*self.inventory(version=version))
+        for build in (None, "fixture-build", "23E254", "23E254A", "23E254b", "17E202"):
+            with self.subTest(build=build), self.assertRaises(ValueError):
+                run_platform_checks.select_simulator(*self.inventory(build=build))
+
+    def test_synthetic_observed_identifier_is_joined_without_suffix_inference(self):
+        for identifier in ("com.apple.CoreSimulator.SimRuntime.iOS-26-4",
+                           "com.apple.CoreSimulator.SimRuntime.iOS-26-4-1"):
+            with self.subTest(identifier=identifier):
+                runtimes, devices = self.inventory(identifier=identifier)
+                value = run_platform_checks.select_simulator(runtimes, devices)
+                self.assertEqual(identifier, value["runtime_identifier"])
+                devices["devices"] = {identifier + "-0": next(iter(devices["devices"].values()))}
+                with self.assertRaises(ValueError):
+                    run_platform_checks.select_simulator(runtimes, devices)
+
+    def test_runtime_version_build_and_identifier_must_match_on_one_row(self):
+        runtimes, devices = self.inventory()
+        runtimes["runtimes"] = [dict(runtimes["runtimes"][0], version="26.4"),
+                                dict(runtimes["runtimes"][0], buildversion="23E254b")]
         with self.assertRaises(ValueError):
             run_platform_checks.select_simulator(runtimes, devices)
 
@@ -890,7 +1039,7 @@ class SimulatorTests(unittest.TestCase):
         result, _ = self.ios_preflight([(metadata, runtimes), (metadata, devices)])
         self.assertEqual("unavailable", result["state"])
         self.assertNotIn("simulator", result)
-        self.assertEqual(["No available iPhone 17 in the pinned iOS 26.4 simulator runtime"], result["errors"])
+        self.assertEqual(["No available iPhone 17 in the pinned iOS 26.4.1 simulator runtime, build 23E254a"], result["errors"])
 
     def test_malformed_or_injected_runtime_identity_cannot_be_selected(self):
         with self.assertRaisesRegex(ValueError, "Invalid simctl inventory schema"):

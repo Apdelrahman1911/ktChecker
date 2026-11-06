@@ -1,6 +1,6 @@
 {
   "release_qualified": false,
-  "change_reason": "Initial 2026-11-04 researched planning inventory after targeted correctness audit; all rules remain planned. Explicit advisory, opt-in, exclusion and alias dispositions are not release-qualified coverage.",
+  "change_reason": "Initial 2026-11-04 researched planning inventory after targeted correctness audit; all rules remain planned. Explicit advisory, opt-in, exclusion and alias dispositions are not release-qualified coverage. Reviewed planning-only compiler445/owner-full1665 successor: add ktc.compiler.common.error_suppression (advisory) and ktc.compiler.common.inapplicable_operator_modifier (enabled_when_validated), preserving every prior 1,663 ID and mode. Both additions remain planned; no execution, default activation, implementation, testing or qualification credit is established.",
   "rule_modes": {
     "ktc.android.backup_sensitive_path_policy": "opt_in",
     "ktc.android.lint.AaptCrash": "enabled_when_validated",
@@ -629,6 +629,7 @@
     "ktc.compiler.common.enum_entry_as_type": "enabled_when_validated",
     "ktc.compiler.common.equality_not_applicable": "enabled_when_validated",
     "ktc.compiler.common.error_in_contract_description": "enabled_when_validated",
+    "ktc.compiler.common.error_suppression": "advisory",
     "ktc.compiler.common.expect_actual_classifiers_are_in_beta_warning": "opt_in",
     "ktc.compiler.common.expect_actual_incompatible_class_kind": "enabled_when_validated",
     "ktc.compiler.common.expect_actual_incompatible_class_modifiers": "enabled_when_validated",
@@ -687,6 +688,7 @@
     "ktc.compiler.common.implementation_by_delegation_in_expect_class": "enabled_when_validated",
     "ktc.compiler.common.implicit_boxing_in_identity_equals": "advisory",
     "ktc.compiler.common.inapplicable_all_target": "enabled_when_validated",
+    "ktc.compiler.common.inapplicable_operator_modifier": "enabled_when_validated",
     "ktc.compiler.common.incompatible_enum_comparison_error": "enabled_when_validated",
     "ktc.compiler.common.inferred_invisible_when_type_warning": "advisory",
     "ktc.compiler.common.initialization_before_declaration": "enabled_when_validated",

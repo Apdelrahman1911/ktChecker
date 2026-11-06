@@ -1,9 +1,9 @@
 import { test, type TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { windowsPrivateInvocation, WINDOWS_PRIVATE_STATE_PROGRAM, verifyWindowsPrivateResponse, runWindowsPrivateState } from '../src/windows-private-state.js';
@@ -85,9 +85,11 @@ function control(operation: string, path: string, target?: string): void {
   });
   if (result.error || result.status !== 0 || result.stdout.toString('utf8') !== '{"ok":true}') throw new Error('native_windows_control_setup_failed');
 }
-async function root(t: TestContext, suffix = ''): Promise<string> {
+async function root(t: TestContext, suffix = '', parent = tmpdir()): Promise<string> {
   // Native creation sets the current SID explicitly, not the process's guessed username/default owner.
-  const path = join(tmpdir(), 'ktchecker-native-acl-' + randomUUID() + suffix);
+  // Select only the existing fixture parent by its canonical spelling (TEMP may
+  // use an 8.3 alias). Never normalize a caller path inside the native verifier.
+  const path = join(await realpath(parent), 'ktchecker-native-acl-' + randomUUID() + suffix);
   t.after(() => rm(path, { recursive: true, force: true }));
   return path;
 }
@@ -95,6 +97,16 @@ const prepare = (path: string) => runWindowsPrivateState({ operation: 'prepare_s
 const verify = (path: string) => runWindowsPrivateState({ operation: 'verify_file', path });
 
 if (process.platform === 'win32') {
+  test('native Windows fixture selects a canonical temporary parent without admitting the original junction alias', async t => {
+    const parent = await root(t); prepare(parent);
+    const alias = await root(t); control('junction', alias, parent);
+    const path = await root(t, '', alias);
+    assert.equal(dirname(path), await realpath(parent));
+    prepare(path); verify(join(path, 'inbox.sqlite'));
+    assert.throws(() => prepare(join(alias, 'uncreated-child')), /unsafe_state_path/);
+    await assert.rejects(lstat(join(parent, 'uncreated-child')), { code: 'ENOENT' });
+  });
+
   test('native Windows creates SID-private stores before bytes and verifies real SQLite WAL SHM inheritance and reopen', async t => {
     const path = await root(t); prepare(path);
     const file = join(path, 'inbox.sqlite'); let db = new DatabaseSync(file);

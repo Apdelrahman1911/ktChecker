@@ -14,18 +14,33 @@ object LintFixtureMain {
         val resultPath = Path.of(requireNotNull(options["result"]) { "--result is required" }).toAbsolutePath()
         var snapshotId = ""
         var artifactIdentities: List<ArtifactIdentity> = emptyList()
+        var capturedAttempt: Pair<AnalysisInput, ProcessOutcome>? = null
         val envelope = try {
-            run(options, onSnapshot = { snapshotId = it }, onArtifacts = { artifactIdentities = it })
+            run(options, onSnapshot = { snapshotId = it }, onArtifacts = { artifactIdentities = it },
+                onAttempt = { input, outcome -> capturedAttempt = input to outcome })
         } catch (error: Exception) {
             fixtureFailureEnvelope("android-lint", "32.3.1", options["case"] ?: "positive", "android",
                 snapshotId, artifactIdentities, error)
         }
         writeFixtureEnvelope(resultPath, envelope)
+        // Explicit private diagnostics only: never append process output to the
+        // public envelope/console, and never turn a diagnostic into authority.
+        options["private-attempt-directory"]?.let {
+            try {
+                LintFixturePrivateAttempt.retain(Path.of(it), Path.of(requireNotNull(options["fixture"])),
+                    snapshotId, capturedAttempt?.first, capturedAttempt?.second)
+            } catch (error: ExecutionProblem) { throw error }
+            catch (_: Exception) {
+                // Even invalid option paths must not escape through an InvalidPathException.
+                throw ExecutionProblem("lint_private_attempt_write_failed", "Requested private diagnostics could not be retained")
+            }
+        }
         check(envelope.state != "failed") { "Lint fixture provider assertions failed; inspect structured provider result." }
     }
 
     private fun run(options: Map<String, String>, onSnapshot: (String) -> Unit,
-                    onArtifacts: (List<ArtifactIdentity>) -> Unit): FixtureCheckEnvelope {
+                    onArtifacts: (List<ArtifactIdentity>) -> Unit,
+                    onAttempt: (AnalysisInput, ProcessOutcome) -> Unit): FixtureCheckEnvelope {
         val fixture = Path.of(requireNotNull(options["fixture"])).toAbsolutePath().toRealPath()
         val case = options["case"] ?: "positive"
         val classpath = requireNotNull(options["lint-classpath"]).split(File.pathSeparator).map { Path.of(it).toRealPath() }
@@ -96,7 +111,10 @@ object LintFixtureMain {
             reportPath = if (kmp) "build/reports/lint-results.xml" else "lint-results.xml",
             compilationModel = compilationModel, mode = if (kmp) "gradle" else "standalone", requiredTaskPaths = requiredTasks)
         var attempt: ProcessOutcome? = null
-        val provider = AndroidLintProvider(authority, plan, IsolatedProcessRunner { attempt = it }).analyze(input)
+        val provider = AndroidLintProvider(authority, plan, IsolatedProcessRunner {
+            attempt = it
+            onAttempt(input, it)
+        }).analyze(input)
         val expected = if (kmp) setOf("NewApi") else setOf("ContentDescription", "HardcodedText")
         val diagnosed = provider.findings.mapNotNull { it.upstreamId }.toSet()
         val expectFindings = case == "new-api" || (!kmp && case == "positive")

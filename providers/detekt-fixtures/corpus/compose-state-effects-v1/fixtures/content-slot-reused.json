@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "rule_id": "ktc.compose.pack.ContentSlotReused",
+  "upstream_id": "Compose:ContentSlotReused",
+  "default_activation": "opt_in",
+  "depth": "syntax",
+  "entity_kind": "parameter_name",
+  "source_oracle": {
+    "kind": "tagged_source_prediction_not_observation",
+    "tag": "v0.6.8",
+    "commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+    "implementation": {
+      "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/ContentSlotReused.kt",
+      "sha256": "cc98212f8eb7ae97bd0a2f164786cec060ab111ea0d83d37596648344590dae8",
+      "line_ranges": [
+        [
+          21,
+          46
+        ]
+      ]
+    },
+    "wrapper": {
+      "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/ContentSlotReusedCheck.kt",
+      "sha256": "0a2d827a84a5622732e0db31eef06f99fb23603440f874c0d06a05fd5657676a",
+      "line_ranges": [
+        [
+          11,
+          17
+        ]
+      ]
+    },
+    "tests": {
+      "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/ContentSlotReusedCheckTest.kt",
+      "sha256": "5e6921b8353937259f824679f5c50f994b9996e6d48a1fe0c4f14c28802f5f71",
+      "line_ranges": [
+        [
+          22,
+          145
+        ]
+      ]
+    }
+  },
+  "boundary": "An intent-dependent slot convention. This tag counts syntactic calls (including separate branches), not executions or resolved Compose identity. Same-file lambda aliases are a limited recognized form.",
+  "cases": [
+    {
+      "id": "positive",
+      "kind": "positive",
+      "purpose": "The same composable content slot is invoked in separate branches.",
+      "source_basis": [
+        "ContentSlotReused.kt:21-46",
+        "ContentSlotReusedCheckTest.kt:22-64"
+      ],
+      "semantic_interpretation": "positive",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun AdaptiveSlot(wide: Boolean, content: @Composable () -> Unit) {\n    if (wide) content() else content()\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 6,
+          "column": 32,
+          "end_line": 6,
+          "end_column": 39,
+          "text": "content"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 6,
+          "column": 32,
+          "end_line": 6,
+          "end_column": 39,
+          "text": "content"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "valid-alternative",
+      "kind": "valid_alternative",
+      "purpose": "Create one remembered movable wrapper; the original slot is invoked only inside that wrapper.",
+      "source_basis": [
+        "ContentSlotReused.kt:25-46",
+        "ContentSlotReusedCheckTest.kt:107-120",
+        "runtime1.5.0:movableContentOf"
+      ],
+      "semantic_interpretation": "valid_alternative",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.movableContentOf\nimport androidx.compose.runtime.remember\n\n@Composable\nfun AdaptiveSlot(wide: Boolean, content: @Composable () -> Unit) {\n    val movable = remember(content) { movableContentOf { content() } }\n    if (wide) movable() else movable()\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "one-slot-call",
+      "kind": "valid_control",
+      "purpose": "A single slot invocation does not reach the tag's two-call threshold.",
+      "source_basis": [
+        "ContentSlotReused.kt:25-26"
+      ],
+      "semantic_interpretation": "valid_control",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun AdaptiveSlot(content: @Composable () -> Unit) {\n    content()\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "suppression-neighbor",
+      "kind": "suppression_neighbor",
+      "purpose": "Function-local suppression does not leak to a neighboring content parameter.",
+      "source_basis": [
+        "ContentSlotReused.kt:25-29",
+        "detekt:Entity.kt:28",
+        "detekt:Suppressions.kt:19-45"
+      ],
+      "semantic_interpretation": "suppression_neighbor",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Suppress(\"Compose:ContentSlotReused\")\n@Composable\nfun QuietSlot(wide: Boolean, content: @Composable () -> Unit) {\n    if (wide) content() else content()\n}\n\n@Composable\nfun VisibleSlot(wide: Boolean, content: @Composable () -> Unit) {\n    if (wide) content() else content()\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 12,
+          "column": 31,
+          "end_line": 12,
+          "end_column": 38,
+          "text": "content"
+        }
+      ],
+      "suppressed_targets": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 29,
+          "end_line": 7,
+          "end_column": 36,
+          "text": "content"
+        }
+      ],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 12,
+          "column": 31,
+          "end_line": 12,
+          "end_column": 38,
+          "text": "content"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "local-composable-typealias",
+      "kind": "alias_control",
+      "purpose": "The same-file composable function typealias is explicitly discovered by upstream helpers.",
+      "source_basis": [
+        "ContentSlotReused.kt:22-26",
+        "Lambdas.kt:77-95",
+        "Lambdas.kt:97-142"
+      ],
+      "semantic_interpretation": "supported_same_file_syntax_alias",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\ntypealias Content = @Composable () -> Unit\n\n@Composable\nfun AdaptiveSlot(wide: Boolean, content: Content) {\n    if (wide) content() else content()\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 32,
+          "end_line": 8,
+          "end_column": 39,
+          "text": "content"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 32,
+          "end_line": 8,
+          "end_column": 39,
+          "text": "content"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "composable-annotation-alias",
+      "kind": "alias_control",
+      "purpose": "A genuine aliased Composable annotation is missed; no Compose semantic exemption is implied.",
+      "source_basis": [
+        "KtAnnotateds.kt:11-12",
+        "DetektRule.kt:68-75"
+      ],
+      "semantic_interpretation": "known_syntax_false_negative_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable as Ui\n\n@Ui\nfun AdaptiveSlot(wide: Boolean, content: @Ui () -> Unit) {\n    if (wide) content() else content()\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "unrelated-annotation-homonym",
+      "kind": "homonym_control",
+      "purpose": "A deliberately unrelated annotation is recognized by spelling alone; it is not a positive Compose API stub.",
+      "source_basis": [
+        "KtAnnotateds.kt:11-12",
+        "KtCallableDeclarations.kt:50-56",
+        "ContentSlotReused.kt:25-29"
+      ],
+      "semantic_interpretation": "known_syntax_false_positive_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\n@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE)\nannotation class Composable\n\n@Composable\nfun AdaptiveSlot(wide: Boolean, content: @Composable () -> Unit) {\n    if (wide) content() else content()\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 32,
+          "end_line": 7,
+          "end_column": 39,
+          "text": "content"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 32,
+          "end_line": 7,
+          "end_column": 39,
+          "text": "content"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "selected-main-excludes-test",
+      "kind": "source_set_control",
+      "purpose": "Select the valid main source only; the captured test file contains the ordinary positive trigger.",
+      "source_basis": [
+        "detekt-provider:compilation-membership",
+        "fixture:positive",
+        "fixture:valid-alternative"
+      ],
+      "semantic_interpretation": "unselected_source_is_not_analyzed_or_qualified",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.movableContentOf\nimport androidx.compose.runtime.remember\n\n@Composable\nfun AdaptiveSlot(wide: Boolean, content: @Composable () -> Unit) {\n    val movable = remember(content) { movableContentOf { content() } }\n    if (wide) movable() else movable()\n}\n",
+        "src/test/kotlin/TestOnly.kt": "package fixtures.compose.outside\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun AdaptiveSlot(wide: Boolean, content: @Composable () -> Unit) {\n    if (wide) content() else content()\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "excluded_positive_oracle": [
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 6,
+          "column": 32,
+          "end_line": 6,
+          "end_column": 39,
+          "text": "content"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    }
+  ],
+  "observation": {
+    "actual_execution": null,
+    "tested": false,
+    "qualified": false,
+    "real_world_precision": null,
+    "coverage_certificate": null
+  }
+}

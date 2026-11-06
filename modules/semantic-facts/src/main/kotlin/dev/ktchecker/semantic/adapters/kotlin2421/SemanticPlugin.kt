@@ -5,7 +5,6 @@ package dev.ktchecker.semantic.adapters.kotlin2421
 import dev.ktchecker.contracts.ContractJson
 import dev.ktchecker.contracts.Digests
 import dev.ktchecker.semantic.*
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.CompilerConfigurationKey
@@ -20,7 +19,8 @@ import org.jetbrains.kotlin.fir.analysis.checkers.context.CheckerContext
 import org.jetbrains.kotlin.fir.analysis.checkers.declaration.DeclarationCheckers
 import org.jetbrains.kotlin.fir.analysis.checkers.declaration.FirFileChecker
 import org.jetbrains.kotlin.fir.analysis.extensions.FirAdditionalCheckersExtension
-import org.jetbrains.kotlin.fir.declarations.FirFile
+import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.platform.jvm.isJvm
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrarAdapter
 import org.jetbrains.kotlin.diagnostics.DiagnosticReporter
@@ -35,6 +35,7 @@ import java.nio.file.attribute.PosixFilePermissions
 private val REQUEST_PATH = CompilerConfigurationKey.create<String>("ktChecker semantic request")
 private val REQUEST_DIGEST = CompilerConfigurationKey.create<String>("ktChecker semantic request digest")
 private val OUTPUT_PATH = CompilerConfigurationKey.create<String>("ktChecker semantic output directory")
+private val REQUEST_KIND = CompilerConfigurationKey.create<String>("ktChecker explicit semantic request kind")
 
 /** Not enabled through ordinary project/compiler flags. An exact owner-selected invocation opts in. */
 class SemanticCommandLineProcessor : CommandLineProcessor {
@@ -43,6 +44,7 @@ class SemanticCommandLineProcessor : CommandLineProcessor {
         CliOption("request", "path", "Exact owner-selected frozen semantic request", required = true),
         CliOption("request-digest", "sha256", "Digest binding the frozen request", required = true),
         CliOption("output", "directory", "Separate fresh evidence directory", required = true),
+        CliOption("request-kind", "kind", "Explicit separate observed request schema; absent preserves legacy", required = false),
     )
 
     override fun processOption(option: AbstractCliOption, value: String, configuration: CompilerConfiguration) {
@@ -50,6 +52,7 @@ class SemanticCommandLineProcessor : CommandLineProcessor {
             "request" -> REQUEST_PATH
             "request-digest" -> REQUEST_DIGEST
             "output" -> OUTPUT_PATH
+            "request-kind" -> REQUEST_KIND
             else -> throw SemanticFactException("semantic_plugin_option_unknown", "Unknown semantic plugin option")
         }
         check(configuration.get(key) == null) { "Duplicate semantic plugin option" }
@@ -67,11 +70,12 @@ class SemanticCompilerRegistrar : CompilerPluginRegistrar() {
         if (!requestPath.isAbsolute || !Files.isRegularFile(requestPath, NOFOLLOW_LINKS) || Files.size(requestPath) > 1_048_576) {
             throw SemanticFactException("semantic_request_unsafe", "Semantic request must be a bounded regular file")
         }
-        val request = ContractJson.decodeFromString<SemanticFactsRequest>(Files.readString(requestPath))
+        val requestText = Files.readString(requestPath)
+        val request = decodeSelectedSemanticRequest(configuration.get(REQUEST_KIND), requestText)
         if (request.digest() != configuration.get(REQUEST_DIGEST)) {
             throw SemanticFactException("semantic_request_digest_mismatch", "Semantic request changed after authorization")
         }
-        val problems = SemanticFactsValidation.requestProblems(request)
+        val problems = SemanticFactsValidation.extractionRequestProblems(request)
         if (problems.isNotEmpty()) throw SemanticFactException(problems.first(), "Invalid selected semantic request: $problems")
         if (KotlinCompilerVersion.VERSION != SEMANTIC_COMPILER_VERSION) {
             throw SemanticFactException("semantic_compiler_version_mismatch", "This adapter requires exact Kotlin 2.4.21")
@@ -108,7 +112,11 @@ private class SemanticCheckers(session: FirSession, emitter: SemanticFactEmitter
 }
 
 /** One collector per compiler invocation, never global FIR state or cross-project mutable sessions. */
-internal class SemanticFactEmitter(val request: SemanticFactsRequest, output: Path) {
+internal class SemanticFactEmitter(val request: SemanticRequestData, output: Path) {
+    constructor(request: SemanticFactsRequest, output: Path) : this(SemanticRequestData.of(request), output)
+
+    // No observer object, VFS reads or new output fields on the unchanged default route.
+    val binaryOriginObserver: FirJvmBinaryOrigins? = if (request.observeJvmBinaryOrigins) FirJvmBinaryOrigins() else null
     private val root = Path.of(request.sourceRoot).toRealPath()
     private val output: Path
     private val sources = request.sources.associateBy { root.resolve(it.path).normalize() }
@@ -128,6 +136,11 @@ internal class SemanticFactEmitter(val request: SemanticFactsRequest, output: Pa
     }
 
     @Synchronized fun emit(file: FirFile) {
+        // Actual pinned compiler types, not a target spelling/platform-toString heuristic.
+        // Refuse the ENTIRE observed action; never discard a common or non-JVM source file.
+        if (request.observed != null && (!file.moduleData.platform.isJvm() || file.moduleData.isCommon)) {
+            throw SemanticFactException("observed_semantic_non_jvm_source_context", "Observed action requires actual non-common JVM FIR sources")
+        }
         if (++writtenShards > request.sources.size * 4) throw SemanticFactException("semantic_shard_limit", "Too many compiler source contexts")
         val input = source(file) ?: throw SemanticFactException("semantic_uncaptured_source", "Compiler visited a source absent from the frozen request")
         val shard = FirFactExtractor(this, file, input).extract()

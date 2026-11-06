@@ -8,6 +8,8 @@ import json
 import re
 import unittest
 
+import compiler_mapping_contracts as contracts
+
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'providers/compiler-fixtures'
@@ -47,6 +49,9 @@ COHORT_CONTROLS_TEST_PINS = {
     'preimage': 'c94126878ad5e803b02a7f0d2e04f5fd28e5f30beed0a135cdfb59ed84327050',
     'postimage': '647731d9f7b4d962f61f8f6945bdc15f58bd6a6509d58b9261181858a8a19e99',
 }
+# Exact reviewed breadth successor. The two historical pre/post identities above remain unchanged.
+BREADTH_COHORT_TEST_POSTIMAGE = 'c7ce230f4637046b7333c42022763642c3389faf3bd3dd1614a4931f5874f34e'
+BREADTH_COHORT_TEST_ADDITION = b',\n            "diagnostic_breadth_default", "diagnostic_breadth_advisory", "diagnostic_breadth_opt_in"'
 # Independently saved preimage source segments, not execution/cleanup/timing/qualification witnesses.
 UNCHANGED_RUNNER_SEGMENTS = {
     'execute': ('    private fun pointMatches(', '987acbe69154a72f96cce02197eb9bc853c12bc1643abab7e34076267fe473dc'),
@@ -132,6 +137,9 @@ def kotlin_delimiters_balanced(source):
 class NullabilityProtocolsHookupSourceContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        # Affirmative445 production contract, distinct from every frozen legacy443 oracle below.
+        cls.current_mapping = contracts.current445(ROOT)
+        contracts.require_legacy_runner_refusal_source(ROOT)
         cls.plan = (KOTLIN / 'CompilerFixtureNullability.kt').read_text(encoding='utf-8')
         cls.kotlin_tests = (KOTLIN / 'CompilerFixtureNullabilityTest.kt').read_text(encoding='utf-8')
         cls.runner = (KOTLIN / 'CompilerFixtureRunner.kt').read_text(encoding='utf-8')
@@ -139,7 +147,8 @@ class NullabilityProtocolsHookupSourceContractTest(unittest.TestCase):
         cls.provenance = (KOTLIN / 'CompilerFixtureProvenance.kt').read_text(encoding='utf-8')
         cls.manifest = json.loads((FIXTURES / 'cohort-plans/nullability-protocols-v1.json').read_bytes())
         cls.ordinary = json.loads((FIXTURES / 'manifest.json').read_bytes())
-        cls.mappings = json.loads((ROOT / 'modules/provider-compiler/src/main/resources/compiler-rule-map.json').read_bytes())['mappings']
+        # The historical443 ledger below is explicit immutable DATA, not an alternate production registry.
+        cls.mappings = contracts.legacy_mapping(ROOT)['mappings']
 
     def test_literal_six_ids_thirty_paths_and_source_hashes_match_reviewed_source_v1(self):
         ids = re.findall(r'Rule\("(ktc\.compiler\.common\.[a-z_]+)", "([A-Z_]+)"', self.plan)
@@ -161,7 +170,10 @@ class NullabilityProtocolsHookupSourceContractTest(unittest.TestCase):
             self.plan[self.plan.index('val SOURCE_METADATA_PINS:'):self.plan.index('fun declarations():')]))
         self.assertEqual(SOURCE_V1_METADATA_PINS, pins)
         for path, expected in pins.items():
-            self.assertEqual(expected, hashlib.sha256((FIXTURES / path).read_bytes()).hexdigest(), path)
+            self.assertEqual(expected, hashlib.sha256(contracts.legacy_fixture_bytes(ROOT, path)).hexdigest(), path)
+        self.assertEqual({'test_nullability_protocols.py'}, {path for path, expected in pins.items()
+                         if hashlib.sha256((FIXTURES / path).read_bytes()).hexdigest() != expected})
+        self.assertIn('assertFails { plan.verifyCapturedMetadata(::fixtureText) }', self.kotlin_tests)
         self.assertIn('declarations().map { it.path } + SOURCE_METADATA_PINS.keys', self.plan)
         self.assertIn('START_CAPTURE_PATHS.size == 36 && START_CAPTURE_PATHS.toSet().size == 36', self.plan)
         self.assertIn('Digests.sha256(readCapturedSource(path)).removePrefix("sha256:") == expected', self.plan)
@@ -169,7 +181,11 @@ class NullabilityProtocolsHookupSourceContractTest(unittest.TestCase):
 
     def test_all_historical_278_sources_main_98_graph_16_map_443_and_supplemental_18_stay_exact(self):
         for path, expected in HISTORICAL_SOURCE_PINS.items():
-            self.assertEqual(expected, hashlib.sha256((ROOT / path).read_bytes()).hexdigest(), path)
+            self.assertEqual(expected, hashlib.sha256(contracts.historical_source_bytes(ROOT, path)).hexdigest(), path)
+        self.assertEqual({'providers/compiler-fixtures/generate_fixtures.py',
+                          'providers/compiler-fixtures/test_type_boundaries.py'},
+                         {path for path, expected in HISTORICAL_SOURCE_PINS.items()
+                          if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != expected})
         historical = sorted([*(FIXTURES / 'cases').rglob('*.kt'), *(FIXTURES / 'planned-kmp-cases').rglob('*.kt')],
                             key=lambda path: path.relative_to(FIXTURES).as_posix())
         self.assertEqual(278, len(historical))
@@ -179,6 +195,8 @@ class NullabilityProtocolsHookupSourceContractTest(unittest.TestCase):
         self.assertEqual(98, len(self.ordinary['fixtures']))
         self.assertEqual(16, len(json.loads((FIXTURES / 'planned-kmp-manifest.json').read_bytes())['fixtures']))
         self.assertEqual(443, len(self.mappings))
+        self.assertEqual(445, len(self.current_mapping['mappings']))
+        self.assertEqual(402, sum(row['backend'] != 'native' for row in self.current_mapping['mappings']))
         supplemental = [item for row in self.ordinary['fixtures'] for item in row.get('supplemental_inputs', [])]
         self.assertEqual(18, len(supplemental))
         for item in supplemental:
@@ -203,14 +221,17 @@ class NullabilityProtocolsHookupSourceContractTest(unittest.TestCase):
         self.assertIn('declaration.ruleId !in assessments && fixtureRuleIdsByPath.put(declaration.path, declaration.ruleId) == null', load)
         self.assertNotIn('assessments[declaration.ruleId]', load)
         self.assertIn('registry.mappings.size == 443', load)
+        # This retained legacy load body is unreachable under actual445: refuse before path/allocation.
+        contracts.require_legacy_runner_refusal_source(ROOT)
+        self.assertFalse(set(contracts.NEW_IDS) & {rule_id for rule_id, _ in REVIEWED_IDS})
 
     def test_conditional_start_capture_preserves_original_four_argument_signature_and_drift_scope(self):
         self.assertIn('private val includeNullabilitySourcePlan: Boolean,', self.provenance)
         self.assertIn('checkpoint: () -> Unit = {}): CompilerFixtureProvenance =\n            capture(repositoryPath, runPath, evidence, includeNullabilitySourcePlan = false, checkpoint = checkpoint)', self.provenance)
-        self.assertIn('includeNullabilitySourcePlan: Boolean, checkpoint: () -> Unit = {}): CompilerFixtureProvenance {', self.provenance)
-        self.assertEqual(2, self.provenance.count('fun capture(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,'))
-        self.assertIn('val currentPaths = runCatching { sourceFiles(repository, includeNullabilitySourcePlan) }', self.provenance)
-        self.assertIn('val sources = sourceFiles(repository, includeNullabilitySourcePlan).map', self.provenance)
+        self.assertIn('includeNullabilitySourcePlan: Boolean, checkpoint: () -> Unit = {}): CompilerFixtureProvenance =\n            captureSelected(repositoryPath, runPath, evidence, includeNullabilitySourcePlan, null, checkpoint)', self.provenance)
+        self.assertEqual(3, self.provenance.count('fun capture(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,'))
+        self.assertIn('val currentPaths = runCatching { sourceFiles(repository, includeNullabilitySourcePlan, diagnosticBreadthSelector) }', self.provenance)
+        self.assertIn('val sources = sourceFiles(repository, includeNullabilitySourcePlan, diagnosticBreadthSelector).map', self.provenance)
         roots = re.search(r'private val SOURCE_ROOTS = listOf\((.*?)\)\n', self.provenance, re.DOTALL)
         self.assertIsNotNone(roots)
         self.assertEqual(['modules/provider-compiler/src/main', 'modules/provider-compiler/src/test',
@@ -228,20 +249,28 @@ class NullabilityProtocolsHookupSourceContractTest(unittest.TestCase):
 
     def test_only_new_selector_has_thirty_five_cap_with_all_old_bounds_and_selects_calls_preserved(self):
         cohort_test = (KOTLIN / 'CompilerFixtureControlsTest.kt').read_bytes()
-        self.assertEqual(COHORT_CONTROLS_TEST_PINS['postimage'], hashlib.sha256(cohort_test).hexdigest())
+        self.assertEqual(BREADTH_COHORT_TEST_POSTIMAGE, hashlib.sha256(cohort_test).hexdigest())
+        self.assertEqual(1, cohort_test.count(BREADTH_COHORT_TEST_ADDITION))
+        predecessor = cohort_test.replace(BREADTH_COHORT_TEST_ADDITION, b'', 1)
+        self.assertEqual(COHORT_CONTROLS_TEST_PINS['postimage'], hashlib.sha256(predecessor).hexdigest())
         correction = b', "nullability_protocols"), CompilerFixtureSettings.COHORTS)'
-        self.assertEqual(1, cohort_test.count(correction))
-        old_test = cohort_test.replace(correction, b'), CompilerFixtureSettings.COHORTS)', 1)
+        self.assertEqual(1, predecessor.count(correction))
+        old_test = predecessor.replace(correction, b'), CompilerFixtureSettings.COHORTS)', 1)
         self.assertEqual(COHORT_CONTROLS_TEST_PINS['preimage'], hashlib.sha256(old_test).hexdigest())
         expectation = re.search(r'assertEquals\(expectedNames \+ setOf\((.*?)\), CompilerFixtureSettings.COHORTS\)',
                                 cohort_test.decode('utf-8'), re.DOTALL)
         self.assertIsNotNone(expectation)
         self.assertEqual(['original', 'overrides', 'visibility', 'types_conventions', 'inline_constructors',
-                          'opt_in', 'jvm', 'type_boundaries', 'all', 'type_boundaries_supplemental', 'nullability_protocols'],
+                          'opt_in', 'jvm', 'type_boundaries', 'all', 'type_boundaries_supplemental', 'nullability_protocols',
+                          'diagnostic_breadth_default', 'diagnostic_breadth_advisory', 'diagnostic_breadth_opt_in'],
                          re.findall(r'"([^"]+)"', expectation.group(1)))
-        self.assertIn('val maxAttempts: Int = if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS else MAX_ATTEMPTS,', self.controls)
+        self.assertIn('val maxAttempts: Int = maximumAttemptsFor(cohort),', self.controls)
+        self.assertIn('cohort == CompilerFixtureNullabilityPlan.SELECTOR -> CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS', self.controls)
+        self.assertIn('cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS -> CompilerFixtureDiagnosticBreadthPlan.maxAttempts(cohort)', self.controls)
+        limit = self.controls[self.controls.index('        fun maximumAttemptsFor('):self.controls.index('        /** Gradle JavaExec')]
+        self.assertIn('else -> MAX_ATTEMPTS', limit)
         self.assertIn('if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) require(maxAttempts <= CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS)', self.controls)
-        self.assertIn('val attemptLimit = if (cohort == CompilerFixtureNullabilityPlan.SELECTOR)', self.controls)
+        self.assertIn('val attemptLimit = maximumAttemptsFor(cohort).toLong()', self.controls)
         self.assertIn('number("max-attempts", attemptLimit, attemptLimit).toInt()', self.controls)
         for bound in ('MAX_ATTEMPTS = 48', 'MAX_OVERALL_MILLIS = 1_200_000L', 'MAX_PER_JOB_MILLIS = 90_000L',
                       'MAX_EVIDENCE_BYTES = 268_435_456L', 'JOB_RESERVE_BYTES = 16_777_216L', 'TERMINAL_RESERVE_BYTES = 8_388_608L'):

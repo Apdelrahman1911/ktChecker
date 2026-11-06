@@ -1,5 +1,8 @@
 package dev.ktchecker.compiler
 
+import dev.ktchecker.contracts.Digests
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
 import java.util.Collections
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -23,7 +26,15 @@ data class CompilerRuleMapping(
     val jvmApplicable: Boolean get() = backend in setOf("common", "jvm", "ir")
 }
 
-class CompilerRuleRegistry private constructor(mappings: List<CompilerRuleMapping>) {
+/** Exact loaded bytes identify a mapping contract, not execution or qualification authority. */
+data class CompilerMappingIdentity(val contractId: String, val resourceDigest: String) {
+    init { require(contractId.isNotBlank() && Digests.valid(resourceDigest)) }
+}
+
+class CompilerRuleRegistry private constructor(
+    mappings: List<CompilerRuleMapping>,
+    val mappingIdentity: CompilerMappingIdentity,
+) {
     val mappings: List<CompilerRuleMapping> = Collections.unmodifiableList(ArrayList(mappings))
     val byUpstreamId: Map<String, CompilerRuleMapping> = Collections.unmodifiableMap(
         mappings.associateBy { it.upstreamId },
@@ -36,12 +47,12 @@ class CompilerRuleRegistry private constructor(mappings: List<CompilerRuleMappin
     )
 
     init {
-        require(mappings.size == 443) { "Expected the reviewed 443 exact compiler mappings" }
+        require(mappings.size == 445) { "Expected the reviewed 445 exact compiler mappings" }
         require(byUpstreamId.size == mappings.size && byRuleId.size == mappings.size) {
             "Duplicate compiler ID or normalized rule owner"
         }
         require(mappings.groupingBy { it.backend }.eachCount() ==
-            mapOf("common" to 292, "jvm" to 99, "native" to 43, "ir" to 9)) {
+            mapOf("common" to 294, "jvm" to 99, "native" to 43, "ir" to 9)) {
             "Compiler mapping disposition counts changed without review"
         }
     }
@@ -49,19 +60,26 @@ class CompilerRuleRegistry private constructor(mappings: List<CompilerRuleMappin
     companion object {
         const val VERSION = "2.4.21"
         const val PROVIDER_ID = "kotlin-compiler-jvm"
+        const val MAPPING_CONTRACT = "kotlin-compiler-2.4.21-common445-u2-v1"
 
         fun load(): CompilerRuleRegistry {
-            val text = checkNotNull(CompilerRuleRegistry::class.java.getResourceAsStream("/compiler-rule-map.json")) {
+            val bytes = checkNotNull(CompilerRuleRegistry::class.java.getResourceAsStream("/compiler-rule-map.json")) {
                 "Missing exact compiler rule mapping resource"
-            }.bufferedReader(Charsets.UTF_8).use { it.readText() }
-            return parse(text)
+            }.use { it.readBytes() }
+            return parse(bytes)
         }
 
-        internal fun parse(text: String): CompilerRuleRegistry {
+        internal fun parse(text: String): CompilerRuleRegistry = parse(text.toByteArray(Charsets.UTF_8))
+
+        internal fun parse(bytes: ByteArray): CompilerRuleRegistry {
+            val frozen = bytes.copyOf()
+            val text = Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(frozen)).toString()
             val root = Json.parseToJsonElement(text) as? JsonObject ?: error("Compiler map must be an object")
             require(root["schema_version"]?.jsonPrimitive?.int == 1) { "Unsupported compiler mapping schema" }
             require(root.string("provider_id") == PROVIDER_ID)
             require(root.string("provider_version") == VERSION)
+            require(root.string("mapping_contract") == MAPPING_CONTRACT) { "Unsupported compiler mapping contract" }
             val rows = root["mappings"] as? JsonArray ?: error("Compiler map has no mappings")
             val mappings = rows.map { element ->
                 val row = element as? JsonObject ?: error("Mapping is not an object")
@@ -74,7 +92,7 @@ class CompilerRuleRegistry private constructor(mappings: List<CompilerRuleMappin
                     row.string("kind"), row.string("certainty"), row.string("default_activation"),
                     row.string("source"), row.string("source_section"))
             }
-            return CompilerRuleRegistry(mappings)
+            return CompilerRuleRegistry(mappings, CompilerMappingIdentity(MAPPING_CONTRACT, Digests.sha256(frozen)))
         }
 
         private fun JsonObject.string(key: String): String = (get(key) as? JsonPrimitive)?.content

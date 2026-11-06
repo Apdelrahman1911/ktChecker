@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "corpus_id": "detekt-syntax-protocol-v1",
+  "authoring_state": "unexecuted",
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "rule_id": "ktc.kotlin.detekt.exceptions.too-generic-exception-caught",
+  "upstream_id": "exceptions:TooGenericExceptionCaught",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "catalog_record_sha256": "baa4d63bc1b42f735785679e788ebf9960c5a505789857757d988343cf522e6e",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-exceptions/src/main/kotlin/dev/detekt/rules/exceptions/TooGenericExceptionCaught.kt",
+    "source_file_sha256": "637f4fa0334f4009a9407f4baf21705801868c0a0b50b96e1a76f9740af88fa6",
+    "predicate_line_numbers": [
+      43,
+      44,
+      46,
+      47,
+      49,
+      50,
+      51,
+      52,
+      54,
+      60,
+      63,
+      72
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/exceptions/TooGenericExceptionCaught",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:36fd820368a3a55062a73d1f5d468f9454a31a497561fff2b33623a232728acc"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "bounded_predicate": "Opt-in catch policy: report the catch parameter if its type-reference text is in configured exceptionNames and its name does not match allowedExceptionNameRegex. Defaults include Exception and Throwable; catch body effects and cancellation rethrow are not inspected.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.catchpolicy\n\nfun readOrFallback(read: () -> String): String = try {\n    read()\n} catch (failure: Exception) {\n    \"unavailable\"\n}\n\nfun closeOrFalse(close: () -> Unit): Boolean = try {\n    close()\n    true\n} catch (failure: Throwable) {\n    false\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 9,
+        "end_line": 5,
+        "end_column": 27,
+        "span": "failure: Exception",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 12,
+        "column": 9,
+        "end_line": 12,
+        "end_column": 27,
+        "span": "failure: Throwable",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Two valid callback boundaries catch Exception and Throwable. Both violate the explicitly selected broad-catch convention. Neither finding is a proof of swallowed coroutine cancellation or resource leakage."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.catchpolicy\n\nimport java.io.IOException\n\nfun readOrFallback(read: () -> String): String = try {\n    read()\n} catch (failure: IOException) {\n    \"unavailable\"\n}\n\nfun closeOrFalse(close: () -> Unit): Boolean = try {\n    close()\n    true\n} catch (failure: IOException) {\n    false\n}\n"
+    },
+    "expected": [],
+    "intent": "Both boundaries catch only IOException, a legal specific-exception alternative under this policy. Absence of this warning does not establish cleanup or cancellation safety."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.catchpolicy\n\nfun readOrFallback(read: () -> String): String = try {\n    read()\n} catch (failure: Exception) {\n    \"unavailable\"\n}\n\nfun closeOrFalse(close: () -> Unit): Boolean = try {\n    close()\n    true\n} catch (failure: Throwable) {\n    false\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"TooGenericExceptionCaught\")\n\npackage suppressed.corpus.catchpolicy\n\nfun readOrFallback(read: () -> String): String = try {\n    read()\n} catch (failure: Exception) {\n    \"unavailable\"\n}\n\nfun closeOrFalse(close: () -> Unit): Boolean = try {\n    close()\n    true\n} catch (failure: Throwable) {\n    false\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 5,
+        "column": 9,
+        "end_line": 5,
+        "end_column": 27,
+        "span": "failure: Exception",
+        "occurrence": 0
+      },
+      {
+        "path": "Case.kt",
+        "line": 12,
+        "column": 9,
+        "end_line": 12,
+        "end_column": 27,
+        "span": "failure: Throwable",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on the package-isolated copy. Preserve every positive range from the byte-identical unsuppressed neighbor. No host finding filter or ktChecker-ID suppression alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.catchpolicy\n\nfun invokeOrFallback(action: () -> String): String = try {\n    action()\n} catch (failure: Exception) {\n    if (failure is java.util.concurrent.CancellationException) throw failure\n    \"unavailable\"\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 9,
+          "end_line": 5,
+          "end_column": 27,
+          "span": "failure: Exception",
+          "occurrence": 0
+        }
+      ],
+      "intent": "This broad catch explicitly rethrows java.util.concurrent.CancellationException and still reports. The body does not make it a narrow catch. Keep the policy limit: this non-suspending source is not a coroutine cancellation analysis or swallow proof.",
+      "id": "cancellation-rethrow-does-not-waive-broad-catch-policy",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.catchpolicy\n\nfun invokeOrFallback(action: () -> String): String = try {\n    action()\n} catch (failure: java.lang.Exception) {\n    \"unavailable\"\n}\n"
+      },
+      "expected": [],
+      "intent": "The fully qualified java.lang.Exception remains broad, but the default exact type-text set does not contain that spelling. Preserve the policy false negative without claiming any flow or ownership analysis.",
+      "id": "qualified-broad-exception-escapes-text-list",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.catchpolicy\n\nfun readOrFallback(read: () -> String): String = try {\n    read()\n} catch (failure: Exception) {\n    \"unavailable\"\n}\n\nfun closeOrFalse(close: () -> Unit): Boolean = try {\n    close()\n    true\n} catch (failure: Throwable) {\n    false\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 12,
+          "column": 9,
+          "end_line": 12,
+          "end_column": 27,
+          "span": "failure: Throwable",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Set the genuine exceptionNames option to [Throwable] on the exact original positive bytes. Clear only the Exception range and retain the Throwable range with the rule and descriptor still active; never treat this as whole-rule disabling.",
+      "id": "configured-throwable-only-keeps-one-active-finding",
+      "case_kind": "configuration",
+      "assessment": "owner_configured_policy_boundary",
+      "options": {
+        "exceptionNames": [
+          "Throwable"
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "Explicit opt-in style/policy only, even though this cohort also contains two advisory contract warnings. Selecting this mixed cohort must explicitly acknowledge the broad-catch policy.",
+    "Catch bodies are not analyzed. Rethrowing cancellation still reports. An Exception/Throwable warning is neither swallowed-coroutine-cancellation proof nor ownership, leak, safe-cleanup or exception-flow proof.",
+    "Fully qualified names and typealiases are not resolved. The default allowedExceptionNameRegex _|(ignore|expected).* also exempts matching parameter names; that name exemption is documented but not independently exercised in this bounded three-control plan.",
+    "ktc.coroutines.swallowed-cancellation, ktc.coroutines.result-swallowing-cancellation and ktc.coroutines.suspending-finally-cleanup still require graph refinements. ktc.resources.owned_autocloseable_exit still requires semantic ownership refinement.",
+    "The exact canonical MissingUseCall route remains semantic, not included156 LIGHT. No relabeling, graph substitution or historical stage transfer is permitted.",
+    "No genuine imported-model, Kotlin type-checking, coroutine execution, resource execution, natural-project or release qualification is claimed."
+  ],
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "qualification_note": "Authored ranges/intents are not observed diagnostics. Retain unexpected/false-positive outputs and all misses; never rewrite expectations to force a pass. Real isolated runner, active descriptor, source snapshots and fresh source-bound evidence require separate root admission. No natural-project, parser, semantic, ownership, cancellation-flow, model or release qualification.",
+  "predicate_helper_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-psi-utils/src/main/kotlin/dev/detekt/psi/AllowedExceptionNamePattern.kt",
+    "source_file_sha256": "51354031f6b950805418520ffda2cf6f81775f4df04a05d954ce793ef297ae48",
+    "predicate_line_numbers": [
+      5
+    ],
+    "research_only": true
+  }
+}

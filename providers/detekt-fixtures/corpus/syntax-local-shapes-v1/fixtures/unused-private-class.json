@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "corpus_id": "detekt-syntax-local-shapes-v1",
+  "authoring_state": "unexecuted",
+  "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+  "upstream_id": "style:UnusedPrivateClass",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "severity": "warning",
+  "kind": "probable_defect",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "c575dd90962faad1a0dee6530eebdc9ecf3a012f44beb7cc0ecfdeb5943a70ca",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-style/src/main/kotlin/dev/detekt/rules/style/UnusedPrivateClass.kt",
+    "source_file_sha256": "d113ae6c9a7b84337e803f94cdf5e6d542636b9417ba8daef437669743ee05ab",
+    "source_archive_sha256": "4f18e9ac263a157229db846ac18d3a71b8861d74d415da3ebd0fa085dee461a6",
+    "source_archive_entry": "dev/detekt/rules/style/UnusedPrivateClass.kt",
+    "predicate_line_numbers": [
+      42,
+      44,
+      51,
+      53,
+      69,
+      78,
+      88,
+      93,
+      98,
+      121,
+      126,
+      131,
+      138,
+      143,
+      148,
+      153,
+      158,
+      166,
+      175,
+      182,
+      189,
+      196,
+      201
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/style/UnusedPrivateClass",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:1b8dbf007dbbad2d8260edb32b0ae4089d1567d2f9b15768a8835a24a9e7dabc"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [],
+  "bounded_predicate": "A per-file visitor collects private KtClass declarations, then simple class-like names from calls, type references, annotations, callable/class references and qualified receivers plus import prefixes. Any same-name entry can retain a private class without symbol resolution. Entity.from(the entire private class). No rule-specific options.",
+  "selection_rationale": "Adds bounded private class retention/removal advice, not another visibility policy rule. The three extra cases distinguish type-use, scoped-name ambiguity and reflective legitimate use.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.privateclass\n\nprivate class ObsoleteIndex(val size: Int)\nfun currentSize(): Int = 0\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 0,
+        "end_line": 3,
+        "end_column": 42,
+        "span": "private class ObsoleteIndex(val size: Int)",
+        "occurrence": 0
+      }
+    ],
+    "intent": "An unreferenced private helper is separate from public API policy and can confuse readers. The advisory is bounded to this file and its syntactic usage collector."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.privateclass\n\nprivate class Index(val size: Int)\nfun currentSize(): Int = Index(3).size\n"
+    },
+    "expected": [],
+    "intent": "The private helper is actually named as a constructor callee; it remains useful and is not reported."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.privateclass\n\nprivate class ObsoleteIndex(val size: Int)\nfun currentSize(): Int = 0\n",
+      "SuppressedCase.kt": "@file:Suppress(\"UnusedPrivateClass\")\n\npackage suppressed.corpus.privateclass\n\nprivate class ObsoleteIndex(val size: Int)\nfun currentSize(): Int = 0\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 0,
+        "end_line": 3,
+        "end_column": 42,
+        "span": "private class ObsoleteIndex(val size: Int)",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.privateclass\n\nprivate class Pending(val value: Int)\nprivate fun pendingValue(value: Pending): Int = value.value\nfun noInstanceNeeded(): Int = 0\n"
+      },
+      "expected": [],
+      "intent": "A private type used only in another private declaration signature is retained. This is a valid type-reference boundary, not proof that either declaration is reachable.",
+      "id": "type-reference-retains-private-class",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.privateclass\n\nprivate class LocalIndex\nfun localName(): String {\n    class LocalIndex(val name: String)\n    return LocalIndex(\"inner\").name\n}\n"
+      },
+      "expected": [],
+      "intent": "Only the inner scoped LocalIndex is constructed, but the collector uses simple names and retains the unused outer private class too. Preserve the anticipated miss.",
+      "id": "same-named-inner-class-hides-unused-outer",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.privateclass\n\nprivate class ReflectiveAdapter\nfun loadAdapter(): Class<*> = Class.forName(\"corpus.privateclass.ReflectiveAdapter\")\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 0,
+          "end_line": 3,
+          "end_column": 31,
+          "span": "private class ReflectiveAdapter",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The class name is intentionally referenced through reflection text, which the visitor does not connect. An active warning is expected despite potential real dynamic use; no reflective load is executed or certified.",
+      "id": "reflection-text-is-not-a-syntactic-type-use",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    }
+  ],
+  "analysis_cost": {
+    "standard_cases": 6,
+    "independent_controls": 3,
+    "authored_analyses": 9,
+    "per_rule_non_analysis_calls": 3,
+    "per_cohort_cli_probes": 1,
+    "actual_executions": 0
+  },
+  "limitations": [
+    "No rule-specific options exist; the lifecycle disabled case is not presented as a real detector option.",
+    "Reflection, serialization frameworks and generated/dynamic uses are not absence-of-use evidence. Same-name scope collisions and import-prefix heuristics can also miss genuinely unused declarations.",
+    "Private objects and global call-graph liveness are not the selected KtClass predicate.",
+    "Local syntactic advice only. No binding identity, safe automatic rewrite, whole-program reachability, binary ABI compatibility, call effect, reflection completeness, performance or semantic qualification follows.",
+    "The six lifecycle cases include a disabled-rule configuration control, pinned-version positive replay and negative child-snapshot replay; the latter two are not new predicates. Every other negative/control keeps this rule active.",
+    "Only the existing explicit JVM LIGHT input is proposed. Common and Native requests must abstain without launching; no parser/compiler/Kotlin 2.4.21 versus embedded 2.4.10 compatibility or multiplatform qualification.",
+    "File-level suppression is authored; declaration-level aliases, baselines and generated-code inclusion policy are not newly qualified."
+  ],
+  "qualification_note": "Authored expected ranges and concrete counterexamples come from primary source and language reasoning before execution, never detector outputs. Preserve any unexpected findings/misses and stop; do not rewrite oracles to force a pass. Existing activation/severity/certainty remain exact. Independent oracle/source review, root adoption, fresh controls and separately admitted single-cohort real isolated calls are required. No natural-project precision, safety, release or historical-stage transfer."
+}

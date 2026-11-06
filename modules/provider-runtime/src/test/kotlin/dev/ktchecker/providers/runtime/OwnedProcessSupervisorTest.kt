@@ -208,13 +208,16 @@ class OwnedProcessSupervisorTest {
 
     private class MemoryChannel(bytes: ByteArray, private val helperExit: Int = 0,
                                 override val frames: InputStream = ByteArrayInputStream(bytes), diagnostics: ByteArray = byteArrayOf(),
-                                val running: AtomicBoolean = AtomicBoolean(false), onCancel: (() -> Unit)? = null) : SupervisorChannel {
+                                val running: AtomicBoolean = AtomicBoolean(false), onCancel: (() -> Unit)? = null,
+                                onControlClose: (() -> Unit)? = null) : SupervisorChannel {
         override val diagnostics = ByteArrayInputStream(diagnostics)
         val written = ByteArrayOutputStream()
         val controlClosed = AtomicBoolean()
         override val control = object : OutputStream() {
             override fun write(byte: Int) { synchronized(written) { written.write(byte) }; onCancel?.invoke() }
-            override fun close() { controlClosed.set(true) }
+            override fun close() {
+                if (controlClosed.compareAndSet(false, true)) onControlClose?.invoke()
+            }
         }
         override fun alive() = running.get()
         override fun exitCode(): Int? = if (running.get()) null else helperExit
@@ -227,10 +230,13 @@ class OwnedProcessSupervisorTest {
 
     private class GateInput(private val closeOpens: Boolean = true) : InputStream() {
         private val gate = CountDownLatch(1)
+        val readStarted = CountDownLatch(1)
         @Volatile private var selected: ByteArrayInputStream? = null
         fun open(bytes: ByteArray) { selected = ByteArrayInputStream(bytes); gate.countDown() }
-        override fun read(): Int { gate.await(); return selected?.read() ?: -1 }
-        override fun read(bytes: ByteArray, offset: Int, length: Int): Int { gate.await(); return selected?.read(bytes, offset, length) ?: -1 }
+        override fun read(): Int { readStarted.countDown(); gate.await(); return selected?.read() ?: -1 }
+        override fun read(bytes: ByteArray, offset: Int, length: Int): Int {
+            readStarted.countDown(); gate.await(); return selected?.read(bytes, offset, length) ?: -1
+        }
         override fun close() { if (closeOpens) gate.countDown() }
     }
 
@@ -422,6 +428,85 @@ class OwnedProcessSupervisorTest {
         assertEquals(listOf("execution_cancelled"), result.reasons)
         eventually { channel.controlClosed.get() }
         assertContentEquals(byteArrayOf('C'.code.toByte()), channel.cancellations())
+    }
+
+    @Test fun `late control write failure preserves timeout FINAL and acknowledged capacity`() {
+        assertLateControlWriteFailure(quiescent = true)
+    }
+
+    @Test fun `late control write failure without quiescence keeps capacity poisoned`() {
+        assertLateControlWriteFailure(quiescent = false)
+    }
+
+    private fun assertLateControlWriteFailure(quiescent: Boolean) {
+        val afterFinal = GateInput(closeOpens = false)
+        val running = AtomicBoolean(true)
+        val stdout = "synthetic-out".toByteArray()
+        val stderr = "synthetic-err".toByteArray()
+        val privateFailure = "private synthetic control write failure"
+        val timeoutFlags = (SupervisorFlags.COMPLETED xor SupervisorFlags.EXEC_CONFIRMED) or SupervisorFlags.TIMED_OUT
+        val flags = if (quiescent) timeoutFlags else timeoutFlags xor SupervisorFlags.QUIESCENT
+        val frames = java.io.SequenceInputStream(ByteArrayInputStream(wire(stdout, stderr,
+            cause = 2, flags = flags, exit = 137)), afterFinal)
+        val channel = MemoryChannel(byteArrayOf(), frames = frames, running = running,
+            onCancel = { throw java.io.IOException(privateFailure) },
+            onControlClose = {
+                // cancelControl records the write exception before entering its finally/close.
+                afterFinal.open(byteArrayOf())
+                running.set(false)
+            })
+        val image = FakeImage()
+        val slots = SupervisorSlots(1)
+        try {
+            // SequenceInputStream reaches this gate only after the reader validated and stored
+            // FINAL. Local cancellation is the synthetic cleanup trigger, not an observed B cause.
+            val result = run(channel, image, slots,
+                cancellation = CancellationToken { afterFinal.readStarted.count == 0L }, timeout = 5000, grace = 4000)
+            assertEquals(0L, afterFinal.readStarted.count)
+            assertTrue(channel.controlClosed.get())
+            assertContentEquals(byteArrayOf('C'.code.toByte()), channel.cancellations())
+            assertFalse(running.get())
+            assertEquals(0, channel.exitCode())
+            assertEquals("failed", result.status)
+            val expectedReasons = listOf("execution_timeout", "process_supervisor_control_failed", "execution_cancelled") +
+                (if (quiescent) emptyList() else listOf("owned_process_group_shutdown_unverified"))
+            assertEquals(expectedReasons, result.reasons)
+            assertTrue(result.cancelled)
+            assertTrue(result.timedOut)
+            assertFalse(result.truncated)
+            assertFalse(result.executionConfirmed)
+            assertEquals(137, result.exitCode)
+            assertContentEquals(stdout, result.stdout)
+            assertContentEquals(stderr, result.stderr)
+            assertEquals(stdout.size.toLong() + stderr.size, result.outputBytes)
+            assertEquals(identity, result.supervisorIdentity)
+            assertFalse(result.toString().contains(privateFailure))
+            assertEquals(2, image.verified.get())
+            eventually { image.closed.get() == 1 && slots.remaining() == (if (quiescent) 1 else 0) }
+
+            val nextImage = FakeImage()
+            val nextChannel = MemoryChannel(wire("separate".toByteArray()))
+            val next = run(nextChannel, nextImage, slots)
+            if (quiescent) {
+                assertEquals("executed", next.status, next.reasons.toString())
+                assertTrue(next.reasons.isEmpty())
+                assertTrue(next.executionConfirmed)
+                assertContentEquals("separate".toByteArray(), next.stdout)
+                eventually { nextImage.closed.get() == 1 && slots.remaining() == 1 }
+            } else {
+                assertEquals("unavailable", next.status)
+                assertEquals(listOf("process_supervisor_capacity_unavailable"), next.reasons)
+                assertFalse(next.executionConfirmed)
+                assertNull(next.supervisorIdentity)
+                assertEquals(0, nextImage.verified.get())
+                assertEquals(0, nextImage.closed.get())
+                assertEquals(0, slots.remaining())
+            }
+            assertTrue(nextChannel.cancellations().isEmpty())
+        } finally {
+            running.set(false)
+            afterFinal.open(byteArrayOf())
+        }
     }
 
     @Test fun `prefork cancelled and setup failure cleanup acknowledgments release capacity`() {

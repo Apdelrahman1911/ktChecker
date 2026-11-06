@@ -1,0 +1,2 @@
+@Suppress("ERROR_SUPPRESSION", "INAPPLICABLE_OPERATOR_MODIFIER")
+fun safeValue(): Int = 1

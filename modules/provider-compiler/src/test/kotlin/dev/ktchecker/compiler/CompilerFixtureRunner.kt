@@ -12,6 +12,24 @@ import java.util.UUID
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 
+/** New generated runs stay under ignored build output; tracked fixture history is never reused or moved. */
+internal fun compilerFixtureCreateRunDirectory(repository: Path, runId: String): Path {
+    require(runId.isNotBlank() && runId != "." && runId != ".." &&
+        runId == Path.of(runId).fileName?.toString()) { "Expected a single run directory name" }
+    val parents = mutableListOf(fixtureDirectoryIdentity(repository))
+    for (component in listOf("build", "compiler-fixtures", "runs")) {
+        parents.forEach(::requireFixtureDirectory)
+        val directory = parents.last().path.resolve(component)
+        if (!Files.exists(directory, NOFOLLOW_LINKS)) Files.createDirectory(directory)
+        parents += fixtureDirectoryIdentity(directory)
+    }
+    parents.forEach(::requireFixtureDirectory)
+    return Files.createDirectory(parents.last().path.resolve(runId)).also {
+        fixtureDirectoryIdentity(it)
+        privateFixturePermissions(it)
+    }
+}
+
 /** Original, executable provider-integration fixtures. No independent qualification is inferred. */
 object CompilerFixtureRunner {
     private const val VERSION = CompilerRuleRegistry.VERSION
@@ -43,6 +61,9 @@ object CompilerFixtureRunner {
     private var nullabilityInputs = emptyList<CompilerFixtureNullabilityInput>()
     private val nullabilityReceipts = mutableListOf<NullabilityReceipt>()
     private var nullabilityVersionDenial: Boolean? = null
+    private var diagnosticBreadthInputs = emptyList<CompilerFixtureDiagnosticBreadthInput>()
+    private val diagnosticBreadthReceipts = mutableListOf<DiagnosticBreadthReceipt>()
+    private var diagnosticBreadthVersionDenial: Boolean? = null
     private var plannedFixtures = emptyList<JsonObject>()
     private var runFailure: Throwable? = null
     private var checkpointSerial = 0
@@ -68,6 +89,7 @@ object CompilerFixtureRunner {
     private data class ProbeSampleReceipt(val observation: CompilerFixtureProbeObservation, val receipt: Path)
     private data class SupplementalReceipt(val observation: CompilerFixtureSupplementalObservation, val receipt: Path)
     private data class NullabilityReceipt(val observation: CompilerFixtureNullabilityObservation, val receipt: Path)
+    private data class DiagnosticBreadthReceipt(val observation: CompilerFixtureDiagnosticBreadthObservation, val receipt: Path)
 
     @JvmStatic fun main(args: Array<String>) = run(args, probeMode = false)
 
@@ -78,6 +100,8 @@ object CompilerFixtureRunner {
         check(!::budget.isInitialized) { "A fixture invocation cannot resume or merge an earlier run" }
         timingProbe = if (probeMode) CompilerFixtureTimingProbeSpec.parse(args) else null
         settings = timingProbe?.settings() ?: CompilerFixtureSettings.parse(args)
+        // Every existing selector has a legacy443 oracle. Refuse before any path/allocation or child reservation.
+        CompilerFixtureMappingContract.requireLegacy(CompilerRuleRegistry.load().mappingIdentity)
         val suppliedFixtureRoot = Path.of(settings.fixtureDirectory).toAbsolutePath().normalize()
         val suppliedRepository = suppliedFixtureRoot.parent.parent
         repository = CompilerFixtureProvenance.canonicalOuterDirectory(suppliedRepository)
@@ -85,11 +109,7 @@ object CompilerFixtureRunner {
         require(Files.isDirectory(fixtureRoot, NOFOLLOW_LINKS) && fixtureRoot.toRealPath() == fixtureRoot) { "Unsafe fixture directory" }
         val runId = Instant.now().toString().replace(":", "-") + "-" +
             (timingProbe?.let { "timing-probe-${it.variant}" } ?: settings.cohort) + "-" + UUID.randomUUID()
-        val runs = fixtureRoot.resolve("runs")
-        if (!Files.exists(runs, NOFOLLOW_LINKS)) Files.createDirectory(runs)
-        fixtureDirectoryIdentity(runs)
-        runRoot = Files.createDirectory(runs.resolve(runId))
-        privateFixturePermissions(runRoot)
+        runRoot = compilerFixtureCreateRunDirectory(repository, runId)
         evidence = CompilerFixtureEvidence(repository, runRoot, latestSidecar(), settings.evidenceBytes)
         evidence.directory(runRoot.resolve("control"))
         budget = CompilerFixtureBudget(settings, startedNanos = started, ownerStop = { evidence.ownerStopRequested() })
@@ -99,7 +119,7 @@ object CompilerFixtureRunner {
             save(runRoot.resolve("invocation.json"), mapOf("schema_version" to 1, "run_uuid" to runId,
                 "settings" to settings.description(), "expected_visible_scope" to mapOf("ordinary_pairs" to 98,
                     "planned_unsupported_common_jvm_graphs" to 16, "catalog_mappings" to 443),
-                "execution_authority" to "Each child-capable provider call still needs a new exact nonserializable permit; invocation is not authority.") + probeScope() + supplementalScope() + nullabilityScope())
+                "execution_authority" to "Each child-capable provider call still needs a new exact nonserializable permit; invocation is not authority.") + probeScope() + supplementalScope() + nullabilityScope() + diagnosticBreadthScope())
             timingProbe?.let { require(compilerHeap() == CompilerFixtureTimingProbeSpec.COMPILER_HEAP_MIB) {
                 "The fixed timing probe requires a 512MiB child compiler heap; no override is admitted"
             } }
@@ -111,6 +131,8 @@ object CompilerFixtureRunner {
             budget.requireActive()
             provenance = if (nullabilitySelected()) CompilerFixtureProvenance.capture(repository, runRoot, evidence,
                 includeNullabilitySourcePlan = true) { budget.requireActive() }
+                else if (diagnosticBreadthSelected()) CompilerFixtureProvenance.capture(repository, runRoot, evidence,
+                    diagnosticBreadthSelector = settings.cohort) { budget.requireActive() }
                 else CompilerFixtureProvenance.capture(repository, runRoot, evidence) { budget.requireActive() }
             save(provenance.manifestPath, provenance.description())
             registry = CompilerRuleRegistry.parse(provenance.compilerRegistryText)
@@ -128,6 +150,13 @@ object CompilerFixtureRunner {
                 "initial_source_v1_manifest" to provenance.fixtureReference(CompilerFixtureNullabilityPlan.MANIFEST_PATH),
                 "captured_inputs" to nullabilityInputs.map { provenance.fixtureReference(it.declaration.path) },
                 "authoring_records_are_not_execution_observations" to true))
+            if (diagnosticBreadthSelected()) save(runRoot.resolve("diagnostic-breadth-schedule.json"), CompilerFixtureDiagnosticBreadthPlan.description(settings.cohort) + mapOf(
+                "startup_provenance" to reference(provenance.manifestPath),
+                "initial_source_manifest" to provenance.fixtureReference(CompilerFixtureDiagnosticBreadthPlan.MANIFEST_PATH),
+                "all_captured_authored_sources" to diagnosticBreadthInputs.filter { it.declaration.kind != "option_off" }.map { provenance.fixtureReference(it.declaration.path) },
+                "selected_call_order" to selectedDiagnosticBreadthInputs().map { it.description() },
+                "unselected_inputs_remain_visible_not_run_not_excluded" to true,
+                "source_schedule_is_not_execution_authority" to true))
             save(runRoot.resolve("fixture-scope.json"), fixtureScope())
             budget.requireActive()
             val compilerPaths = System.getProperty("ktchecker.compiler.classpath")?.split(File.pathSeparator)
@@ -164,7 +193,8 @@ object CompilerFixtureRunner {
             writeEvidence("start")
             val probe = timingProbe
             if (probe == null) {
-                if (nullabilitySelected()) runNullabilityInputs()
+                if (diagnosticBreadthSelected()) runDiagnosticBreadthInputs()
+                else if (nullabilitySelected()) runNullabilityInputs()
                 else if (supplementalSelected()) runSupplementalInputs()
                 else runFixtures(allFixtures.filter { settings.selects(it.authoredCohort, it.ruleId) })
                 runIntentControls()
@@ -172,7 +202,9 @@ object CompilerFixtureRunner {
             } else runTimingProbeSamples(probe)
             budget.requireActive()
             if (probe == null) {
-                if (nullabilitySelected()) check(boundedWorkComplete()) {
+                if (diagnosticBreadthSelected()) check(boundedWorkComplete()) {
+                    "Diagnostic breadth remains incomplete: unmatched or unknown expectations, actual failed tasks and all raw companions stay retained; no ordinary or global credit"
+                } else if (nullabilitySelected()) check(boundedWorkComplete()) {
                     "Nullability run remains incomplete: six suppression expectations are unknown; expected positive errors are failed compiler tasks, not terminal success"
                 } else if (supplementalSelected()) check(boundedWorkComplete()) {
                     "Supplemental observations remain partial: failed or unknown expectations are not validated; all actual receipts retained"
@@ -208,7 +240,7 @@ object CompilerFixtureRunner {
                     terminalCommitted = publishTerminal(candidate)
                 } else save(runRoot.resolve("summary.json"), mapOf("schema_version" to 1, "run_complete" to false,
                     "startup_capture_complete" to ::provenance.isInitialized, "budget" to budget.description(),
-                    "evidence_accounting" to evidence.statistics(), "qualification" to "none; startup did not finish") + probeScope() + supplementalScope() + nullabilityScope(),
+                    "evidence_accounting" to evidence.statistics(), "qualification" to "none; startup did not finish") + probeScope() + supplementalScope() + nullabilityScope() + diagnosticBreadthScope(),
                     terminal = true, replace = true)
             } catch (failure: Throwable) {
                 runFailure = preserveCompilerFixtureFailure(runFailure, failure)
@@ -227,7 +259,15 @@ object CompilerFixtureRunner {
         }
         val failures = assessments.values.flatten().count { !it.passed }
         val tested = assessments.values.count { cases -> CASE_KINDS.all { kind -> cases.any { it.kind == kind && it.passed } } }
-        if (nullabilitySelected()) {
+        if (diagnosticBreadthSelected()) {
+            println("Compiler $VERSION private diagnostic breadth ${settings.cohort}: ${budget.attempts.size}/${settings.maxAttempts} reservations; " +
+                "${diagnosticBreadthReceipts.count { it.observation.observedReceiptComplete }}/${CompilerFixtureDiagnosticBreadthPlan.declarations(settings.cohort).size} actual input receipts; " +
+                "${diagnosticBreadthReceipts.count { it.observation.expectationMatched == true }} local source-oracle matches; " +
+                "${diagnosticBreadthReceipts.count { it.observation.actualCompilerTaskFailed }} actual failed compiler tasks; " +
+                "${CompilerFixtureDiagnosticBreadthPlan.unknownSuppressionCount(settings.cohort)} unknown hard-error suppressions; " +
+                "90 authored sources / 98 ordinary pairs / 16 unsupported graphs / 443 mappings visible; ordinary-six-kind completion=false; 0 qualified.")
+            println("Private run/checkpoints: $runRoot; no ordinary external latest sidecar or historical stage transfer; receipt counts alone are not success.")
+        } else if (nullabilitySelected()) {
             println("Compiler $VERSION private authored nullability observations: ${budget.attempts.size}/${settings.maxAttempts} reserved attempts; " +
                 "${nullabilityReceipts.count { it.observation.observedReceiptComplete }}/30 observed receipts; " +
                 "${nullabilityReceipts.count { it.observation.expectedPositiveErrorMatched }}/6 expected positive ERROR matches (compiler tasks still failed); " +
@@ -310,6 +350,27 @@ object CompilerFixtureRunner {
                 }
             }
         }
+        if (diagnosticBreadthSelected()) {
+            CompilerFixtureDiagnosticBreadthPlan.verifyCapturedMetadata(provenance::readFixture)
+            val sourceManifest = Json.parseToJsonElement(provenance.readFixture(CompilerFixtureDiagnosticBreadthPlan.MANIFEST_PATH)).jsonObject
+            diagnosticBreadthInputs = CompilerFixtureDiagnosticBreadthPlan.load(sourceManifest, provenance::readFixture)
+            require(registry.mappings.none { it.upstreamId == "INAPPLICABLE_OPERATOR_MODIFIER" }) {
+                "The reviewed companion is unmapped raw evidence, never an invented extra breadth mapping"
+            }
+            // Register each unique authored path once: option-off shares the exact positive path and bytes.
+            diagnosticBreadthInputs.groupBy { it.declaration.path }.forEach { (path, inputs) ->
+                val declaration = inputs.first().declaration
+                require(inputs.all { it.declaration.ruleId == declaration.ruleId && it.declaration.sourceSha256 == declaration.sourceSha256 && it.source == inputs.first().source })
+                val mapping = registry.byRuleId.getValue(declaration.ruleId)
+                require(mapping.upstreamId == declaration.upstreamId && mapping.backend == "common" &&
+                    mapping.declaredSeverity == declaration.severity && mapping.defaultActivation == declaration.defaultActivation) {
+                    "Diagnostic breadth does not match the existing exact common severity/activation mapping"
+                }
+                require(declaration.ruleId !in assessments && declaration.ruleId !in CompilerFixtureNullabilityPlan.RULE_IDS &&
+                    fixtureRuleIdsByPath.put(path, declaration.ruleId) == null) { "Breadth source collided with old attribution; no ordinary pair is appended" }
+            }
+            require(selectedDiagnosticBreadthInputs().map { it.declaration } == CompilerFixtureDiagnosticBreadthPlan.declarations(settings.cohort))
+        }
         val planned = Json.parseToJsonElement(provenance.readFixture("planned-kmp-manifest.json")).jsonObject
         require(planned.getValue("kotlin_version").jsonPrimitive.content == VERSION)
         plannedFixtures = planned.getValue("fixtures").jsonArray.map { it.jsonObject }
@@ -323,13 +384,15 @@ object CompilerFixtureRunner {
         }
         require(registry.mappings.size == 443 && (allFixtures.any { settings.selects(it.authoredCohort, it.ruleId) } ||
             (supplementalSelected() && supplementalInputs.size == CompilerFixtureSupplementalPlan.INPUT_COUNT) ||
-            (nullabilitySelected() && nullabilityInputs.size == CompilerFixtureNullabilityPlan.INPUT_COUNT)))
+            (nullabilitySelected() && nullabilityInputs.size == CompilerFixtureNullabilityPlan.INPUT_COUNT) ||
+            (diagnosticBreadthSelected() && selectedDiagnosticBreadthInputs().size == CompilerFixtureDiagnosticBreadthPlan.declarations(settings.cohort).size)))
     }
 
     private fun fixtureScope(): Map<String, Any?> = mapOf("schema_version" to 1, "named_cohort" to settings.cohort,
         "ordinary_pairs" to allFixtures.map { fixture -> mapOf("rule_id" to fixture.ruleId, "upstream_id" to fixture.upstreamId,
             "authored_cohort" to CompilerFixtureSettings.authoredName(fixture.authoredCohort), "selected" to settings.selects(fixture.authoredCohort, fixture.ruleId),
             "selection_state" to if (timingProbe != null) "not_run_ordinary_six_kind_outside_probe_schedule"
+                else if (diagnosticBreadthSelected()) "not_run_ordinary_six_kind_outside_diagnostic_breadth_schedule"
                 else if (nullabilitySelected()) "not_run_ordinary_six_kind_outside_nullability_schedule"
                 else if (supplementalSelected()) "not_run_ordinary_six_kind_outside_supplemental_schedule"
                 else if (settings.selects(fixture.authoredCohort, fixture.ruleId)) "selected_pending_not_run" else "unselected_not_run_not_excluded",
@@ -338,7 +401,166 @@ object CompilerFixtureRunner {
         "ordinary_manifest_evidence" to provenance.fixtureReference("manifest.json"), "catalog_mappings" to registry.mappings.size,
         "planned_execution" to "none; sealed common/JVM roles and refines capability still unsupported; never merged into ordinary sources",
         "selection_scope" to "trusted bounded harness scheduling only; all unselected/planned/Native rules remain visible gaps, not exclusions") +
-        probeScope() + supplementalCheckpoint(terminal = false) + nullabilityCheckpoint(terminal = false)
+        probeScope() + supplementalCheckpoint(terminal = false) + nullabilityCheckpoint(terminal = false) + diagnosticBreadthCheckpoint(terminal = false)
+
+    private fun diagnosticBreadthSelected(): Boolean = timingProbe == null && settings.cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS
+
+    private fun selectedDiagnosticBreadthInputs(): List<CompilerFixtureDiagnosticBreadthInput> = diagnosticBreadthInputs.filter {
+        settings.selectsDiagnosticBreadth(CompilerFixtureDiagnosticBreadthPlan.AUTHORED_COHORT, it.declaration.ruleId, it.declaration.kind)
+    }
+
+    private fun diagnosticBreadthScope(): Map<String, Any?> = if (!diagnosticBreadthSelected()) emptyMap() else mapOf(
+        "diagnostic_breadth_definition" to CompilerFixtureDiagnosticBreadthPlan.description(settings.cohort),
+        "diagnostic_breadth_completion_validity" to "Private source-oracle observations only: unknown hard-error suppressions keep default/opt-in incomplete. Expected ERROR matches remain failed compiler/provider tasks. No ordinary-six-kind/global-stage/qualified/latest promotion.") +
+        compilerFixtureDiagnosticBreadthCompletionFields(settings.cohort, false)
+
+    private fun diagnosticBreadthInventory(terminal: Boolean, ruleId: String? = null): List<Map<String, Any?>> =
+        diagnosticBreadthInputs.filter { ruleId == null || it.declaration.ruleId == ruleId }.map { input ->
+            val d = input.declaration
+            val selected = settings.selectsDiagnosticBreadth(CompilerFixtureDiagnosticBreadthPlan.AUTHORED_COHORT, d.ruleId, d.kind)
+            val retained = diagnosticBreadthReceipts.singleOrNull { it.observation.declaration == d }
+            val state = retained?.observation?.state ?: if (!selected) "unselected_not_run_not_excluded" else
+                if (!terminal) "selected_pending_not_run" else "not_run_incomplete_" + (budget.stopReason?.code ?: "run_failure_or_missing_actual_receipt")
+            input.description() + mapOf("selected" to selected, "execution_state" to state,
+                "captured_authored_source" to provenance.fixtureReference(d.path),
+                "actual_observation" to retained?.observation?.description(), "observation_receipt" to retained?.receipt?.let(::reference),
+                "local_observation_requires_intact_current_START_for_attribution" to true, "initial_authoring_record_never_rewritten" to true)
+        }
+
+    private fun diagnosticBreadthCheckpoint(terminal: Boolean, provenanceIntact: Boolean? = null): Map<String, Any?> =
+        if (!diagnosticBreadthSelected()) emptyMap() else mapOf(
+            "diagnostic_breadth_inputs" to diagnosticBreadthInventory(terminal),
+            "diagnostic_breadth_authored_source_files" to diagnosticBreadthInputs.filter { it.declaration.kind != "option_off" }.size,
+            "diagnostic_breadth_all_source_and_option_off_declarations" to diagnosticBreadthInputs.size,
+            "diagnostic_breadth_selected_source_and_option_off_calls" to selectedDiagnosticBreadthInputs().size,
+            "diagnostic_breadth_returned_input_receipt_count" to diagnosticBreadthReceipts.size,
+            "diagnostic_breadth_observed_receipt_count" to diagnosticBreadthReceipts.count { it.observation.observedReceiptComplete },
+            "diagnostic_breadth_observed_receipts_complete" to (provenanceIntact != false &&
+                CompilerFixtureDiagnosticBreadthPlan.observedReceiptsComplete(settings.cohort, budget.attempts, diagnosticBreadthReceipts.map { it.observation })),
+            "diagnostic_breadth_current_START_provenance_check_passed" to provenanceIntact,
+            "diagnostic_breadth_receipt_completeness_scope" to "Informational actual receipts including failed compiler tasks; never expectation, complete diagnostic coverage or qualification proof.",
+            "diagnostic_breadth_reserved_attempt_schedule_matches_plan" to CompilerFixtureDiagnosticBreadthPlan.exactAttemptScheduleMatches(settings.cohort, budget.attempts),
+            "diagnostic_breadth_reservation_counts_are_not_execution_or_denial_proof" to true,
+            "diagnostic_breadth_local_expected_ERROR_match_count" to diagnosticBreadthReceipts.count { it.observation.expectedErrorMatched },
+            "diagnostic_breadth_local_oracle_match_counts_by_kind" to (CompilerFixtureDiagnosticBreadthPlan.KINDS + "option_off").associateWith { kind ->
+                diagnosticBreadthReceipts.count { it.observation.declaration.kind == kind && it.observation.expectationMatched == true } },
+            "diagnostic_breadth_current_START_attributed_oracle_match_count" to if (provenanceIntact == true)
+                diagnosticBreadthReceipts.count { it.observation.expectationMatched == true } else 0,
+            "diagnostic_breadth_actual_failed_compiler_task_count" to diagnosticBreadthReceipts.count { it.observation.actualCompilerTaskFailed },
+            "diagnostic_breadth_actual_failed_provider_count" to diagnosticBreadthReceipts.count { it.observation.actualProviderFailed },
+            "diagnostic_breadth_unexpected_or_unmatched_variant_count" to diagnosticBreadthReceipts.count { it.observation.unexpectedOrUnmatchedVariant },
+            "diagnostic_breadth_unknown_hard_error_suppression_count" to CompilerFixtureDiagnosticBreadthPlan.unknownSuppressionCount(settings.cohort),
+            "diagnostic_breadth_expectations_validated" to CompilerFixtureDiagnosticBreadthPlan.expectedVariantsValidated(settings.cohort, diagnosticBreadthReceipts.map { it.observation }),
+            "diagnostic_breadth_version_denial_observed" to diagnosticBreadthVersionDenial,
+            "diagnostic_breadth_version_denial_evidence" to runRoot.resolve("diagnostic-breadth-version-denial.json").takeIf(evidence::contains)?.let(::reference),
+            "diagnostic_breadth_schedule_evidence" to runRoot.resolve("diagnostic-breadth-schedule.json").takeIf(evidence::contains)?.let(::reference),
+            "diagnostic_breadth_initial_manifest_evidence" to provenance.fixtureReference(CompilerFixtureDiagnosticBreadthPlan.MANIFEST_PATH),
+            "diagnostic_breadth_status" to if (terminal) "terminal_private_local_observations_not_ordinary_or_global_credit" else "observations_pending_or_in_progress_not_success",
+            "diagnostic_breadth_observation_receipts" to diagnosticBreadthReceipts.map { reference(it.receipt) }) + diagnosticBreadthScope()
+
+    private fun runDiagnosticBreadthInputs() {
+        val inputs = selectedDiagnosticBreadthInputs()
+        require(diagnosticBreadthSelected() && inputs.map { it.declaration } == CompilerFixtureDiagnosticBreadthPlan.declarations(settings.cohort))
+        inputs.forEach { input ->
+            val d = input.declaration
+            // One unchanged captured source per call. Option-off reuses a positive path/digest, not transformed bytes.
+            val job = try {
+                execute(d.label, mapOf(d.path to input.source), d.flags)
+            } catch (failure: Throwable) {
+                // The unchanged executor retains an actual returned Job before its receipt assertions.
+                jobs.singleOrNull { it.attempt.number == d.number && it.label == d.label }?.let { actual ->
+                    try { recordDiagnosticBreadthObservation(input, actual, executionFailure = failure) }
+                    catch (persistence: Throwable) { preserveCompilerFixtureFailure(failure, persistence) }
+                }
+                throw failure // No fallback, replacement or later admission after failed custody/cleanup/quarantine.
+            }
+            val observation = recordDiagnosticBreadthObservation(input, job)
+            if (observation.unexpectedOrUnmatchedVariant) println("UNMATCHED diagnostic breadth ${d.upstreamId}/${d.kind}; actual errors and failed tasks retained")
+            writeCheckpoint("diagnostic-breadth-${d.number}-${d.kind}")
+        }
+        finishPhase("diagnostic-breadth-inputs")
+        val denied = try {
+            execute(CompilerFixtureDiagnosticBreadthPlan.VERSION_DENIAL_LABEL,
+                mapOf("version-control.kt" to "fun versionControl() = 1\n"), CompilerFixtureDiagnosticBreadthPlan.BASE_FLAGS,
+                requestedVersion = CompilerFixtureDiagnosticBreadthPlan.VERSION_DENIAL_REQUESTED_VERSION)
+        } catch (failure: Throwable) {
+            jobs.singleOrNull { it.attempt.number == CompilerFixtureDiagnosticBreadthPlan.versionDenialAttempt(settings.cohort) &&
+                it.label == CompilerFixtureDiagnosticBreadthPlan.VERSION_DENIAL_LABEL }?.let { actual ->
+                try { recordDiagnosticBreadthVersionDenial(actual, executionFailure = failure) }
+                catch (persistence: Throwable) { preserveCompilerFixtureFailure(failure, persistence) }
+            }
+            throw failure
+        }
+        recordDiagnosticBreadthVersionDenial(denied)
+        finishPhase("diagnostic-breadth-version-denial")
+        // The four existing control bodies run once afterward;35/40 are separate caps, not pooled budgets.
+    }
+
+    private fun recordDiagnosticBreadthObservation(input: CompilerFixtureDiagnosticBreadthInput, job: Job,
+        executionFailure: Throwable? = null): CompilerFixtureDiagnosticBreadthObservation {
+        val d = input.declaration
+        require(diagnosticBreadthReceipts.none { it.observation.declaration == d })
+        val sourcePaths = job.process?.outputDirectory?.let { output -> job.sources.map { (relative, source) ->
+            output.resolve("sources").resolve(relative) to CompilerSourceIdentity(relative, Digests.sha256(source), source)
+        }.toMap() } ?: emptyMap()
+        val parsed = CompilerDiagnosticParser().parse((job.process?.stderr ?: "") + "\n" + (job.process?.stdout ?: ""), sourcePaths)
+        // Provider rawDiagnostics is residual-only. Keep all named parser emissions and all residual task diagnostics.
+        val fullRaw = CompilerFixtureNullabilityPlan.fullActualRawDiagnostics(parsed)
+        val residualAccountedFor = CompilerFixtureNullabilityPlan.residualDiagnosticsAccountedFor(fullRaw, job.result.rawDiagnostics)
+        val healthy = job.process?.let { it.successfulExecution && !it.cancelled && !it.timedOut && !it.truncated &&
+            "owned_process_group_shutdown_unverified" !in it.reasons } == true
+        val observation = CompilerFixtureDiagnosticBreadthObservation(d, job.attempt.number,
+            executionConfirmed = job.process?.executionConfirmed == true, healthySupervisedExecution = healthy,
+            pinnedVersionObserved = parsed.reportedVersion == VERSION,
+            receiptsAndAuthoredInputIntact = executionFailure == null && job.persistenceComplete && job.receiptInvariantsPassed &&
+                job.directory !in rejectedJobAttribution && job.process?.supervisorIdentity == provenance.supervisorIdentity &&
+                job.attempt.number == d.number && job.attempt.label == d.label && job.attempt.ruleIds == setOf(d.ruleId) &&
+                job.fixtureRuleIds == setOf(d.ruleId) && job.sources == mapOf(d.path to input.source) &&
+                job.input.context.compilerVersion == VERSION && job.input.context.compilerArguments == d.flags &&
+                job.input.context.compilationFiles == listOf(d.path) && residualAccountedFor &&
+                Digests.sha256(input.source).removePrefix("sha256:") == d.sourceSha256 &&
+                CompilerFixtureDiagnosticBreadthPlan.snapshotMembersMatch(input, job.input.snapshot.files),
+            actualExitCode = job.process?.exitCode, providerStatus = job.result.status, parserMalformed = parsed.malformed,
+            diagnostics = CompilerFixtureDiagnosticBreadthPlan.diagnostics(input, fullRaw, job.result.findings))
+        val receipt = runRoot.resolve("diagnostic-breadth-observations/%02d-%s-%s.json".format(d.number, d.upstreamId.lowercase(), d.kind))
+        save(receipt, observation.description() + mapOf(
+            "captured_authored_source" to provenance.fixtureReference(d.path), "initial_manifest_authoring_record" to input.authoringRecord,
+            "initial_source_plan_records_are_never_rewritten" to true, "startup_provenance" to reference(provenance.manifestPath),
+            "analysis_key" to job.input.analysisKey(), "snapshot_id" to job.input.snapshot.snapshotId, "actual_job_evidence" to references(job),
+            "actual_parser_reported_version" to parsed.reportedVersion,
+            "full_actual_raw_diagnostic_oracle_inventory" to ContractJson.encodeToJsonElement(fullRaw),
+            "full_actual_raw_inventory_definition" to "Every actual named parser emission plus every unparsed/raw diagnostic, including unmapped companion errors. Original exact order/bytes remain in referenced stdout/stderr.",
+            "provider_residual_raw_diagnostics" to ContractJson.encodeToJsonElement(job.result.rawDiagnostics),
+            "provider_residual_diagnostics_accounted_for_in_full_actual_inventory" to residualAccountedFor,
+            "full_normalized_finding_oracle_inventory" to ContractJson.encodeToJsonElement(job.result.findings),
+            "actual_location_policy" to "Actual authored path/digest/point plus predeclared source-token bounds; exact selected raw/mapped severity/count/point/message pairing. Regions never replace actual diagnostic positions.",
+            "execute_failure_type" to executionFailure?.javaClass?.name,
+            "attribution_withheld_after_execute_failure" to (executionFailure != null),
+            "matched_ERROR_is_successful_compilation" to false, "unmapped_companion_is_an_extra_breadth_rule" to false,
+            "qualification" to "none") + CompilerFixtureProcessEvidence.fields(job.process, provenance.supervisorIdentity), terminal = executionFailure != null)
+        diagnosticBreadthReceipts += DiagnosticBreadthReceipt(observation, receipt)
+        return observation
+    }
+
+    private fun recordDiagnosticBreadthVersionDenial(job: Job, executionFailure: Throwable? = null) {
+        val denied = CompilerFixtureDiagnosticBreadthPlan.versionDenialMatches(settings.cohort, job.attempt, job.input.context.compilerVersion,
+            job.result.status, job.result.reasons, actualProcessObserved = job.process != null,
+            receiptsAndInputIntact = executionFailure == null && job.persistenceComplete && job.receiptInvariantsPassed &&
+                job.directory !in rejectedJobAttribution && job.fixtureRuleIds.isEmpty() &&
+                job.sources == mapOf("version-control.kt" to "fun versionControl() = 1\n") &&
+                job.input.context.compilationFiles == listOf("version-control.kt") &&
+                job.input.context.compilerArguments == CompilerFixtureDiagnosticBreadthPlan.BASE_FLAGS)
+        save(runRoot.resolve("diagnostic-breadth-version-denial.json"), mapOf(
+            "requested_version" to CompilerFixtureDiagnosticBreadthPlan.VERSION_DENIAL_REQUESTED_VERSION,
+            "denied_before_runtime_as_requested" to denied, "reserved_attempt_number" to job.attempt.number,
+            "actual_process_observed" to (job.process != null), "actual_provider_status" to job.result.status,
+            "actual_provider_reasons" to job.result.reasons, "actual_job_evidence" to references(job),
+            "execute_failure_type" to executionFailure?.javaClass?.name,
+            "execution_claim" to "none; this is only the actual exact mismatched-version refusal, not an absent-child or reservation inference",
+            "ordinary_six_kind_assessment" to false, "qualification" to "none"), terminal = executionFailure != null)
+        diagnosticBreadthVersionDenial = denied
+    }
+
 
     private fun nullabilitySelected(): Boolean = timingProbe == null && settings.cohort == CompilerFixtureNullabilityPlan.SELECTOR
 
@@ -508,13 +730,20 @@ object CompilerFixtureRunner {
 
     private fun supplementalSelected(): Boolean = timingProbe == null && settings.cohort == CompilerFixtureSupplementalPlan.SELECTOR
 
-    private fun latestSidecar(): Path? = compilerFixtureNullabilityLatestSidecar(nullabilitySelected(),
-        compilerFixtureSupplementalLatestSidecar(supplementalSelected(), compilerFixtureLatestSidecar(fixtureRoot, timingProbe)))
+    private fun latestSidecar(): Path? = compilerFixtureDiagnosticBreadthLatestSidecar(diagnosticBreadthSelected(),
+        compilerFixtureNullabilityLatestSidecar(nullabilitySelected(),
+            compilerFixtureSupplementalLatestSidecar(supplementalSelected(), compilerFixtureLatestSidecar(fixtureRoot, timingProbe))))
 
     private fun completionFields(complete: Boolean): Map<String, Any> = compilerFixtureCompletionFields(timingProbe, complete) +
-        compilerFixtureSupplementalCompletionFields(supplementalSelected()) + compilerFixtureNullabilityCompletionFields(nullabilitySelected())
+        compilerFixtureSupplementalCompletionFields(supplementalSelected()) + compilerFixtureNullabilityCompletionFields(nullabilitySelected()) +
+        compilerFixtureDiagnosticBreadthCompletionFields(if (diagnosticBreadthSelected()) settings.cohort else null, complete)
 
-    private fun boundedWorkComplete(): Boolean = if (nullabilitySelected())
+    private fun boundedWorkComplete(): Boolean = if (diagnosticBreadthSelected())
+        CompilerFixtureDiagnosticBreadthPlan.observedReceiptsComplete(settings.cohort, budget.attempts, diagnosticBreadthReceipts.map { it.observation }) &&
+            CompilerFixtureDiagnosticBreadthPlan.expectedVariantsValidated(settings.cohort, diagnosticBreadthReceipts.map { it.observation }) &&
+            CompilerFixtureDiagnosticBreadthPlan.exactAttemptScheduleMatches(settings.cohort, budget.attempts) &&
+            diagnosticBreadthVersionDenial == true && controls.values.all { it == true }
+        else if (nullabilitySelected())
         CompilerFixtureNullabilityPlan.observedReceiptsComplete(budget.attempts, nullabilityReceipts.map { it.observation }) &&
             CompilerFixtureNullabilityPlan.expectedVariantsValidated(nullabilityReceipts.map { it.observation }) &&
             CompilerFixtureNullabilityPlan.exactAttemptScheduleMatches(budget.attempts) &&
@@ -1148,7 +1377,7 @@ object CompilerFixtureRunner {
                 "evidence" to evidence.immutableFilesUnder(orphan.directory).map(::reference)) +
                 CompilerFixtureProcessEvidence.fields(orphan.process, provenance.supervisorIdentity) },
             "qualification" to "none; reservations/preparations/denials and actual confirmed executions remain distinct") +
-            probeCheckpoint() + supplementalCheckpoint(terminal) + nullabilityCheckpoint(terminal), terminal = terminal)
+            probeCheckpoint() + supplementalCheckpoint(terminal) + nullabilityCheckpoint(terminal) + diagnosticBreadthCheckpoint(terminal), terminal = terminal)
         val inventory = directory.resolve("assessment-inventory.json")
         save(inventory, mapOf("schema_version" to 1, "phase" to phase, "terminal" to terminal,
             "ordinary_pairs" to allFixtures.map { fixture -> mapOf("rule_id" to fixture.ruleId,
@@ -1161,7 +1390,7 @@ object CompilerFixtureRunner {
                 if (timingProbe != null) "not_run_outside_probe_schedule"
                 else if (terminal) "not_run_incomplete_" + (budget.stopReason?.code ?: "run_failure_or_missing_control") else "pending_not_run"
             } else if (passed) "passed" else "failed" },
-            "unselected_scope" to "not_run_not_excluded") + supplementalCheckpoint(terminal) + nullabilityCheckpoint(terminal), terminal = terminal)
+            "unselected_scope" to "not_run_not_excluded") + supplementalCheckpoint(terminal) + nullabilityCheckpoint(terminal) + diagnosticBreadthCheckpoint(terminal), terminal = terminal)
         val receipt = directory.resolve("checkpoint.json")
         save(receipt, mapOf("schema_version" to 1, "sequence" to checkpointSerial, "phase" to phase,
             "terminal" to terminal, "captured_at" to Instant.now().toString(), "named_cohort" to settings.cohort,
@@ -1217,6 +1446,11 @@ object CompilerFixtureRunner {
             if (mapping.ruleId in plannedIds) gaps += "Planned common/JVM graph is unsupported: no sealed fragment-role/refines capability; no concatenation or same-module pseudo-KMP run is admitted."
             else if (fixture == null) gaps += "No ordinary executable per-ID fixture authored/run for this mapping yet."
             if (fixture != null && !settings.selects(fixture.authoredCohort, fixture.ruleId)) gaps += "Authored ordinary pair was not selected by this bounded cohort; not_run is a gap, not a scope exclusion."
+            if (diagnosticBreadthSelected() && mapping.ruleId in CompilerFixtureDiagnosticBreadthPlan.RULE_IDS) {
+                gaps += "Six authored breadth sources plus explicitly declared option-off reuse are private source oracles, not ordinary-six-kind implementation/test/qualification credit."
+                gaps += "Every expected ERROR remains an actual failed compiler/provider task; unmapped mandatory companions and all unexpected or unnamed errors stay retained. Unknown hard-error suppressions are never validated, even exit0."
+                if (mapping.ruleId !in CompilerFixtureDiagnosticBreadthPlan.ruleIds(settings.cohort)) gaps += "This breadth ID is authored and captured but unselected/not_run, not excluded."
+            }
             if (nullabilitySelected() && mapping.ruleId in CompilerFixtureNullabilityPlan.RULE_IDS) {
                 gaps += "Only five independently authored nullability source observations are scheduled; no ordinary pair or six-kind assessment is appended or credited."
                 gaps += "Expected positive ERROR/nonzero matches remain failed compiler tasks. Exit0 alternatives require selected absence in both full channels and no raw/mapped errors; every warning/companion/unnamed error remains retained without a clean coverage claim."
@@ -1247,10 +1481,14 @@ object CompilerFixtureRunner {
             }
             mapOf("rule_id" to mapping.ruleId, "implemented" to implemented, "tested" to (implemented && allCases),
                 "qualified" to false, "attempted" to attempted, "provider_status" to providerStatus,
-                "selection_state" to if (nullabilitySelected() && mapping.ruleId in CompilerFixtureNullabilityPlan.RULE_IDS)
+                "selection_state" to if (diagnosticBreadthSelected() && mapping.ruleId in CompilerFixtureDiagnosticBreadthPlan.RULE_IDS)
+                    (if (mapping.ruleId in CompilerFixtureDiagnosticBreadthPlan.ruleIds(settings.cohort)) "private_diagnostic_breadth_source_oracles_not_ordinary_six_kind"
+                    else "unselected_diagnostic_breadth_not_run_not_excluded") else
+                    if (nullabilitySelected() && mapping.ruleId in CompilerFixtureNullabilityPlan.RULE_IDS)
                     "private_authored_nullability_observations_not_ordinary_six_kind" else
                     if (fixture == null) "not_run_unauthored_or_unsupported" else
                     if (timingProbe != null) "not_run_ordinary_six_kind_outside_probe_schedule" else
+                    if (diagnosticBreadthSelected()) "not_run_ordinary_six_kind_outside_diagnostic_breadth_schedule" else
                     if (nullabilitySelected()) "not_run_ordinary_six_kind_outside_nullability_schedule" else
                     if (supplementalSelected()) "not_run_ordinary_six_kind_outside_supplemental_schedule" else
                     if (settings.selects(fixture.authoredCohort, fixture.ruleId)) "selected_bounded" else "not_run_unselected_not_excluded",
@@ -1265,7 +1503,9 @@ object CompilerFixtureRunner {
                 "implementation_evidence" to if (implemented) implementation else emptyList<Any>(),
                 "qualification_evidence" to emptyList<Any>(), "gaps" to gaps) + if (nullabilitySelected()) mapOf(
                     "nullability_input_inventory" to nullabilityInventory(terminal, mapping.ruleId),
-                    "nullability_observations_are_not_ordinary_implementation_test_or_qualification_credit" to true) else emptyMap()
+                    "nullability_observations_are_not_ordinary_implementation_test_or_qualification_credit" to true) else if (diagnosticBreadthSelected()) mapOf(
+                    "diagnostic_breadth_input_inventory" to diagnosticBreadthInventory(terminal, mapping.ruleId),
+                    "diagnostic_breadth_observations_are_not_ordinary_implementation_test_or_qualification_credit" to true) else emptyMap()
         }
         val state = when {
             !intactProvenance -> "attempted_provenance_or_receipt_gaps"
@@ -1274,6 +1514,12 @@ object CompilerFixtureRunner {
                 terminal -> "private_timing_probe_partial_or_failed"
                 jobs.isEmpty() -> "private_timing_probe_startup_not_run"
                 else -> "private_timing_probe_in_progress_unqualified"
+            }
+            diagnosticBreadthSelected() -> when {
+                completionEligible -> "private_diagnostic_breadth_local_schedule_completion_candidate_unqualified"
+                terminal -> "private_diagnostic_breadth_partial_or_failed_unmatched_or_unknown_expectations"
+                jobs.isEmpty() -> "private_diagnostic_breadth_startup_not_run"
+                else -> "private_diagnostic_breadth_observations_in_progress_not_success"
             }
             nullabilitySelected() -> when {
                 terminal -> "private_nullability_partial_or_failed_six_unknown_suppression_expectations"
@@ -1306,7 +1552,7 @@ object CompilerFixtureRunner {
             "provenance_evidence" to listOf(reference(provenance.manifestPath), reference(provenanceCheck),
                 reference(checkpoint.ledger), reference(checkpoint.inventory), reference(runRoot.resolve("fixture-scope.json"))),
             "historical_tuple_policy" to "Other run UUIDs and their raw/sidecar bytes remain separate immutable evidence; no partial successes or historical failures are merged into this tuple.",
-            "rules" to rules) + probeCheckpoint() + supplementalCheckpoint(terminal, intactProvenance) + nullabilityCheckpoint(terminal, intactProvenance)
+            "rules" to rules) + probeCheckpoint() + supplementalCheckpoint(terminal, intactProvenance) + nullabilityCheckpoint(terminal, intactProvenance) + diagnosticBreadthCheckpoint(terminal, intactProvenance)
         val sidecarPath = checkpoint.directory.resolve("compiler-jvm-$VERSION.json")
         save(sidecarPath, sidecar, terminal = terminal)
         val summaryPath = checkpoint.directory.resolve("summary.json")
@@ -1334,7 +1580,7 @@ object CompilerFixtureRunner {
             "private_root_cleanup_evidence" to runRoot.resolve("private-root-cleanup.json").takeIf(evidence::contains)?.let(::reference),
             "intent_control_evidence" to runRoot.resolve("intent-controls.json").takeIf(evidence::contains)?.let(::reference),
             "transport_control_evidence" to runRoot.resolve("transport-controls.json").takeIf(evidence::contains)?.let(::reference)) +
-            probeCheckpoint() + supplementalCheckpoint(terminal, intactProvenance) + nullabilityCheckpoint(terminal, intactProvenance)
+            probeCheckpoint() + supplementalCheckpoint(terminal, intactProvenance) + nullabilityCheckpoint(terminal, intactProvenance) + diagnosticBreadthCheckpoint(terminal, intactProvenance)
         save(summaryPath, summary, terminal = terminal)
         // Only convenience destinations change. All hash references above name immutable checkpoint/job/assessment files.
         latestSidecar()?.let { save(it, sidecar, terminal = terminal, replace = true) }

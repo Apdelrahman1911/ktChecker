@@ -1,0 +1,203 @@
+{
+  "schema_version": 1,
+  "namespace": "compose-state-effects-v1",
+  "status": "authored_unrun_not_a_live_coverage_sidecar",
+  "actual_execution": null,
+  "actual_native_analysis_count": null,
+  "actual_fixture_pass_fail_skip": null,
+  "authored_rule_count": 8,
+  "authored_source_case_count": 61,
+  "default_activation_counts": {
+    "advisory": 5,
+    "opt_in": 3
+  },
+  "release_qualified": false,
+  "rules": [
+    {
+      "rule_id": "ktc.compose.pack.RememberMissing",
+      "default_activation": "advisory",
+      "authored_case_count": 8,
+      "state": "unavailable",
+      "reason": "compose_state_effects_corpus_not_run",
+      "provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "certificate_id": null,
+      "observed_raw_findings": null,
+      "future_owner_context_expectation": {
+        "rule_id": "ktc.compose.pack.RememberMissing",
+        "mode": "partial_reviewed_message_facets",
+        "expected_native_invocations_per_selected_job": 8,
+        "whole_rule_implemented_after_observation": false,
+        "whole_rule_state_after_observation": "unavailable",
+        "reason": "detekt_compose_partial_api_surface",
+        "tested": false,
+        "qualified": false
+      }
+    },
+    {
+      "rule_id": "ktc.compose.pack.RememberContentMissing",
+      "default_activation": "advisory",
+      "authored_case_count": 8,
+      "state": "unavailable",
+      "reason": "compose_state_effects_corpus_not_run",
+      "provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "certificate_id": null,
+      "observed_raw_findings": null,
+      "future_owner_context_expectation": {
+        "rule_id": "ktc.compose.pack.RememberContentMissing",
+        "mode": "reviewed_api_surface",
+        "expected_native_invocations_per_selected_job": 8,
+        "whole_rule_implemented_after_observation": true,
+        "whole_rule_state_after_observation": "findings_or_unknown",
+        "reason": null,
+        "tested": false,
+        "qualified": false
+      }
+    },
+    {
+      "rule_id": "ktc.compose.pack.LambdaParameterInRestartableEffect",
+      "default_activation": "advisory",
+      "authored_case_count": 8,
+      "state": "unavailable",
+      "reason": "compose_state_effects_corpus_not_run",
+      "provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "certificate_id": null,
+      "observed_raw_findings": null,
+      "future_owner_context_expectation": {
+        "rule_id": "ktc.compose.pack.LambdaParameterInRestartableEffect",
+        "mode": "unavailable_unattributed_surface",
+        "expected_native_invocations_per_selected_job": 0,
+        "whole_rule_implemented_after_observation": false,
+        "whole_rule_state_after_observation": "unavailable",
+        "reason": "detekt_compose_api_surface_unknown",
+        "tested": false,
+        "qualified": false
+      }
+    },
+    {
+      "rule_id": "ktc.compose.pack.ContentSlotReused",
+      "default_activation": "opt_in",
+      "authored_case_count": 8,
+      "state": "unavailable",
+      "reason": "compose_state_effects_corpus_not_run",
+      "provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "certificate_id": null,
+      "observed_raw_findings": null,
+      "future_owner_context_expectation": {
+        "rule_id": "ktc.compose.pack.ContentSlotReused",
+        "mode": "reviewed_api_surface",
+        "expected_native_invocations_per_selected_job": 8,
+        "whole_rule_implemented_after_observation": true,
+        "whole_rule_state_after_observation": "findings_or_unknown",
+        "reason": null,
+        "tested": false,
+        "qualified": false
+      }
+    },
+    {
+      "rule_id": "ktc.compose.pack.MutableStateAutoboxing",
+      "default_activation": "advisory",
+      "authored_case_count": 8,
+      "state": "unavailable",
+      "reason": "compose_state_effects_corpus_not_run",
+      "provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "certificate_id": null,
+      "observed_raw_findings": null,
+      "future_owner_context_expectation": {
+        "rule_id": "ktc.compose.pack.MutableStateAutoboxing",
+        "mode": "partial_reviewed_message_facets",
+        "expected_native_invocations_per_selected_job": 8,
+        "whole_rule_implemented_after_observation": false,
+        "whole_rule_state_after_observation": "unavailable",
+        "reason": "detekt_compose_partial_api_surface",
+        "tested": false,
+        "qualified": false
+      }
+    },
+    {
+      "rule_id": "ktc.compose.pack.StateParam",
+      "default_activation": "opt_in",
+      "authored_case_count": 7,
+      "state": "unavailable",
+      "reason": "compose_state_effects_corpus_not_run",
+      "provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "certificate_id": null,
+      "observed_raw_findings": null,
+      "future_owner_context_expectation": {
+        "rule_id": "ktc.compose.pack.StateParam",
+        "mode": "reviewed_api_surface",
+        "expected_native_invocations_per_selected_job": 7,
+        "whole_rule_implemented_after_observation": true,
+        "whole_rule_state_after_observation": "findings_or_unknown",
+        "reason": null,
+        "tested": false,
+        "qualified": false
+      }
+    },
+    {
+      "rule_id": "ktc.compose.pack.MutableStateParam",
+      "default_activation": "opt_in",
+      "authored_case_count": 7,
+      "state": "unavailable",
+      "reason": "compose_state_effects_corpus_not_run",
+      "provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "certificate_id": null,
+      "observed_raw_findings": null,
+      "future_owner_context_expectation": {
+        "rule_id": "ktc.compose.pack.MutableStateParam",
+        "mode": "unavailable_unattributed_surface",
+        "expected_native_invocations_per_selected_job": 0,
+        "whole_rule_implemented_after_observation": false,
+        "whole_rule_state_after_observation": "unavailable",
+        "reason": "detekt_compose_api_surface_unknown",
+        "tested": false,
+        "qualified": false
+      }
+    },
+    {
+      "rule_id": "ktc.compose.pack.UnstableCollections",
+      "default_activation": "advisory",
+      "authored_case_count": 7,
+      "state": "unavailable",
+      "reason": "compose_state_effects_corpus_not_run",
+      "provenance": "not_executed",
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "certificate_id": null,
+      "observed_raw_findings": null,
+      "future_owner_context_expectation": {
+        "rule_id": "ktc.compose.pack.UnstableCollections",
+        "mode": "reviewed_api_surface",
+        "expected_native_invocations_per_selected_job": 7,
+        "whole_rule_implemented_after_observation": true,
+        "whole_rule_state_after_observation": "findings_or_unknown",
+        "reason": null,
+        "tested": false,
+        "qualified": false
+      }
+    }
+  ],
+  "interpretation": "Authored source programs, literal-span oracles and future task wiring do not attest any detector execution, parser compatibility, rule delivery, precision or release qualification. Future per-run evidence is separate and does not overwrite this pending document.",
+  "unchanged": "Existing31-rule/287-analysis SOURCE inventory, prior cohorts, coverage snapshots, catalogs and historical results are not amended."
+}

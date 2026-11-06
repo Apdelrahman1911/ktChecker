@@ -76,7 +76,7 @@ coverage, or the warm 1–3-second objective. The catalog remains the release
 requirements ledger; a separate machine-readable report records evidence:
 
 ```bash
-python3 scripts/rule_coverage.py --output build/reports/rule-coverage.json
+python3 -I -B -S scripts/run_current_coverage.py --output build/reports/rule-coverage.json
 ```
 
 [Implementation evidence](docs/implementation-evidence.md) distinguishes observed,

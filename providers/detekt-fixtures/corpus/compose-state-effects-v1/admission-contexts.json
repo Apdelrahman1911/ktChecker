@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "rules": [
+    {
+      "rule_id": "ktc.compose.pack.RememberMissing",
+      "mode": "partial_reviewed_message_facets",
+      "expected_native_invocations_per_selected_job": 8,
+      "whole_rule_implemented_after_observation": false,
+      "whole_rule_state_after_observation": "unavailable",
+      "reason": "detekt_compose_partial_api_surface",
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "rule_id": "ktc.compose.pack.RememberContentMissing",
+      "mode": "reviewed_api_surface",
+      "expected_native_invocations_per_selected_job": 8,
+      "whole_rule_implemented_after_observation": true,
+      "whole_rule_state_after_observation": "findings_or_unknown",
+      "reason": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "rule_id": "ktc.compose.pack.LambdaParameterInRestartableEffect",
+      "mode": "unavailable_unattributed_surface",
+      "expected_native_invocations_per_selected_job": 0,
+      "whole_rule_implemented_after_observation": false,
+      "whole_rule_state_after_observation": "unavailable",
+      "reason": "detekt_compose_api_surface_unknown",
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "rule_id": "ktc.compose.pack.ContentSlotReused",
+      "mode": "reviewed_api_surface",
+      "expected_native_invocations_per_selected_job": 8,
+      "whole_rule_implemented_after_observation": true,
+      "whole_rule_state_after_observation": "findings_or_unknown",
+      "reason": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "rule_id": "ktc.compose.pack.MutableStateAutoboxing",
+      "mode": "partial_reviewed_message_facets",
+      "expected_native_invocations_per_selected_job": 8,
+      "whole_rule_implemented_after_observation": false,
+      "whole_rule_state_after_observation": "unavailable",
+      "reason": "detekt_compose_partial_api_surface",
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "rule_id": "ktc.compose.pack.StateParam",
+      "mode": "reviewed_api_surface",
+      "expected_native_invocations_per_selected_job": 7,
+      "whole_rule_implemented_after_observation": true,
+      "whole_rule_state_after_observation": "findings_or_unknown",
+      "reason": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "rule_id": "ktc.compose.pack.MutableStateParam",
+      "mode": "unavailable_unattributed_surface",
+      "expected_native_invocations_per_selected_job": 0,
+      "whole_rule_implemented_after_observation": false,
+      "whole_rule_state_after_observation": "unavailable",
+      "reason": "detekt_compose_api_surface_unknown",
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "rule_id": "ktc.compose.pack.UnstableCollections",
+      "mode": "reviewed_api_surface",
+      "expected_native_invocations_per_selected_job": 7,
+      "whole_rule_implemented_after_observation": true,
+      "whole_rule_state_after_observation": "findings_or_unknown",
+      "reason": null,
+      "tested": false,
+      "qualified": false
+    }
+  ],
+  "controls": [
+    {
+      "id": "untrusted-library-labels",
+      "mechanism": "analysis_without_library_permit",
+      "expected_reason": "detekt_compose_library_not_authorized",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "copied-approved-profile",
+      "mechanism": "analysis_without_library_permit",
+      "expected_reason": "detekt_compose_library_not_authorized",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "missing-runtime",
+      "mechanism": "trusted_owner_exact_compilation_missing_runtime",
+      "expected_reason": "detekt_compose_library_missing",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "missing-annotations",
+      "mechanism": "trusted_owner_exact_compilation_missing_annotation_variant",
+      "expected_reason": "detekt_compose_library_missing",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "unsupported-runtime",
+      "mechanism": "trusted_owner_separately_pinned_actual_other_runtime_vector",
+      "expected_reason": "detekt_compose_tuple_unsupported",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "wrong-source-set",
+      "mechanism": "preparation_rejection_not_unavailable_result",
+      "expected_reason": "detekt_compose_compilation_mismatch",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "wrong-membership",
+      "mechanism": "preparation_rejection_not_unavailable_result",
+      "expected_reason": "detekt_compose_compilation_members_mismatch",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "reordered-dependencies",
+      "mechanism": "preparation_rejection_not_unavailable_result",
+      "expected_reason": "detekt_compose_compilation_mismatch",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "profile-present-at-prepare",
+      "mechanism": "preparation_rejection_not_unavailable_result",
+      "expected_reason": "detekt_compose_preparation_profile_present",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "changed-owner-resolution",
+      "mechanism": "live_prepared_owner_selection_changed",
+      "expected_reason": "detekt_compose_owner_resolution_changed",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "provider-instance-rebind",
+      "mechanism": "live_permit_copied_to_another_provider",
+      "expected_reason": "detekt_compose_binding_mismatch",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "revoked-library-permit",
+      "mechanism": "closed_library_permit",
+      "expected_reason": "detekt_compose_library_not_authorized",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    },
+    {
+      "id": "owner-disabled-selected-rule",
+      "mechanism": "live_library_permit_but_owner_configuration_disabled",
+      "expected_reason": "rule_disabled_by_owner_selected_configuration",
+      "expected_runner_callbacks": 0,
+      "promoted_findings": 0,
+      "execution_observation": null,
+      "tested": false,
+      "qualified": false
+    }
+  ],
+  "additional_rule_specific_control": {
+    "rule_id": "ktc.compose.pack.UnstableCollections",
+    "id": "missing-immutable-family",
+    "expected_reason": "detekt_compose_api_surface_unknown",
+    "expected_runner_callbacks": 0
+  },
+  "source_set_control": "Every rule has selected-main-excludes-test: actual captured test SOURCE contains a positive, but exact main membership excludes it. No pathname-based blanket assumption.",
+  "partial_facet_controls": [
+    {
+      "rule_id": "ktc.compose.pack.RememberMissing",
+      "case_id": "unrelated-factory-homonym",
+      "raw_locations": 2,
+      "admitted_locations": 1,
+      "withheld_locations": 1
+    },
+    {
+      "rule_id": "ktc.compose.pack.MutableStateAutoboxing",
+      "case_id": "remember-does-not-remove-boxing",
+      "raw_locations": 2,
+      "admitted_locations": 1,
+      "withheld_locations": 1
+    }
+  ],
+  "non_composable_scope": "MutableStateAutoboxing positive and suppression controls intentionally have no @Composable. No blanket annotation prerequisite is permitted.",
+  "unattributed_not_universal_dependency_requirements": {
+    "MutableStateParam": "A parameter-name diagnostic has one message for generic/scalar state and primitive holders. This packet has no owner-bound resolved-type site witness. Missing optional collection APIs alone must not be described as a universal dependency requirement for genuine scalar sites.",
+    "LambdaParameterInRestartableEffect": "A parameter-name diagnostic aggregates across the whole composable. No owner-bound closed inventory attributes all runtime3/lifecycle3/Circuit/KeyedEffect sites. A single LaunchedEffect fixture or absent import is not that witness."
+  },
+  "owner_boundary": "The native harness is installed trusted fixture-owner code. It independently re-reads an explicitly owner-selected digest-pinned complete dependency descriptor and resolves fixed fixture compilation scope/membership from registered immutable SnapshotStore captures, never from the AnalysisInput argument. No request/model/library tag is authority.",
+  "no_execution_yet": true,
+  "no_passing_negative_or_certificate": true
+}

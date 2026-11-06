@@ -3,16 +3,21 @@ import { lstat, readFile } from 'node:fs/promises';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 import { bridgeConfigSchema, serveBridge } from './server.js';
 import { RestartingJsonLineRpc } from './rpc.js';
-import { assertPrivateStatePlatform } from './private-state.js';
+import { darwinPrivateStateBackend, nativePrivateStatePath } from './private-state.js';
 
 async function main(): Promise<void> {
+  const backend = darwinPrivateStateBackend();
   const args = process.argv.slice(2);
   if (args.length !== 2 || args[0] !== '--config' || !args[1]) throw new Error('Usage: ktchecker-mcp-preview --config OWNER_PRIVATE_JSON');
-  assertPrivateStatePlatform();
-  const stat = await lstat(args[1]);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 1_048_576) throw new Error('Configuration must be a bounded regular private file');
-  if ((stat.mode & 0o077) !== 0 || (process.getuid && stat.uid !== process.getuid())) throw new Error('Configuration must be owned by this user and mode 0600');
-  const config = bridgeConfigSchema.parse(JSON.parse(await readFile(args[1], 'utf8')));
+  let bytes: string;
+  if (backend) bytes = backend.readConfig(nativePrivateStatePath(args[1])).toString('utf8');
+  else {
+    const stat = await lstat(args[1]);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 1_048_576) throw new Error('Configuration must be a bounded regular private file');
+    if ((stat.mode & 0o077) !== 0 || (process.getuid && stat.uid !== process.getuid())) throw new Error('Configuration must be owned by this user and mode 0600');
+    bytes = await readFile(args[1], 'utf8');
+  }
+  const config = bridgeConfigSchema.parse(JSON.parse(bytes));
   const broker = new RestartingJsonLineRpc({ command: config.broker.command, args: config.broker.args,
     ...(config.broker.cwd ? { cwd: config.broker.cwd } : {}) });
   const handle = serveBridge(broker, config, {

@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.visitors.FirVisitorVoid
 import org.jetbrains.kotlin.resolve.multiplatform.ExpectActualMatchingCompatibility
+import org.jetbrains.kotlin.types.ConstantValueKind
 import java.util.Collections
 import java.util.IdentityHashMap
 
@@ -37,6 +38,14 @@ internal class FirFactExtractor(
     private val types = mutableListOf<TypeUseFact>()
     private val relations = mutableListOf<ExpectActualFact>()
     private val unknown = mutableListOf<UnknownSemanticFact>()
+    private val binaryOrigins = emitter.binaryOriginObserver?.let { mutableListOf<JvmBinaryOriginObservation>() }
+    private val observeDirectIntLiteralArguments = when (emitter.request.directIntLiteralArgumentVersion) {
+        null -> false
+        DIRECT_INT_LITERAL_ARGUMENT_VERSION -> true
+        else -> throw SemanticFactException("semantic_direct_int_literal_request_version_unsupported",
+            "This producer supports only the explicitly requested literal argument vocabulary v1")
+    }
+    private var literalArgumentObservations = 0
     private var visited = 0
     private var convertedTypeNodes = 0
 
@@ -84,7 +93,8 @@ internal class FirFactExtractor(
             declarations.sorted(), symbols.values.distinctBy { it.id }.sortedBy { it.id },
             calls.distinct().sortedWith(compareBy({ it.source.startByte }, { it.targetSymbolId })),
             types.distinct().sortedBy { it.source.startByte }, relations.distinct().sortedBy { it.actualSymbolId },
-            unknown.distinct().sortedWith(compareBy({ it.source?.startByte ?: -1 }, { it.kind }, { it.reason })))
+            unknown.distinct().sortedWith(compareBy({ it.source?.startByte ?: -1 }, { it.kind }, { it.reason })),
+            jvmBinaryOrigins = binaryOrigins?.let(::jvmBinaryOriginSurvey))
     }
 
     private fun access(expression: FirQualifiedAccessExpression, containing: String?) {
@@ -98,11 +108,18 @@ internal class FirFactExtractor(
         val result = expressionType(expression)
         unknownType(result, "call_type", source)
         val function = expression as? FirFunctionCall
-        val arguments = (function?.argumentList as? FirResolvedArgumentList)?.mapping?.map { (argument, parameter) ->
+        val mapping = (function?.argumentList as? FirResolvedArgumentList)?.mapping
+        if (observeDirectIntLiteralArguments && mapping != null && mapping.size > DIRECT_INT_LITERAL_ARGUMENTS_PER_CALL_LIMIT) {
+            throw SemanticFactException("semantic_direct_int_literal_shape_limit", "Too many mapped literal argument outcomes")
+        }
+        val arguments = mapping?.map { (argument, parameter) ->
             val parameters = (reference.resolvedSymbol.fir as? FirFunction)?.valueParameters.orEmpty()
             val index = parameters.indexOfFirst { it.symbol === parameter.symbol }
             if (index < 0) unknown += UnknownSemanticFact("argument", "parameter_binding_not_in_selected_signature", source)
-            ArgumentBindingFact(span(argument.source), index, parameter.name.asString())
+            val argumentSource = span(argument.source)
+            ArgumentBindingFact(argumentSource, index, parameter.name.asString(),
+                directIntLiteral = if (observeDirectIntLiteralArguments && index >= 0)
+                    directIntLiteralArgument(argument, argumentSource, source) else null)
         }.orEmpty()
         if (function != null && function.argumentList.arguments.isNotEmpty() && function.argumentList !is FirResolvedArgumentList) {
             unknown += UnknownSemanticFact("argument", "argument_mapping_unavailable", source)
@@ -114,6 +131,34 @@ internal class FirFactExtractor(
         }, target.id, containing, result,
             expression.dispatchReceiver?.let(::expressionType),
             expression.extensionReceiver?.let(::expressionType), arguments)
+    }
+
+    /**
+     * Inspect exactly the compiler object in the resolved mapping. In particular, never unwrap
+     * named/spread/smart-cast nodes, parse source text, evaluate unary calls, or follow properties.
+     * Kotlin 2.4.21's FirLiteralExpression documents kind, not value's boxed class, as authoritative
+     * for signedness. Parsed integer literals retain a Long payload after kind approximation.
+     * Both the exact Int kind and the existing resolved Int type are still required.
+     */
+    private fun directIntLiteralArgument(argument: FirExpression, argumentSource: SemanticSpan?,
+                                         callSource: SemanticSpan): DirectIntLiteralArgumentFact {
+        if (++literalArgumentObservations > DIRECT_INT_LITERAL_ARGUMENTS_PER_SHARD_LIMIT) {
+            throw SemanticFactException("semantic_direct_int_literal_shape_limit", "Literal argument outcomes exceed the bounded vocabulary")
+        }
+        fun unsupported(reason: DirectIntLiteralArgumentReason) =
+            DirectIntLiteralArgumentFact(DirectIntLiteralArgumentState.UNSUPPORTED, reason = reason)
+        fun unavailable(reason: DirectIntLiteralArgumentReason) =
+            DirectIntLiteralArgumentFact(DirectIntLiteralArgumentState.UNKNOWN, reason = reason)
+        if (argumentSource == null) return unavailable(DirectIntLiteralArgumentReason.SOURCE_UNAVAILABLE)
+        if (argumentSource.synthetic || callSource.synthetic) return unavailable(DirectIntLiteralArgumentReason.SOURCE_SYNTHETIC)
+        if (argument !is FirLiteralExpression) return unsupported(DirectIntLiteralArgumentReason.NOT_DIRECT_FIR_LITERAL)
+        if (argument.kind != ConstantValueKind.Int) return unsupported(DirectIntLiteralArgumentReason.LITERAL_KIND_NOT_INT)
+        val value = directIntLiteralSignedValue(argument.value)
+            ?: return unsupported(DirectIntLiteralArgumentReason.VALUE_NOT_INT)
+        val literalType = expressionType(argument)
+        if (!literalType.known) return unavailable(DirectIntLiteralArgumentReason.TYPE_UNAVAILABLE)
+        if (!isDirectIntLiteralType(literalType)) return unsupported(DirectIntLiteralArgumentReason.TYPE_NOT_EXACT_INT)
+        return DirectIntLiteralArgumentFact(DirectIntLiteralArgumentState.OBSERVED, value = value)
     }
 
     private fun symbol(symbol: FirBasedSymbol<*>): SymbolFact {
@@ -155,6 +200,9 @@ internal class FirFactExtractor(
         // non-local overload does not merge it with another overload or change its signature key.
         val result = descriptor.copy(id = resolvedSymbolIdentity(descriptor))
         symbols[symbol] = result
+        emitter.binaryOriginObserver?.let {
+            requireNotNull(binaryOrigins).add(it.observe(symbol, result.id, file.moduleData.platform))
+        }
         if (kind == "unsupported_symbol" || qualifiedName == "<unknown>") {
             unknown += UnknownSemanticFact("symbol", "unsupported_compiler_symbol_kind", location)
         }
@@ -329,4 +377,16 @@ internal class FirFactExtractor(
     private fun unknownType(type: TypeFact, kind: String, source: SemanticSpan?) {
         if (!type.known) unknown += UnknownSemanticFact(kind, type.reason ?: "nested_type_information_unknown", source)
     }
+}
+
+/**
+ * Exact signed payload decoding only, AFTER the producer has required ConstantValueKind.Int.
+ * Kotlin's parsed integer literal payload can stay Long when its kind becomes Int. Narrow only
+ * that exact boxed class, after both signed bounds; never call Number.toInt or reinterpret UInt.
+ * An already boxed Int needs no conversion. This helper alone proves no FIR kind, type or origin.
+ */
+internal fun directIntLiteralSignedValue(value: Any?): Int? = when (value) {
+    is Int -> value
+    is Long -> if (value >= Int.MIN_VALUE.toLong() && value <= Int.MAX_VALUE.toLong()) value.toInt() else null
+    else -> null
 }

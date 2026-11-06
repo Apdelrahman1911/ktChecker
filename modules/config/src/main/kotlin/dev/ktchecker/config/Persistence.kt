@@ -22,6 +22,8 @@ import java.util.concurrent.locks.ReentrantLock
 
 /** Trusted fault/telemetry hook; never supplied by a model or mutation request. */
 interface ConfigWriteObserver {
+    /** Called before, not instead of, the required native directory synchronization. */
+    fun beforeDirectorySync(directory: Path) {}
     fun beforeAtomicReplace(temporary: Path, destination: Path) {}
     fun afterAtomicReplace(destination: Path) {}
 
@@ -42,7 +44,7 @@ internal class ConfigPersistence(stateRoot: Path, private val observer: ConfigWr
 
     init {
         val absolute = stateRoot.toAbsolutePath().normalize()
-        createDirectoryTree(absolute)
+        createDirectoryTree(absolute, observer)
         if (Files.isSymbolicLink(absolute) || !Files.isDirectory(absolute, NOFOLLOW_LINKS)) {
             throw ConfigReadException("Configuration state root must be a real directory.")
         }
@@ -58,7 +60,7 @@ internal class ConfigPersistence(stateRoot: Path, private val observer: ConfigWr
 
     fun <T> withLock(binding: ConfigBinding, block: (ConfigStoragePaths) -> T): T {
         val paths = paths(binding)
-        createDirectoryTree(paths.lock.parent)
+        createDirectoryTree(paths.lock.parent, observer)
         requireWithinRoot(paths.lock.parent)
         val localLock = JVM_LOCKS.computeIfAbsent(paths.lock.toString()) { ReentrantLock(true) }
         if (localLock.isHeldByCurrentThread) throw ConfigException("Do not recursively enter configuration storage from a config fence.")
@@ -111,7 +113,7 @@ internal class ConfigPersistence(stateRoot: Path, private val observer: ConfigWr
     fun replace(path: Path, document: PolicyDocument) {
         val bytes = ContractJson.encodeToString(document).toByteArray(Charsets.UTF_8)
         if (bytes.size.toLong() > MAX_DOCUMENT_BYTES) throw ConfigValidationException("Configuration exceeds its durable size bound.")
-        createDirectoryTree(path.parent)
+        createDirectoryTree(path.parent, observer)
         requireWithinRoot(path.parent)
         var temporary: Path? = null
         var replaced = false
@@ -130,7 +132,7 @@ internal class ConfigPersistence(stateRoot: Path, private val observer: ConfigWr
             Files.move(temporary, path, ATOMIC_MOVE, REPLACE_EXISTING)
             replaced = true
             observer.afterAtomicReplace(path)
-            forceDirectory(path.parent)
+            forceDirectory(path.parent, observer)
         } catch (e: Exception) {
             val detail = if (e is AtomicMoveNotSupportedException) "Atomic configuration replacement is unsupported; no non-atomic fallback." else
                 if (replaced) "Configuration may have been applied, but durability could not be confirmed; inspect before retrying." else
@@ -155,16 +157,20 @@ internal class ConfigPersistence(stateRoot: Path, private val observer: ConfigWr
 
     private companion object {
         const val MAX_DOCUMENT_BYTES = 16L * 1024 * 1024
+        const val DIRECTORY_SYNC_FAILURE = "Configuration directory synchronization failed; durability is unconfirmed."
         val ABSENT_DIGEST = Digests.sha256("ktchecker/config/absent/1")
         val JVM_LOCKS = ConcurrentHashMap<String, ReentrantLock>()
 
-        fun createDirectoryTree(path: Path) {
+        fun createDirectoryTree(path: Path, observer: ConfigWriteObserver) {
             val absolute = path.toAbsolutePath().normalize()
             if (Files.exists(absolute, NOFOLLOW_LINKS)) {
                 if (Files.isSymbolicLink(absolute) || !Files.isDirectory(absolute, NOFOLLOW_LINKS)) throw ConfigReadException("Unsafe configuration directory.")
+                // Visibility does not prove that a peer has synced this directory link.
+                forceDirectory(absolute, observer)
+                absolute.parent?.let { forceDirectory(it, observer) }
                 return
             }
-            absolute.parent?.let { createDirectoryTree(it) }
+            absolute.parent?.let { createDirectoryTree(it, observer) }
             try {
                 Files.createDirectory(absolute, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")))
             } catch (_: UnsupportedOperationException) {
@@ -173,12 +179,21 @@ internal class ConfigPersistence(stateRoot: Path, private val observer: ConfigWr
                 if (Files.isSymbolicLink(absolute) || !Files.isDirectory(absolute, NOFOLLOW_LINKS)) throw ConfigReadException("Unsafe configuration directory.")
             }
             // Persist newly created directory links before claiming a durable first write.
-            forceDirectory(absolute)
-            absolute.parent?.let { forceDirectory(it) }
+            forceDirectory(absolute, observer)
+            absolute.parent?.let { forceDirectory(it, observer) }
         }
 
-        fun forceDirectory(path: Path) {
-            FileChannel.open(path, READ).use { it.force(true) }
+        fun forceDirectory(path: Path, observer: ConfigWriteObserver) {
+            // Required on every host. Diagnostic normalization is not a fallback;
+            // replace() still marks a post-move failure as possiblyApplied.
+            try {
+                observer.beforeDirectorySync(path)
+                FileChannel.open(path, READ).use { it.force(true) }
+            } catch (error: IOException) {
+                throw ConfigReadException(DIRECTORY_SYNC_FAILURE, error)
+            } catch (error: UnsupportedOperationException) {
+                throw ConfigReadException(DIRECTORY_SYNC_FAILURE, error)
+            }
         }
     }
 }

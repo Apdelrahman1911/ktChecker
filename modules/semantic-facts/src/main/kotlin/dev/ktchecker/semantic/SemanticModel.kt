@@ -1,8 +1,11 @@
+@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+
 package dev.ktchecker.semantic
 
 import dev.ktchecker.contracts.ArtifactIdentity
 import dev.ktchecker.contracts.ContractJson
 import dev.ktchecker.contracts.Digests
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.encodeToJsonElement
@@ -11,6 +14,11 @@ import java.util.Collections
 const val SEMANTIC_ADAPTER_ID = "kotlin-fir-2.4.21/v1"
 const val SEMANTIC_COMPILER_VERSION = "2.4.21"
 const val SEMANTIC_PLUGIN_ID = "dev.ktchecker.semantic-facts"
+const val DIRECT_INT_LITERAL_ARGUMENT_VERSION = 1
+
+internal const val DIRECT_INT_LITERAL_ARGUMENTS_PER_CALL_LIMIT = 256
+internal const val DIRECT_INT_LITERAL_ARGUMENTS_PER_SHARD_LIMIT = 20_000
+internal const val DIRECT_INT_LITERAL_ARGUMENTS_PER_BUNDLE_LIMIT = 100_000
 
 /** A selected tuple is not a qualified tuple. Only the trusted execution owner supplies this input. */
 @Serializable
@@ -31,6 +39,12 @@ data class SemanticFactsRequest(
     val compilerVersion: String = SEMANTIC_COMPILER_VERSION,
     val adapterId: String = SEMANTIC_ADAPTER_ID,
     val schemaVersion: Int = 1,
+    /** Separate opt-in observation, never a request for execution or binary-ownership authority. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val observeJvmBinaryOrigins: Boolean = false,
+    /** Independent opt-in vocabulary. Null means NOT OBSERVED, never complete literal coverage. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val directIntLiteralArgumentVersion: Int? = null,
 ) {
     fun digest(): String = Digests.sha256("ktchecker:semantic-request:v1\u0000" +
         Digests.canonical(ContractJson.encodeToJsonElement(this)))
@@ -139,7 +153,50 @@ fun resolvedSymbolIdentity(symbol: SymbolFact): String = Digests.sha256("ktcheck
     ContractJson.encodeToString(symbol.copy(id = "", source = if (symbol.local) symbol.source else null)))
 
 @Serializable
-data class ArgumentBindingFact(val source: SemanticSpan?, val parameterIndex: Int, val parameterName: String)
+enum class DirectIntLiteralArgumentState { OBSERVED, UNSUPPORTED, UNKNOWN }
+
+/** Fixed reasons keep this optional scalar vocabulary bounded; no compiler object/text escapes. */
+@Serializable
+enum class DirectIntLiteralArgumentReason {
+    NOT_DIRECT_FIR_LITERAL,
+    LITERAL_KIND_NOT_INT,
+    VALUE_NOT_INT,
+    TYPE_NOT_EXACT_INT,
+    SOURCE_UNAVAILABLE,
+    SOURCE_SYNTHETIC,
+    TYPE_UNAVAILABLE,
+}
+
+/**
+ * A compiler observation of the mapped argument object, not evaluation of source expressions.
+ * OBSERVED requires exactly an Int value and no reason. Other states require their fixed reason
+ * and no value. Validation cannot authenticate caller-created DTOs or confer execution authority.
+ * Unary/wrapper evaluation, const/variable propagation and descriptor/alias/count proof are absent.
+ */
+@Serializable
+data class DirectIntLiteralArgumentFact(
+    val state: DirectIntLiteralArgumentState,
+    val value: Int? = null,
+    val reason: DirectIntLiteralArgumentReason? = null,
+    @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+    val version: Int = DIRECT_INT_LITERAL_ARGUMENT_VERSION,
+)
+
+/** Shared by the real FIR producer and data-only guard controls; it is not provenance evidence. */
+internal fun isDirectIntLiteralType(type: TypeFact): Boolean = type.known &&
+    type.kind == "class" && type.classifierId == "kotlin.Int" && type.nullable == false &&
+    type.arguments.isEmpty() && type.components.isEmpty() &&
+    type.parameterOwner == null && type.parameterIndex == null
+
+@Serializable
+data class ArgumentBindingFact(
+    val source: SemanticSpan?,
+    val parameterIndex: Int,
+    val parameterName: String,
+    /** Absent is NOT OBSERVED, including on an opted-in request; it is never a clean result. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val directIntLiteral: DirectIntLiteralArgumentFact? = null,
+)
 
 /** This is a statically resolved call/access target, not a complete dynamic call graph. */
 @Serializable
@@ -197,6 +254,9 @@ data class SemanticFactShard(
     val unknown: List<UnknownSemanticFact>,
     val adapterId: String = SEMANTIC_ADAPTER_ID,
     val schemaVersion: Int = 1,
+    /** Absent by default/old adapter: binary origins are NOT OBSERVED, never implicitly verified. */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val jvmBinaryOrigins: JvmBinaryOriginSurvey? = null,
 )
 
 @Serializable
@@ -210,6 +270,7 @@ data class SemanticFactBundle(
     val compilerExitCode: Int?,
     val reasons: List<String>,
     val shards: List<SemanticFactShard>,
+    /** Original core vocabulary only; never literal/descriptor coverage or rule qualification. */
     val completeForSupportedVocabulary: Boolean,
     val tupleQualified: Boolean = false,
     val customRulesQualified: Boolean = false,

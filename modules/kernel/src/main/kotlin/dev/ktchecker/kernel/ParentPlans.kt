@@ -52,11 +52,14 @@ internal class ParentPlans(
         if (!service.ingestion.tryAcquire()) fail("ingestion_busy", "Bounded input ingestion is busy; retry before acceptance")
         val staged = linkedMapOf<String, InputArchive.Staged>()
         try {
-            val batch = resolveBatch(binding, request)
+            val declared = freeze(authority.resolve(binding, request)
+                ?: fail("plan_authority_unavailable", "Only the trusted controller can resolve a complete registered review plan"))
+            if (declared.jvmProduced != null) return service.producedPlans.submit(credential, binding, request, declared)
+            val batch = resolveBatch(binding, request, declared)
             val children = batch.admissions.flatMap { it.children }
             ledger.read { c -> authenticateRecipients(c, batch); preflight(c, batch.admissions) }
             verifyPreparations(batch)
-            val stageBudget = ledger.read { c -> config.maxArchiveBytes - c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM work") }
+            val stageBudget = ledger.read { c -> config.maxArchiveBytes - service.archiveBytesUsed(c) }
             var stagedBytes = 0L
             children.distinctBy { it.key }.forEach { child ->
                 val exists = ledger.read { c -> c.count("SELECT COUNT(*) FROM work WHERE work_key=?", child.key) != 0L }
@@ -83,7 +86,7 @@ internal class ParentPlans(
                 preflight(c, batch.admissions)
                 val missing = children.distinctBy { it.key }.filter { c.count("SELECT COUNT(*) FROM work WHERE work_key=?", it.key) == 0L }
                 var bytes = 0L
-                val available = config.maxArchiveBytes - c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM work")
+                val available = config.maxArchiveBytes - service.archiveBytesUsed(c)
                 missing.forEach { child ->
                     val ready = staged[child.key] ?: fail("archive_missing", "Prepared plan input is unavailable")
                     if (ready.bytes > available - bytes) fail("archive_full", "Whole parent plan exceeds durable archive quota")
@@ -158,9 +161,7 @@ internal class ParentPlans(
         return ContractJson.decodeFromString(encoded)
     }
 
-    private fun resolveBatch(binding: ClientBinding, request: SubmitPlanRequest): Batch {
-        val declared = freeze(authority.resolve(binding, request)
-            ?: fail("plan_authority_unavailable", "Only the trusted controller can resolve a complete registered review plan"))
+    private fun resolveBatch(binding: ClientBinding, request: SubmitPlanRequest, declared: RequiredReviewPlan): Batch {
         val definition = normalize(binding, request, declared, allowRouting = true)
         if (declared.requiredRecipientClientIds == listOf(binding.clientId)) return Batch(listOf(admission(definition)))
         if (definition != declared) fail("routing_plan_not_canonical", "Routed owner-prepared plans must already have canonical slot and input ordering")
@@ -253,6 +254,7 @@ internal class ParentPlans(
 
     private fun normalize(binding: ClientBinding, request: SubmitPlanRequest, definition: RequiredReviewPlan, allowRouting: Boolean = false): RequiredReviewPlan {
         validateRequest(request)
+        if (definition.jvmProduced != null) fail("produced_plan_routing_unavailable", "Declared JVM execution is not an ordinary/routed slot")
         if (definition.binding != binding) fail("plan_binding_mismatch", "Plan belongs to another client, namespace or generation")
         if (definition.request != request) fail("plan_request_mismatch", "Registered plan is bound to another exact patch, idempotency key or reference")
         if (definition.requiredRecipientClientIds.size !in 1..64 || definition.requiredRecipientClientIds.distinct().size != definition.requiredRecipientClientIds.size ||
@@ -302,7 +304,7 @@ internal class ParentPlans(
         val children = admissions.flatMap { it.children }
         if (children.size > config.maxRetainedReviews - c.count("SELECT COUNT(*) FROM reviews")) fail("ledger_full", "Whole parent plan exceeds retained obligations quota")
         val queued = children.distinctBy { it.key }.count { it.slot.state == "pending" && c.count("SELECT COUNT(*) FROM work WHERE work_key=?", it.key) == 0L }
-        if (queued > config.maxQueuedWork - c.count("SELECT COUNT(*) FROM work WHERE state='queued'")) fail("queue_full", "Whole parent plan exceeds the durable work queue")
+        if (queued > config.maxQueuedWork - service.queuedCapacityUsed(c)) fail("queue_full", "Whole parent plan exceeds the durable work queue")
         admissions.forEach { admission ->
             val pending = service.pendingReviews(c, admission.binding.clientId)
             val added = admission.children.count { it.slot.state == "pending" && c.count("SELECT COUNT(*) FROM work WHERE work_key=? AND state='complete'", it.key) == 0L }
@@ -312,11 +314,12 @@ internal class ParentPlans(
 
     private fun acceptChild(c: Connection, binding: ClientBinding, child: Child, staged: InputArchive.Staged?): ReviewStatus {
         val input = child.slot.input
-        if (c.count("SELECT COUNT(*) FROM work WHERE work_key=?", child.key) == 0L) {
+        val workDomain = c.one("SELECT provider_key,fair_key FROM work WHERE work_key=?", child.key) { it.getString(1) to it.getString(2) }
+        val fairKey = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
+        if (workDomain != null && workDomain != (service.providerKey to fairKey)) fail("ledger_corrupt", "Retained parent work has a different provider or physical worktree")
+        ledger.admitProviderFairness(c, workDomain?.first ?: service.providerKey, workDomain?.second ?: fairKey, binding.clientId)
+        if (workDomain == null) {
             val ready = staged ?: fail("archive_missing", "Prepared parent input is unavailable")
-            val fairKey = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
-            c.execute("""INSERT OR IGNORE INTO fair_queues(fair_key,last_served)
-                VALUES(?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", fairKey)
             c.execute("""INSERT INTO work(work_key,input_json,frozen_json,provider_key,fair_key,state,archive_bytes,created_at)
                 VALUES(?,?,?,?,?,?,?,?)""", child.key, canonical(input), canonical(ready.input), service.providerKey, fairKey,
                 if (child.slot.state == "pending") "queued" else "complete", ready.bytes, System.currentTimeMillis())
@@ -334,8 +337,6 @@ internal class ParentPlans(
         c.execute("""INSERT INTO reviews(review_id,client_id,patch_id,idempotency_key,request_hash,request_json,input_json,work_key,sequence,policy_certificate,created_at)
             VALUES(?,?,?,?,?,?,?,?,?,?,?)""", review, binding.clientId, child.request.patchId, child.request.idempotencyKey,
             Digests.sha256(requestJson), requestJson, canonical(input), child.key, sequence, service.admittedPolicyCertificate, System.currentTimeMillis())
-        c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
-            SELECT ?,fair_key,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter') FROM work WHERE work_key=?""", binding.clientId, child.key)
         c.execute("UPDATE clients SET next_review=next_review+1,epoch=epoch+1 WHERE client_id=?", binding.clientId)
         val raw = c.one("SELECT result_json FROM work WHERE work_key=? AND state='complete'", child.key) {
             it.getString(1)?.let { json -> ContractJson.decodeFromString<ProviderResult>(json) }
@@ -378,6 +379,7 @@ internal class ParentPlans(
 
     private fun localStatus(c: Connection, row: ParentRow): ParentPlanStatus {
         val definition = storedDefinition(row.encoded, row.digest)
+        if (definition.jvmProduced != null) return service.producedPlans.localStatus(c, row.client, row.id)
         val children = c.query("SELECT slot_id,review_id FROM plan_slots WHERE plan_id=?", row.id) { it.getString(1) to it.getString(2) }.toMap()
         val slots = definition.slots.map { slot ->
             val child = children[slot.slotId]?.let { service.readStatus(c, it, row.client) }
@@ -538,7 +540,9 @@ internal class ParentPlans(
         val id = c.one("SELECT plan_id FROM parent_plans WHERE client_id=? ORDER BY rowid DESC LIMIT 1", client) { it.getString(1) } ?: return null
         val row = parent(c, client, id)
         validateRouting(c, row)
-        return Stored(row.id, storedDefinition(row.encoded, row.digest), row.frontier)
+        val definition = storedDefinition(row.encoded, row.digest)
+        if (definition.jvmProduced != null) service.producedPlans.localStatus(c, client, id)
+        return Stored(row.id, definition, row.frontier)
     }
 
     private fun storedDefinition(encoded: String, digest: String): RequiredReviewPlan {
@@ -550,6 +554,9 @@ internal class ParentPlans(
     }
 
     internal fun lineageReasons(c: Connection, client: String): List<String> = buildList {
+        if (c.count("SELECT COUNT(*) FROM produced_plan_admissions a JOIN parent_plans p ON p.plan_id=a.plan_id WHERE p.client_id=?", client) != 0L) {
+            add("produced_plan_preview_unqualified")
+        }
         if (c.count("SELECT routed_obligations FROM clients WHERE client_id=?", client) != 0L ||
             c.count("SELECT COUNT(*) FROM parent_plans WHERE client_id=? AND routing_id IS NOT NULL", client) != 0L ||
             c.count("SELECT COUNT(*) FROM routing_members WHERE client_id=?", client) != 0L) {
@@ -561,7 +568,7 @@ internal class ParentPlans(
         }
     }
 
-    private fun prior(c: Connection, client: String, key: String, hash: String): ParentPlanStatus? {
+    internal fun prior(c: Connection, client: String, key: String, hash: String): ParentPlanStatus? {
         if (c.count("SELECT COUNT(*) FROM reviews WHERE client_id=? AND idempotency_key=?", client, key) != 0L) {
             fail("idempotency_conflict", "Idempotency key already belongs to a manual review")
         }

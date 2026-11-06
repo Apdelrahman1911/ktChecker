@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "corpus_id": "detekt-syntax-local-shapes-v1",
+  "authoring_state": "unexecuted",
+  "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+  "upstream_id": "style:UseIfInsteadOfWhen",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "severity": "info",
+  "kind": "style",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "a3f62eaaf8ed6d47788bb60ca253422546d62d66c70e4ff0dbf5b71868a3ad89",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-style/src/main/kotlin/dev/detekt/rules/style/UseIfInsteadOfWhen.kt",
+    "source_file_sha256": "3ac327d62aa6d0daf0b9152376c6e5017c8a60fa67b12c3224830bd8adb11eca",
+    "source_archive_sha256": "4f18e9ac263a157229db846ac18d3a71b8861d74d415da3ebd0fa085dee461a6",
+    "source_archive_entry": "dev/detekt/rules/style/UseIfInsteadOfWhen.kt",
+    "predicate_line_numbers": [
+      28,
+      35,
+      37,
+      46,
+      48
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/style/UseIfInsteadOfWhen",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:22dfef90aa92a2690f8885ea2786de72bbda2583d383b10ade44040222c5a857"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [
+    {
+      "name": "ignoreWhenContainingVariableDeclaration",
+      "type": "Boolean",
+      "defaults": false
+    }
+  ],
+  "bounded_predicate": "Report when with exactly two entries, an else, and no entry containing multiple comma-separated conditions, unless ignoreWhenContainingVariableDeclaration is true and the subject is a KtProperty. Entity.from(when), no type binding.",
+  "selection_rationale": "Adds a binary-branch convention not covered by existing rules. Meaningful grouped alternatives, exhaustive boolean arms and a single-evaluation subject binding constrain the proposal; the real option warrants the fourth case.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.binarywhen\n\nfun label(code: Int): String = when (code) {\n    0 -> \"empty\"\n    else -> \"present\"\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 31,
+        "end_line": 6,
+        "end_column": 1,
+        "span": "when (code) {\n    0 -> \"empty\"\n    else -> \"present\"\n}",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A binary branch with one condition and one default is an explicit if-versus-when readability convention. It is not a correctness assertion."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.binarywhen\n\nfun label(code: Int): String = if (code == 0) \"empty\" else \"present\"\n"
+    },
+    "expected": [],
+    "intent": "An equivalent binary conditional on a stable integer parameter uses if; the selected rule remains active."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.binarywhen\n\nfun label(code: Int): String = when (code) {\n    0 -> \"empty\"\n    else -> \"present\"\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"UseIfInsteadOfWhen\")\n\npackage suppressed.corpus.binarywhen\n\nfun label(code: Int): String = when (code) {\n    0 -> \"empty\"\n    else -> \"present\"\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 31,
+        "end_line": 6,
+        "end_column": 1,
+        "span": "when (code) {\n    0 -> \"empty\"\n    else -> \"present\"\n}",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.binarywhen\n\nfun label(code: Int): String = when (code) {\n    0, 1 -> \"small\"\n    else -> \"large\"\n}\n"
+      },
+      "expected": [],
+      "intent": "Grouped alternatives share an outcome but there is more than one condition in the first entry; this explicit readability boundary is not just an entry-count test.",
+      "id": "grouped-conditions-remain-when",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.binarywhen\n\nfun label(present: Boolean): String = when (present) {\n    true -> \"present\"\n    false -> \"empty\"\n}\n"
+      },
+      "expected": [],
+      "intent": "The exhaustive boolean choice intentionally has no else; the rule requires an else and must not manufacture one.",
+      "id": "exhaustive-two-arm-when-without-else",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.binarywhen\n\nfun label(read: () -> Int): String = when (val code = read()) {\n    0 -> \"empty\"\n    else -> \"present-$code\"\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 37,
+          "end_line": 6,
+          "end_column": 1,
+          "span": "when (val code = read()) {\n    0 -> \"empty\"\n    else -> \"present-$code\"\n}",
+          "occurrence": 0
+        }
+      ],
+      "intent": "A when subject declares a value reused in the default branch, preserving a single callback evaluation and local scope. Default false still reports; no semantics-preserving simple if rewrite is assumed.",
+      "id": "subject-declaration-default-policy-reports",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.binarywhen\n\nfun label(read: () -> Int): String = when (val code = read()) {\n    0 -> \"empty\"\n    else -> \"present-$code\"\n}\n"
+      },
+      "expected": [],
+      "intent": "The actual ignoreWhenContainingVariableDeclaration option exempts the byte-identical subject-declaration source while leaving the rule active. It preserves a legitimate one-read scoped idiom.",
+      "options": {
+        "ignoreWhenContainingVariableDeclaration": true
+      },
+      "id": "configured-subject-declaration-exemption",
+      "case_kind": "configuration",
+      "assessment": "genuine_upstream_option"
+    }
+  ],
+  "analysis_cost": {
+    "standard_cases": 6,
+    "independent_controls": 4,
+    "authored_analyses": 10,
+    "per_rule_non_analysis_calls": 3,
+    "per_cohort_cli_probes": 1,
+    "actual_executions": 0
+  },
+  "limitations": [
+    "Binary when can be intentional. No architecture/style default is changed; this remains opt-in info/intent-dependent.",
+    "The fixture uses Kotlin when-subject declaration syntax; no parser/compiler execution has yet qualified these bytes. Future version variants and Common/Native execution remain unqualified.",
+    "The option is a syntactic subject-declaration exemption, not call-effect, branch exhaustiveness or evaluation-count proof.",
+    "Local syntactic advice only. No binding identity, safe automatic rewrite, whole-program reachability, binary ABI compatibility, call effect, reflection completeness, performance or semantic qualification follows.",
+    "The six lifecycle cases include a disabled-rule configuration control, pinned-version positive replay and negative child-snapshot replay; the latter two are not new predicates. Every other negative/control keeps this rule active.",
+    "Only the existing explicit JVM LIGHT input is proposed. Common and Native requests must abstain without launching; no parser/compiler/Kotlin 2.4.21 versus embedded 2.4.10 compatibility or multiplatform qualification.",
+    "File-level suppression is authored; declaration-level aliases, baselines and generated-code inclusion policy are not newly qualified."
+  ],
+  "qualification_note": "Authored expected ranges and concrete counterexamples come from primary source and language reasoning before execution, never detector outputs. Preserve any unexpected findings/misses and stop; do not rewrite oracles to force a pass. Existing activation/severity/certainty remain exact. Independent oracle/source review, root adoption, fresh controls and separately admitted single-cohort real isolated calls are required. No natural-project precision, safety, release or historical-stage transfer."
+}

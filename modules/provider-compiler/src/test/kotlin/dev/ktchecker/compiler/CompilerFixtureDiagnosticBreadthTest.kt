@@ -1,0 +1,666 @@
+package dev.ktchecker.compiler
+
+import dev.ktchecker.contracts.Digests
+import dev.ktchecker.contracts.Finding
+import dev.ktchecker.contracts.RawDiagnostic
+import dev.ktchecker.contracts.SnapshotFile
+import dev.ktchecker.contracts.SourceLocation
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlinx.serialization.json.*
+import kotlin.test.*
+
+/** Source, parser and value gates only. No actual compiler/provider/native process or receipt is created or simulated. */
+class CompilerFixtureDiagnosticBreadthTest {
+    private val plan = CompilerFixtureDiagnosticBreadthPlan
+    private val authoredInputs by lazy { plan.load(manifest(), ::fixtureText) }
+
+    @Test fun exactlyThreeClosedSelectorsHaveFiveDisjointExistingIdsAndLiteralKindMajorSchedules() {
+        assertEquals(linkedSetOf("diagnostic_breadth_default", "diagnostic_breadth_advisory", "diagnostic_breadth_opt_in"), plan.SELECTORS)
+        assertEquals(listOf("positive", "negative", "boundary", "applicability", "suppression", "regression"), plan.KINDS)
+        assertEquals(15, plan.RULE_IDS.size)
+        assertEquals(15, plan.SELECTORS.flatMap { plan.ruleIds(it) }.size)
+        for (selector in plan.SELECTORS) {
+            val declarations = plan.declarations(selector)
+            val firstIds = declarations.take(5).map { it.ruleId }
+            assertEquals(5, firstIds.toSet().size)
+            assertEquals(plan.ruleIds(selector), firstIds.toSet())
+            assertEquals(plan.KINDS.flatMap { kind -> List(5) { kind } }, declarations.take(30).map { it.kind })
+            assertEquals(List(6) { firstIds }.flatten(), declarations.take(30).map { it.ruleId })
+            assertEquals((1..declarations.size).toList(), declarations.map { it.number })
+            assertEquals(declarations.size, declarations.map { it.label }.toSet().size)
+            assertEquals(30, declarations.map { it.path }.toSet().size)
+            assertEquals(if (selector == plan.DEFAULT_SELECTOR) 0 else 5, declarations.count { it.kind == "option_off" })
+        }
+        assertEquals(100, plan.allDeclarations().size)
+        assertEquals(90, plan.allDeclarations().map { it.path }.toSet().size)
+    }
+
+    @Test fun reviewedActivationGroupsSeveritiesAndUnmappedCompanionDoNotCreateAnyNewMapping() {
+        val registry = CompilerRuleRegistry.load()
+        assertEquals(445, registry.mappings.size)
+        assertEquals(402, registry.jvmRuleIds.size)
+        assertTrue("INAPPLICABLE_OPERATOR_MODIFIER" in registry.byUpstreamId)
+        val legacyData = CompilerLegacy443SourceData.mappings(fixtureRoot())
+        assertEquals(443, legacyData.size)
+        assertFalse(legacyData.any { it.getValue("upstream_id").jsonPrimitive.content == "INAPPLICABLE_OPERATOR_MODIFIER" })
+        // The unchanged raw-only443 companion oracle is not a valid445 execution contract.
+        assertEquals(CompilerFixtureMappingContract.REFUSAL, assertFailsWith<IllegalStateException> {
+            CompilerFixtureMappingContract.requireLegacy(registry.mappingIdentity)
+        }.message)
+        val ordinary = Json.parseToJsonElement(fixtureText("manifest.json")).jsonObject.getValue("fixtures").jsonArray
+        val ordinaryIds = ordinary.map { it.jsonObject.getValue("rule_id").jsonPrimitive.content }.toSet()
+        assertEquals(98, ordinaryIds.size)
+        assertTrue(plan.RULE_IDS.intersect(ordinaryIds).isEmpty())
+        assertTrue(plan.RULE_IDS.intersect(CompilerFixtureNullabilityPlan.RULE_IDS).isEmpty())
+        assertEquals(119, (ordinaryIds + CompilerFixtureNullabilityPlan.RULE_IDS + plan.RULE_IDS).size)
+        for (d in plan.allDeclarations()) {
+            val mapping = registry.byRuleId.getValue(d.ruleId)
+            assertEquals(d.upstreamId, mapping.upstreamId)
+            assertEquals("common", mapping.backend)
+            assertEquals(d.severity, mapping.declaredSeverity)
+            assertEquals(d.defaultActivation, mapping.defaultActivation)
+            assertEquals(when (d.selector) {
+                plan.DEFAULT_SELECTOR -> "enabled_when_validated"
+                plan.ADVISORY_SELECTOR -> "advisory"
+                else -> "opt_in"
+            }, d.defaultActivation)
+            assertEquals(d.flags, CompilerFlags.validate(d.flags))
+        }
+    }
+
+    @Test fun eachSelectorDefaultAndExplicitAttemptLimitsAreSeparatelyThirtyFiveOrFortyNotPooled() {
+        for ((selector, cap) in listOf(plan.DEFAULT_SELECTOR to 35, plan.ADVISORY_SELECTOR to 40, plan.OPT_IN_SELECTOR to 40)) {
+            assertEquals(cap, CompilerFixtureSettings("fixtures", selector).maxAttempts)
+            assertEquals(cap, CompilerFixtureSettings.parse(arrayOf("fixtures", "--cohort=$selector")).maxAttempts)
+            assertEquals(cap, CompilerFixtureSettings.parse(arrayOf("fixtures", "--cohort=$selector", "--max-attempts=$cap")).maxAttempts)
+            assertEquals(1, CompilerFixtureSettings("fixtures", selector, maxAttempts = 1).maxAttempts)
+            assertFails { CompilerFixtureSettings("fixtures", selector, maxAttempts = cap + 1) }
+            for (bound in listOf("${cap + 1}", "48", "0", "-1", "0$cap", "${cap}x")) {
+                assertFails { CompilerFixtureSettings.parse(arrayOf("fixtures", "--cohort=$selector", "--max-attempts=$bound")) }
+            }
+            assertEquals(cap - 1, plan.childCapableCalls(selector))
+            assertEquals(cap - 4, plan.versionDenialAttempt(selector))
+            assertEquals("explicit_diagnostic_breadth_source_oracles_only", CompilerFixtureSettings("fixtures", selector).description()["selection_kind"])
+            assertEquals(false, CompilerFixtureSettings("fixtures", selector).description()["ordinary_six_kind_scheduling"])
+        }
+        for (selector in listOf("diagnostic_breadth", "diagnostic_breadth_all", "Diagnostic_breadth_default", "diagnostic_breadth_opt-in", "all_diagnostic_breadth")) {
+            assertFails { CompilerFixtureSettings.parse(arrayOf("fixtures", "--cohort=$selector")) }
+            assertFails { plan.declarations(selector) }
+            assertFails { plan.maxAttempts(selector) }
+        }
+        assertFails { CompilerFixtureSettings.parse(arrayOf("fixtures")) }
+    }
+
+    @Test fun breadthSelectionCannotStealOrdinarySupplementalNullabilityOrOtherBreadthInputs() {
+        val ordinary = Json.parseToJsonElement(fixtureText("manifest.json")).jsonObject.getValue("fixtures").jsonArray
+        for (selector in plan.SELECTORS) {
+            val settings = CompilerFixtureSettings("fixtures", selector)
+            for (row in ordinary.map { it.jsonObject }) assertFalse(settings.selects(row["authored_cohort"]?.jsonPrimitive?.content,
+                row.getValue("rule_id").jsonPrimitive.content))
+            for (d in plan.allDeclarations()) assertEquals(d.selector == selector,
+                settings.selectsDiagnosticBreadth(plan.AUTHORED_COHORT, d.ruleId, d.kind))
+            assertFalse(settings.selectsNullability(CompilerFixtureNullabilityPlan.AUTHORED_COHORT, CompilerFixtureNullabilityPlan.RULE_IDS.first(), "positive"))
+            assertFalse(settings.selectsSupplemental("2026-11-04-type_boundaries", CompilerFixtureSupplementalPlan.RULE_IDS.first(), "boundary"))
+            assertFails { settings.selectsDiagnosticBreadth("unknown", plan.ruleIds(selector).first(), "positive") }
+            assertFails { settings.selectsDiagnosticBreadth(plan.AUTHORED_COHORT, "ktc.compiler.common.unsafe_call", "positive") }
+            assertFails { settings.selectsDiagnosticBreadth(plan.AUTHORED_COHORT, plan.ruleIds(selector).first(), "configuration") }
+            assertFails { settings.selects(plan.AUTHORED_COHORT, plan.ruleIds(selector).first()) }
+        }
+        assertFails { CompilerFixtureSettings("fixtures", plan.DEFAULT_SELECTOR).selectsDiagnosticBreadth(plan.AUTHORED_COHORT,
+            plan.ruleIds(plan.DEFAULT_SELECTOR).first(), "option_off") }
+        for (selector in CompilerFixtureSettings.COHORTS - plan.SELECTORS) assertFalse(CompilerFixtureSettings("fixtures", selector)
+            .selectsDiagnosticBreadth(plan.AUTHORED_COHORT, plan.RULE_IDS.first(), "positive"))
+    }
+
+    @Test fun allTwentyOlderFortyEightCallRoutesAndNullabilityThirtyFiveKeepTheirExistingBounds() {
+        val old = CompilerFixtureSettings.COHORTS - plan.SELECTORS - CompilerFixtureNullabilityPlan.SELECTOR
+        assertEquals(20, old.size)
+        for (selector in old) {
+            val settings = CompilerFixtureSettings.parse(arrayOf("fixtures", "--cohort=$selector"))
+            assertEquals(48, settings.maxAttempts)
+            assertEquals(1_200_000L, settings.overallMillis)
+            assertEquals(90_000L, settings.perJobMillis)
+            assertEquals(268_435_456L, settings.evidenceBytes)
+            assertFalse("explicit_diagnostic_breadth_rule_ids" in settings.description())
+        }
+        assertEquals(35, CompilerFixtureSettings("fixtures", CompilerFixtureNullabilityPlan.SELECTOR).maxAttempts)
+        assertEquals(48, CompilerFixtureSettings.MAX_ATTEMPTS)
+        assertEquals(16_777_216L, CompilerFixtureSettings.JOB_RESERVE_BYTES)
+        assertEquals(8_388_608L, CompilerFixtureSettings.TERMINAL_RESERVE_BYTES)
+        assertEquals(10, CompilerFixtureSettings.ORIGINAL_ID_COHORTS.size)
+        assertEquals(42, CompilerFixtureSettings.ORIGINAL_RULE_IDS.size)
+    }
+
+    @Test fun ninetySourcePathsAndSixExactMetadataPinsAreAllVisibleAtStartIncludingUnselectedFiles() {
+        assertEquals(6, plan.SOURCE_METADATA_PINS.size)
+        assertEquals(96, plan.START_CAPTURE_PATHS.size)
+        assertEquals(96, plan.START_CAPTURE_PATHS.toSet().size)
+        assertEquals(plan.allDeclarations().map { it.path }.toSet() + plan.SOURCE_METADATA_PINS.keys, plan.START_CAPTURE_PATHS.toSet())
+        // Old metadata DATA remains byte-exact; actual current Python successors cannot satisfy its pins.
+        assertFails { plan.verifyCapturedMetadata(::fixtureText) }
+        assertEquals(setOf("test_diagnostic_breadth.py", "test_diagnostic_breadth_hookup.py"),
+            plan.SOURCE_METADATA_PINS.filter { (path, digest) -> Digests.sha256(fixtureText(path)).removePrefix("sha256:") != digest }.keys)
+        val legacyText: (String) -> String = { CompilerLegacy443SourceData.metadataText(fixtureRoot(), it) }
+        val reads = mutableListOf<String>()
+        plan.verifyCapturedMetadata { reads += it; legacyText(it) }
+        assertEquals(plan.SOURCE_METADATA_PINS.keys.toList(), reads)
+        for ((path, digest) in plan.SOURCE_METADATA_PINS) {
+            assertEquals(digest, Digests.sha256(legacyText(path)).removePrefix("sha256:"))
+            assertFails { plan.verifyCapturedMetadata { legacyText(it) + if (it == path) "\n" else "" } }
+        }
+        assertFalse(manifest().getValue("run_complete").jsonPrimitive.boolean)
+        assertEquals("authored_source_only_additive_plan", manifest().getValue("status").jsonPrimitive.content)
+    }
+
+    @Test fun loaderReadsNinetyUnchangedFilesOnceAndReusesPositiveBytesForOnlyTenExplicitOptionOffCalls() {
+        val reads = mutableListOf<String>()
+        val initial = manifest()
+        val loaded = plan.load(initial) { reads += it; fixtureText(it) }
+        assertEquals(90, reads.size)
+        assertEquals(90, reads.toSet().size)
+        assertEquals(plan.allDeclarations(), loaded.map { it.declaration })
+        assertEquals(100, loaded.size)
+        assertEquals(initial, manifest())
+        for (input in loaded) {
+            val d = input.declaration
+            assertEquals(d.sourceSha256, Digests.sha256(input.source).removePrefix("sha256:"))
+            assertEquals(d.authoringRecord(), input.authoringRecord)
+            assertEquals(JsonNull, input.authoringRecord.getValue("expected_outcome_matched"))
+            assertEquals("not_run", input.authoringRecord.getValue("execution_state").jsonPrimitive.content)
+            assertFalse(input.authoringRecord.getValue("executed_by_current_harness").jsonPrimitive.boolean)
+            if (d.kind == "option_off") {
+                val positive = loaded.single { it.declaration.ruleId == d.ruleId && it.declaration.kind == "positive" }
+                assertEquals(positive.source, input.source)
+                assertEquals(positive.declaration.path, d.path)
+                assertEquals(positive.declaration.sourceSha256, d.sourceSha256)
+                assertEquals("positive", d.sourceKind)
+                assertNotEquals(positive.declaration.flags, d.flags)
+                assertEquals(0, d.expectedCount)
+            }
+        }
+    }
+
+    @Test fun manifestRowOrderMayNormalizeButCannotChangeTheClosedKindMajorSchedule() {
+        val initial = manifest()
+        val rows = initial.getValue("fixtures").jsonArray.reversed().map { value ->
+            val row = value.jsonObject
+            JsonObject(row + ("inputs" to JsonArray(row.getValue("inputs").jsonArray.reversed())))
+        }
+        val reordered = JsonObject(initial + ("fixtures" to JsonArray(rows)))
+        assertEquals(plan.allDeclarations(), plan.load(reordered, ::fixtureText).map { it.declaration })
+        failsBeforeSourceRead(JsonObject(initial + ("ordered_kinds" to JsonArray(plan.KINDS.reversed().map(::JsonPrimitive)))))
+        // On-disk raw metadata pins remain a separate START check; reordered JSON is not adopted source.
+        assertNotEquals(plan.SOURCE_METADATA_PINS.getValue(plan.MANIFEST_PATH), Digests.sha256(reordered.toString()).removePrefix("sha256:"))
+    }
+
+    @Test fun headerRuleIdentitySeverityBackendActivationAndOptionsMutationsFailBeforeAnySourceRead() {
+        for ((key, value) in listOf("run_complete" to JsonPrimitive(true), "rule_count" to JsonPrimitive(16),
+            "source_file_count" to JsonPrimitive(91), "qualification" to JsonPrimitive("qualified"),
+            "schema_version" to JsonPrimitive("1"), "unexpected_authority" to JsonPrimitive(true))) {
+            failsBeforeSourceRead(JsonObject(manifest() + (key to value)))
+        }
+        for ((key, value) in listOf("rule_id" to JsonPrimitive("ktc.compiler.common.unsafe_call"), "upstream_id" to JsonPrimitive("UNSAFE_CALL"),
+            "backend" to JsonPrimitive("native"), "declared_severity" to JsonPrimitive("WARNING"),
+            "default_activation" to JsonPrimitive("advisory"), "selector" to JsonPrimitive(plan.ADVISORY_SELECTOR),
+            "authored_cohort" to JsonPrimitive("ordinary"), "flags" to JsonArray(listOf(JsonPrimitive("-Werror"))))) {
+            failsBeforeSourceRead(changeRow(manifest()) { JsonObject(it + (key to value)) })
+        }
+    }
+
+    @Test fun missingDuplicateOrUnknownRowsKindsAndInputRecordsCannotSilentlyNarrowTheInventory() {
+        val initial = manifest()
+        val rows = initial.getValue("fixtures").jsonArray
+        failsBeforeSourceRead(JsonObject(initial + ("fixtures" to JsonArray(rows.dropLast(1)))))
+        failsBeforeSourceRead(JsonObject(initial + ("fixtures" to JsonArray(rows.dropLast(1) + rows.first()))))
+        failsBeforeSourceRead(changeRow(initial) { row -> JsonObject(row + ("inputs" to JsonArray(row.getValue("inputs").jsonArray.dropLast(1)))) })
+        failsBeforeSourceRead(changeRow(initial) { row ->
+            val inputs = row.getValue("inputs").jsonArray
+            JsonObject(row + ("inputs" to JsonArray(inputs.dropLast(1) + inputs.first())))
+        })
+        for ((key, value) in listOf("kind" to JsonPrimitive("configuration"), "path" to JsonPrimitive("../escape.kt"),
+            "source_sha256" to JsonPrimitive("0".repeat(64)), "execution_state" to JsonPrimitive("executed"),
+            "executed_by_current_harness" to JsonPrimitive(true), "expected_outcome_matched" to JsonPrimitive(true),
+            "extra" to JsonPrimitive("not authority"))) {
+            failsBeforeSourceRead(changeInput(initial) { JsonObject(it + (key to value)) })
+        }
+    }
+
+    @Test fun oracleCountsSeveritiesRegionsSuppressionAndCompanionMutationsFailBeforeSourceRead() {
+        for ((key, value) in listOf("selected_expected_count" to JsonPrimitive(0), "selected_severity" to JsonPrimitive("warning"),
+            "selected_point_regions" to JsonArray(emptyList()), "compilation_expectation" to JsonPrimitive("exit0"),
+            "suppression_expectation" to JsonPrimitive("safe"), "unexpected_errors" to JsonPrimitive("ignore"))) {
+            failsBeforeSourceRead(changeInput(manifest()) { row ->
+                JsonObject(row + ("oracle" to JsonObject(row.getValue("oracle").jsonObject + (key to value))))
+            })
+        }
+        failsBeforeSourceRead(changeInput(manifest(), rowIndex = 1) { row ->
+            JsonObject(row + ("oracle" to JsonObject(row.getValue("oracle").jsonObject + ("required_raw_companions" to JsonArray(emptyList())))))
+        })
+    }
+
+    @Test fun optionOffSourceIdentityAndExactFlagChangeAreNotArbitraryManifestExecutionAuthority() {
+        for ((key, value) in listOf("source_kind" to JsonPrimitive("negative"), "path" to JsonPrimitive("other.kt"),
+            "flags" to JsonArray(listOf(JsonPrimitive("-nowarn"))), "source_sha256" to JsonPrimitive("1".repeat(64)))) {
+            failsBeforeSourceRead(changeRow(manifest(), 5) { row ->
+                JsonObject(row + ("option_off_probe" to JsonObject(row.getValue("option_off_probe").jsonObject + (key to value))))
+            })
+        }
+        failsBeforeSourceRead(changeRow(manifest()) { JsonObject(it + ("option_off_probe" to JsonObject(emptyMap()))) })
+        for (off in authoredInputs.filter { it.declaration.kind == "option_off" }) {
+            val d = off.declaration
+            val positive = input(d.upstreamId)
+            val expected = when (d.upstreamId) {
+                "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE" -> plan.BASE_FLAGS + "-Xexplicit-api=disable"
+                "RETURN_VALUE_NOT_USED" -> plan.BASE_FLAGS + "-Xreturn-value-checker=disable"
+                else -> positive.declaration.flags + "-Xwarning-level=${d.upstreamId}:disabled"
+            }
+            assertEquals(expected, d.flags)
+            assertEquals(0, d.expectedCount)
+            assertEquals("exit0", d.compilationExpectation)
+        }
+        assertFalse(input("RETURN_VALUE_NOT_USED").source.contains("@"))
+        assertTrue(input("RETURN_VALUE_NOT_USED", "boundary").source.contains("@IgnorableReturnValue"))
+    }
+
+    @Test fun sourceDriftEmptyReadsAndChangedAuthoredRegionsCannotBeAcceptedAsPinnedInput() {
+        assertFails { plan.load(manifest()) { fixtureText(it) + "\n" } }
+        assertFails { plan.load(manifest()) { "" } }
+        for (input in authoredInputs) {
+            assertTrue((input.declaration.selectedRegions + input.declaration.companions.flatMap { it.regions }).all { it.belongsTo(input.source) })
+        }
+    }
+
+    @Test fun authoredSnapshotBindingAcceptsEveryExactTwoMemberExecutorSnapshotWithoutCompilingMetadata() {
+        assertEquals(100, authoredInputs.size)
+        for (input in authoredInputs) {
+            // Independently mirror execute's exact captured metadata bytes, not a helper-generated expected vector.
+            val metadata = "// Synthetic captured fixture metadata; never executed or compiled.\n"
+            val captured = mapOf(input.declaration.path to input.source, "build.gradle.kts" to metadata)
+            val files = captured.toSortedMap().map { (path, source) ->
+                val bytes = source.toByteArray(Charsets.UTF_8)
+                SnapshotFile(path, Digests.sha256(bytes), bytes.size.toLong())
+            }
+            assertEquals(2, files.size)
+            assertEquals(setOf(input.declaration.path, "build.gradle.kts"), files.map { it.path }.toSet())
+            assertTrue(plan.snapshotMembersMatch(input, files), input.declaration.label)
+            assertTrue(plan.snapshotMembersMatch(input, files.reversed()), input.declaration.label)
+        }
+    }
+
+    @Test fun authoredSnapshotBindingRejectsMissingDuplicateExtraAndRenamedMembers() {
+        val input = input("HAS_NEXT_MISSING")
+        val metadata = "// Synthetic captured fixture metadata; never executed or compiled.\n".toByteArray(Charsets.UTF_8)
+        val source = SnapshotFile(input.declaration.path, Digests.sha256(input.source), input.source.toByteArray(Charsets.UTF_8).size.toLong())
+        val build = SnapshotFile("build.gradle.kts", Digests.sha256(metadata), metadata.size.toLong())
+        val complete = listOf(source, build)
+        assertTrue(plan.snapshotMembersMatch(input, complete))
+        for (changed in listOf(emptyList(), listOf(source), listOf(build), listOf(source, source), listOf(build, build),
+            complete + source, complete + build, complete + source.copy(path = "extra.kt"),
+            listOf(source.copy(path = "other.kt"), build), listOf(source, build.copy(path = "settings.gradle.kts")))) {
+            assertFalse(plan.snapshotMembersMatch(input, changed), changed.map { it.path }.toString())
+        }
+    }
+
+    @Test fun authoredSnapshotBindingRejectsDigestSizeAndSourceDriftForEitherMember() {
+        val input = input("HAS_NEXT_MISSING")
+        val metadata = "// Synthetic captured fixture metadata; never executed or compiled.\n".toByteArray(Charsets.UTF_8)
+        val complete = listOf(
+            SnapshotFile(input.declaration.path, Digests.sha256(input.source), input.source.toByteArray(Charsets.UTF_8).size.toLong()),
+            SnapshotFile("build.gradle.kts", Digests.sha256(metadata), metadata.size.toLong()),
+        )
+        assertTrue(plan.snapshotMembersMatch(input, complete))
+        for (index in complete.indices) {
+            for (changed in listOf(complete[index].copy(digest = Digests.sha256("not the captured bytes")),
+                complete[index].copy(size = complete[index].size + 1), complete[index].copy(size = -1))) {
+                val altered = complete.toMutableList().also { it[index] = changed }
+                assertFalse(plan.snapshotMembersMatch(input, altered), "$index:$changed")
+            }
+        }
+        val changedSource = input.copy(source = input.source + "\n")
+        assertFalse(plan.snapshotMembersMatch(changedSource, complete))
+        assertFalse(plan.snapshotMembersMatch(changedSource, listOf(
+            complete[0].copy(digest = Digests.sha256(changedSource.source), size = changedSource.source.toByteArray(Charsets.UTF_8).size.toLong()),
+            complete[1],
+        )), "Recapturing changed source bytes cannot replace the declaration's original digest")
+    }
+
+    @Test fun regressionFilesAreIndependentlyPinnedTwoLineShiftsWithCorrespondinglyShiftedProposedRegions() {
+        for (positive in authoredInputs.filter { it.declaration.kind == "positive" }) {
+            val regression = input(positive.declaration.upstreamId, "regression")
+            assertEquals("\n\n" + positive.source, regression.source)
+            assertNotEquals(positive.declaration.path, regression.declaration.path)
+            assertNotEquals(positive.declaration.sourceSha256, regression.declaration.sourceSha256)
+            assertEquals(positive.declaration.selectedRegions.map { it.copy(line = it.line + 2) }, regression.declaration.selectedRegions)
+            assertEquals(positive.declaration.companions.map { it.copy(regions = it.regions.map { point -> point.copy(line = point.line + 2) }) }, regression.declaration.companions)
+            assertEquals(true, observedValue(regression).expectationMatched)
+            val wrong = rawValues(regression).map { it.copy(location = it.location?.let { location -> location.copy(line = location.line - 2, endLine = location.line - 2) }) }
+            assertEquals(false, observedValue(regression, wrong).expectationMatched)
+        }
+    }
+
+    @Test fun warningPositiveAndRegressionValuesNeedExactOneToOneSeverityCountAndPointMatches() {
+        for (input in authoredInputs.filter { it.declaration.severity == "WARNING" && it.declaration.kind in setOf("positive", "regression") }) {
+            val raw = rawValues(input)
+            val findings = findingValues(input)
+            assertEquals(true, observedValue(input).expectationMatched)
+            assertFalse(observedValue(input).actualCompilerTaskFailed)
+            assertEquals(false, observedValue(input, emptyList(), findings).expectationMatched)
+            assertEquals(false, observedValue(input, raw, emptyList()).expectationMatched)
+            assertEquals(false, observedValue(input, raw + raw, findings + findings).expectationMatched)
+            assertEquals(false, observedValue(input, raw.map { it.copy(severity = "error") }, findings).expectationMatched)
+            assertEquals(false, observedValue(input, raw, findings.map { it.copy(severity = "error") }).expectationMatched)
+        }
+    }
+
+    @Test fun matchingErrorPositivesAndRegressionsRemainActualFailedCompilerAndProviderTasks() {
+        for (input in authoredInputs.filter { it.declaration.compilationExpectation == "nonzero" }) {
+            val value = observedValue(input)
+            assertEquals(true, value.expectationMatched)
+            assertTrue(value.expectedErrorMatched)
+            assertTrue(value.actualCompilerTaskFailed)
+            assertTrue(value.actualProviderFailed)
+            assertFalse(value.unexpectedOrUnmatchedVariant)
+            assertEquals("predeclared_ERROR_match_actual_compiler_and_provider_still_failed", value.state)
+            assertEquals(false, value.copy(actualExitCode = 0, providerStatus = "partial").expectationMatched)
+            assertEquals(false, value.copy(providerStatus = "partial").expectationMatched)
+            assertEquals(false, value.copy(actualExitCode = null).expectationMatched)
+        }
+    }
+
+    @Test fun mandatoryUnmappedOperatorCompanionCannotDisappearChangeSeverityMoveOrAcquireInventedMapping() {
+        val input = input("HAS_NEXT_FUNCTION_TYPE_MISMATCH")
+        val raw = rawValues(input)
+        assertEquals(2, raw.size)
+        assertEquals(1, findingValues(input).size)
+        assertEquals(true, observedValue(input).expectationMatched)
+        val companion = raw.single { it.upstreamId == "INAPPLICABLE_OPERATOR_MODIFIER" }
+        for (mutated in listOf(raw.filterNot { it == companion }, raw + companion,
+            raw.map { if (it == companion) it.copy(severity = "warning") else it },
+            raw.map { if (it == companion) it.copy(upstreamId = "UNRELATED_ERROR") else it },
+            raw.map { if (it == companion) it.copy(location = selectedPoint(input)) else it })) {
+            assertEquals(false, observedValue(input, mutated).expectationMatched)
+        }
+        val invented = findingValues(input).single().copy(ruleId = "ktc.compiler.common.inapplicable_operator_modifier",
+            upstreamId = companion.upstreamId, location = checkNotNull(companion.location))
+        assertEquals(false, observedValue(input, raw, findingValues(input) + invented).expectationMatched)
+        assertEquals(false, observedValue(input, raw, findingValues(input) + invented.copy(severity = "warning")).expectationMatched)
+        assertFalse("ktc.compiler.common.inapplicable_operator_modifier" in plan.RULE_IDS)
+    }
+
+    @Test fun mismatchedMessagesPointsAndEitherHalfOfTheStableUpstreamPairCannotHideInOtherFindings() {
+        val input = input("SENSELESS_COMPARISON")
+        val raw = rawValues(input)
+        val finding = findingValues(input).single()
+        for (wrong in listOf(finding.copy(diagnosis = "different unit-only message"),
+            finding.copy(location = finding.location.copy(column = finding.location.column + 1, endColumn = finding.location.column + 1)),
+            finding.copy(ruleId = "ktc.compiler.common.other"), finding.copy(upstreamId = "OTHER"))) {
+            assertEquals(false, observedValue(input, raw, listOf(wrong)).expectationMatched)
+        }
+        assertEquals(false, observedValue(input, raw.map { it.copy(upstreamId = "OTHER") }).expectationMatched)
+    }
+
+    @Test fun selectedAbsenceNeedsExitZeroBothChannelsEmptyAndNoUnrelatedOrUnnamedErrors() {
+        val unrelatedWarning = RawDiagnostic("unit-only unrelated warning", "warning", "UNRELATED_WARNING")
+        for (input in authoredInputs.filter { it.declaration.expectedCount == 0 }) {
+            val value = observedValue(input, listOf(unrelatedWarning, RawDiagnostic("unit-only info", "info")))
+            assertEquals(true, value.expectationMatched)
+            assertEquals(2, value.diagnostics.rawDiagnosticCount)
+            assertEquals(false, value.copy(actualExitCode = 1, providerStatus = "failed").expectationMatched)
+            assertEquals(false, value.copy(providerStatus = "failed").expectationMatched)
+            for (rawError in listOf(RawDiagnostic("unnamed unit-only error"), RawDiagnostic("unrelated unit-only error", "error", "OTHER"))) {
+                assertEquals(false, observedValue(input, listOf(rawError)).expectationMatched)
+            }
+            assertEquals(false, observedValue(input, listOf(RawDiagnostic("selected without point", input.declaration.severity.lowercase(), input.declaration.upstreamId))).expectationMatched)
+        }
+    }
+
+    @Test fun unrelatedMappedWarningsAreRetainedButAnyUnexpectedMappedErrorBlocksAnAlternative() {
+        val input = input("SENSELESS_COMPARISON", "negative")
+        val point = SourceLocation(input.declaration.path, Digests.sha256(input.source), 1, 0)
+        val unrelated = findingValue(input, point).copy(ruleId = "ktc.compiler.common.other", upstreamId = "OTHER", severity = "warning")
+        assertEquals(true, observedValue(input, emptyList(), listOf(unrelated)).expectationMatched)
+        val failed = observedValue(input, emptyList(), listOf(unrelated.copy(severity = "error")))
+        assertEquals(false, failed.expectationMatched)
+        assertEquals(1, failed.diagnostics.unexpectedMappedErrorCount)
+    }
+
+    @Test fun nineWarningSuppressionsRequireOnlyTheIndependentlyDeclaredUnsuppressedControlRegion() {
+        val inputs = authoredInputs.filter { it.declaration.kind == "suppression" && it.declaration.severity == "WARNING" }
+        assertEquals(9, inputs.size)
+        for (input in inputs) {
+            assertTrue(input.source.contains("@Suppress(\"${input.declaration.upstreamId}\")"))
+            assertTrue(input.source.contains("fun control("))
+            assertEquals(true, observedValue(input).expectationMatched)
+            val region = input.declaration.selectedRegions.single()
+            val earlier = input.source.split('\n').withIndex().first { (line, text) -> line + 1 < region.line && region.sourceToken in text }
+            val wrongPoint = SourceLocation(input.declaration.path, Digests.sha256(input.source), earlier.index + 1, earlier.value.indexOf(region.sourceToken))
+            val wrongRaw = rawValues(input).map { it.copy(location = wrongPoint) }
+            val wrongFindings = findingValues(input).map { it.copy(location = wrongPoint) }
+            assertEquals(false, observedValue(input, wrongRaw, wrongFindings).expectationMatched)
+            assertEquals(false, observedValue(input, emptyList(), emptyList()).expectationMatched)
+        }
+    }
+
+    @Test fun sixHardErrorSuppressionsAlwaysStayUnknownWithEveryActualFailureAndWarningRetained() {
+        val inputs = authoredInputs.filter { it.declaration.unknownExpectation }
+        assertEquals(6, inputs.size)
+        assertEquals(listOf(5, 0, 1), plan.SELECTORS.map { plan.unknownSuppressionCount(it) })
+        for (input in inputs) {
+            val raw = listOf(RawDiagnostic("unit-only retained error"), RawDiagnostic("unit-only unspecified suppression", "warning", "ERROR_SUPPRESSION"))
+            val value = observedValue(input, raw, emptyList())
+            assertNull(value.expectationMatched)
+            assertNull(value.diagnostics.unexpectedRawErrorCount)
+            assertNull(value.diagnostics.unexpectedMappedErrorCount)
+            assertEquals(2, value.diagnostics.rawDiagnosticCount)
+            assertEquals(1, value.diagnostics.errorSuppressionCount)
+            val failed = value.copy(actualExitCode = 1, providerStatus = "failed")
+            assertNull(failed.expectationMatched)
+            assertTrue(failed.actualCompilerTaskFailed)
+            assertNull(failed.copy(receiptsAndAuthoredInputIntact = false).expectationMatched)
+            assertNull(observedValue(input, emptyList(), emptyList()).expectationMatched)
+        }
+    }
+
+    @Test fun boundaryKindIsNotAnAbsenceOracleAndTheTwoKnownBlindSpotsRemainDocumentaryGaps() {
+        val boundaries = authoredInputs.filter { it.declaration.kind == "boundary" }
+        assertEquals(15, boundaries.size)
+        assertEquals(listOf("USELESS_CALL_ON_NOT_NULL"), boundaries.filter { it.declaration.expectedCount == 1 }.map { it.declaration.upstreamId })
+        assertEquals(14, boundaries.count { it.declaration.expectedCount == 0 })
+        val rows = manifest().getValue("fixtures").jsonArray.map { it.jsonObject }
+        for (id in listOf("DUPLICATE_BRANCH_CONDITION_IN_WHEN", "TRIM_MARGIN_BLANK_PREFIX")) {
+            assertTrue(rows.single { it.getValue("upstream_id").jsonPrimitive.content == id }.getValue("boundary_scope").jsonPrimitive.content.contains("blind spot"))
+            assertEquals(0, input(id, "boundary").declaration.expectedCount)
+        }
+        assertEquals(true, observedValue(input("USELESS_CALL_ON_NOT_NULL", "boundary")).expectationMatched)
+    }
+
+    @Test fun locationsRequireActualAuthoredDigestPathPointAndNarrowSourceRegionNotAnyValidFilePosition() {
+        val input = input("SENSELESS_COMPARISON")
+        val d = input.declaration
+        val point = selectedPoint(input)
+        assertTrue(plan.authoredPointMatches(point, d, input.source, d.selectedRegions))
+        for (wrong in listOf(point.copy(path = "other.kt"), point.copy(fileDigest = "sha256:" + "0".repeat(64)),
+            point.copy(line = 0, endLine = 0), point.copy(line = point.line + 1, endLine = point.line + 1),
+            point.copy(column = 0, endColumn = 0), point.copy(endColumn = point.column + 1),
+            point.copy(endLine = point.line + 1), point.copy(column = d.selectedRegions.single().endColumnExclusive, endColumn = d.selectedRegions.single().endColumnExclusive))) {
+            assertFalse(plan.authoredPointMatches(wrong, d, input.source, d.selectedRegions))
+        }
+        assertFalse(plan.authoredPointMatches(null, d, input.source, d.selectedRegions))
+        assertFalse(plan.authoredPointMatches(point, d, input.source + "\n", d.selectedRegions))
+    }
+
+    @Test fun regionCoordinatesUseUtf16AndStillDoNotFabricateDiagnosticSpans() {
+        val original = input("SENSELESS_COMPARISON")
+        val source = "fun sample(value: String): Boolean { val emoji = \"\uD83D\uDE00\"; return value != null }\n"
+        val column = source.indexOf("value != null")
+        assertEquals(column - 1, source.codePointCount(0, column))
+        val region = CompilerFixtureDiagnosticBreadthRegion(1, column, column + "value != null".length, "value != null")
+        val d = original.declaration.copy(sourceSha256 = Digests.sha256(source).removePrefix("sha256:"), selectedRegions = listOf(region))
+        val point = SourceLocation(d.path, Digests.sha256(source), 1, column)
+        assertTrue(plan.authoredPointMatches(point, d, source, listOf(region)))
+        assertFalse(plan.authoredPointMatches(point.copy(column = column - 1, endColumn = column - 1), d, source, listOf(region)))
+        assertFalse(plan.authoredPointMatches(point.copy(endColumn = region.endColumnExclusive), d, source, listOf(region)))
+    }
+
+    @Test fun missingExecutionVersionReceiptHealthySupervisionOrCorrectAttemptAlwaysWithholdsAttribution() {
+        val value = observedValue(input("SENSELESS_COMPARISON"))
+        for (changed in listOf(value.copy(executionConfirmed = false), value.copy(healthySupervisedExecution = false),
+            value.copy(pinnedVersionObserved = false), value.copy(receiptsAndAuthoredInputIntact = false),
+            value.copy(attemptNumber = value.attemptNumber + 1), value.copy(actualExitCode = null),
+            value.copy(providerStatus = "unavailable"))) {
+            assertFalse(changed.observedReceiptComplete)
+            assertEquals(false, changed.expectationMatched)
+        }
+        val error = observedValue(input("HAS_NEXT_MISSING")).copy(receiptsAndAuthoredInputIntact = false)
+        assertTrue(error.actualCompilerTaskFailed)
+        assertTrue(error.actualProviderFailed)
+        assertEquals(false, error.expectationMatched)
+    }
+
+    @Test fun fullRawValueInventoryIncludesMappedEmissionsAndUnmappedResidualsWithTheirMultiplicities() {
+        val input = input("HAS_NEXT_FUNCTION_TYPE_MISMATCH")
+        val raw = rawValues(input)
+        val selected = raw.single { it.upstreamId == input.declaration.upstreamId }
+        val companion = raw.single { it.upstreamId != input.declaration.upstreamId }
+        val parsed = CompilerParseResult(listOf(ParsedCompilerDiagnostic(checkNotNull(selected.upstreamId), selected.severity, selected.message, selected.location)),
+            listOf(companion), "2.4.21", false)
+        val full = CompilerFixtureNullabilityPlan.fullActualRawDiagnostics(parsed)
+        assertEquals(raw, full)
+        assertTrue(CompilerFixtureNullabilityPlan.residualDiagnosticsAccountedFor(full, listOf(companion)))
+        assertFalse(CompilerFixtureNullabilityPlan.residualDiagnosticsAccountedFor(full, listOf(companion, companion)))
+        assertFalse(CompilerFixtureNullabilityPlan.residualDiagnosticsAccountedFor(listOf(selected), listOf(companion)))
+        assertEquals(true, observedValue(input, full).expectationMatched)
+    }
+
+    @Test fun parserValueControlsKeepGlobalWarningsMalformedStatusAndQuotedNamesSeparateFromEmissions() {
+        val input = input("SENSELESS_COMPARISON")
+        val d = input.declaration
+        val point = selectedPoint(input)
+        val actualPath = Path.of("/unit-value-only").resolve(d.path)
+        val paths = mapOf(actualPath to CompilerSourceIdentity(d.path, Digests.sha256(input.source), input.source))
+        val output = "$actualPath:${point.line}:${point.column + 1}: warning: [${d.upstreamId}] $UNIT_MESSAGE\n" +
+            "warning: unit-only global option warning; quoted '${d.upstreamId}' is not another emission\n"
+        val parsed = CompilerDiagnosticParser().parse(output, paths)
+        assertTrue(parsed.malformed)
+        val full = CompilerFixtureNullabilityPlan.fullActualRawDiagnostics(parsed)
+        assertEquals(2, full.size)
+        assertEquals(1, full.count { it.upstreamId == d.upstreamId })
+        val value = observedValue(input, full).copy(parserMalformed = parsed.malformed)
+        assertEquals(true, value.expectationMatched) // Local selected oracle only; not complete diagnostic/project coverage.
+        assertEquals(true, value.description()["actual_parser_malformed_or_unparsed_output"])
+        val globalSelected = CompilerDiagnosticParser().parse("warning: [${d.upstreamId}] $UNIT_MESSAGE\n", paths)
+        assertEquals(false, observedValue(input, CompilerFixtureNullabilityPlan.fullActualRawDiagnostics(globalSelected)).expectationMatched)
+        val quoteOnly = CompilerDiagnosticParser().parse("warning: name '${d.upstreamId}' quoted, not emitted\n", paths)
+        assertEquals(0, CompilerFixtureNullabilityPlan.fullActualRawDiagnostics(quoteOnly).count { it.upstreamId == d.upstreamId })
+    }
+
+    @Test fun exactAttemptScheduleRejectsMissingExtraReorderedDuplicateOrCrossSelectorReservations() {
+        for (selector in plan.SELECTORS) {
+            val attempts = attemptValues(selector)
+            assertTrue(plan.exactAttemptScheduleMatches(selector, attempts)) // Arithmetic only, no actual process or receipt.
+            assertFalse(plan.exactAttemptScheduleMatches(selector, attempts.dropLast(1)))
+            assertFalse(plan.exactAttemptScheduleMatches(selector, attempts + attempts.last()))
+            assertFalse(plan.exactAttemptScheduleMatches(selector, attempts.reversed()))
+            assertFalse(plan.exactAttemptScheduleMatches(selector, attempts.mapIndexed { i, a -> if (i == 0) a.copy(label = "other") else a }))
+            assertFalse(plan.exactAttemptScheduleMatches(selector, attempts.mapIndexed { i, a -> if (i == 0) a.copy(ruleIds = emptySet()) else a }))
+            assertFalse(plan.exactAttemptScheduleMatches(selector, attempts.mapIndexed { i, a -> if (i == attempts.lastIndex) a.copy(number = 1) else a }))
+        }
+        assertFalse(plan.exactAttemptScheduleMatches(plan.ADVISORY_SELECTOR, attemptValues(plan.OPT_IN_SELECTOR)))
+    }
+
+    @Test fun completeReceiptValueVectorAloneCannotValidateUnknownSuppressionOrMissingActualVariant() {
+        for (selector in plan.SELECTORS) {
+            val inputs = authoredInputs.filter { it.declaration.selector == selector }
+            val observations = inputs.map { observedValue(it) }
+            assertTrue(plan.observedReceiptsComplete(selector, attemptValues(selector), observations)) // Value-only gate, not actual receipts.
+            assertEquals(selector == plan.ADVISORY_SELECTOR, plan.expectedVariantsValidated(selector, observations))
+            assertFalse(plan.observedReceiptsComplete(selector, attemptValues(selector), observations.dropLast(1)))
+            assertFalse(plan.observedReceiptsComplete(selector, attemptValues(selector), observations.reversed()))
+            assertFalse(plan.observedReceiptsComplete(selector, attemptValues(selector), observations.mapIndexed { i, o -> if (i == 0) o.copy(receiptsAndAuthoredInputIntact = false) else o }))
+            assertFalse(plan.expectedVariantsValidated(selector, observations.dropLast(1)))
+        }
+    }
+
+    @Test fun wrongVersionDenialRequiresTheExactNumberVersionUnavailableReasonAndNoActualProcess() {
+        val reasons = listOf("compiler_version_not_pinned_2_4_21")
+        for (selector in plan.SELECTORS) {
+            val attempt = attemptValues(selector)[plan.versionDenialAttempt(selector) - 1]
+            assertTrue(plan.versionDenialMatches(selector, attempt, "2.4.20", "unavailable", reasons, false, true))
+            assertFalse(plan.versionDenialMatches(selector, attempt, "2.4.21", "unavailable", reasons, false, true))
+            assertFalse(plan.versionDenialMatches(selector, attempt, "2.4.20", "failed", reasons, false, true))
+            assertFalse(plan.versionDenialMatches(selector, attempt, "2.4.20", "unavailable", emptyList(), false, true))
+            assertFalse(plan.versionDenialMatches(selector, attempt, "2.4.20", "unavailable", reasons, true, true))
+            assertFalse(plan.versionDenialMatches(selector, attempt, "2.4.20", "unavailable", reasons, false, false))
+            assertFalse(plan.versionDenialMatches(selector, attempt.copy(number = attempt.number - 1), "2.4.20", "unavailable", reasons, false, true))
+            assertFalse(plan.versionDenialMatches(selector, attempt.copy(ruleIds = plan.ruleIds(selector)), "2.4.20", "unavailable", reasons, false, true))
+        }
+    }
+
+    @Test fun privateCompletionOverlayAndLatestSidecarNeverGrantOrdinaryMatrixOrQualificationCredit() {
+        val ordinary = Path.of("fixtures/evidence/compiler-jvm-2.4.21.json")
+        assertNull(compilerFixtureDiagnosticBreadthLatestSidecar(true, ordinary))
+        assertEquals(ordinary, compilerFixtureDiagnosticBreadthLatestSidecar(false, ordinary))
+        assertEquals(emptyMap(), compilerFixtureDiagnosticBreadthCompletionFields(null, true))
+        for (selector in plan.SELECTORS) {
+            val incomplete = compilerFixtureDiagnosticBreadthCompletionFields(selector, false)
+            assertEquals(false, incomplete["run_complete"])
+            val value = compilerFixtureDiagnosticBreadthCompletionFields(selector, true)
+            assertEquals(selector == plan.ADVISORY_SELECTOR, value["run_complete"])
+            assertEquals(false, value["ordinary_six_kind_assessments_complete"])
+            assertEquals(false, value["diagnostic_breadth_observed_receipts_alone_are_success"])
+            assertFalse("qualified" in value)
+            assertFalse("tested" in value)
+            assertFalse("implemented" in value)
+            assertTrue(value.getValue("completion_scope").toString().contains("no_global_stage_credit"))
+        }
+    }
+
+    private fun input(upstream: String, kind: String = "positive"): CompilerFixtureDiagnosticBreadthInput =
+        authoredInputs.single { it.declaration.upstreamId == upstream && it.declaration.kind == kind }
+    private fun selectedPoint(input: CompilerFixtureDiagnosticBreadthInput): SourceLocation = point(input, input.declaration.selectedRegions.first())
+    private fun point(input: CompilerFixtureDiagnosticBreadthInput, region: CompilerFixtureDiagnosticBreadthRegion): SourceLocation =
+        SourceLocation(input.declaration.path, Digests.sha256(input.source), region.line, region.startColumn)
+    private fun rawValues(input: CompilerFixtureDiagnosticBreadthInput): List<RawDiagnostic> =
+        (if (input.declaration.expectedCount == 1) listOf(RawDiagnostic(UNIT_MESSAGE, input.declaration.severity.lowercase(),
+            input.declaration.upstreamId, selectedPoint(input))) else emptyList()) + input.declaration.companions.map {
+            RawDiagnostic("unit-only required unmapped companion", "error", it.upstreamId, point(input, it.regions.first()))
+        }
+    private fun findingValues(input: CompilerFixtureDiagnosticBreadthInput): List<Finding> =
+        if (input.declaration.expectedCount == 1) listOf(findingValue(input, selectedPoint(input))) else emptyList()
+    private fun findingValue(input: CompilerFixtureDiagnosticBreadthInput, point: SourceLocation): Finding =
+        Finding(input.declaration.ruleId, "unit-only diagnostic value", UNIT_MESSAGE, "No actual emission or receipt claimed", point,
+            "unit_value_not_evidence", "value-controls", severity = input.declaration.severity.lowercase(), upstreamId = input.declaration.upstreamId)
+    private fun observedValue(input: CompilerFixtureDiagnosticBreadthInput, raw: List<RawDiagnostic> = rawValues(input),
+        findings: List<Finding> = findingValues(input)): CompilerFixtureDiagnosticBreadthObservation {
+        val error = input.declaration.compilationExpectation == "nonzero"
+        return CompilerFixtureDiagnosticBreadthObservation(input.declaration, input.declaration.number, true, true, true, true,
+            if (error) 1 else 0, if (error) "failed" else "partial", false, plan.diagnostics(input, raw, findings))
+    }
+    private fun attemptValues(selector: String): List<CompilerFixtureAttempt> {
+        val budget = CompilerFixtureBudget(CompilerFixtureSettings("fixtures", selector), startedNanos = 0, nanoTime = { 0 })
+        plan.declarations(selector).forEach { budget.reserveAttempt(it.label, setOf(it.ruleId)).state = "unit_value_only_not_run" }
+        budget.reserveAttempt(plan.VERSION_DENIAL_LABEL, emptySet()).state = "unit_value_only_not_run"
+        plan.CONTROL_LABELS.forEach { budget.reserveAttempt(it, emptySet()).state = "unit_value_only_not_run" }
+        return budget.attempts
+    }
+    private fun fixtureRoot(): Path = generateSequence(Path.of("").toAbsolutePath().normalize()) { it.parent }
+        .map { it.resolve("providers/compiler-fixtures") }.first { Files.isRegularFile(it.resolve(plan.MANIFEST_PATH)) }
+    private fun fixtureText(relative: String): String = Files.readString(fixtureRoot().resolve(relative))
+    private fun manifest(): JsonObject = Json.parseToJsonElement(fixtureText(plan.MANIFEST_PATH)).jsonObject
+    private fun failsBeforeSourceRead(changed: JsonObject) {
+        var reads = 0
+        assertFails { plan.load(changed) { reads++; fixtureText(it) } }
+        assertEquals(0, reads)
+    }
+    private fun changeRow(initial: JsonObject, rowIndex: Int = 0, change: (JsonObject) -> JsonObject): JsonObject =
+        JsonObject(initial + ("fixtures" to JsonArray(initial.getValue("fixtures").jsonArray.mapIndexed { index, row ->
+            if (index == rowIndex) change(row.jsonObject) else row
+        })))
+    private fun changeInput(initial: JsonObject, rowIndex: Int = 0, change: (JsonObject) -> JsonObject): JsonObject = changeRow(initial, rowIndex) { row ->
+        JsonObject(row + ("inputs" to JsonArray(row.getValue("inputs").jsonArray.mapIndexed { index, input ->
+            if (index == 0) change(input.jsonObject) else input
+        })))
+    }
+    companion object { private const val UNIT_MESSAGE = "unit-only selected diagnostic value, never observed compiler output" }
+}

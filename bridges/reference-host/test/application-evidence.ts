@@ -17,7 +17,7 @@ export async function captureApplicationEvidence(host: CodexHostPort, journal: I
   const output = canonical({ contractVersion: 'ktchecker/preview-1', invocationId: proof.invocationId,
     requestDigest: proof.requestDigest, contexts: contexts.map(item => ({ contextDigest: item.digest, text: item.text })) });
   const serializedApplicationRequest = JSON.stringify({ id: application.applicationRequestId, method: 'turn/start', params: {
-    threadId: host.binding.hostThreadId, input: [], toolOutput: { name: 'ktchecker', output }, effort: 'low',
+    threadId: host.binding.hostThreadId, input: [], toolOutput: { name: 'ktchecker', output }, effort: proof.effort ?? 'low',
   } });
   assert.equal(digest(serializedApplicationRequest), application.serializedRequestDigest);
   const publicItems = await host.server.request<{ data: { item: { type: string; id: string; text?: string } }[] }>('thread/items/list', {

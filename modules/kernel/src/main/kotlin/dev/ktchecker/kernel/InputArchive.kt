@@ -29,6 +29,18 @@ internal class InputArchive(private val root: Path, private val config: KernelCo
         val bytes: Long,
     ) : AutoCloseable {
         private var installed = false
+        @Volatile private var published = false
+
+        /** All source/artifact IO stays outside the ledger writer. Before install, verify held
+         * staging bytes; after publication, verify the immutable final archive path. */
+        fun readInput(): AnalysisInput = if (published) input else input.copy(
+                materializedRoot = temp.resolve("sources").toString(),
+                context = input.context.copy(classpath = input.context.classpath.map { artifact ->
+                    artifact.copy(path = temp.resolve(destination.relativize(Path.of(artifact.path))).toString())
+                }))
+
+        fun verify(maxBytes: Long) = verifyFrozen(readInput(), maxBytes)
+
         fun install() {
             if (Files.exists(destination, LinkOption.NOFOLLOW_LINKS)) {
                 if (!Files.isDirectory(destination, LinkOption.NOFOLLOW_LINKS) || Files.isSymbolicLink(destination)) {
@@ -40,11 +52,13 @@ internal class InputArchive(private val root: Path, private val config: KernelCo
                     Files.readString(manifest) != ContractJson.encodeToString(input)) {
                     fail("archive_conflict", "Archived input identity differs")
                 }
+                published = true
                 return
             }
             Files.move(temp, destination, StandardCopyOption.ATOMIC_MOVE)
             forceDirectory(destination.parent)
             installed = true
+            published = true
         }
         override fun close() {
             if (!installed) deleteTree(temp)
@@ -108,6 +122,34 @@ internal class InputArchive(private val root: Path, private val config: KernelCo
             deleteTree(temp)
             throw t
         }
+    }
+
+    /** Copies D's already retained sources/known artifacts, adding only the certified output
+     * ordinal. The temporary read-location projection is NOT P and is never admitted as work. */
+    fun stageResolvedFromDeclaration(key: String, original: AnalysisInput, archive: DeclaredPlanArchive,
+        insertedArtifact: dev.ktchecker.contracts.ArtifactIdentity? = null): Staged {
+        archive.verify()
+        val declaration = archive.original
+        val index = archive.admission.declaration.classpathIndex
+        val known = original.context.classpath.filterIndexed { ordinal, _ -> insertedArtifact == null || ordinal != index }
+        if (original.snapshot != declaration.snapshot || original.materializedRoot != declaration.materializedRoot ||
+            original.outputRoot != null || known != declaration.context.classpath ||
+            insertedArtifact != null && original.context.classpath.getOrNull(index) != insertedArtifact) {
+            fail("produced_archive_resolution_mismatch", "Resolved execution must retain all declared source/known artifact identities")
+        }
+        val currentRead = archive.readInput()
+        val retained = currentRead.context.classpath.iterator()
+        val reads = original.context.classpath.mapIndexed { ordinal, artifact ->
+            if (insertedArtifact != null && ordinal == index) artifact else retained.next()
+        }
+        if (retained.hasNext()) fail("produced_archive_resolution_mismatch", "Known artifact inventory was not consumed exactly")
+        val staged = stage(key, original.copy(materializedRoot = currentRead.materializedRoot,
+            context = original.context.copy(classpath = reads)))
+        try {
+            archive.verify()
+            staged.verify(config.maxSnapshotBytes)
+            return staged
+        } catch (failure: Throwable) { staged.close(); throw failure }
     }
 
     companion object {

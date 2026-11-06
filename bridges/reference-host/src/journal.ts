@@ -1,9 +1,9 @@
-import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync, lstatSync, openSync, closeSync, chmodSync } from 'node:fs';
-import { join } from 'node:path';
+import { chmodSync } from 'node:fs';
 import { randomUUID, createHash } from 'node:crypto';
 import { PREVIEW_CONTRACT } from '@ktchecker/mcp-preview/rpc';
 import { assertPrivateStatePlatform } from '@ktchecker/mcp-preview/private-state';
+import { HostError, PrivateDatabase } from './private-database.js';
+export { HostError, privatePath } from './private-database.js';
 import type { HostBinding, JournalState, EventPage, ReviewEvent } from './types.js';
 
 export function digest(text:string):string{return 'sha256:'+createHash('sha256').update(text,'utf8').digest('hex');}
@@ -12,18 +12,11 @@ export function canonical(value:unknown):string {
   if(value!==null && typeof value==='object') return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical((value as Record<string,unknown>)[k])).join(',')+'}';
   const result=JSON.stringify(value); if(result===undefined)throw new Error('non_json_value'); return result;
 }
-export class HostError extends Error { constructor(readonly code:string){super(code);this.name='HostError';} }
-export function privatePath(path:string,directory:boolean):void{
-  assertPrivateStatePlatform();
-  const stat=lstatSync(path);
-  if(stat.isSymbolicLink()||(directory?!stat.isDirectory():!stat.isFile()))throw new HostError('unsafe_state_path');
-  if((stat.mode&0o077)!==0||(process.getuid&&stat.uid!==process.getuid()))throw new HostError('state_permissions');
-}
 export interface JournalOptions {maxEvents?:number;maxStateBytes?:number;leaseMillis?:number;now?:()=>number}
 
 /** SQLite FULL/WAL atomic page+cursor commits. One leased controller per explicitly bound store. */
 export class InboxJournal {
-  private readonly db:DatabaseSync;
+  private readonly db:PrivateDatabase;
   private readonly owner=randomUUID();
   private readonly now:()=>number;
   private readonly leaseMillis:number;
@@ -33,18 +26,15 @@ export class InboxJournal {
   private closed=false;
   private leaseProblem=false;
   constructor(directory:string,readonly binding:HostBinding,options:JournalOptions={}){
+    assertPrivateStatePlatform();
     if(!Number.isSafeInteger(binding.client.generation)||binding.client.generation<1||!binding.hostThreadId)throw new HostError('invalid_binding');
     this.now=options.now??Date.now;this.leaseMillis=options.leaseMillis??15_000;
     this.maxEvents=options.maxEvents??4096;this.maxStateBytes=options.maxStateBytes??16*1024*1024;
     if(this.leaseMillis<300||this.maxEvents<1||this.maxStateBytes<1024)throw new HostError('invalid_journal_limits');
-    mkdirSync(directory,{recursive:true,mode:0o700});privatePath(directory,true);
-    const path=join(directory,'inbox.sqlite');
-    try{closeSync(openSync(path,'wx',0o600));}catch(error){if((error as NodeJS.ErrnoException).code!=='EEXIST')throw error;}
-    privatePath(path,false);
-    this.db=new DatabaseSync(path);
+    this.db=new PrivateDatabase(directory,'inbox.sqlite');
     try{
-      this.db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA trusted_schema=OFF; PRAGMA busy_timeout=5000;');
-      this.db.exec('CREATE TABLE IF NOT EXISTS journal (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL); CREATE TABLE IF NOT EXISTS controller (id INTEGER PRIMARY KEY CHECK(id=1), owner TEXT NOT NULL, expires INTEGER NOT NULL);');
+      this.db.exec('CREATE TABLE IF NOT EXISTS journal (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL)');
+      this.db.exec('CREATE TABLE IF NOT EXISTS controller (id INTEGER PRIMARY KEY CHECK(id=1), owner TEXT NOT NULL, expires INTEGER NOT NULL)');
       this.db.exec('BEGIN IMMEDIATE');
       const existing=this.db.prepare('SELECT state FROM journal WHERE id=1').get() as {state:string}|undefined;
       if(existing){
@@ -60,7 +50,9 @@ export class InboxJournal {
       if(lease&&lease.expires>this.now())throw new HostError('consumer_controller_busy');
       this.db.prepare('INSERT INTO controller(id,owner,expires) VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET owner=excluded.owner,expires=excluded.expires').run(this.owner,this.now()+this.leaseMillis);
       this.db.exec('COMMIT');
-      if(process.platform!=='win32')for(const suffix of ['-wal','-shm']){try{chmodSync(path+suffix,0o600);}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}}
+      // Darwin admission/creator permissions precede every write: no late chmod
+      // "repair" may turn an unsafe sidecar into a claimed private write.
+      if(process.platform!=='win32'&&process.platform!=='darwin')for(const suffix of ['-wal','-shm']){try{chmodSync(this.db.path+suffix,0o600);}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}}
     }catch(error){try{this.db.exec('ROLLBACK');}catch{}this.db.close();throw error;}
     this.heartbeat=setInterval(()=>{try{this.edit(()=>{});}catch{this.leaseProblem=true;}},Math.floor(this.leaseMillis/3));
     this.heartbeat.unref();

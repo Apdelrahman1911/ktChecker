@@ -1,0 +1,605 @@
+{
+  "schema": "ktchecker/scoped-implementation-checkpoint/1",
+  "checkpoint_date": "2026-11-05",
+  "release_qualified": false,
+  "aggregate_release_test_graph_passed": false,
+  "scope_reduced": false,
+  "required_catalog_rule_count": 1663,
+  "last_global_coverage_ledger": {
+    "contexts_per_rule": 8,
+    "cells": 13304,
+    "implemented_cells": 2,
+    "tested_cells": 0,
+    "qualified_cells": 0,
+    "regenerated_by_this_checkpoint": false,
+    "note": "Strict release-context accounting. Synthetic fixture execution below is separate, not silently promoted into these cells."
+  },
+  "implementation_changes": [
+    "Nominal observed-export path retains configuration_input_closure_unproven across durable parent/slot/anchor events and completion denial.",
+    "Strict produced-output and observed model composition; exact owner attempt and invocation binding.",
+    "Current-image parent/projection host controls preserve exact empty target identity.",
+    "Two additional bounded Detekt LIGHT cohorts preserve all22 authored rule routes and199 planned analyses.",
+    "Indexed platform workflow gains an explicit consent-bound Darwin native-component-only profile; existing Android/iOS/Desktop job stanzas remain unchanged.",
+    "Windows distribution observation uses independently bound full-volume/FileIdInfo native metadata without dropping no-follow, identity, containment or fail-closed checks; actual Windows validation remains pending."
+  ],
+  "compile": {
+    "receipt": {
+      "path": "build/ci-evidence/observed-protocol-compile-20261105-r3/root-verification.json",
+      "sha256": "72b83c43606c567189ddcdeedeb7de120ba4269c3237ebda25a8786f2f2de174"
+    },
+    "state": "verified",
+    "source": {
+      "commit": "663113117bb3784c1a7638ac8282e64beabe59d0",
+      "dirty": true,
+      "file_count": 4385,
+      "working_tree_digest": "sha256:231846796288b4e313a6f6fb278af42c9daf38f542b3f94104cf9f163f6a3d38",
+      "digest_scope": "tracked + untracked nonignored actual bytes, missing files, symlinks and executable bits",
+      "unsupported_directories": 0
+    },
+    "source_before_after_equal": true,
+    "settled_exit_code": 0,
+    "elapsed_seconds": 77.104,
+    "tests_executed": false
+  },
+  "kernel_owner_corpus_controls": {
+    "receipt": {
+      "path": "build/ci-evidence/observed-kernel-owner-corpus-controls-20261105-r1/root-verification.json",
+      "sha256": "6e2d35b7d6220c277e6468df4fb9407090bbb46f87ebef9b602714e9fe5985ac"
+    },
+    "source": {
+      "commit": "663113117bb3784c1a7638ac8282e64beabe59d0",
+      "dirty": true,
+      "file_count": 4385,
+      "working_tree_digest": "sha256:231846796288b4e313a6f6fb278af42c9daf38f542b3f94104cf9f163f6a3d38",
+      "digest_scope": "tracked + untracked nonignored actual bytes, missing files, symlinks and executable bits",
+      "unsupported_directories": 0
+    },
+    "source_before_after_equal": true,
+    "elapsed_seconds": 377.945,
+    "lanes": {
+      ":kernel:test": {
+        "methods": 189,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "task_state": "EXECUTED"
+      },
+      ":project-model:test": {
+        "methods": 10,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "task_state": "EXECUTED"
+      },
+      ":provider-compiler:test": {
+        "methods": 6,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "task_state": "EXECUTED"
+      },
+      ":cli:test": {
+        "methods": 121,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "task_state": "EXECUTED"
+      },
+      ":provider-detekt:corpusTest": {
+        "methods": 54,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "task_state": "EXECUTED"
+      }
+    },
+    "total_methods": 380,
+    "real_compiler_owner_model_execution": false,
+    "stress": {
+      "clients": 16,
+      "distinct_patch_dispatches": 100,
+      "cancellations_with_preserved_obligations": 20,
+      "provider": "synthetic",
+      "useful_findings_latency_benchmark": false
+    }
+  },
+  "host_controls": {
+    "receipt": {
+      "path": "build/ci-evidence/observed-host-controls-20261105-r1/root-verification.json",
+      "sha256": "d0d435d7ab0e2118045d5b42bd540897531965b50a93be778cc94b6f1bb14c70"
+    },
+    "source": {
+      "commit": "663113117bb3784c1a7638ac8282e64beabe59d0",
+      "dirty": true,
+      "file_count": 4385,
+      "working_tree_digest": "sha256:9430f448e0c9c8a221f9d6ca2840711d296030ebc610f2f7cececee02cf2ebde",
+      "digest_scope": "tracked + untracked nonignored actual bytes, missing files, symlinks and executable bits",
+      "unsupported_directories": 0
+    },
+    "source_before_after_equal": true,
+    "reports": [
+      {
+        "path": "delivery-regression-junit.xml",
+        "sha256": "b8afaf74fd52c61a0d0e1095c52f03b53fb931c9610288043860d0284f4349f6",
+        "tests": 42,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "path": "parent-projection-junit.xml",
+        "sha256": "e687be0d5e4a0dd4939a5c2945c7f23ec9d71b444fff8a9abb9e5901df653ccd",
+        "tests": 14,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "total_methods": 56,
+    "actual_model_requests": 0,
+    "commands": [
+      {
+        "phase": "build",
+        "elapsed_seconds": 5.208,
+        "sha256": "538ffa133e08f430b6d6acc94b4eb638bc65c24460fde444d9f25bb178617162"
+      },
+      {
+        "phase": "parent-projection",
+        "elapsed_seconds": 3.01,
+        "sha256": "25db1a79fc6c3af6d25fb5256f710946d99cad4eb127bfc4c175e727bcf70255"
+      },
+      {
+        "phase": "delivery-regression",
+        "elapsed_seconds": 1.203,
+        "sha256": "6213295a773aab0b975dc211754e0a46108a90d8e64da165da6996b14ec54671"
+      }
+    ]
+  },
+  "expanded_corpus_controls": {
+    "receipt": {
+      "path": "build/ci-evidence/detekt-expanded-controls-20261105-r1/root-verification.json",
+      "sha256": "02ab60c6fa6e37602686c23519afd102168727933823bf5eca3a79b57cb6956e"
+    },
+    "source": {
+      "commit": "663113117bb3784c1a7638ac8282e64beabe59d0",
+      "dirty": true,
+      "file_count": 4398,
+      "working_tree_digest": "sha256:1babf99833e8289d15939f2b087db47b57c960e60c851a6234b223ecc62e3c01",
+      "digest_scope": "tracked + untracked nonignored actual bytes, missing files, symlinks and executable bits",
+      "unsupported_directories": 0
+    },
+    "source_before_after_equal": true,
+    "methods": 67,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "elapsed_seconds": 61.086,
+    "actual_provider_executions": 0
+  },
+  "executed_detekt_cohorts": [
+    {
+      "receipt": {
+        "path": "build/ci-evidence/detekt-protocol-cohort-20261105-r1/root-verification.json",
+        "sha256": "d00749f471dbef97bb6c54aec4d2a37f0c35723ba4e251fb20dbbab990a2d20e"
+      },
+      "state": "verified_scoped_execution",
+      "source": {
+        "commit": "663113117bb3784c1a7638ac8282e64beabe59d0",
+        "dirty": true,
+        "file_count": 4399,
+        "working_tree_digest": "sha256:6869fa11e5e5fb43c25daa058c28b69ff3730a3031a52933ec6ac2c507ad09a9",
+        "digest_scope": "tracked + untracked nonignored actual bytes, missing files, symlinks and executable bits",
+        "unsupported_directories": 0
+      },
+      "source_before_after_equal": true,
+      "settled_exit_code": 0,
+      "cohort": "protocol-and-catch-boundaries-v1",
+      "elapsed_seconds": 103.947,
+      "junit": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "detector_analyses": 27,
+      "total_calls": 37,
+      "native_execution_confirmations": 28,
+      "runtime_callbacks": 31,
+      "progress_records": 113,
+      "selected_rules": [
+        {
+          "rule_id": "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception",
+          "cases": 9,
+          "cases_passed": 9,
+          "implemented": true,
+          "tested": true,
+          "qualified": false,
+          "assessment": "Authored synthetic upstream-predicate expectations, including documented FP/FN boundaries; not natural-project precision."
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter",
+          "cases": 9,
+          "cases_passed": 9,
+          "implemented": true,
+          "tested": true,
+          "qualified": false,
+          "assessment": "Authored synthetic upstream-predicate expectations, including documented FP/FN boundaries; not natural-project precision."
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.exceptions.too-generic-exception-caught",
+          "cases": 9,
+          "cases_passed": 9,
+          "implemented": true,
+          "tested": true,
+          "qualified": false,
+          "assessment": "Authored synthetic upstream-predicate expectations, including documented FP/FN boundaries; not natural-project precision."
+        }
+      ],
+      "context": {
+        "id": "detekt-syntax-protocol-protocol-and-catch-boundaries-v1-native-preview1",
+        "target": "jvm",
+        "source_set": "synthetic",
+        "corpus_cohort": "protocol-and-catch-boundaries-v1",
+        "cohort_plan_digest": "sha256:c832b3938eb553dad22bf483db5780dde8571b86b83679f20064c95fdf2356ad",
+        "corpus_source_tuple_digest": "sha256:a4c454315ab71bfdf05cda92824c973538a0c8fc5a61af239f7ecaf9fcbb9202",
+        "corpus_code_image_digest": "sha256:f89aa9f0a2ce9aaaaa41623af41137acc56a5dc7c831cdac25e2132e4ad49343",
+        "corpus_fixture_set_digest": "sha256:442a08aa6bc76a9effa408deddcdade45e1321c0aedc4aefcd4789105a5c34c3",
+        "invocation_ceiling": 37,
+        "aggregate_limit_millis": 1200000,
+        "child_limit_millis": 60000,
+        "execution_backend": "owned_child_native_supervisor_preview1",
+        "supervisor_protocol_version": "ktchecker-owned-child-supervisor/preview-1",
+        "supervisor_target": "linux-x86_64",
+        "supervisor_source_digest": "sha256:96c72b71ae7340b22f9112c14193eed19d61f26b6e4add37ab58242b4520f781",
+        "supervisor_binary_digest": "sha256:0232051f0e20427a1ef2bfe092dbbddadde382dd832dd5d86d0568a8e89ed9b1",
+        "runtime_execution_source_digest": "sha256:38b51316e03eb622099fede43ff678e6417aed3c347e0a9acfa1e63f6e7eebfd",
+        "runtime_code_image_digest": "sha256:dd340a1b70cd23107f04f18d6858b28a8517db4f0b06b71a0db300f1b6fa35c4",
+        "native_qualification": false,
+        "module": ":detekt-syntax-protocol-protocol-and-catch-boundaries-v1",
+        "compilation": "main",
+        "analysis_mode": "light",
+        "kotlin_version": "2.4.21",
+        "compiler_version": "2.4.21",
+        "embedded_kotlin_version": "2.4.10",
+        "jdk_version": "21.0.12",
+        "library_versions": {},
+        "scope_note": "3 actually checked protocol-and-catch-boundaries-v1 syntax routes only. Full twenty-two/199 authoring scope remains not_run; prior nineteen/172 and sixteen/145 are intact and 19 other rows are not exclusions. Unqualified."
+      },
+      "authoring_inventory": {
+        "rules": 22,
+        "analyses": 199,
+        "not_run_rules_in_this_lane": 19,
+        "full_corpus_run": false
+      },
+      "verified_reference_count": 585,
+      "reference_scope": "Direct sidecar evidence references plus start_witness.references; no arbitrary fixture-relative paths reinterpreted.",
+      "limitations": [
+        "Linux/JVM LIGHT synthetic fixtures only",
+        "Embedded Kotlin2.4.10 versus declared/compiler2.4.21 remains an unqualified parser boundary",
+        "No actual model request or full/incremental equivalence",
+        "Known heuristic FP/FN cases remain limitations even when the expected provider result matches"
+      ],
+      "global_qualification_ledger_promoted": false
+    },
+    {
+      "receipt": {
+        "path": "build/ci-evidence/detekt-exception-cohort-20261105-r1/root-verification.json",
+        "sha256": "fd3427e781695a15c6763a3392d6477e41b5a16ba7f98854777fd12301df8221"
+      },
+      "state": "verified_scoped_execution",
+      "source": {
+        "commit": "663113117bb3784c1a7638ac8282e64beabe59d0",
+        "dirty": true,
+        "file_count": 4399,
+        "working_tree_digest": "sha256:6869fa11e5e5fb43c25daa058c28b69ff3730a3031a52933ec6ac2c507ad09a9",
+        "digest_scope": "tracked + untracked nonignored actual bytes, missing files, symlinks and executable bits",
+        "unsupported_directories": 0
+      },
+      "source_before_after_equal": true,
+      "settled_exit_code": 0,
+      "cohort": "exception-observability-policy-v1",
+      "elapsed_seconds": 104.144,
+      "junit": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0
+      },
+      "detector_analyses": 27,
+      "total_calls": 37,
+      "native_execution_confirmations": 28,
+      "runtime_callbacks": 31,
+      "progress_records": 113,
+      "selected_rules": [
+        {
+          "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+          "cases": 9,
+          "cases_passed": 9,
+          "implemented": true,
+          "tested": true,
+          "qualified": false,
+          "assessment": "Authored synthetic upstream-predicate expectations, including documented FP/FN boundaries; not natural-project precision."
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+          "cases": 9,
+          "cases_passed": 9,
+          "implemented": true,
+          "tested": true,
+          "qualified": false,
+          "assessment": "Authored synthetic upstream-predicate expectations, including documented FP/FN boundaries; not natural-project precision."
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+          "cases": 9,
+          "cases_passed": 9,
+          "implemented": true,
+          "tested": true,
+          "qualified": false,
+          "assessment": "Authored synthetic upstream-predicate expectations, including documented FP/FN boundaries; not natural-project precision."
+        }
+      ],
+      "context": {
+        "id": "detekt-syntax-exception-observability-exception-observability-policy-v1-native-preview1",
+        "target": "jvm",
+        "source_set": "synthetic",
+        "corpus_cohort": "exception-observability-policy-v1",
+        "cohort_plan_digest": "sha256:54c13bc47181b6922365fc37b718b9d6d87a057add32b1a9170972484b95155b",
+        "corpus_source_tuple_digest": "sha256:a4c454315ab71bfdf05cda92824c973538a0c8fc5a61af239f7ecaf9fcbb9202",
+        "corpus_code_image_digest": "sha256:f89aa9f0a2ce9aaaaa41623af41137acc56a5dc7c831cdac25e2132e4ad49343",
+        "corpus_fixture_set_digest": "sha256:442a08aa6bc76a9effa408deddcdade45e1321c0aedc4aefcd4789105a5c34c3",
+        "invocation_ceiling": 37,
+        "aggregate_limit_millis": 1200000,
+        "child_limit_millis": 60000,
+        "execution_backend": "owned_child_native_supervisor_preview1",
+        "supervisor_protocol_version": "ktchecker-owned-child-supervisor/preview-1",
+        "supervisor_target": "linux-x86_64",
+        "supervisor_source_digest": "sha256:96c72b71ae7340b22f9112c14193eed19d61f26b6e4add37ab58242b4520f781",
+        "supervisor_binary_digest": "sha256:0232051f0e20427a1ef2bfe092dbbddadde382dd832dd5d86d0568a8e89ed9b1",
+        "runtime_execution_source_digest": "sha256:38b51316e03eb622099fede43ff678e6417aed3c347e0a9acfa1e63f6e7eebfd",
+        "runtime_code_image_digest": "sha256:dd340a1b70cd23107f04f18d6858b28a8517db4f0b06b71a0db300f1b6fa35c4",
+        "native_qualification": false,
+        "module": ":detekt-syntax-exception-observability-exception-observability-policy-v1",
+        "compilation": "main",
+        "analysis_mode": "light",
+        "kotlin_version": "2.4.21",
+        "compiler_version": "2.4.21",
+        "embedded_kotlin_version": "2.4.10",
+        "jdk_version": "21.0.12",
+        "library_versions": {},
+        "scope_note": "3 actually checked exception-observability-policy-v1 syntax routes only. Full twenty-two/199 authoring scope remains not_run; prior nineteen/172 and sixteen/145 are intact and 19 other rows are not exclusions. Unqualified."
+      },
+      "authoring_inventory": {
+        "rules": 22,
+        "analyses": 199,
+        "not_run_rules_in_this_lane": 19,
+        "full_corpus_run": false
+      },
+      "verified_reference_count": 585,
+      "reference_scope": "Direct sidecar evidence references plus start_witness.references; no arbitrary fixture-relative paths reinterpreted.",
+      "limitations": [
+        "Linux/JVM LIGHT synthetic fixtures only",
+        "Embedded Kotlin2.4.10 versus declared/compiler2.4.21 remains an unqualified parser boundary",
+        "No actual model request or full/incremental equivalence",
+        "Known heuristic FP/FN cases remain limitations even when the expected provider result matches"
+      ],
+      "global_qualification_ledger_promoted": false
+    }
+  ],
+  "hosted_prior_commit": {
+    "observation_sha256": "e4beb669e70f6181966dc68d5e65921003e3610077d600e7ab6b8b83130cf102",
+    "observed_at": "2026-11-05T13:33:15.442443+00:00",
+    "head_commit": "663113117bb3784c1a7638ac8282e64beabe59d0",
+    "actual_tested_merge_commit": "295b716498200f27415bc02cac7218bd8c7e2143",
+    "logs_requested": false,
+    "artifacts_requested": false,
+    "root_causes_inferred_from_step_statuses": false,
+    "runs": [
+      {
+        "id": 42030164595,
+        "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/42030164595",
+        "name": "Planning evidence and registry",
+        "status": "completed",
+        "conclusion": "failure",
+        "jobs": [
+          {
+            "name": "Planning integrity (windows-2025)",
+            "status": "completed",
+            "conclusion": "failure",
+            "failed_steps": [
+              "Test validation failure paths"
+            ]
+          },
+          {
+            "name": "Planning integrity (macos-15)",
+            "status": "completed",
+            "conclusion": "success",
+            "failed_steps": []
+          },
+          {
+            "name": "Planning integrity (ubuntu-24.04)",
+            "status": "completed",
+            "conclusion": "success",
+            "failed_steps": []
+          }
+        ]
+      },
+      {
+        "id": 42030164557,
+        "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/42030164557",
+        "name": "Preview bridges (actual SDK and synthetic host controls)",
+        "status": "completed",
+        "conclusion": "failure",
+        "jobs": [
+          {
+            "name": "MCP SDK and synthetic host tests/audits (windows-2025)",
+            "status": "completed",
+            "conclusion": "failure",
+            "failed_steps": [
+              "Execute npm ci, actual SDK/synthetic-host tests/audits and validated unsigned npm packs",
+              "Bind sanitized bridge evidence to actual source and job outcome"
+            ]
+          },
+          {
+            "name": "MCP SDK and synthetic host tests/audits (ubuntu-24.04)",
+            "status": "completed",
+            "conclusion": "success",
+            "failed_steps": []
+          },
+          {
+            "name": "MCP SDK and synthetic host tests/audits (macos-26)",
+            "status": "completed",
+            "conclusion": "failure",
+            "failed_steps": [
+              "Execute npm ci, actual SDK/synthetic-host tests/audits and validated unsigned npm packs",
+              "Bind sanitized bridge evidence to actual source and job outcome"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 42030164666,
+        "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/42030164666",
+        "name": "Preview implementation (real pinned JVM)",
+        "status": "completed",
+        "conclusion": "failure",
+        "jobs": [
+          {
+            "name": "JVM 21 checker build and installed launcher (macos-26)",
+            "status": "completed",
+            "conclusion": "failure",
+            "failed_steps": [
+              "Build and test actual modules; assemble preview distributions",
+              "Verify exact genuine library controls or visible Windows opt-out skips",
+              "Verify actual host-specific helper receipt and installed doctor bytes",
+              "Inventory actual dependency bytes, declared licenses and retained notices",
+              "Collect actual suites and artifact identities, including failures"
+            ]
+          },
+          {
+            "name": "JVM 21 checker build and installed launcher (ubuntu-24.04)",
+            "status": "completed",
+            "conclusion": "failure",
+            "failed_steps": [
+              "Build and test actual modules; assemble preview distributions",
+              "Verify exact genuine library controls or visible Windows opt-out skips",
+              "Verify actual host-specific helper receipt and installed doctor bytes",
+              "Inventory actual dependency bytes, declared licenses and retained notices",
+              "Collect actual suites and artifact identities, including failures"
+            ]
+          },
+          {
+            "name": "JVM 21 checker build and installed launcher (windows-2025)",
+            "status": "completed",
+            "conclusion": "failure",
+            "failed_steps": [
+              "Verify the evidence harness failure paths",
+              "Bind observed Gradle to the selected JVM",
+              "Observe exact helper build inputs and compiler or explicit unsupported host",
+              "Execute exact tiny native controls or record Windows native unavailability",
+              "Verify exact genuine library controls or visible Windows opt-out skips",
+              "Verify actual host-specific helper receipt and installed doctor bytes",
+              "Inventory actual dependency bytes, declared licenses and retained notices",
+              "Collect actual suites and artifact identities, including failures"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 42030164710,
+        "url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/42030164710",
+        "name": "Preview platform execution (actual KMP targets)",
+        "status": "completed",
+        "conclusion": "failure",
+        "jobs": [
+          {
+            "name": "Real iOS arm64 compile/link and iOS 26.4 simulator execution",
+            "status": "completed",
+            "conclusion": "failure",
+            "failed_steps": [
+              "Compile/link both actual iOS targets, execute simulator tests and reject invalid actuals",
+              "Execute independent offline Native FIR library feasibility with explicit enrollment",
+              "Collect exact simulator reports, linked frameworks and provider outcomes"
+            ]
+          },
+          {
+            "name": "Actual Android KMP compile, host tests and NewApi adapter controls",
+            "status": "completed",
+            "conclusion": "failure",
+            "failed_steps": [
+              "Exercise real Lint adapter against immutable fixture captures",
+              "Collect exact Android host-side reports and provider outcomes"
+            ]
+          },
+          {
+            "name": "Actual Desktop/JVM KMP common boundary tests",
+            "status": "completed",
+            "conclusion": "success",
+            "failed_steps": []
+          }
+        ]
+      }
+    ]
+  },
+  "retained_failures": [
+    {
+      "path": "build/ci-evidence/observed-protocol-compile-20261105-r1/root-verification.json",
+      "sha256": "988227f4e9f7882d374ce47b32be8f7c74d67b3e037a2d5d5940cdf5bc141555",
+      "state": "failed",
+      "reason": "Kernel test ConcurrentHashMap membership ambiguity; corrected successor later compiled."
+    },
+    {
+      "path": "build/ci-evidence/observed-protocol-compile-20261105-r2/root-verification.json",
+      "sha256": "f164f5d7eb312e21e7aff3118f619e92ccf34ec56338366c16a91ca451775e50",
+      "state": "failed",
+      "reason": "CLI Long/Int literal mismatch; corrected successor later compiled."
+    },
+    {
+      "path": "build/ci-evidence/detekt-protocol-cohort-20261105-r1/root-readback-r1-failure.json",
+      "state": "readback_helper_failed",
+      "reason": "Initial evidence-reader incorrectly interpreted a fixture-relative path as a filesystem evidence path; corrected scoped reader only, no provider rerun.",
+      "sha256": "fc78300177c452f573e80f38de1309981744fa5896cf5d085f702ae046b5a02d"
+    }
+  ],
+  "pending": [
+    "Fresh same-lineage patch-to-fix actual host/model-context experiment",
+    "Actual Windows execution and qualification of the distribution-observation correction",
+    "Darwin native-component dispatch at a separately bound new commit",
+    "Native semantics and full Android/iOS/Desktop/macOS target qualification",
+    "General incremental/full equivalence",
+    "Broad per-rule/context and real-world false-positive qualification",
+    "Fresh isolated runnable distribution acceptance and owner license decision",
+    "Warm1\u20133second useful-first-finding benchmark"
+  ],
+  "evidence_boundary": "Separate source-bound runs; not an aggregate full-current-source pass, a new installation, proof of model delivery, or release qualification.",
+  "windows_portability_controls": {
+    "adoption_receipt": {
+      "path": "build/ci-evidence/windows-observation-adoption-20261105-hakn51j7/adoption.json",
+      "sha256": "8fc0ee8c5a233e576a5689558280c1208d9e1cb36e766c02a066b38a44202f67"
+    },
+    "private_receipt_sha256": "9251727448ddbe7186976ab092cdb8177a7fe31141e413361aff2cff0ca9f060",
+    "private_verification_sha256": "f665a3afb56704b98bf330536d5059d14ac10259edcc706813235700497e6af6",
+    "methods": 80,
+    "subtests": 199,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "audit_violations": 0,
+    "outer_exit": 0,
+    "outer_elapsed_seconds": 0.7188793739769608,
+    "peak_rss_bytes": 31571968,
+    "host": "Linux",
+    "scope": "Synthetic distribution fixtures; Windows API/buffer/handle seams mocked. Ordinary C-backed stdlib imports are not Windows/native-ABI execution.",
+    "root_rerun": false,
+    "original_lane": {
+      "methods": 0,
+      "state": "failed_import_guard_before_tests",
+      "retained": true,
+      "replayed": false,
+      "verification_sha256": "7b35664d61bc8f81096634a8fa7aafff0f38a9b281c38a145ed4584efa06d8e2"
+    },
+    "actual_windows_execution": false,
+    "windows_root_cause_proven": false,
+    "qualified": false
+  }
+}

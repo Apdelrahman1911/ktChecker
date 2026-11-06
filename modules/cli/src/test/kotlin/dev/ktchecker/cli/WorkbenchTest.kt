@@ -76,7 +76,7 @@ class WorkbenchTest {
         Workbench(options()).use { work ->
             val rpc = RpcServer(work)
             listOf("config.mutate", "snapshot.edit", "exec", "review.prepare").forEach { method ->
-                val value = rpc.handle("""{"id":"x","method":"$method","params":{}}""")
+                val value = rpc.handle("""{"id":"x","method":"$method","params":{},"findingWireProfile":"$FINDING_WIRE_PROFILE"}""")
                 assertEquals("method_not_found", value.getValue("error").jsonObject.getValue("code").jsonPrimitive.content)
             }
         }

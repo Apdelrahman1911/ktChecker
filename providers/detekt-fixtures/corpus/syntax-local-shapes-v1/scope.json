@@ -1,0 +1,853 @@
+{
+  "schema": "ktchecker/detekt-syntax-local-shapes-scope/1",
+  "state": "SOURCE_IMPLEMENTATION_CANDIDATE_NOT_ADOPTED_OR_EXECUTED",
+  "candidate_only": true,
+  "new_rules_attempted": false,
+  "execution_count": 0,
+  "qualification_claimed": false,
+  "current_scope": {
+    "ids": 1663,
+    "contexts": 8,
+    "new_contexts": 0,
+    "changed_catalog_or_activation_files": [],
+    "scope_exclusions": [],
+    "historical_stage_transfer": 0
+  },
+  "existing_detekt_mapping": {
+    "total_mapping_rows": 276,
+    "included_exact_syntax_rows": 156,
+    "map_path": "modules/provider-detekt/src/main/resources/detekt-rule-map.json",
+    "map_sha256": "47ce5a08d971f8174441a578130188915a141e3c80724f3553609e3672aa1202",
+    "included156_rule_ids": [
+      "ktc.compose.pack.ComposableAnnotationNaming",
+      "ktc.compose.pack.ComposableNestingDepth",
+      "ktc.compose.pack.ComposableParamOrder",
+      "ktc.compose.pack.CompositionLocalAllowlist",
+      "ktc.compose.pack.ContentEmitterReturningValues",
+      "ktc.compose.pack.ContentSlotReused",
+      "ktc.compose.pack.ContentTrailingLambda",
+      "ktc.compose.pack.DefaultsVisibility",
+      "ktc.compose.pack.LambdaParameterEventTrailing",
+      "ktc.compose.pack.LambdaParameterInRestartableEffect",
+      "ktc.compose.pack.Material2",
+      "ktc.compose.pack.ModifierClickableOrder",
+      "ktc.compose.pack.ModifierComposed",
+      "ktc.compose.pack.ModifierMissing",
+      "ktc.compose.pack.ModifierNaming",
+      "ktc.compose.pack.ModifierNotUsedAtRoot",
+      "ktc.compose.pack.ModifierReused",
+      "ktc.compose.pack.ModifierWithoutDefault",
+      "ktc.compose.pack.MultipleEmitters",
+      "ktc.compose.pack.MutableParams",
+      "ktc.compose.pack.MutableStateAutoboxing",
+      "ktc.compose.pack.MutableStateParam",
+      "ktc.compose.pack.ParameterNaming",
+      "ktc.compose.pack.PreviewAnnotationNaming",
+      "ktc.compose.pack.PreviewNaming",
+      "ktc.compose.pack.PreviewPublic",
+      "ktc.compose.pack.RememberContentMissing",
+      "ktc.compose.pack.RememberMissing",
+      "ktc.compose.pack.StateParam",
+      "ktc.compose.pack.UnstableCollections",
+      "ktc.compose.pack.ViewModelForwarding",
+      "ktc.compose.pack.ViewModelInjection",
+      "ktc.kotlin.detekt.empty-blocks.empty-catch-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-default-constructor",
+      "ktc.kotlin.detekt.empty-blocks.empty-do-while-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-else-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-finally-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-for-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-function-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-if-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-init-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-secondary-constructor",
+      "ktc.kotlin.detekt.empty-blocks.empty-try-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-when-block",
+      "ktc.kotlin.detekt.empty-blocks.empty-while-block",
+      "ktc.kotlin.detekt.exceptions.exception-raised-in-unexpected-location",
+      "ktc.kotlin.detekt.exceptions.not-implemented-declaration",
+      "ktc.kotlin.detekt.exceptions.print-stack-trace",
+      "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+      "ktc.kotlin.detekt.exceptions.swallowed-exception",
+      "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally",
+      "ktc.kotlin.detekt.exceptions.throwing-exception-in-main",
+      "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+      "ktc.kotlin.detekt.exceptions.throwing-new-instance-of-same-exception",
+      "ktc.kotlin.detekt.exceptions.too-generic-exception-caught",
+      "ktc.kotlin.detekt.exceptions.too-generic-exception-thrown",
+      "ktc.kotlin.detekt.potential-bugs.equals-always-returns-true-or-false",
+      "ktc.kotlin.detekt.potential-bugs.explicit-garbage-collection-call",
+      "ktc.kotlin.detekt.potential-bugs.invalid-range",
+      "ktc.kotlin.detekt.potential-bugs.iterator-has-next-calls-next-method",
+      "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception",
+      "ktc.kotlin.detekt.potential-bugs.lateinit-usage",
+      "ktc.kotlin.detekt.potential-bugs.missing-package-declaration",
+      "ktc.kotlin.detekt.potential-bugs.unconditional-jump-statement-in-loop",
+      "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression",
+      "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter",
+      "ktc.kotlin.detekt.style.also-could-be-apply",
+      "ktc.kotlin.detekt.style.braces-on-if-statements",
+      "ktc.kotlin.detekt.style.braces-on-when-statements",
+      "ktc.kotlin.detekt.style.class-ordering",
+      "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "ktc.kotlin.detekt.style.data-class-contains-functions",
+      "ktc.kotlin.detekt.style.data-class-should-be-immutable",
+      "ktc.kotlin.detekt.style.destructuring-declaration-with-too-many-entries",
+      "ktc.kotlin.detekt.style.double-negative-lambda",
+      "ktc.kotlin.detekt.style.equals-null-call",
+      "ktc.kotlin.detekt.style.equals-on-signature-line",
+      "ktc.kotlin.detekt.style.explicit-it-lambda-multiple-parameters",
+      "ktc.kotlin.detekt.style.explicit-it-lambda-parameter",
+      "ktc.kotlin.detekt.style.expression-body-syntax",
+      "ktc.kotlin.detekt.style.forbidden-comment",
+      "ktc.kotlin.detekt.style.forbidden-import",
+      "ktc.kotlin.detekt.style.forbidden-suppress",
+      "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "ktc.kotlin.detekt.style.loop-with-too-many-jump-statements",
+      "ktc.kotlin.detekt.style.magic-number",
+      "ktc.kotlin.detekt.style.mandatory-braces-loops",
+      "ktc.kotlin.detekt.style.may-be-constant",
+      "ktc.kotlin.detekt.style.nested-classes-visibility",
+      "ktc.kotlin.detekt.style.optional-abstract-keyword",
+      "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "ktc.kotlin.detekt.style.range-until-instead-of-range-to",
+      "ktc.kotlin.detekt.style.redundant-constructor-keyword",
+      "ktc.kotlin.detekt.style.redundant-visibility-modifier",
+      "ktc.kotlin.detekt.style.return-count",
+      "ktc.kotlin.detekt.style.safe-cast",
+      "ktc.kotlin.detekt.style.serial-version-uidin-serializable-class",
+      "ktc.kotlin.detekt.style.string-should-be-raw-string",
+      "ktc.kotlin.detekt.style.throws-count",
+      "ktc.kotlin.detekt.style.trim-multiline-raw-string",
+      "ktc.kotlin.detekt.style.underscores-in-numeric-literals",
+      "ktc.kotlin.detekt.style.unnecessary-backticks",
+      "ktc.kotlin.detekt.style.unnecessary-inheritance",
+      "ktc.kotlin.detekt.style.unnecessary-parentheses",
+      "ktc.kotlin.detekt.style.unused-parameter",
+      "ktc.kotlin.detekt.style.unused-private-class",
+      "ktc.kotlin.detekt.style.use-array-literals-in-annotations",
+      "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "ktc.kotlin.detekt.style.use-let",
+      "ktc.kotlin.detekt.style.utility-class-with-public-constructor",
+      "ktc.kotlin.detekt.style.wildcard-import",
+      "ktc.maintainability.detekt.comments.absent-or-wrong-file-license",
+      "ktc.maintainability.detekt.comments.deprecated-block-tag",
+      "ktc.maintainability.detekt.comments.documentation-over-private-function",
+      "ktc.maintainability.detekt.comments.documentation-over-private-property",
+      "ktc.maintainability.detekt.comments.end-of-sentence-format",
+      "ktc.maintainability.detekt.comments.kdoc-references-non-public-property",
+      "ktc.maintainability.detekt.comments.outdated-documentation",
+      "ktc.maintainability.detekt.comments.undocumented-public-class",
+      "ktc.maintainability.detekt.comments.undocumented-public-function",
+      "ktc.maintainability.detekt.comments.undocumented-public-property",
+      "ktc.maintainability.detekt.complexity.cognitive-complex-method",
+      "ktc.maintainability.detekt.complexity.complex-condition",
+      "ktc.maintainability.detekt.complexity.complex-interface",
+      "ktc.maintainability.detekt.complexity.cyclomatic-complex-method",
+      "ktc.maintainability.detekt.complexity.labeled-expression",
+      "ktc.maintainability.detekt.complexity.large-class",
+      "ktc.maintainability.detekt.complexity.long-method",
+      "ktc.maintainability.detekt.complexity.method-overloading",
+      "ktc.maintainability.detekt.complexity.nested-block-depth",
+      "ktc.maintainability.detekt.complexity.string-literal-duplication",
+      "ktc.maintainability.detekt.complexity.too-many-functions",
+      "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+      "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public",
+      "ktc.maintainability.detekt.naming.class-naming",
+      "ktc.maintainability.detekt.naming.constructor-parameter-naming",
+      "ktc.maintainability.detekt.naming.enum-naming",
+      "ktc.maintainability.detekt.naming.forbidden-class-name",
+      "ktc.maintainability.detekt.naming.function-name-max-length",
+      "ktc.maintainability.detekt.naming.function-name-min-length",
+      "ktc.maintainability.detekt.naming.function-naming",
+      "ktc.maintainability.detekt.naming.function-parameter-naming",
+      "ktc.maintainability.detekt.naming.invalid-package-declaration",
+      "ktc.maintainability.detekt.naming.lambda-parameter-naming",
+      "ktc.maintainability.detekt.naming.matching-declaration-name",
+      "ktc.maintainability.detekt.naming.object-property-naming",
+      "ktc.maintainability.detekt.naming.package-naming",
+      "ktc.maintainability.detekt.naming.top-level-property-naming",
+      "ktc.maintainability.detekt.naming.variable-max-length",
+      "ktc.maintainability.detekt.naming.variable-min-length",
+      "ktc.maintainability.detekt.naming.variable-naming",
+      "ktc.performance.detekt.performance.for-each-on-range",
+      "ktc.performance.detekt.performance.unnecessary-init-on-array",
+      "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+      "ktc.performance.detekt.performance.unnecessary-temporary-instantiation",
+      "ktc.performance.detekt.performance.unnecessary-type-casting"
+    ]
+  },
+  "preserved_baseline": {
+    "rule_count": 22,
+    "authored_analyses": 199,
+    "fixture_files": [
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+        "sha256": "19f00be9222d0d9f2dc7d383732f50c49f045825b86d80c9126f04f0cfe4b5e8",
+        "bytes": 9620,
+        "rule_id": "ktc.kotlin.detekt.exceptions.print-stack-trace",
+        "analyses": 9,
+        "control_ids": [
+          "non-jdk-thread-dumpstack-is-not-stack-printing",
+          "caught-throwable-alias-still-prints",
+          "qualified-jdk-thread-dumpstack-is-missed"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+        "sha256": "acbec925685ca96468e85efb333bcde2084714b219c400a857c2683cc9318209",
+        "bytes": 8977,
+        "rule_id": "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
+        "analyses": 9,
+        "control_ids": [
+          "parenthesized-rethrow-escapes-exact-name",
+          "following-work-exempts-earlier-rethrow",
+          "earlier-work-does-not-exempt-trailing-rethrow"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+        "sha256": "fd40be8293bb11848f72a814c77ba65dbd4010b031375cf81f0fbc689e9c3081",
+        "bytes": 10823,
+        "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+        "analyses": 9,
+        "control_ids": [
+          "same-named-string-factory-is-not-an-exception",
+          "import-aliased-no-argument-exception-is-missed",
+          "configured-state-exception-only-keeps-one-active-finding"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+        "sha256": "f5b4b907acf297778c4e1c7281f8cf72fb2606ef36635926847e6b32ebc72b03",
+        "bytes": 7797,
+        "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+        "analyses": 9,
+        "control_ids": [
+          "owner-four-condition-threshold",
+          "literal-operator-text-is-not-four-decisions",
+          "non-condition-boolean-body-is-outside-predicate"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+        "sha256": "3072d43d79031d52ce2633a44fc84deda250de6bb5b03b55b3adfdf6929823c8",
+        "bytes": 8172,
+        "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+        "analyses": 9,
+        "control_ids": [
+          "stored-range-origin-not-followed",
+          "materialized-list-is-not-a-range-receiver",
+          "parenthesized-explicit-range-to-method"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+        "sha256": "3403c94cd8027dbf278b83a841c856d44e9b508e84c331f4209a402e1d1aecf0",
+        "bytes": 8252,
+        "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+        "analyses": 9,
+        "control_ids": [
+          "internal-package-name-is-not-visibility",
+          "empty-ignore-list-reports-public-internal-package",
+          "application-state-has-no-library-abi-promise"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+        "sha256": "0269a9470d085ff9177ba551894a430ad6b920c758d11345ef6e17caf850f7b1",
+        "bytes": 8734,
+        "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+        "analyses": 9,
+        "control_ids": [
+          "reordered-docs-and-invalid-name-defaults",
+          "order-option-does-not-waive-invalid-tags",
+          "prose-truth-is-not-checked-without-tags"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+        "sha256": "2618915ae01dd64cccf566ae2321037df18436a09bc86cf10f00224f999cb626",
+        "bytes": 8023,
+        "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+        "analyses": 9,
+        "control_ids": [
+          "multi-statement-default-initializer-retains-audit",
+          "computed-default-expression-not-evaluated",
+          "shadowed-array-constructor-requires-lambda"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+        "sha256": "506789a3a5eb500de52b1d5ba09b3f4736fb0a4b3206c279167c841cbf82a523",
+        "bytes": 8284,
+        "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+        "analyses": 9,
+        "control_ids": [
+          "stateful-second-poll-is-not-redundant",
+          "whitespace-inside-string-literals-is-significant",
+          "parenthesized-duplicate-is-not-flattened"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/iterator-not-throwing-no-such-element-exception.json",
+        "sha256": "948e040ddb8dc8ee7b4b4a03f28b5f99c286488ac067cf2b8de0bd0f9d94a421",
+        "bytes": 9298,
+        "rule_id": "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception",
+        "analyses": 9,
+        "control_ids": [
+          "delegated-list-iterator-already-throws",
+          "dormant-local-throw-does-not-enforce-exhaustion",
+          "qualified-exhaustion-exception-is-still-correct"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/too-generic-exception-caught.json",
+        "sha256": "e6ec648a998557360fc0f102021b174465174074ecb63f95f724cfc770e50ff9",
+        "bytes": 10429,
+        "rule_id": "ktc.kotlin.detekt.exceptions.too-generic-exception-caught",
+        "analyses": 9,
+        "control_ids": [
+          "cancellation-rethrow-does-not-waive-broad-catch-policy",
+          "qualified-broad-exception-escapes-text-list",
+          "configured-throwable-only-keeps-one-active-finding"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/wrong-equals-type-parameter.json",
+        "sha256": "7d61a3327c1711387d2afafe2632518930fe9e1e01ca3f6403776ca9273465e6",
+        "bytes": 8789,
+        "rule_id": "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter",
+        "analyses": 9,
+        "control_ids": [
+          "typed-overload-beside-correct-any-override",
+          "nullable-any-typealias-is-a-valid-override",
+          "interface-typed-overload-is-outside-visitor"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/data-class-should-be-immutable.json",
+        "sha256": "18ab89477ca9142738f46a339e8f2f30feebe23910f695873c4dac7ead1fb879",
+        "bytes": 5754,
+        "rule_id": "ktc.kotlin.detekt.style.data-class-should-be-immutable",
+        "analyses": 9,
+        "control_ids": [
+          "mutable-reference-held-by-val",
+          "ordinary-class-var",
+          "deliberate-mutable-data-api"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/equals-always-returns-true-or-false.json",
+        "sha256": "46d5f6b7edd96b2cd80273404e527c4ea52961ee351e9437b7acead625f4a9e5",
+        "bytes": 6479,
+        "rule_id": "ktc.kotlin.detekt.potential-bugs.equals-always-returns-true-or-false",
+        "analyses": 9,
+        "control_ids": [
+          "conditional-nonconstant-return",
+          "unrelated-equals-overload",
+          "constant-computation-not-literal"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/invalid-range.json",
+        "sha256": "b816b926232a4697d4e47d7570bd0f4c3554c5853d6eacc4612a87fdb23177bb",
+        "bytes": 6689,
+        "rule_id": "ktc.kotlin.detekt.potential-bugs.invalid-range",
+        "analyses": 9,
+        "control_ids": [
+          "exclusive-equality-versus-inclusive",
+          "dynamic-bounds",
+          "long-and-negative-literal-gaps"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/iterator-has-next-calls-next-method.json",
+        "sha256": "b3d571c07773b6db518c5beec08fad6dfdc46f6aaa7c8208a0eac981d0b5a9af",
+        "bytes": 6715,
+        "rule_id": "ktc.kotlin.detekt.potential-bugs.iterator-has-next-calls-next-method",
+        "analyses": 9,
+        "control_ids": [
+          "helper-based-legal-iterator",
+          "reading-a-different-iterator",
+          "shadowed-iterator-contract"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/library-entities-should-not-be-public.json",
+        "sha256": "2a7db2916f4c1665ae93f68b501da5dd4075fd0c05ee98ecbad607448e7c053c",
+        "bytes": 6796,
+        "rule_id": "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public",
+        "analyses": 9,
+        "control_ids": [
+          "deliberate-immutable-public-api",
+          "public-property-outside-predicate",
+          "inner-class-boundary"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/not-implemented-declaration.json",
+        "sha256": "9d89045bf4ad1d912c95e486589d709dba3f9082cb4a0598c2a1aef2140ae4c5",
+        "bytes": 7057,
+        "rule_id": "ktc.kotlin.detekt.exceptions.not-implemented-declaration",
+        "analyses": 9,
+        "control_ids": [
+          "shadowed-todo-symbol",
+          "shadowed-error-type",
+          "two-argument-custom-todo"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/swallowed-exception.json",
+        "sha256": "5b0aced194699ea2a1c107de14420cb8c24716dd6d1996c6a81dffda20d52081",
+        "bytes": 8499,
+        "rule_id": "ktc.kotlin.detekt.exceptions.swallowed-exception",
+        "analyses": 11,
+        "control_ids": [
+          "cause-through-local-alias",
+          "default-ignored-type-and-name",
+          "configured-ignored-name",
+          "configured-ignored-type",
+          "shadowed-parameter-name"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/throwing-exception-from-finally.json",
+        "sha256": "576bc38836fe9dff65dafdcdbfc582741f9f2d811fcf748eb5886f775f238995",
+        "bytes": 5957,
+        "rule_id": "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally",
+        "analyses": 8,
+        "control_ids": [
+          "deferred-throw-in-callback",
+          "throw-handled-inside-finally"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/unconditional-jump-statement-in-loop.json",
+        "sha256": "7c053915126f7d2c61def0eaa75890f7ca86950a5627333b9eb86f310c8b6f37",
+        "bytes": 6418,
+        "rule_id": "ktc.kotlin.detekt.potential-bugs.unconditional-jump-statement-in-loop",
+        "analyses": 10,
+        "control_ids": [
+          "single-expression-loop",
+          "labeled-conditional-continue",
+          "elvis-continue-return",
+          "continue-is-not-loop-exit"
+        ]
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-v1/useless-postfix-expression.json",
+        "sha256": "0b079a1deccfdaaed5a14095a91602fd37f3a160bf350572bd5e4e343accafe8",
+        "bytes": 5914,
+        "rule_id": "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression",
+        "analyses": 8,
+        "control_ids": [
+          "persistent-class-property",
+          "overloaded-inc-retains-side-effect"
+        ]
+      }
+    ],
+    "cohorts": [
+      {
+        "cohort_id": "exceptions-core-v1",
+        "analyses_by_rule": {
+          "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally": 8,
+          "ktc.kotlin.detekt.exceptions.swallowed-exception": 11,
+          "ktc.kotlin.detekt.exceptions.not-implemented-declaration": 9
+        },
+        "planned_invocations": 38,
+        "plan_identity_sha256": "1a04a745f3a90b093f07725c33f7aa5e4f68dcb4e08300e7498eabb23046469f",
+        "modified_by_this_packet": false
+      },
+      {
+        "cohort_id": "iteration-core-v1",
+        "analyses_by_rule": {
+          "ktc.kotlin.detekt.potential-bugs.invalid-range": 9,
+          "ktc.kotlin.detekt.potential-bugs.iterator-has-next-calls-next-method": 9,
+          "ktc.kotlin.detekt.potential-bugs.unconditional-jump-statement-in-loop": 10
+        },
+        "planned_invocations": 38,
+        "plan_identity_sha256": "855ccc2174e1497b74560aa5041923b870dbb289c68728eeffaf58140eb58890",
+        "modified_by_this_packet": false
+      },
+      {
+        "cohort_id": "value-core-v1",
+        "analyses_by_rule": {
+          "ktc.kotlin.detekt.potential-bugs.equals-always-returns-true-or-false": 9,
+          "ktc.kotlin.detekt.potential-bugs.useless-postfix-expression": 8
+        },
+        "planned_invocations": 24,
+        "plan_identity_sha256": "c6e6311078fe7d849755351e936326f00db5c508482f9830ac2367268a41c0c6",
+        "modified_by_this_packet": false
+      },
+      {
+        "cohort_id": "opt-in-policy-v1",
+        "analyses_by_rule": {
+          "ktc.kotlin.detekt.style.data-class-should-be-immutable": 9,
+          "ktc.maintainability.detekt.libraries.library-entities-should-not-be-public": 9
+        },
+        "planned_invocations": 25,
+        "plan_identity_sha256": "83266a809d5e1e5ec7591a36882f7435ff7f108ea28a3426b418ce7d0f9ee421",
+        "modified_by_this_packet": false
+      },
+      {
+        "cohort_id": "performance-shapes-v1",
+        "analyses_by_rule": {
+          "ktc.performance.detekt.performance.for-each-on-range": 9,
+          "ktc.performance.detekt.performance.unnecessary-init-on-array": 9,
+          "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression": 9
+        },
+        "planned_invocations": 37,
+        "plan_identity_sha256": "b9c1f5300aa5eb0fa12ba772bd42f5c5b49c1ca96c95a62b3191b15698b375dd",
+        "modified_by_this_packet": false
+      },
+      {
+        "cohort_id": "public-contract-policy-v1",
+        "analyses_by_rule": {
+          "ktc.maintainability.detekt.comments.outdated-documentation": 9,
+          "ktc.maintainability.detekt.complexity.complex-condition": 9,
+          "ktc.maintainability.detekt.libraries.forbidden-public-data-class": 9
+        },
+        "planned_invocations": 37,
+        "plan_identity_sha256": "75ec7045f1c36c6a01ea9e479acf8672aca29a62b964cc35972a84f606523515",
+        "modified_by_this_packet": false
+      },
+      {
+        "cohort_id": "protocol-and-catch-boundaries-v1",
+        "analyses_by_rule": {
+          "ktc.kotlin.detekt.potential-bugs.iterator-not-throwing-no-such-element-exception": 9,
+          "ktc.kotlin.detekt.potential-bugs.wrong-equals-type-parameter": 9,
+          "ktc.kotlin.detekt.exceptions.too-generic-exception-caught": 9
+        },
+        "planned_invocations": 37,
+        "plan_identity_sha256": "c832b3938eb553dad22bf483db5780dde8571b86b83679f20064c95fdf2356ad",
+        "modified_by_this_packet": false
+      },
+      {
+        "cohort_id": "exception-observability-policy-v1",
+        "plan_identity_sha256": "54c13bc47181b6922365fc37b718b9d6d87a057add32b1a9170972484b95155b",
+        "planned_invocations": 37,
+        "analyses_by_rule": {
+          "ktc.kotlin.detekt.exceptions.rethrow-caught-exception": 9,
+          "ktc.kotlin.detekt.exceptions.print-stack-trace": 9,
+          "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause": 9
+        },
+        "modified_by_this_packet": false
+      }
+    ],
+    "preserved_expansion_namespace_files": [
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/README.md",
+        "sha256": "0f4a892d41a15d0a8ea814fa0caed8e5aed31bf2f2133cf528dcfad00bafaaab",
+        "bytes": 9531
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/cohorts/performance-shapes-v1.json",
+        "sha256": "57ed23512dd2be4392f4c2aaaf1025f0642b0bf13a866ff0730b712234ba3b50",
+        "bytes": 55782
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/cohorts/public-contract-policy-v1.json",
+        "sha256": "5b67c08a36249b3aab8732efa21d4c8b1b821d6ad0d0a9d2bf730fc8d592f149",
+        "bytes": 54560
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/cohorts.json",
+        "sha256": "4c0f8f193dff05856a572b91cfc7a3875bf2eca47117a4934935fd8485a8d603",
+        "bytes": 12083
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+        "sha256": "f5b4b907acf297778c4e1c7281f8cf72fb2606ef36635926847e6b32ebc72b03",
+        "bytes": 7797
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+        "sha256": "3072d43d79031d52ce2633a44fc84deda250de6bb5b03b55b3adfdf6929823c8",
+        "bytes": 8172
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+        "sha256": "3403c94cd8027dbf278b83a841c856d44e9b508e84c331f4209a402e1d1aecf0",
+        "bytes": 8252
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+        "sha256": "0269a9470d085ff9177ba551894a430ad6b920c758d11345ef6e17caf850f7b1",
+        "bytes": 8734
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+        "sha256": "2618915ae01dd64cccf566ae2321037df18436a09bc86cf10f00224f999cb626",
+        "bytes": 8023
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+        "sha256": "506789a3a5eb500de52b1d5ba09b3f4736fb0a4b3206c279167c841cbf82a523",
+        "bytes": 8284
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/integration-contract.json",
+        "sha256": "b5e98c8167c08e65e1efd9db5434491617e9b42bffe3a1126ad2d66f9141115b",
+        "bytes": 13290
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/scope.json",
+        "sha256": "31dbfa09d313d391db67f86b88b392ffca39bf06e5c9f9c178a5b9bb1c4124f4",
+        "bytes": 19800
+      }
+    ],
+    "preserved_protocol_namespace_files": [
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/README.md",
+        "sha256": "a5d8f3f1b58d506a033fb5b746352bac72554f3bdc14f82070870bb301673eec",
+        "bytes": 7047
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/cohorts/protocol-and-catch-boundaries-v1.json",
+        "sha256": "dd92538470b9221d71d471c9aadf632cb05084cdeba10e261c72200004e36701",
+        "bytes": 56871
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/cohorts.json",
+        "sha256": "270761489f2299a0789309ab916c7e2893e844e5b8041623db383b65ec1817c6",
+        "bytes": 7387
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/iterator-not-throwing-no-such-element-exception.json",
+        "sha256": "948e040ddb8dc8ee7b4b4a03f28b5f99c286488ac067cf2b8de0bd0f9d94a421",
+        "bytes": 9298
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/too-generic-exception-caught.json",
+        "sha256": "e6ec648a998557360fc0f102021b174465174074ecb63f95f724cfc770e50ff9",
+        "bytes": 10429
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/fixtures/wrong-equals-type-parameter.json",
+        "sha256": "7d61a3327c1711387d2afafe2632518930fe9e1e01ca3f6403776ca9273465e6",
+        "bytes": 8789
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/integration-contract.json",
+        "sha256": "e99e21efc8673f4bb042fa19e9dd1b9fd0a3a7b4f8fcf9018d53cccbad46a775",
+        "bytes": 14637
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-protocol-v1/scope.json",
+        "sha256": "572f28d2a60acddc1624bd9cbacfee5bbaf5d397e12545a6a5121f3b2f4d45a6",
+        "bytes": 34505
+      }
+    ],
+    "execution_state": "not_evaluated_or_imported_by_this_packet",
+    "execution_stage_transfer": 0,
+    "preserved_observability_namespace_files": [
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/README.md",
+        "sha256": "178254aada120d55128c050ef928feb40532c5c0f8caa64aadde0ddcbc887452",
+        "bytes": 7335
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/cohorts.json",
+        "sha256": "e29e9f14c0cce37bd4c868b9fda91e4e3bd7170fc875e72600562f126fe95fb1",
+        "bytes": 7735
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/cohorts/exception-observability-policy-v1.json",
+        "sha256": "fa5a6bb853a6dd6b21b4101c86d50f136aa4e1a748ff8d8e4459f661be6409c1",
+        "bytes": 57892
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/print-stack-trace.json",
+        "sha256": "19f00be9222d0d9f2dc7d383732f50c49f045825b86d80c9126f04f0cfe4b5e8",
+        "bytes": 9620
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/rethrow-caught-exception.json",
+        "sha256": "acbec925685ca96468e85efb333bcde2084714b219c400a857c2683cc9318209",
+        "bytes": 8977
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/fixtures/throwing-exceptions-without-message-or-cause.json",
+        "sha256": "fd40be8293bb11848f72a814c77ba65dbd4010b031375cf81f0fbc689e9c3081",
+        "bytes": 10823
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/integration-contract.json",
+        "sha256": "6ff3668ad97ceafd046f4a4546a616fee5be9f034240789502b95545eadf0e86",
+        "bytes": 15500
+      },
+      {
+        "path": "providers/detekt-fixtures/corpus/syntax-exception-observability-v1/scope.json",
+        "sha256": "796366a129447f44d0a052a01fa948fb4dc90d55ce926b6a6d730a6a63c928f7",
+        "bytes": 39637
+      }
+    ]
+  },
+  "additional_proposed_scope": {
+    "rule_count": 9,
+    "authored_analyses": 88,
+    "independent_controls": 34,
+    "default_advisory": 2,
+    "explicit_opt_in": 7,
+    "rule_ids": [
+      "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "ktc.kotlin.detekt.style.expression-body-syntax",
+      "ktc.kotlin.detekt.style.function-only-returning-constant",
+      "ktc.kotlin.detekt.style.may-be-constant",
+      "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "ktc.kotlin.detekt.style.safe-cast",
+      "ktc.kotlin.detekt.style.unused-parameter",
+      "ktc.kotlin.detekt.style.unused-private-class",
+      "ktc.kotlin.detekt.style.use-if-instead-of-when"
+    ],
+    "state": "not_run",
+    "attempted": false,
+    "implemented": false,
+    "tested": false,
+    "qualified": false
+  },
+  "combined_proposed_authoring_scope": {
+    "rule_count": 31,
+    "authored_analyses": 287,
+    "baseline_cohort_count": 8,
+    "additional_cohort_count": 3,
+    "aggregate_execution_or_sidecar_created": false,
+    "scope_reduction": false,
+    "baseline_execution_stage_transfer": 0
+  },
+  "named_coroutine_and_resource_gaps": [
+    {
+      "rule_id": "ktc.coroutines.swallowed-cancellation",
+      "upstream_id": "coroutines:SuspendFunSwallowedCancellation",
+      "relation": "requires_refinement",
+      "depth": "graph",
+      "default_activation": "enabled_when_validated",
+      "catalog_record_sha256": "d7771ad782c082275bcc3120e2a5437db8157d547b31f4fa838c7ca8c6fb559d",
+      "mapping_gaps": [
+        "The catalog requires narrower resolved ownership/effect/project-policy semantics than raw upstream Detekt; that adapter is not implemented.",
+        "Semantic mode requires an exact fully resolved JVM compiler/classpath tuple; no target/version qualification is claimed."
+      ],
+      "delivered_by_this_cohort": false,
+      "state": "unavailable_in_this_light_context",
+      "attempted": false,
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "no_stage_transfer_from_broad_catch_or_other_syntax_rules": true,
+      "no_stage_transfer_from_observability_or_other_syntax_rules": true,
+      "no_stage_transfer_from_local_shapes_or_other_syntax_rules": true
+    },
+    {
+      "rule_id": "ktc.coroutines.result-swallowing-cancellation",
+      "upstream_id": "coroutines:SuspendFunSwallowedCancellation",
+      "relation": "requires_refinement",
+      "depth": "graph",
+      "default_activation": "enabled_when_validated",
+      "catalog_record_sha256": "7bc345605d1b4ecd5faac468887afebf4b42509f8b59b10302fb4b7a42b831ad",
+      "mapping_gaps": [
+        "The catalog requires narrower resolved ownership/effect/project-policy semantics than raw upstream Detekt; that adapter is not implemented.",
+        "Semantic mode requires an exact fully resolved JVM compiler/classpath tuple; no target/version qualification is claimed."
+      ],
+      "delivered_by_this_cohort": false,
+      "state": "unavailable_in_this_light_context",
+      "attempted": false,
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "no_stage_transfer_from_broad_catch_or_other_syntax_rules": true,
+      "no_stage_transfer_from_observability_or_other_syntax_rules": true,
+      "no_stage_transfer_from_local_shapes_or_other_syntax_rules": true
+    },
+    {
+      "rule_id": "ktc.coroutines.suspending-finally-cleanup",
+      "upstream_id": "coroutines:SuspendFunInFinallySection",
+      "relation": "requires_refinement",
+      "depth": "graph",
+      "default_activation": "advisory",
+      "catalog_record_sha256": "577487c307118ca6bf6b5e38b1826cb00e0868e64212edd686d36c32a5d2439e",
+      "mapping_gaps": [
+        "The catalog requires narrower resolved ownership/effect/project-policy semantics than raw upstream Detekt; that adapter is not implemented.",
+        "Semantic mode requires an exact fully resolved JVM compiler/classpath tuple; no target/version qualification is claimed."
+      ],
+      "delivered_by_this_cohort": false,
+      "state": "unavailable_in_this_light_context",
+      "attempted": false,
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "no_stage_transfer_from_broad_catch_or_other_syntax_rules": true,
+      "no_stage_transfer_from_observability_or_other_syntax_rules": true,
+      "no_stage_transfer_from_local_shapes_or_other_syntax_rules": true
+    },
+    {
+      "rule_id": "ktc.resources.owned_autocloseable_exit",
+      "upstream_id": "potential-bugs:MissingUseCall",
+      "relation": "requires_refinement",
+      "depth": "semantic",
+      "default_activation": "advisory",
+      "catalog_record_sha256": "b9190f6d46a278c6d9bedc4dca8896a6517b412f06c9ef7f8a175145e0d55cfa",
+      "mapping_gaps": [
+        "The catalog requires narrower resolved ownership/effect/project-policy semantics than raw upstream Detekt; that adapter is not implemented.",
+        "Semantic mode requires an exact fully resolved JVM compiler/classpath tuple; no target/version qualification is claimed."
+      ],
+      "delivered_by_this_cohort": false,
+      "state": "unavailable_in_this_light_context",
+      "attempted": false,
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "no_stage_transfer_from_broad_catch_or_other_syntax_rules": true,
+      "no_stage_transfer_from_observability_or_other_syntax_rules": true,
+      "no_stage_transfer_from_local_shapes_or_other_syntax_rules": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.potential-bugs.missing-use-call",
+      "upstream_id": "potential-bugs:MissingUseCall",
+      "relation": "exact",
+      "depth": "semantic",
+      "default_activation": "advisory",
+      "catalog_record_sha256": "ef64734fa392b6fa35c9d0512de725cfa4b84bac5064be9d3ffa3b755ac713d3",
+      "mapping_gaps": [
+        "Semantic mode requires an exact fully resolved JVM compiler/classpath tuple; no target/version qualification is claimed."
+      ],
+      "delivered_by_this_cohort": false,
+      "state": "unavailable_in_this_light_context",
+      "attempted": false,
+      "implemented": false,
+      "tested": false,
+      "qualified": false,
+      "no_stage_transfer_from_broad_catch_or_other_syntax_rules": true,
+      "no_stage_transfer_from_observability_or_other_syntax_rules": true,
+      "no_stage_transfer_from_local_shapes_or_other_syntax_rules": true
+    }
+  ],
+  "next_reusable_capability": {
+    "name": "owner-bound verified-model full-analysis admission and exact resolution closure",
+    "state": "SEPARATE_OWNER_CAPABILITY_NOT_IMPLEMENTED_OR_ADMITTED_BY_THIS_PACKET",
+    "first_exact_rule_id": "ktc.kotlin.detekt.potential-bugs.missing-use-call",
+    "first_upstream_id": "potential-bugs:MissingUseCall",
+    "current_boundary": "This corpus remains LEGACY_EXPLICIT_INPUT and LIGHT-only. A distinct owner-bound verified-model full-analysis route and exact resolution closure must be separately reviewed/admitted; status and stages of that separate work are not inferred, transferred or claimed by this packet.",
+    "required_inputs": [
+      "Owner-admitted typed model/source-set binding, rather than request tags or a LIGHT token.",
+      "Exact JVM source membership and resolved Analysis API compiler/JDK/classpath closure, including produced inputs only when separately admitted and verified.",
+      "Fresh full-analysis execution profile, artifact/source/code witnesses, selected semantic rule projection and fail-closed unresolved/changed-input negatives.",
+      "Bounded independent positive/use-negative and real ignoreClass/ownership-transfer boundary fixtures, with raw outcomes retained and no expectation repair from observed diagnostics."
+    ],
+    "upstream_limit": "MissingUseCall uses Analysis API types/calls, recognized kotlin.io.use/kotlin.use and shallow property/return/argument exceptions; it is not a proved alias ownership graph or definite leak classifier.",
+    "remaining_refinements": [
+      "ktc.resources.owned_autocloseable_exit still needs its independent local ownership/control-flow/transfer adapter.",
+      "Coroutine cancellation and suspending-finally claims still need resolved cancellable calls, recovery/rethrow/ensureActive and cleanup-effect graph refinements."
+    ],
+    "owner_dependency": "Root owns production adapter/kernel hookup and every execution grant. This is next-capability practicality, not a replacement release plan or concurrent source change.",
+    "semantic_execution_claimed": false,
+    "qualification_claimed": false
+  },
+  "distinction": "Three additional closed local-shape cohorts propose nine rules/88 analyses, including 34 context/option/counterexample controls. Prior 22/199 and eight identities stay byte-exact; the combined 31/287 remains authoring inventory, never an aggregate execution route. Two new advisory and seven opt-in routes retain mapping taxonomy. All 1663 IDs x eight contexts and all 125 deferred exact syntax mappings remain in scope. No semantic/FQN/ABI/safe-rewrite proof or stage transfer.",
+  "breadth_inventory": {
+    "path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/breadth-inventory.json",
+    "sha256": "959a738a477936d36e77e872b592eaad916d596922f320893aa41d0e4acbce92",
+    "exact_syntax_rows": 156,
+    "deferred_rules_remain_in_scope": 125
+  }
+}

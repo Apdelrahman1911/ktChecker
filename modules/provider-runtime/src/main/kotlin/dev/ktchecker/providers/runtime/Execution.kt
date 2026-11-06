@@ -72,6 +72,10 @@ data class ProcessOutcome(
     val executed: Boolean get() = executionConfirmed
     val successfulExecution: Boolean get() = executionConfirmed && status == "executed"
 
+    /** Original stored datum for PRIVATE documentary evidence only; no I/O or identity reconstruction.
+     * This string grants no execution/report authority and is not independent proof of custody. */
+    fun outputIdentityForPrivateEvidence(): String? = outputIdentity
+
     /** Fresh isolated output only. Symlinks and path traversal are not evidence. */
     fun report(relativePath: String, maxBytes: Int = 8_388_608): ByteArray {
         val root = outputDirectory ?: throw ExecutionProblem("report_unavailable", "No executed output directory")
@@ -91,6 +95,16 @@ data class ProcessOutcome(
         } catch (e: ExecutionProblem) { throw e }
         catch (_: Exception) { throw ExecutionProblem("report_missing_or_unsafe", "Provider report is absent or unsafe") }
     }
+
+    /**
+     * All immediate regular reports in an anchored output subdirectory; never a filtered prefix.
+     * This is bounded DATA I/O, not proof that a compiler ran or that its output is complete.
+     * The owner must retain this ORIGINAL outcome, verify its actual successful/quiescent action
+     * and immutable output custody, and check the returned complete filename/content vocabulary.
+     */
+    fun readReports(relativeDirectory: String, maxFiles: Int = 1024, maxFileBytes: Int = 16_777_216,
+                    maxTotalBytes: Int = 16_777_216): Map<String, ByteArray> =
+        readOutputReports(outputDirectory, outputIdentity, relativeDirectory, maxFiles, maxFileBytes, maxTotalBytes)
 }
 
 /** No shell, unique outputs, bounded diagnostics and cooperative owned-process-tree shutdown. */

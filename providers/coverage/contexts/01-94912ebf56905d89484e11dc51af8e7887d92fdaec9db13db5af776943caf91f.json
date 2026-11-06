@@ -1,0 +1,15 @@
+{
+  "analysis_mode": "full",
+  "current_source_attribution": "Current adapter code exists, but per-rule executed/tested attribution is withheld until a fresh verified native-supervised run; original historical tuple is separately retained.",
+  "evidence_state": "current_sources_not_executed_after_native_supervisor_and_test_provenance_changes",
+  "id": "current-edited-detekt-coroutine-raw-jvm-unexecuted-native-preview1",
+  "jdk_version": "unknown",
+  "kotlin_version": "2.4.21",
+  "library_versions": {
+    "kotlin-stdlib": "2.4.21"
+  },
+  "scope_note": "Authored synthetic controls only. Historical test receipts are not current-source/native backend evidence or compatibility/precision/release qualification.",
+  "source_set": "main",
+  "stdlib_sha256": "sha256:bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3",
+  "target": "jvm"
+}

@@ -29,6 +29,62 @@ The bridge MUST advertise only its tested revisions and implemented capabilities
 
 The pinned TS client defaults to legacy negotiation. A long-lived ktChecker adapter that wants preference/fallback MUST deliberately configure documented `versionNegotiation: { mode: "auto" }` and its supported revisions, or use a pinned profile after a verified probe. A pin does not fall back. Avoid auto-probing on every short CLI invocation: the SDK's stdio probe can spawn a disposable sibling process. Bridge startup must be side-effect-free except connecting to the already-authorized broker; never submit analysis merely because a probe launched the process. Record negotiated profile and invalidate cached verdicts after server configuration/version changes.
 
+### Private preview Finding-wire admission (unadopted SOURCE)
+
+The private `ktchecker/preview-1` proposal is narrower than the prospective
+`ktchecker/1` negotiation examples above/below: the bridge is pinned to SDK
+**2.4.0** and admits only MCP **2026-07-28**; legacy MCP is rejected. No other
+SDK/revision combination is qualified here. Its exact application wire
+profile is **`ktchecker/finding-retrieval-attachments-1`**. This declaration means
+that the peer accepts the existing optional `Finding.retrievalAttachments` field,
+including nonempty arrays, and retains the complete locator-containing Finding
+and diagnostic bytes. It does not change attachment validation or default
+omission, nor license stripping a field to appease an old strict reader.
+
+- **Private NDJSON:** every request carries top-level
+  `"findingWireProfile":"ktchecker/finding-retrieval-attachments-1"`, alongside
+  `id`, `method`, and `params`. The producer rejects absent, malformed or different
+  profiles with `incompatible_finding_wire_profile` **before handler dispatch**.
+  Every successful response echoes the exact profile alongside `contractVersion`,
+  `id`, and `result`. Ordinary error envelopes have no required profile echo and
+  remain errors. The TypeScript transport rejects any success without the exact
+  echo before resolving its application value. An old strict producer rejects
+  the new request key; there is no legacy-success fallback.
+- **MCP:** discovery advertises
+  `capabilities.experimental["ktchecker/finding-retrieval-attachments"] =
+  {"profile":"ktchecker/finding-retrieval-attachments-1"}`. Each of the six tool
+  requests must independently include that exact one-field declaration under
+  `_meta["io.modelcontextprotocol/clientCapabilities"].experimental`, with the
+  pinned protocol version. Discovery/tool listing can remain available without
+  admission. Missing, malformed, unknown or different declarations are errors
+  before broker invocation, never empty/filtered success. SDK-valid but
+  incompatible declarations return tool `isError:true`; invalid MCP envelopes
+  may instead be rejected by the SDK. A tool argument cannot grant admission.
+- **No remembered grant:** both directions are checked on each operation,
+  including the first operation after reconnect. Successful earlier requests,
+  client/server names, registration and matching `contractVersion` alone do not
+  admit a later request or response. Disconnect/mismatch does not replay a
+  mutation. If a response is incompatible, the mutation's remote outcome can be
+  unknown; only explicit durable reconciliation may decide it.
+
+The reference-host executable uses this same private transport before its
+`KernelBroker`. An incompatible page cannot reach the atomic inbox/cursor commit;
+an incompatible receipt/gate result cannot confirm local ACK, observation or
+completion. Separate ACKs remain separate operations and may be reconciled
+independently; a compatible receipt is not fabricated for an incompatible one.
+The profile is **only an outer transport envelope**, never part of the application
+result, event payload, raw-response identity, Finding checksum or context digest.
+No attachment byte is rewritten and no new model-callable capability/ACK tool is
+introduced.
+
+This is compatibility admission, not authentication, source/artifact access,
+analysis completion, ACK authority or actual-model delivery evidence. The matching
+producer and consumer SOURCE changes must be selected together; all controls are
+**UNRUN**. It does not fix the ABI of raw in-process Kotlin callers or direct
+readers outside these guarded wire surfaces, which still require coordinated
+upgrade. Future profiles require an explicit reviewed change, not wildcard or
+minor-version guessing.
+
 ### Modern discovery example (stdio framing)
 
 Each JSON object is one UTF-8 JSON-RPC message; there are no console banners on stdout.
@@ -109,6 +165,63 @@ The daemon additionally provides `doctor`, snapshot capture/registration, adapte
 `waitMs` is a transport-response budget (design cap 10 seconds), not the analysis deadline. If analysis cannot finish within it, return a truthful pending/running object with missing checks, partial findings, and `nextPollAfterMs`. A host/CLI foreground `review run` loop continues **outside the model** until terminal result or its explicit deadline, then inserts the actual diagnosis/coverage summary before allowing a “review complete” claim. Returning only `reviewId` to a small model and expecting it to infer next steps does not pass the foreground contract.
 
 Application failures have stable reason codes (`project_model_unavailable`, `unsupported_target`, `sdk_missing`, `permission_denied`, `snapshot_not_coherent`, `stale_snapshot`, `deadline_exceeded`, `worker_crashed`, `queue_full`, `delivery_unavailable`, `delivery_history_lost`, `idempotency_conflict`). Include a concise explanation, retryability, and suggested owner action; never use an empty findings array as an error signal. Detail log references are private opaque artifacts, not terminal transcripts embedded in model context.
+
+### Private preview extension: policy reassessment (unadopted)
+
+This separate extension describes **implemented-in-private, unadopted SOURCE**,
+not an installed capability or a change to the proposed `ktchecker/1` schemas and
+review-state table above. It follows the private kernel, Workbench and CLI SOURCE;
+TypeScript MCP/reference-host wiring is pending. Its [CLI forms and exit values](implementation-usage.md#private-policy-reassessment-cli-unadopted)
+do **not** inherit the future commands, stdin convention or verdict exits in §7.
+
+| Private application RPC | Exact parameters | Result |
+| --- | --- | --- |
+| `review.policy.reassess` | `credential`, `request` | Publish or replay one immutable historical policy view. |
+| `review.policy.status` | `credential`, `idempotencyKey` | Read that authenticated client's retained view; no reclassification. |
+
+`request` is a closed object with exactly `reviewId`, `idempotencyKey`,
+`generation` and `expectedPolicyDigest`. `generation` is the enrolled client
+binding's generation, not a reassessment counter. The digest names the expected
+current **full** policy; it is not a caller assertion of analysis equivalence.
+No input, raw result, old capture, certificate, permit or execution grant is
+accepted in this request. Policy changes still require a separate explicit owner
+action under the existing mutation authority; this review request is not that
+action and grants no configuration, source, execution or completion authority.
+
+The kernel resolves the client's complete, noncancelled ordinary review and its
+certified original input, work, raw result and effective result. Full raw coverage
+for that original input is required even for an audit-only view. The trusted
+owner adapter validates retained preparation and compatible policy captures:
+only unchanged effective rule settings and analysis authority qualify. See
+[policy compatibility and retention](suppressions.md#private-same-raw-reassessment-unadopted).
+
+Acceptance atomically adds a `PolicyReassessmentView` with
+`state: "policy_reassessed"` and one ordinary **delivery-required per-client event**.
+Its `sequence` is the new event sequence; `certified.reviewSequence` still names
+the original review sequence. Original input, raw/effective results, captured
+policy, certificates, review/work identities, history and receipts remain immutable.
+Only `open`, `accepted`, `suppressed` or `baselined` finding dispositions can differ
+from the raw result in the new view; execution failures remain open. This is
+neither a new execution nor a transition of the original review's state.
+
+An exact accepted request replay returns the retained view without a new event.
+Reusing its key with changed fields conflicts; a new key targeting the preceding
+view's policy digest (or the original digest before any view) is rejected.
+Status is historical, not a currentness or archive-recovery certificate. Its
+success, or merely receiving the reassess response, does not ACK or prove model
+observation. The new event is an **additional historical delivery obligation**;
+old required events/receipts are not replaced, including after later policy edits.
+One client's receipt never satisfies another client's obligation.
+
+Only a validated view of the latest ordinary review, with the entire original
+input unchanged, can participate in current-policy accounting. It carries the
+original coverage, not new execution, recency, absence or fixed-finding evidence.
+Full-project scope, current policy/source/analysis authority, complete history,
+coverage, delivery and guarded-action fences remain mandatory even when
+`auditOnly=false`. Ordinary Workbench is partial, nonauthoritative and always
+**audit-only**. Plan/routed/produced reassessment and integrated completion using
+these views are unsupported. A status result, `policy_reassessed`, or CLI exit 0
+is not full-project success. No runtime or host-delivery validation is claimed.
 
 ## 5. Events, replay, acknowledgement, and stale results
 

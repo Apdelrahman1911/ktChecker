@@ -10,7 +10,9 @@ import kotlinx.serialization.Serializable
  * Admission captures the immutable evaluator identity before any worker can publish. Evaluation
  * replaces only that exact admission with its terminal certificate. Legacy null/plain hashes and
  * malformed/unknown formats remain untouched and cannot acquire the current evaluator's authority.
- * This does not make old binaries safe for mixed-version operation; stop them before upgrading.
+ * The kernel disposition guard is also versioned in the evaluator identity. Revision 2 refuses
+ * pre-guard permissions without rewriting their history; fresh reviews may reuse the retained raw
+ * result only through the current guard. This is not safe mixed-version operation: stop old binaries.
  */
 @Serializable
 internal data class PolicyCertificate(
@@ -46,9 +48,9 @@ internal data class PolicyCertificate(
 
 internal fun capturePolicyEvaluatorIdentity(policy: ResultPolicy): String {
     val declared = policy.evaluatorIdentity
-    return if (declared == null) Digests.sha256(canonical(listOf("instance-result-policy/1", randomToken())))
+    return if (declared == null) Digests.sha256(canonical(listOf("instance-result-policy/2", randomToken())))
     else {
         identifier(declared, "result policy evaluator identity")
-        Digests.sha256(canonical(listOf("declared-result-policy/1", declared)))
+        Digests.sha256(canonical(listOf("declared-result-policy/2", declared)))
     }
 }

@@ -1,0 +1,344 @@
+{
+  "schema_version": 1,
+  "rule_id": "ktc.compose.pack.UnstableCollections",
+  "upstream_id": "Compose:UnstableCollections",
+  "default_activation": "advisory",
+  "depth": "syntax",
+  "entity_kind": "type_reference",
+  "source_oracle": {
+    "kind": "tagged_source_prediction_not_observation",
+    "tag": "v0.6.8",
+    "commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+    "implementation": {
+      "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/UnstableCollections.kt",
+      "sha256": "dfe57502d2ee6c17cbb25d81d206a819921287e59d2bc3eb605997bd2433e83f",
+      "line_ranges": [
+        [
+          14,
+          37
+        ]
+      ]
+    },
+    "wrapper": {
+      "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/UnstableCollectionsCheck.kt",
+      "sha256": "f29acc7cba9ba775435c327354cba1adc03d0325b8e7a72048384645dda6c763",
+      "line_ranges": [
+        [
+          11,
+          17
+        ]
+      ]
+    },
+    "tests": {
+      "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/UnstableCollectionsCheckTest.kt",
+      "sha256": "9988d5ba2b48f3b43bd1c0309f11a9080e9d4979838d943f47fddd2dbdf77b16",
+      "line_ranges": [
+        [
+          18,
+          53
+        ]
+      ]
+    }
+  },
+  "boundary": "Advisory only: no compiler stability, strong-skipping behavior, or measured recomposition cost is established. Upstream defaults this rule off; the corpus explicitly selects it, without changing ktChecker's advisory disposition.",
+  "cases": [
+    {
+      "id": "positive",
+      "kind": "positive",
+      "purpose": "Select List, Set and Map signatures for this advisory syntax policy.",
+      "source_basis": [
+        "UnstableCollections.kt:16-25",
+        "KtCallableDeclarations.kt:41-48",
+        "UnstableCollectionsCheckTest.kt:18-39"
+      ],
+      "semantic_interpretation": "positive",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun ChoiceGroups(\n    labels: List<String>,\n    enabled: Set<String>,\n    priorities: Map<String, Int>,\n) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 12,
+          "end_line": 7,
+          "end_column": 24,
+          "text": "List<String>"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 13,
+          "end_line": 8,
+          "end_column": 24,
+          "text": "Set<String>"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 16,
+          "end_line": 9,
+          "end_column": 32,
+          "text": "Map<String, Int>"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 12,
+          "end_line": 7,
+          "end_column": 24,
+          "text": "List<String>"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 13,
+          "end_line": 8,
+          "end_column": 24,
+          "text": "Set<String>"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 16,
+          "end_line": 9,
+          "end_column": 32,
+          "text": "Map<String, Int>"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "valid-alternative",
+      "kind": "valid_alternative",
+      "purpose": "Use actual immutable collection interfaces, not same-named local substitute classes.",
+      "source_basis": [
+        "UnstableCollectionsCheckTest.kt:42-53",
+        "KtCallableDeclarations.kt:41-48",
+        "immutable0.3.8:interfaces"
+      ],
+      "semantic_interpretation": "valid_alternative",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport kotlinx.collections.immutable.ImmutableList\nimport kotlinx.collections.immutable.ImmutableMap\nimport kotlinx.collections.immutable.ImmutableSet\n\n@Composable\nfun ChoiceGroups(\n    labels: ImmutableList<String>,\n    enabled: ImmutableSet<String>,\n    priorities: ImmutableMap<String, Int>,\n) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "additional_api_source_requirements": [
+        "org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8:ImmutableList,ImmutableSet,ImmutableMap"
+      ],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "suppression-neighbor",
+      "kind": "suppression_neighbor",
+      "purpose": "A child-rule suppression on one function does not remove the other type-reference report.",
+      "source_basis": [
+        "UnstableCollections.kt:16-25",
+        "detekt:Suppressions.kt:19-45"
+      ],
+      "semantic_interpretation": "suppression_neighbor",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Suppress(\"Compose:UnstableCollections\")\n@Composable\nfun QuietChoices(labels: List<String>) { }\n\n@Composable\nfun VisibleChoices(labels: List<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 10,
+          "column": 27,
+          "end_line": 10,
+          "end_column": 39,
+          "text": "List<String>"
+        }
+      ],
+      "suppressed_targets": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 25,
+          "end_line": 7,
+          "end_column": 37,
+          "text": "List<String>"
+        }
+      ],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 10,
+          "column": 27,
+          "end_line": 10,
+          "end_column": 39,
+          "text": "List<String>"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "collection-import-alias",
+      "kind": "alias_control",
+      "purpose": "A Kotlin List import alias is still the same collection type, but the tag misses its spelling.",
+      "source_basis": [
+        "KtCallableDeclarations.kt:41-48"
+      ],
+      "semantic_interpretation": "known_syntax_false_negative_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport kotlin.collections.List as Labels\n\n@Composable\nfun Choices(labels: Labels<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "unrelated-collection-homonym",
+      "kind": "homonym_control",
+      "purpose": "An application data class named List is not a Kotlin collection; the regex still reports it.",
+      "source_basis": [
+        "KtCallableDeclarations.kt:41-48",
+        "UnstableCollections.kt:16-25"
+      ],
+      "semantic_interpretation": "known_syntax_false_positive_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\ndata class List<T>(val item: T)\n\n@Composable\nfun Choices(labels: List<String>) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 20,
+          "end_line": 8,
+          "end_column": 32,
+          "text": "List<String>"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 20,
+          "end_line": 8,
+          "end_column": 32,
+          "text": "List<String>"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "nullable-collection",
+      "kind": "positive_control",
+      "purpose": "The optional question mark is part of the actual full-text collection regex.",
+      "source_basis": [
+        "KtCallableDeclarations.kt:44-48"
+      ],
+      "semantic_interpretation": "positive_control",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun Choices(labels: List<String>?) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 6,
+          "column": 20,
+          "end_line": 6,
+          "end_column": 33,
+          "text": "List<String>?"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 6,
+          "column": 20,
+          "end_line": 6,
+          "end_column": 33,
+          "text": "List<String>?"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "selected-main-excludes-test",
+      "kind": "source_set_control",
+      "purpose": "Select the valid main source only; the captured test file contains the ordinary positive trigger.",
+      "source_basis": [
+        "detekt-provider:compilation-membership",
+        "fixture:positive",
+        "fixture:valid-alternative"
+      ],
+      "semantic_interpretation": "unselected_source_is_not_analyzed_or_qualified",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport kotlinx.collections.immutable.ImmutableList\nimport kotlinx.collections.immutable.ImmutableMap\nimport kotlinx.collections.immutable.ImmutableSet\n\n@Composable\nfun ChoiceGroups(\n    labels: ImmutableList<String>,\n    enabled: ImmutableSet<String>,\n    priorities: ImmutableMap<String, Int>,\n) { }\n",
+        "src/test/kotlin/TestOnly.kt": "package fixtures.compose.outside\n\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun ChoiceGroups(\n    labels: List<String>,\n    enabled: Set<String>,\n    priorities: Map<String, Int>,\n) { }\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "excluded_positive_oracle": [
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 7,
+          "column": 12,
+          "end_line": 7,
+          "end_column": 24,
+          "text": "List<String>"
+        },
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 8,
+          "column": 13,
+          "end_line": 8,
+          "end_column": 24,
+          "text": "Set<String>"
+        },
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 9,
+          "column": 16,
+          "end_line": 9,
+          "end_column": 32,
+          "text": "Map<String, Int>"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    }
+  ],
+  "observation": {
+    "actual_execution": null,
+    "tested": false,
+    "qualified": false,
+    "real_world_precision": null,
+    "coverage_certificate": null
+  }
+}

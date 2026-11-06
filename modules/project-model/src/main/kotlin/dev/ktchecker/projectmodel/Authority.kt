@@ -26,6 +26,13 @@ class ModelIngressPermit(
     val verifyExecutedExport: () -> Unit,
     val verifyArtifact: (ModelArtifact) -> Unit,
     val verifyModelInputs: (GradleProjectExport) -> Unit,
+    /** Optional trusted origin enrollment, DENY by default. Return a preselected owner object,
+     * never derive roots/specs from report claims. Reverify registered source/JDK/output/task
+     * origin on BOTH calls and return the SAME instance. This grants no execution permission. */
+    val verifyJvmArgumentOrigin: (ModelCompilation) -> ModelJvmArgumentOrigin? = { null },
+    /** Separate owner-enrolled deferred edge; SAME preselected instance on both calls.
+     * No existing directory or report-declared producer grants this preview capability. */
+    val verifyJvmProducedOutputOrigin: (ModelCompilation) -> ModelJvmProducedOutputOrigin? = { null },
 ) {
     val request: ModelImportRequest = freezeRequest(request)
     val requestDigest: String = this.request.digest()

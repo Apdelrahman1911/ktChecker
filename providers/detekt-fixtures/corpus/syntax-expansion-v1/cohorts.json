@@ -1,0 +1,247 @@
+{
+  "schema": "ktchecker/detekt-syntax-expansion-cohort-proposal/1",
+  "state": "CONNECTED_SOURCE_CANDIDATE_UNCOMPILED_UNEXECUTED_NOT_ADMITTED",
+  "corpus_id": "detekt-syntax-expansion-v1",
+  "default_cohort": null,
+  "allowed_cohort_names": [
+    "performance-shapes-v1",
+    "public-contract-policy-v1"
+  ],
+  "multi_cohort_or_all_selector_allowed": false,
+  "scope_reference": "providers/detekt-fixtures/corpus/syntax-expansion-v1/scope.json",
+  "scope_sha256": "31dbfa09d313d391db67f86b88b392ffca39bf06e5c9f9c178a5b9bb1c4124f4",
+  "cohorts": [
+    {
+      "cohort_id": "performance-shapes-v1",
+      "selected_rules": [
+        {
+          "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+          "upstream_id": "performance:ForEachOnRange",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+          "fixture_sha256": "3072d43d79031d52ce2633a44fc84deda250de6bb5b03b55b3adfdf6929823c8",
+          "analyses": 9,
+          "default_activation": "advisory"
+        },
+        {
+          "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+          "upstream_id": "performance:UnnecessaryInitOnArray",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+          "fixture_sha256": "2618915ae01dd64cccf566ae2321037df18436a09bc86cf10f00224f999cb626",
+          "analyses": 9,
+          "default_activation": "advisory"
+        },
+        {
+          "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+          "upstream_id": "performance:UnnecessaryPartOfBinaryExpression",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+          "fixture_sha256": "506789a3a5eb500de52b1d5ba09b3f4736fb0a4b3206c279167c841cbf82a523",
+          "analyses": 9,
+          "default_activation": "advisory"
+        }
+      ],
+      "case_matrix_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/cohorts/performance-shapes-v1.json",
+      "case_matrix_sha256": "57ed23512dd2be4392f4c2aaaf1025f0642b0bf13a866ff0730b712234ba3b50",
+      "plan_identity": {
+        "schema": "ktchecker/detekt-syntax-expansion-cohort-identity/1",
+        "cohort_id": "performance-shapes-v1",
+        "selected_rules": [
+          {
+            "rule_id": "ktc.performance.detekt.performance.for-each-on-range",
+            "upstream_id": "performance:ForEachOnRange",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/for-each-on-range.json",
+            "fixture_sha256": "3072d43d79031d52ce2633a44fc84deda250de6bb5b03b55b3adfdf6929823c8",
+            "analyses": 9,
+            "default_activation": "advisory"
+          },
+          {
+            "rule_id": "ktc.performance.detekt.performance.unnecessary-init-on-array",
+            "upstream_id": "performance:UnnecessaryInitOnArray",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-init-on-array.json",
+            "fixture_sha256": "2618915ae01dd64cccf566ae2321037df18436a09bc86cf10f00224f999cb626",
+            "analyses": 9,
+            "default_activation": "advisory"
+          },
+          {
+            "rule_id": "ktc.performance.detekt.performance.unnecessary-part-of-binary-expression",
+            "upstream_id": "performance:UnnecessaryPartOfBinaryExpression",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/unnecessary-part-of-binary-expression.json",
+            "fixture_sha256": "506789a3a5eb500de52b1d5ba09b3f4736fb0a4b3206c279167c841cbf82a523",
+            "analyses": 9,
+            "default_activation": "advisory"
+          }
+        ],
+        "case_matrix_sha256": "57ed23512dd2be4392f4c2aaaf1025f0642b0bf13a866ff0730b712234ba3b50",
+        "scope_sha256": "31dbfa09d313d391db67f86b88b392ffca39bf06e5c9f9c178a5b9bb1c4124f4",
+        "limits": {
+          "max_invocations": 40,
+          "aggregate_millis": 1200000,
+          "child_millis": 60000
+        },
+        "planned_invocations": {
+          "detector_analysis": 27,
+          "changed_configuration_authorization_denial": 3,
+          "cli_probe": 1,
+          "unsupported_target_abstention": 6
+        },
+        "previous_stages_accepted": false,
+        "aggregate_context_activation": false,
+        "integration_contract_sha256": "b5e98c8167c08e65e1efd9db5434491617e9b42bffe3a1126ad2d66f9141115b"
+      },
+      "plan_identity_sha256": "b9c1f5300aa5eb0fa12ba772bd42f5c5b49c1ca96c95a62b3191b15698b375dd",
+      "counts": {
+        "authored_analyses": 27,
+        "all_calls": 37,
+        "native_launch_ceiling": 28,
+        "expected_runtime_callbacks": 31,
+        "planned_progress_events": 113,
+        "independent_controls": 9,
+        "authored_alert_bearing_analyses": 14,
+        "authored_zero_finding_analyses": 13,
+        "authored_expected_finding_observations": 23,
+        "unique_rule_source_sets": 18,
+        "unique_rule_source_configuration_sets": 21,
+        "independent_control_assessments": {
+          "anticipated_upstream_false_negative": 3,
+          "anticipated_upstream_false_positive": 4,
+          "predicate_boundary": 2
+        },
+        "actual_executions": 0,
+        "actual_findings": null,
+        "natural_project_observations": 0,
+        "precision_reviewed_natural_observations": 0
+      },
+      "requires_explicit_owner_opt_in": false,
+      "runtime_registration_state": "connected_source_candidate_uncompiled_unexecuted",
+      "execution_admitted": false,
+      "proposed_sidecar": "evidence/verified-jvm-syntax-expansion-performance-shapes-v1-native-preview1.json"
+    },
+    {
+      "cohort_id": "public-contract-policy-v1",
+      "selected_rules": [
+        {
+          "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+          "upstream_id": "comments:OutdatedDocumentation",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+          "fixture_sha256": "0269a9470d085ff9177ba551894a430ad6b920c758d11345ef6e17caf850f7b1",
+          "analyses": 9,
+          "default_activation": "opt_in"
+        },
+        {
+          "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+          "upstream_id": "complexity:ComplexCondition",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+          "fixture_sha256": "f5b4b907acf297778c4e1c7281f8cf72fb2606ef36635926847e6b32ebc72b03",
+          "analyses": 9,
+          "default_activation": "opt_in"
+        },
+        {
+          "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+          "upstream_id": "libraries:ForbiddenPublicDataClass",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+          "fixture_sha256": "3403c94cd8027dbf278b83a841c856d44e9b508e84c331f4209a402e1d1aecf0",
+          "analyses": 9,
+          "default_activation": "opt_in"
+        }
+      ],
+      "case_matrix_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/cohorts/public-contract-policy-v1.json",
+      "case_matrix_sha256": "5b67c08a36249b3aab8732efa21d4c8b1b821d6ad0d0a9d2bf730fc8d592f149",
+      "plan_identity": {
+        "schema": "ktchecker/detekt-syntax-expansion-cohort-identity/1",
+        "cohort_id": "public-contract-policy-v1",
+        "selected_rules": [
+          {
+            "rule_id": "ktc.maintainability.detekt.comments.outdated-documentation",
+            "upstream_id": "comments:OutdatedDocumentation",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/outdated-documentation.json",
+            "fixture_sha256": "0269a9470d085ff9177ba551894a430ad6b920c758d11345ef6e17caf850f7b1",
+            "analyses": 9,
+            "default_activation": "opt_in"
+          },
+          {
+            "rule_id": "ktc.maintainability.detekt.complexity.complex-condition",
+            "upstream_id": "complexity:ComplexCondition",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/complex-condition.json",
+            "fixture_sha256": "f5b4b907acf297778c4e1c7281f8cf72fb2606ef36635926847e6b32ebc72b03",
+            "analyses": 9,
+            "default_activation": "opt_in"
+          },
+          {
+            "rule_id": "ktc.maintainability.detekt.libraries.forbidden-public-data-class",
+            "upstream_id": "libraries:ForbiddenPublicDataClass",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/fixtures/forbidden-public-data-class.json",
+            "fixture_sha256": "3403c94cd8027dbf278b83a841c856d44e9b508e84c331f4209a402e1d1aecf0",
+            "analyses": 9,
+            "default_activation": "opt_in"
+          }
+        ],
+        "case_matrix_sha256": "5b67c08a36249b3aab8732efa21d4c8b1b821d6ad0d0a9d2bf730fc8d592f149",
+        "scope_sha256": "31dbfa09d313d391db67f86b88b392ffca39bf06e5c9f9c178a5b9bb1c4124f4",
+        "limits": {
+          "max_invocations": 40,
+          "aggregate_millis": 1200000,
+          "child_millis": 60000
+        },
+        "planned_invocations": {
+          "detector_analysis": 27,
+          "changed_configuration_authorization_denial": 3,
+          "cli_probe": 1,
+          "unsupported_target_abstention": 6
+        },
+        "previous_stages_accepted": false,
+        "aggregate_context_activation": false,
+        "integration_contract_sha256": "b5e98c8167c08e65e1efd9db5434491617e9b42bffe3a1126ad2d66f9141115b"
+      },
+      "plan_identity_sha256": "75ec7045f1c36c6a01ea9e479acf8672aca29a62b964cc35972a84f606523515",
+      "counts": {
+        "authored_analyses": 27,
+        "all_calls": 37,
+        "native_launch_ceiling": 28,
+        "expected_runtime_callbacks": 31,
+        "planned_progress_events": 113,
+        "independent_controls": 9,
+        "authored_alert_bearing_analyses": 14,
+        "authored_zero_finding_analyses": 13,
+        "authored_expected_finding_observations": 18,
+        "unique_rule_source_sets": 15,
+        "unique_rule_source_configuration_sets": 21,
+        "independent_control_assessments": {
+          "opt_in_policy_limit": 3,
+          "owner_configured_legal_alternative": 2,
+          "shallow_predicate_limitation": 2,
+          "anticipated_upstream_false_positive": 1,
+          "owner_configured_policy_boundary": 1
+        },
+        "actual_executions": 0,
+        "actual_findings": null,
+        "natural_project_observations": 0,
+        "precision_reviewed_natural_observations": 0
+      },
+      "requires_explicit_owner_opt_in": true,
+      "runtime_registration_state": "connected_source_candidate_uncompiled_unexecuted",
+      "execution_admitted": false,
+      "proposed_sidecar": "evidence/verified-jvm-syntax-expansion-public-contract-policy-v1-native-preview1.json"
+    }
+  ],
+  "unchanged_hard_maxima": {
+    "max_invocations": 40,
+    "aggregate_millis": 1200000,
+    "child_millis": 60000,
+    "progress_events": 124
+  },
+  "required_admission": "Independent connected source review and adoption, fresh compile/control verification, exact one-cohort source/code/data-bound owner admission and runtime budget. Registration alone is not consent or execution evidence.",
+  "full_scope_retained": {
+    "existing_fixtures": 10,
+    "existing_analyses": 91,
+    "new_fixtures": 6,
+    "new_analyses": 54,
+    "proposed_combined_fixtures": 16,
+    "proposed_combined_analyses": 145
+  },
+  "actual_tests_executed": 0,
+  "actual_provider_invocations": 0,
+  "changed_old_registry_or_controls": true,
+  "historical_stage_transfer": 0,
+  "integration_contract_path": "providers/detekt-fixtures/corpus/syntax-expansion-v1/integration-contract.json",
+  "integration_contract_sha256": "b5e98c8167c08e65e1efd9db5434491617e9b42bffe3a1126ad2d66f9141115b",
+  "old_fixture_expectations_or_plan_identities_changed": false
+}

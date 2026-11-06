@@ -98,7 +98,8 @@ class CompilerFixtureControlsTest {
         assertEquals(originalRuleIds, groups.values.flatten().toSet())
         assertEquals(originalRuleIds, CompilerFixtureSettings.ORIGINAL_RULE_IDS)
         assertEquals(expectedNames + setOf("original", "overrides", "visibility", "types_conventions",
-            "inline_constructors", "opt_in", "jvm", "type_boundaries", "all", "type_boundaries_supplemental", "nullability_protocols"), CompilerFixtureSettings.COHORTS)
+            "inline_constructors", "opt_in", "jvm", "type_boundaries", "all", "type_boundaries_supplemental", "nullability_protocols",
+            "diagnostic_breadth_default", "diagnostic_breadth_advisory", "diagnostic_breadth_opt_in"), CompilerFixtureSettings.COHORTS)
         for ((name, ids) in groups) {
             val settings = CompilerFixtureSettings("fixtures", name)
             for (id in originalRuleIds) assertEquals(id in ids, settings.selects(null, id), "$name: $id")

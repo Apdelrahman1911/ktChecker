@@ -1,6 +1,6 @@
 /** Pure fixture argument/reservation tests. No CLI, compiler, app-server, or model is started. */
 import assert from 'node:assert/strict';
-import { link, lstat, mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
+import { link, lstat, mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test, type TestContext } from 'node:test';
@@ -219,6 +219,17 @@ test('an existing evidence file blocks work and preserves its original bytes', a
     workStarted = true; await reservation.close();
   })(), { code: 'actual_demo_evidence_exists' });
   assert.equal(workStarted, false); assert.equal(await readFile(path, 'utf8'), original);
+});
+
+test('an occupied evidence directory is classified without opening or changing its contents', async t => {
+  const path = join(await directory(t), 'occupied-directory');
+  await mkdir(path);
+  const sentinel = join(path, 'original.txt'); await writeFile(sentinel, 'original directory contents', { flag: 'wx' });
+  const before = await lstat(path, { bigint: true });
+  await assert.rejects(reserveActualDemoEvidence(path), { code: 'actual_demo_evidence_exists' });
+  const after = await lstat(path, { bigint: true });
+  assert(after.isDirectory()); assert.equal(after.dev, before.dev); assert.equal(after.ino, before.ino);
+  assert.equal(await readFile(sentinel, 'utf8'), 'original directory contents');
 });
 
 test('only one concurrent run can reserve a given NEW evidence pathname', async t => {

@@ -32,6 +32,8 @@ tasks.register<JavaExec>("lintFixture") {
             "--lint-classpath", lintBaselineRuntime.asPath,
         ) + providers.gradleProperty("platformJavaHome").orNull?.let { listOf("--java-home", it) }.orEmpty() +
             providers.gradleProperty("platformLintAnalysisTask").orNull?.let { listOf("--lint-analysis-task", it) }.orEmpty() +
-            providers.gradleProperty("platformLintReportTask").orNull?.let { listOf("--lint-report-task", it) }.orEmpty()
+            providers.gradleProperty("platformLintReportTask").orNull?.let { listOf("--lint-report-task", it) }.orEmpty() +
+            // Fresh PRIVATE child of a canonical current-owner 0700 parent; exclude from public upload globs.
+            providers.gradleProperty("platformPrivateAttemptDirectory").orNull?.let { listOf("--private-attempt-directory", it) }.orEmpty()
     }
 }

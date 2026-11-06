@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pure source inventory/selector tests; no compiler, provider, native helper or process execution."""
 from collections import Counter
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import contextmanager, redirect_stdout, redirect_stderr
 from dataclasses import replace
 from io import StringIO
 from pathlib import Path, PureWindowsPath
@@ -12,6 +12,9 @@ import json
 import re
 import tempfile
 import unittest
+from unittest.mock import patch
+
+import compiler_mapping_contracts as contracts
 
 import nullability_protocols as plan
 
@@ -27,9 +30,45 @@ REVIEWED = (
 )
 
 
+@contextmanager
+def legacy_authoring_source_data():
+    """Only the exact generator SOURCE inverse; no catalog substitution or executable tree."""
+    original_reader = plan.read_existing_source
+    relative_generator = 'providers/compiler-fixtures/generate_fixtures.py'
+    generator_data = contracts.historical_source_bytes(ROOT, relative_generator)
+
+    def read_with_legacy_authoring(directory, relative):
+        if Path(directory).resolve() == ROOT and relative == relative_generator:
+            return generator_data
+        return original_reader(directory, relative)
+
+    with patch.object(plan, 'read_existing_source', side_effect=read_with_legacy_authoring):
+        yield
+
+
+@contextmanager
+def legacy_pre_activation_mapping_data():
+    """Closed legacy mapping DATA and exact authoring SOURCE inverse; never a runtime443 loader."""
+    original_reader = plan.read_existing_source
+    mapping_data = contracts.pre_activation_mapping_bytes(ROOT)
+
+    def read_with_legacy_mapping(directory, relative):
+        if Path(directory).resolve() == ROOT and relative == contracts.MAP_REL:
+            return mapping_data
+        if Path(directory).resolve() == ROOT and relative == 'providers/compiler-fixtures/generate_fixtures.py':
+            return contracts.historical_source_bytes(ROOT, relative)
+        return original_reader(directory, relative)
+
+    with patch.object(plan, 'read_existing_source', side_effect=read_with_legacy_mapping):
+        yield
+
+
 class NullabilityProtocolsSourceContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        # Affirmative445 production contract, distinct from every frozen legacy443 oracle below.
+        cls.current_mapping = contracts.current445(ROOT)
+        contracts.require_legacy_runner_refusal_source(ROOT)
         cls.manifest = json.loads((FIXTURES / plan.MANIFEST_PATH).read_bytes())
         cls.gaps = json.loads((FIXTURES / plan.GAP_INVENTORY_PATH).read_bytes())
         cls.evidence = json.loads((FIXTURES / plan.SOURCE_EVIDENCE_PATH).read_bytes())
@@ -43,8 +82,10 @@ class NullabilityProtocolsSourceContractTest(unittest.TestCase):
 
     def test_exact_six_common_direct_error_ids_have_existing_maps_not_new_catalog_rows(self):
         self.assertEqual(REVIEWED, tuple((rule_id, upstream_id) for rule_id, upstream_id, _ in plan.REVIEWED_RULES))
-        mapped = json.loads((ROOT / 'modules/provider-compiler/src/main/resources/compiler-rule-map.json').read_bytes())['mappings']
-        self.assertEqual(443, len(mapped))
+        mapped = self.current_mapping['mappings']
+        self.assertEqual(445, len(mapped))
+        self.assertEqual(443, len(contracts.legacy_mapping(ROOT)['mappings']))
+        self.assertFalse(set(contracts.NEW_IDS) & set(plan.RULE_IDS))
         by_id = {row['rule_id']: row for row in mapped}
         ordinary = json.loads((FIXTURES / 'manifest.json').read_bytes())['fixtures']
         graphs = json.loads((FIXTURES / 'planned-kmp-manifest.json').read_bytes())['fixtures']
@@ -236,7 +277,15 @@ class NullabilityProtocolsSourceContractTest(unittest.TestCase):
         with self.assertRaises(ValueError): self.select(reader=lambda relative: plan.read_existing_source(FIXTURES, relative).decode())
 
     def test_bookkeeping_keeps_existing98_graph16_map443_supplemental18_and_all278_bytes_unchanged(self):
-        counts = plan.validate_bookkeeping(ROOT, self.manifest)
+        # Actual445 must refuse the unchanged443 inventory before any source description or admission.
+        with self.assertRaisesRegex(ValueError, 'Preexisting source authoring bytes changed: providers/compiler-fixtures/generate_fixtures.py'):
+            plan.validate_bookkeeping(ROOT, self.manifest)
+        # Restoring only legacy authoring SOURCE DATA must still refuse the actual445 map.
+        with legacy_authoring_source_data(), self.assertRaisesRegex(ValueError, 'Do not overwrite or pad the existing98, graph16 or exact443 map'):
+            plan.validate_bookkeeping(ROOT, self.manifest)
+        # The old nullability ledger predates four common-checker corrections; use exact0db3 DATA only.
+        with legacy_pre_activation_mapping_data():
+            counts = plan.validate_bookkeeping(ROOT, self.manifest)
         self.assertEqual((98, 16, 443, 18, 278, 30, 308, 104, 329, 323), tuple(counts[key] for key in (
             'existing_main_manifest_ordinary_pairs', 'existing_planned_unsupported_graphs', 'existing_exact_mappings',
             'existing_type_boundary_authored_supplemental_files', 'preexisting_kotlin_fixture_sources', 'new_authored_files',
@@ -271,7 +320,15 @@ class NullabilityProtocolsSourceContractTest(unittest.TestCase):
         self.assertIn('does not force', self.gaps['deliberately_deferred_neighbor']['reason'])
 
     def test_pure_source_description_cannot_launder_thirty_counts_into_execution_or_promote_tampered_id_bytes_order(self):
-        counts = plan.validate_bookkeeping(ROOT, self.manifest)
+        # Actual445 must refuse the unchanged443 inventory before any source description or admission.
+        with self.assertRaisesRegex(ValueError, 'Preexisting source authoring bytes changed: providers/compiler-fixtures/generate_fixtures.py'):
+            plan.validate_bookkeeping(ROOT, self.manifest)
+        # Restoring only legacy authoring SOURCE DATA must still refuse the actual445 map.
+        with legacy_authoring_source_data(), self.assertRaisesRegex(ValueError, 'Do not overwrite or pad the existing98, graph16 or exact443 map'):
+            plan.validate_bookkeeping(ROOT, self.manifest)
+        # The old nullability ledger predates four common-checker corrections; use exact0db3 DATA only.
+        with legacy_pre_activation_mapping_data():
+            counts = plan.validate_bookkeeping(ROOT, self.manifest)
         description = plan.describe_source_selection(self.selected, counts)
         for field in ('run_complete', 'qualified', 'ordinary_six_kind_assessments_complete', 'ordinary_external_latest_sidecar_writes'):
             self.assertIs(False, description[field])
@@ -287,8 +344,15 @@ class NullabilityProtocolsSourceContractTest(unittest.TestCase):
 
     def test_source_cli_is_read_only_and_never_prints_bodies_or_schedules_processes(self):
         pins = {relative: (ROOT / relative).read_bytes() for relative, _ in plan.BASELINE_SOURCE_PINS}
+        refused_output = StringIO()
+        with redirect_stdout(refused_output), self.assertRaisesRegex(ValueError, 'Preexisting source authoring bytes changed: providers/compiler-fixtures/generate_fixtures.py'):
+            plan.main(['--selector', plan.SELECTOR, '--root', str(ROOT)])
+        self.assertEqual('', refused_output.getvalue())
+        with legacy_authoring_source_data(), redirect_stdout(refused_output), self.assertRaisesRegex(ValueError, 'exact443 map'):
+            plan.main(['--selector', plan.SELECTOR, '--root', str(ROOT)])
+        self.assertEqual('', refused_output.getvalue())
         output = StringIO()
-        with redirect_stdout(output):
+        with legacy_pre_activation_mapping_data(), redirect_stdout(output):
             self.assertEqual(0, plan.main(['--selector', plan.SELECTOR, '--root', str(ROOT)]))
         description = json.loads(output.getvalue())
         self.assertEqual(30, len(description['sources']))

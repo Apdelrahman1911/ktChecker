@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "corpus_id": "detekt-syntax-local-shapes-v1",
+  "authoring_state": "unexecuted",
+  "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+  "upstream_id": "style:CollapsibleIfStatements",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "severity": "info",
+  "kind": "style",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "4f1288943a0ef2d60e26e999dcb4daeda4441930d42741b502e6f31f559a762d",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-style/src/main/kotlin/dev/detekt/rules/style/CollapsibleIfStatements.kt",
+    "source_file_sha256": "3383d8be6f4f489598e409ab8ead17a2582e124e84686cac0390fa52ecc98f44",
+    "source_archive_sha256": "4f18e9ac263a157229db846ac18d3a71b8861d74d415da3ebd0fa085dee461a6",
+    "source_archive_entry": "dev/detekt/rules/style/CollapsibleIfStatements.kt",
+    "predicate_line_numbers": [
+      34,
+      41,
+      43,
+      48,
+      51,
+      54
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/style/CollapsibleIfStatements",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:570d47aa5202a99972b7ea681fbafc10594737629ce79fc0cf559ccfff4ae50b"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [],
+  "bounded_predicate": "Report an if with no else and not parented as a control-structure body when its then child has exactly one KtExpression, itself an if without else. Entity.from(outer if). No binding/boolean normalization and no rule-specific options.",
+  "selection_rationale": "Adds a local guarded-callback simplification distinct from the existing ComplexCondition metric. Outer/inner else and brace-shape controls focus on behavior and actual syntax rather than count padding.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.collapse\n\nfun sendIfAllowed(ready: Boolean, permitted: Boolean, send: () -> Unit) {\n    if (ready) {\n        if (permitted) {\n            send()\n        }\n    }\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 4,
+        "end_line": 8,
+        "end_column": 5,
+        "span": "if (ready) {\n        if (permitted) {\n            send()\n        }\n    }",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A guarded callback has two standalone nested positive guards; combining them can reduce nesting, but readability and evaluation intent remain an explicit policy choice."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.collapse\n\nfun sendIfAllowed(ready: Boolean, permitted: Boolean, send: () -> Unit) {\n    if (ready && permitted) {\n        send()\n    }\n}\n"
+    },
+    "expected": [],
+    "intent": "Short-circuit conjunction retains the order and conditional callback for these boolean inputs without a nested if. This is an actual source alternative, not a disabled rule."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.collapse\n\nfun sendIfAllowed(ready: Boolean, permitted: Boolean, send: () -> Unit) {\n    if (ready) {\n        if (permitted) {\n            send()\n        }\n    }\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"CollapsibleIfStatements\")\n\npackage suppressed.corpus.collapse\n\nfun sendIfAllowed(ready: Boolean, permitted: Boolean, send: () -> Unit) {\n    if (ready) {\n        if (permitted) {\n            send()\n        }\n    }\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 4,
+        "end_line": 8,
+        "end_column": 5,
+        "span": "if (ready) {\n        if (permitted) {\n            send()\n        }\n    }",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.collapse\n\nfun sendOrWait(ready: Boolean, permitted: Boolean, send: () -> Unit, waitForReady: () -> Unit) {\n    if (ready) {\n        if (permitted) send()\n    } else {\n        waitForReady()\n    }\n}\n"
+      },
+      "expected": [],
+      "intent": "An outer else has a distinct recovery action; blindly collapsing would redirect behavior. The no-else boundary correctly leaves this structure alone.",
+      "id": "outer-else-preserves-distinct-recovery",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.collapse\n\nfun sendOrDeny(ready: Boolean, permitted: Boolean, send: () -> Unit, deny: () -> Unit) {\n    if (ready) {\n        if (permitted) send() else deny()\n    }\n}\n"
+      },
+      "expected": [],
+      "intent": "The inner else must only run when ready, so the two positive conditions are not interchangeable with a simple combined guard.",
+      "id": "inner-else-preserves-conditional-denial",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.collapse\n\nfun sendIfAllowed(ready: Boolean, permitted: Boolean, send: () -> Unit) {\n    if (ready) if (permitted) send()\n}\n"
+      },
+      "expected": [],
+      "intent": "A braceless nested guard is still collapsible in this simple case, but the exact child/container shape does not match. Keep the syntactic false negative instead of normalizing braces.",
+      "id": "braceless-nested-guard-is-not-normalized",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    }
+  ],
+  "analysis_cost": {
+    "standard_cases": 6,
+    "independent_controls": 3,
+    "authored_analyses": 9,
+    "per_rule_non_analysis_calls": 3,
+    "per_cohort_cli_probes": 1,
+    "actual_executions": 0
+  },
+  "limitations": [
+    "No rule-specific options exist.",
+    "An optional readability transformation is not evidence of excessive complexity, a control-flow defect or semantic equivalence for arbitrary expressions.",
+    "Braces and child/container placement affect matching; nested side effects and short-circuit conditions are not analyzed.",
+    "Local syntactic advice only. No binding identity, safe automatic rewrite, whole-program reachability, binary ABI compatibility, call effect, reflection completeness, performance or semantic qualification follows.",
+    "The six lifecycle cases include a disabled-rule configuration control, pinned-version positive replay and negative child-snapshot replay; the latter two are not new predicates. Every other negative/control keeps this rule active.",
+    "Only the existing explicit JVM LIGHT input is proposed. Common and Native requests must abstain without launching; no parser/compiler/Kotlin 2.4.21 versus embedded 2.4.10 compatibility or multiplatform qualification.",
+    "File-level suppression is authored; declaration-level aliases, baselines and generated-code inclusion policy are not newly qualified."
+  ],
+  "qualification_note": "Authored expected ranges and concrete counterexamples come from primary source and language reasoning before execution, never detector outputs. Preserve any unexpected findings/misses and stop; do not rewrite oracles to force a pass. Existing activation/severity/certainty remain exact. Independent oracle/source review, root adoption, fresh controls and separately admitted single-cohort real isolated calls are required. No natural-project precision, safety, release or historical-stage transfer."
+}

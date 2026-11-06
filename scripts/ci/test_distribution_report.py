@@ -1,9 +1,10 @@
-"""Adversarial inventory infrastructure tests using synthetic JARs/POMs only."""
+"""Synthetic inventory controls and read-only distribution build-configuration contracts."""
 
 import argparse
 import copy
 import io
 import json
+import re
 from pathlib import Path
 import shutil
 import tempfile
@@ -14,9 +15,11 @@ import zipfile
 
 try:
     from . import ci_common, report_distribution
+    from .test_model_worker_distribution import synthetic_worker
 except ImportError:
     import ci_common
     import report_distribution
+    from test_model_worker_distribution import synthetic_worker
 
 
 IDENTITY = {"commit": "1" * 40, "dirty": False, "working_tree_digest": "sha256:" + "2" * 64}
@@ -34,8 +37,10 @@ class DistributionInventoryTests(unittest.TestCase):
         self.resolved.mkdir()
         self.maven = self.resolved / "actual-bytes-not-a-coordinate.jar"
         self.owner = self.resolved / "owner-output.jar"
+        self.worker = self.resolved / report_distribution.model_worker_distribution.WORKER_FILENAME
         self.jar(self.maven)
         self.jar(self.owner, {"Owner.class": b"synthetic owner bytecode"})
+        synthetic_worker(self.worker)
         self.pom = self.resolved / "actual-module.pom"
         self.pom.write_text('<project xmlns="http://maven.apache.org/POM/4.0.0"><licenses><license>'
                             '<name>The Apache Software License, Version 2.0</name>'
@@ -43,6 +48,7 @@ class DistributionInventoryTests(unittest.TestCase):
                             '</license></licenses></project>')
         for file, relative in ((self.maven, "lib/actual-bytes-not-a-coordinate.jar"),
                                (self.maven, "providers/compiler/actual-bytes-not-a-coordinate.jar"),
+                               (self.worker, report_distribution.model_worker_distribution.WORKER_RELATIVE),
                                (self.owner, "lib/owner-output.jar")):
             destination = self.distribution / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -56,6 +62,9 @@ class DistributionInventoryTests(unittest.TestCase):
         self.manifest = {"schemaVersion": 1, "producer": "gradle-resolved-distribution-artifacts/1",
                          "gradleVersion": "9.6.1", "project": ":cli", "distribution": str(self.distribution),
                          "artifacts": [self.artifact(), self.artifact(configuration="bundledCompiler"),
+                                       self.artifact(coordinate="dev.example:provider-compiler:0.1.0-preview.1", origin="owner_project",
+                                                     configuration="bundledCompilerModel", file=str(self.worker), pom=None,
+                                                     artifactIdentity=report_distribution.model_worker_distribution.APPLICATION_TASK),
                                        self.artifact(coordinate="dev.example:owner:0.1.0-preview.1", origin="owner_project",
                                                      configuration="application", file=str(self.owner), pom=None)]}
         self.policy = {"schema_version": 1, "owner_license": None,
@@ -104,7 +113,7 @@ class DistributionInventoryTests(unittest.TestCase):
         result = self.generate()
         self.assertEqual("passed", result["state"])
         self.assertEqual([], result["errors"])
-        self.assertEqual(2, len(result["components"]))
+        self.assertEqual(3, len(result["components"]))
         component = next(row for row in result["components"] if row["origin"] == "maven")
         self.assertEqual("example.actual:module:1.2.3", component["coordinate"])
         self.assertEqual(ci_common.digest_file(self.maven), component["digest"])
@@ -226,6 +235,51 @@ class DistributionInventoryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.generate()
 
+    def test_worker_inventory_uses_actual_task_bytes_without_a_license_grant(self):
+        result = self.generate()
+        worker = next(row for row in result["components"] if row["configurations"] == ["bundledCompilerModel"])
+        self.assertEqual("dev.example:provider-compiler:0.1.0-preview.1", worker["coordinate"])
+        self.assertEqual([report_distribution.model_worker_distribution.WORKER_RELATIVE], worker["distribution_paths"])
+        self.assertEqual([], worker["pom"]["declared_licenses"])
+        self.assertEqual("verified", result["compiler_model_worker"]["state"])
+        self.assertEqual(worker["digest"], result["compiler_model_worker"]["built_digest"])
+        self.assertFalse(result["compiler_model_worker"]["worker_execution"])
+        self.assertFalse(result["release_qualified"])
+        self.assertEqual("blocked", result["license_review_status"])
+
+    def test_current_inventory_requires_one_exact_isolated_task_record(self):
+        original = copy.deepcopy(self.manifest)
+        worker = self.manifest["artifacts"][-2]
+        rows = original["artifacts"]
+        cases = [rows[:2] + rows[-1:], rows + [copy.deepcopy(worker)]]
+        for change in ({"origin": "maven"}, {"artifactIdentity": ":provider-compiler:compilerApplicationWorkerJar"},
+                       {"configuration": "runtimeClasspath"}, {"pom": str(self.pom)}, {"file": str(self.owner)}):
+            cases.append(rows[:2] + [{**worker, **change}] + rows[-1:])
+        cases.append(rows + [{**worker, "configuration": "runtimeClasspath", "artifactIdentity": "another mapping"}])
+        for artifacts in cases:
+            with self.subTest(index=cases.index(artifacts)), self.assertRaises(ValueError):
+                report_distribution.validate_manifest({**original, "artifacts": artifacts}, self.distribution, self.root)
+
+    def test_wrong_worker_bytes_or_location_cannot_pass_inventory(self):
+        installed = self.distribution / report_distribution.model_worker_distribution.WORKER_RELATIVE
+        original = installed.read_bytes()
+        installed.write_bytes(original + b"different")
+        result = self.generate()
+        self.assertEqual("failed", result["state"])
+        self.assertEqual("failed", result["compiler_model_worker"]["state"])
+        installed.unlink()
+        (self.distribution / "lib" / self.worker.name).write_bytes(original)
+        result = self.generate()
+        self.assertEqual("failed", result["state"])
+        self.assertTrue(any("Compiler-model worker packaging failed" in error for error in result["errors"]))
+
+    def test_foreign_worker_content_fails_even_when_task_and_installed_bytes_match(self):
+        synthetic_worker(self.worker, extra={"dev/ktchecker/cli/Host.class": b"synthetic host"})
+        shutil.copyfile(self.worker, self.distribution / report_distribution.model_worker_distribution.WORKER_RELATIVE)
+        result = self.generate()
+        self.assertEqual("failed", result["state"])
+        self.assertEqual(["unreviewed_worker_file"], result["compiler_model_worker"]["errors"])
+
     def test_duplicate_json_keys_invalid_utf8_and_byte_limits_are_rejected(self):
         for raw in (b'{"schemaVersion":1,"schemaVersion":2}', b'{"text":"\xff"}'):
             self.args.dependencies.write_bytes(raw)
@@ -257,7 +311,7 @@ class DistributionInventoryTests(unittest.TestCase):
         sbom = json.loads(self.args.sbom.read_text())
         self.assertEqual("CycloneDX", sbom["bomFormat"])
         self.assertEqual("1.6", sbom["specVersion"])
-        self.assertEqual(2, len(sbom["components"]))
+        self.assertEqual(3, len(sbom["components"]))
         self.assertIn({"name": "ktchecker:releaseQualified", "value": "false"}, sbom["metadata"]["properties"])
         self.assertIn("owner_license_unresolved", self.args.notice.read_text())
         self.assertNotIn(str(self.root), self.args.notice.read_text())
@@ -275,6 +329,52 @@ class DistributionInventoryTests(unittest.TestCase):
         self.assertEqual(["Actual dependency inventory failed: ValueError"], result["errors"])
         self.assertNotIn(str(self.root), json.dumps(result))
         self.assertFalse(result["release_qualified"])
+
+
+class DistributionBuildConfigurationTests(unittest.TestCase):
+    """Read-only source contracts, not Gradle resolution or installed/runtime evidence."""
+
+    COMPILER_ROOTS = (
+        "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21",
+        "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.21",
+        "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.21",
+    )
+
+    def test_preselected_model_compiler_roots_are_fixed_packaging_dependencies(self):
+        root = Path(__file__).resolve().parents[2]
+        source = (root / "modules/cli/build.gradle.kts").read_text(encoding="utf-8")
+        # Match all direct declarations for the selected compiler/BTA families,
+        # including a forbidden implementation/api/runtimeOnly duplicate.
+        declarations = re.findall(
+            r'^\s*(\w+)\("(org\.jetbrains\.kotlin:kotlin-'
+            r'(?:compiler-(?:embeddable|runner)|build-tools-[\w-]+|tooling-core|daemon-client):[^"\n]+)"\)\s*$',
+            source, re.MULTILINE,
+        )
+        self.assertEqual([("bundledCompiler", coordinate) for coordinate in self.COMPILER_ROOTS], declarations)
+
+    def test_compiler_configuration_has_only_isolated_copy_and_manifest_uses(self):
+        root = Path(__file__).resolve().parents[2]
+        source = (root / "modules/cli/build.gradle.kts").read_text(encoding="utf-8")
+        # This intentionally covers only the reviewed literal DSL surface, not
+        # arbitrary executable Gradle syntax. New wiring requires renewed review.
+        uses = [line.strip() for line in source.splitlines()
+                if re.search(r'\bbundledCompiler\b', line) and not line.lstrip().startswith("//")]
+        self.assertEqual([
+            'val bundledCompiler = configurations.create("bundledCompiler") {',
+            *(f'bundledCompiler("{coordinate}")' for coordinate in self.COMPILER_ROOTS),
+            'from(bundledCompiler) { into("providers/compiler") }',
+        ], uses)
+        configuration = re.search(
+            r'^val bundledCompiler = configurations\.create\("bundledCompiler"\) \{\n(.*?)^\}',
+            source, re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(configuration)
+        self.assertEqual(["isCanBeConsumed = false", "isCanBeResolved = true"],
+                         [line.strip() for line in configuration.group(1).splitlines() if line.strip()])
+        self.assertIn('from(bundledCompilerModel) { into("providers/compiler-model") }', source)
+        manifest = (root / "scripts/ci/distribution-dependencies.init.gradle").read_text(encoding="utf-8")
+        self.assertIn("['runtimeClasspath', 'bundledCompiler'].each { name ->", manifest)
+        self.assertIn("configuration: 'bundledCompilerModel', artifactIdentity: modelWorker.get().path,", manifest)
 
 
 if __name__ == "__main__":
