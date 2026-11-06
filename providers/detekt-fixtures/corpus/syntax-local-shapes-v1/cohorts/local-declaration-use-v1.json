@@ -1,0 +1,1407 @@
+{
+  "schema": "ktchecker/detekt-syntax-local-shapes-case-matrix/1",
+  "cohort_id": "local-declaration-use-v1",
+  "state": "AUTHORED_NOT_RUN",
+  "candidate_only": true,
+  "baseline_scope_reference": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/scope.json",
+  "analyses": [
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 16,
+          "end_line": 3,
+          "end_column": 27,
+          "span": "unusedRetry",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ebe8f1c9c7bbbb61274cd489903f4f01109a61d56f35558dcaa69861a49f8361",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "76a5ff9d47fa2061523d934e572bbb4efed25c4668eb20c053ec59ae801f7f14",
+          "bytes": 84
+        }
+      ],
+      "expected_override": null,
+      "intent": "A cache accessor accepts a retry input that never participates in its result. The advisory highlights the unused declaration; removing a public parameter still requires caller/ABI review.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0efc0b1e3bfdd466694c16ad358a42ce3dd614bb40eb8d7b51a7500b2b453d3a",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "05f685ab689ea056f76860f0afb0ce46ead03dcdce5ec8ef8394c56a12e17e52",
+          "bytes": 82
+        }
+      ],
+      "expected_override": null,
+      "intent": "An actual reference in string interpolation consumes the parameter while this rule remains active; no exemption or rule disable.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ebe8f1c9c7bbbb61274cd489903f4f01109a61d56f35558dcaa69861a49f8361",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "76a5ff9d47fa2061523d934e572bbb4efed25c4668eb20c053ec59ae801f7f14",
+          "bytes": 84
+        }
+      ],
+      "expected_override": [],
+      "intent": "A cache accessor accepts a retry input that never participates in its result. The advisory highlights the unused declaration; removing a public parameter still requires caller/ABI review.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 16,
+          "end_line": 3,
+          "end_column": 27,
+          "span": "unusedRetry",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ebe8f1c9c7bbbb61274cd489903f4f01109a61d56f35558dcaa69861a49f8361",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "76a5ff9d47fa2061523d934e572bbb4efed25c4668eb20c053ec59ae801f7f14",
+          "bytes": 84
+        }
+      ],
+      "expected_override": null,
+      "intent": "A cache accessor accepts a retry input that never participates in its result. The advisory highlights the unused declaration; removing a public parameter still requires caller/ABI review.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 16,
+          "end_line": 3,
+          "end_column": 27,
+          "span": "unusedRetry",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "39ec35baddf42bac3be7b4713d23c88b8a545c0693fca4367f1513f2da5a715e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "76a5ff9d47fa2061523d934e572bbb4efed25c4668eb20c053ec59ae801f7f14",
+          "bytes": 84
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "94e1042a0c6e44a75e9018c8a6a74aadba2b51cf4c97b97734e69b0e90edb390",
+          "bytes": 130
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0efc0b1e3bfdd466694c16ad358a42ce3dd614bb40eb8d7b51a7500b2b453d3a",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "05f685ab689ea056f76860f0afb0ce46ead03dcdce5ec8ef8394c56a12e17e52",
+          "bytes": 82
+        }
+      ],
+      "expected_override": null,
+      "intent": "An actual reference in string interpolation consumes the parameter while this rule remains active; no exemption or rule disable.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "default-reserved-names-are-exempt",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3443da17cab5667e21f2ee65b2d1710c590d344b0453c334c95be58f8f3a7180",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "34b26a870aeee90cd64470bf3b8e85953cf1a27239f766695fd52e1c61abb106",
+          "bytes": 102
+        }
+      ],
+      "expected_override": null,
+      "intent": "Default allowedNames exempts exactly ignored and expected, a legitimate deliberately reserved callback boundary. No fictitious option is applied.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "configured-reserved-regex-retains-neighbor",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 35,
+          "end_line": 3,
+          "end_column": 40,
+          "span": "stale",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "genuine_upstream_option",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "allowedNames": "reserved.*"
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "7053e40ccd45fcbf14365a778f384586973951f91a39508693bb5053fd10c071",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6ab5b5f2149266637bb3b816e59841f604ef9e904c8d79db72bab48eb45fad7e",
+          "bytes": 100
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine allowedNames regex permits reservedToken only; unrelated stale remains an active warning. A broad option never silently disables the rule.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "named-argument-label-does-not-use-parameter",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 10,
+          "end_line": 4,
+          "end_column": 15,
+          "span": "width",
+          "occurrence": 2
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b1568a78a85211402949f0fe5cfa693bd177c6f079adc0a6e97a447813493a2d",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "8f49d2bc8242085f0d68f0c17c07acf798ba4874bf070ff4a43408389994711a",
+          "bytes": 141
+        }
+      ],
+      "expected_override": null,
+      "intent": "The width label on the call is not a reference to blank's width parameter. render's own parameter is consumed. This distinguishes parameter use from named-argument spelling.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "nested-function-shadowing-hides-unused-outer",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+      "fixture_json_pointer": "/controls/3",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "8277f06313f7dffca6ce375109ee236a64ffa21c95cbb17e78f03bbbad3619d9",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "2da7856702a8787a35f12ebd9eb5413114d2d2eb62febd6155002866ca308ad1",
+          "bytes": 140
+        }
+      ],
+      "expected_override": null,
+      "intent": "The nested function consumes only its own width, yet the outer name-only scan also removes column's width. Retain this anticipated false negative; do not claim lexical binding or safe parameter removal.",
+      "selected_sarif_rule_id": "detekt.style.UnusedParameter",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 0,
+          "end_line": 3,
+          "end_column": 42,
+          "span": "private class ObsoleteIndex(val size: Int)",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ff1001e01cc05b5ec3100730eea15929130d6836037418f03bb6c58fdf35ad69",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "fa4855fc29115b007c48bd7505760f0a5c1d7fee976dcaa62b7f8fad7bdee2fe",
+          "bytes": 99
+        }
+      ],
+      "expected_override": null,
+      "intent": "An unreferenced private helper is separate from public API policy and can confuse readers. The advisory is bounded to this file and its syntactic usage collector.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0f28b340a358c8f955d80b05577c7cb95a5a4a03e0399d7ca89818c6a6294926",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f2e27441456db9459381f68994a4bf9b2fc8cb20b648b5beb60b8963c8a97a3f",
+          "bytes": 103
+        }
+      ],
+      "expected_override": null,
+      "intent": "The private helper is actually named as a constructor callee; it remains useful and is not reported.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ff1001e01cc05b5ec3100730eea15929130d6836037418f03bb6c58fdf35ad69",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "fa4855fc29115b007c48bd7505760f0a5c1d7fee976dcaa62b7f8fad7bdee2fe",
+          "bytes": 99
+        }
+      ],
+      "expected_override": [],
+      "intent": "An unreferenced private helper is separate from public API policy and can confuse readers. The advisory is bounded to this file and its syntactic usage collector.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 0,
+          "end_line": 3,
+          "end_column": 42,
+          "span": "private class ObsoleteIndex(val size: Int)",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ff1001e01cc05b5ec3100730eea15929130d6836037418f03bb6c58fdf35ad69",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "fa4855fc29115b007c48bd7505760f0a5c1d7fee976dcaa62b7f8fad7bdee2fe",
+          "bytes": 99
+        }
+      ],
+      "expected_override": null,
+      "intent": "An unreferenced private helper is separate from public API policy and can confuse readers. The advisory is bounded to this file and its syntactic usage collector.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 0,
+          "end_line": 3,
+          "end_column": 42,
+          "span": "private class ObsoleteIndex(val size: Int)",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "bc23b3b6635c33d1af9bd31d7551a6b3520b451888f4f7a6d56e3e7e27433ea4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "fa4855fc29115b007c48bd7505760f0a5c1d7fee976dcaa62b7f8fad7bdee2fe",
+          "bytes": 99
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "1836a23951b6a690a231265d090ed76e4477d1ad0f374b2f0742244a16546ab0",
+          "bytes": 148
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0f28b340a358c8f955d80b05577c7cb95a5a4a03e0399d7ca89818c6a6294926",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f2e27441456db9459381f68994a4bf9b2fc8cb20b648b5beb60b8963c8a97a3f",
+          "bytes": 103
+        }
+      ],
+      "expected_override": null,
+      "intent": "The private helper is actually named as a constructor callee; it remains useful and is not reported.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "type-reference-retains-private-class",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "d5f52257651f9eb17228837313d6e897eee3bccae6c230af93b9e47ec81538fe",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b3fec17e66529d793646ce59937ba1e4bdc1b07808672b1a11eeb982da590342",
+          "bytes": 159
+        }
+      ],
+      "expected_override": null,
+      "intent": "A private type used only in another private declaration signature is retained. This is a valid type-reference boundary, not proof that either declaration is reachable.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "same-named-inner-class-hides-unused-outer",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "6b0743961dc7716ed513a0af9a1be4a95a1c9b084e1518204bd5dedf229060f8",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "d724d1a8c11540c08c99795636c294d1741393dae88621cb1c73767348cfd7cb",
+          "bytes": 157
+        }
+      ],
+      "expected_override": null,
+      "intent": "Only the inner scoped LocalIndex is constructed, but the collector uses simple names and retains the unused outer private class too. Preserve the anticipated miss.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "reflection-text-is-not-a-syntactic-type-use",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 0,
+          "end_line": 3,
+          "end_column": 31,
+          "span": "private class ReflectiveAdapter",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "f7236fcaf5cf48ed0f12ec3d71d21d50fe083b4bc83f77e4f80b84bafc22ed32",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "6cd15dae06ccdbb3aab34e4c3aaaddc86ee1929170651ff1b9323c0af2a845be",
+          "bytes": 146
+        }
+      ],
+      "expected_override": null,
+      "intent": "The class name is intentionally referenced through reflection text, which the visitor does not connect. An active warning is expected despite potential real dynamic use; no reflective load is executed or certified.",
+      "selected_sarif_rule_id": "detekt.style.UnusedPrivateClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 41,
+          "span": "protected val suffix: String = \".idx\"",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "cbed9423704d599b8e84a772a808ea575ce0f15b959c9a537a6d0d81a86dc97e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "2769c54cee624406937af4f999aafb1aadff14aaf7d94a9f85d3344674196fb8",
+          "bytes": 150
+        }
+      ],
+      "expected_override": null,
+      "intent": "A final-by-default class cannot be subclassed, so protected state advertises an extension surface that does not exist in plain source. This remains explicit opt-in advice, not an architecture mandate.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e680986d99a0feb9731f92d46020cc4a7b58bd7d7be9a9f2c4ae02b4ab45904d",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f8f7c9ebf0376120faf3b56863fb3c250b330fcb77019452793fdad130c28cb5",
+          "bytes": 148
+        }
+      ],
+      "expected_override": null,
+      "intent": "The same encapsulated member is explicitly private in the final class. The selected rule is active and no API identity inference is needed.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "cbed9423704d599b8e84a772a808ea575ce0f15b959c9a537a6d0d81a86dc97e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "2769c54cee624406937af4f999aafb1aadff14aaf7d94a9f85d3344674196fb8",
+          "bytes": 150
+        }
+      ],
+      "expected_override": [],
+      "intent": "A final-by-default class cannot be subclassed, so protected state advertises an extension surface that does not exist in plain source. This remains explicit opt-in advice, not an architecture mandate.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 41,
+          "span": "protected val suffix: String = \".idx\"",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "cbed9423704d599b8e84a772a808ea575ce0f15b959c9a537a6d0d81a86dc97e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "2769c54cee624406937af4f999aafb1aadff14aaf7d94a9f85d3344674196fb8",
+          "bytes": 150
+        }
+      ],
+      "expected_override": null,
+      "intent": "A final-by-default class cannot be subclassed, so protected state advertises an extension surface that does not exist in plain source. This remains explicit opt-in advice, not an architecture mandate.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 41,
+          "span": "protected val suffix: String = \".idx\"",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "529ebc4a74141c2f711c905a18c8f8421f8c497fbba0eabf2c3d91b846379c62",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "2769c54cee624406937af4f999aafb1aadff14aaf7d94a9f85d3344674196fb8",
+          "bytes": 150
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "0e0b080508e6d9b7f7fa7133f9343ee08f8b72ee94b6d32b6e1af37fadbc7ed1",
+          "bytes": 208
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e680986d99a0feb9731f92d46020cc4a7b58bd7d7be9a9f2c4ae02b4ab45904d",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f8f7c9ebf0376120faf3b56863fb3c250b330fcb77019452793fdad130c28cb5",
+          "bytes": 148
+        }
+      ],
+      "expected_override": null,
+      "intent": "The same encapsulated member is explicitly private in the final class. The selected rule is active and no API identity inference is needed.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "open-class-protected-extension-state-is-valid",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e24b828007e07cc180a41cd6c545f2eebdb7cf9ff552d790eb4f64683b41009a",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "fe577a1c00588c49b30ad4126249d2e6b0fc599de0b124d902a5bd7a3256e3b1",
+          "bytes": 104
+        }
+      ],
+      "expected_override": null,
+      "intent": "An intentionally open class exposes legitimate subclass state and is excluded by the modifier predicate.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "protected-override-preserves-inherited-contract",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0e53a3213fd3c64ef813afcfa59bba770296065dc5c76b9f5cc75e1883f7f9bd",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "141807f5b4e7f1d954e905125d0f9e8c60a6c64ae845a8b8e07db05e610eacfc",
+          "bytes": 193
+        }
+      ],
+      "expected_override": null,
+      "intent": "The final subclass preserves inherited protected override visibility. The override exemption is a separate valid API boundary from the open-container exemption.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "sealed-hierarchy-is-not-final-container",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "63f073f6320d64b6d3cef9c1ba544574bfdb3e6b073d3ed0336ee6c669c97e47",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "5711aafd51201c07dc80d7fe5e914c6f4834b3c13394b68b2d5cfc2997f27bd9",
+          "bytes": 106
+        }
+      ],
+      "expected_override": null,
+      "intent": "Sealed hierarchies have controlled subclasses; the explicit sealed modifier exempts them even though they are not spelled open.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "factory-only-protected-primary-constructor-still-reports",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+      "fixture_json_pointer": "/controls/3",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 13,
+          "end_line": 3,
+          "end_column": 53,
+          "span": "protected constructor(val value: String)",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "opt_in_policy_limit",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "a95edfff0c39fa5f0f671832062baa2a356ff0ada193eb0f4d002b3747172587",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "124cc062db29ae1d89eebbdab50854943905845fbe951f5e6ef99cbe9ac705dd",
+          "bytes": 176
+        }
+      ],
+      "expected_override": null,
+      "intent": "An intentional factory-only final class can use a protected primary constructor. The rule still flags the whole constructor as opt-in visibility advice; factory access and ABI intent do not become a defect.",
+      "selected_sarif_rule_id": "detekt.style.ProtectedMemberInFinalClass",
+      "selected_sarif_descriptor_enabled_required": true
+    }
+  ],
+  "invocation_schedule": [
+    {
+      "ordinal": 1,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 0
+    },
+    {
+      "ordinal": 2,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 3,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 1
+    },
+    {
+      "ordinal": 4,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 2
+    },
+    {
+      "ordinal": 5,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 3
+    },
+    {
+      "ordinal": 6,
+      "kind": "cli_probe",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "cli-version-probe",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "expected_version": "2.0.0-alpha.6"
+    },
+    {
+      "ordinal": 7,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 8,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 9,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 4
+    },
+    {
+      "ordinal": 10,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 5
+    },
+    {
+      "ordinal": 11,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "default-reserved-names-are-exempt",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 6
+    },
+    {
+      "ordinal": 12,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "configured-reserved-regex-retains-neighbor",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 7
+    },
+    {
+      "ordinal": 13,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "named-argument-label-does-not-use-parameter",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 8
+    },
+    {
+      "ordinal": 14,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+      "case_id": "nested-function-shadowing-hides-unused-outer",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 9
+    },
+    {
+      "ordinal": 15,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 10
+    },
+    {
+      "ordinal": 16,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 17,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 11
+    },
+    {
+      "ordinal": 18,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 12
+    },
+    {
+      "ordinal": 19,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 13
+    },
+    {
+      "ordinal": 20,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 21,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 22,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 14
+    },
+    {
+      "ordinal": 23,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 15
+    },
+    {
+      "ordinal": 24,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "type-reference-retains-private-class",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 16
+    },
+    {
+      "ordinal": 25,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "same-named-inner-class-hides-unused-outer",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 17
+    },
+    {
+      "ordinal": 26,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+      "case_id": "reflection-text-is-not-a-syntactic-type-use",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 18
+    },
+    {
+      "ordinal": 27,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 19
+    },
+    {
+      "ordinal": 28,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 29,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 20
+    },
+    {
+      "ordinal": 30,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 21
+    },
+    {
+      "ordinal": 31,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 22
+    },
+    {
+      "ordinal": 32,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 33,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 34,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 23
+    },
+    {
+      "ordinal": 35,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 24
+    },
+    {
+      "ordinal": 36,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "open-class-protected-extension-state-is-valid",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 25
+    },
+    {
+      "ordinal": 37,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "protected-override-preserves-inherited-contract",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 26
+    },
+    {
+      "ordinal": 38,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "sealed-hierarchy-is-not-final-container",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 27
+    },
+    {
+      "ordinal": 39,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+      "case_id": "factory-only-protected-primary-constructor-still-reports",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 28
+    }
+  ],
+  "counts": {
+    "authored_analyses": 29,
+    "all_calls": 39,
+    "native_launch_ceiling": 30,
+    "expected_runtime_callbacks": 33,
+    "planned_progress_events": 119,
+    "independent_controls": 11,
+    "authored_alert_bearing_analyses": 13,
+    "authored_zero_finding_analyses": 16,
+    "authored_expected_finding_observations": 13,
+    "unique_rule_source_sets": 20,
+    "unique_rule_source_configuration_sets": 23,
+    "independent_control_assessments": {
+      "predicate_boundary": 6,
+      "genuine_upstream_option": 1,
+      "anticipated_upstream_false_negative": 2,
+      "anticipated_upstream_false_positive": 1,
+      "opt_in_policy_limit": 1
+    },
+    "actual_executions": 0,
+    "actual_findings": null,
+    "natural_project_observations": 0,
+    "precision_reviewed_natural_observations": 0
+  },
+  "explicit_opt_in_policy_rule_ids": [
+    "ktc.kotlin.detekt.style.protected-member-in-final-class"
+  ],
+  "source_authored_not_observed": true
+}

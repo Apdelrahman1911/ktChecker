@@ -35,20 +35,20 @@ class JvmOriginalArgumentImporterTest {
     @Test fun equalButNewOriginOrNullEquivocationAtSecondCheckRejectsIngress(): Unit {
         for (firstAbsent in listOf(false, true)) {
             val f = Fixture(); var checks = 0
-            val failure = assertFailsWith<ProjectModelException> {
+            val failure = assertOwnerFixtureModelFailure(f.owner.work) {
                 f.import { if (++checks == 1) { if (firstAbsent) null else f.origin } else f.newOrigin() }
             }
             assertEquals("model_jvm_argument_origin_changed", failure.code)
         }
         val f = Fixture(); var checks = 0
-        assertEquals("model_jvm_argument_origin_changed", assertFailsWith<ProjectModelException> {
+        assertEquals("model_jvm_argument_origin_changed", assertOwnerFixtureModelFailure(f.owner.work) {
             f.import { if (++checks == 1) f.origin else null }
         }.code)
     }
 
     @Test fun ownerOriginErrorsAreNeverConvertedToAnEmptyDomain(): Unit {
         val f = Fixture()
-        assertEquals("fixture_owner_origin_failed", assertFailsWith<ProjectModelException> {
+        assertEquals("fixture_owner_origin_failed", assertOwnerFixtureModelFailure(f.owner.work) {
             f.import { throw ProjectModelException("fixture_owner_origin_failed", "Synthetic missing owner proof") }
         }.code)
     }

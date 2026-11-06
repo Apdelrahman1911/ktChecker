@@ -19,7 +19,7 @@ import org.junit.jupiter.api.io.TempDir
 class IntegratedProducedHistoryBarrierTest {
     @TempDir lateinit var temp: Path
 
-    private class Registry(private val produced: ProducedLaneFixture) : ReviewPlanAuthority, ReviewPlanRoutingAuthority {
+    private class Registry(private val produced: ProducedLane1665Fixture) : ReviewPlanAuthority, ReviewPlanRoutingAuthority {
         var declared: RequiredReviewPlan? = null
         var route: AuthorizedReviewRoute? = null
         override fun resolve(binding: ClientBinding, request: SubmitPlanRequest): RequiredReviewPlan? =
@@ -40,7 +40,7 @@ class IntegratedProducedHistoryBarrierTest {
             }
     }
     private data class Scenario(
-        val service: KernelService, val f: ProducedLaneFixture, val clients: List<ClientRegistration>,
+        val service: KernelService, val f: ProducedLane1665Fixture, val clients: List<ClientRegistration>,
         val declared: RequiredReviewPlan, val history: ParentPlanStatus, val finals: List<ParentPlanStatus>,
         val finalPlans: List<RequiredReviewPlan>, val obligations: List<IntegratedPatchObligation>,
         val fence: Fence, val authority: IntegratedCompletionAuthority, val effects: AtomicInteger, val release: CountDownLatch,
@@ -50,13 +50,13 @@ class IntegratedProducedHistoryBarrierTest {
     }
 
     private fun withDeferredHistory(observed: Boolean = false, body: (Scenario) -> Unit) {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val registry = Registry(f); val typed = f.Provider()
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val registry = Registry(f); val typed = f.Provider()
         val finalInputs = AtomicReference<List<AnalysisInput>>(emptyList())
         val provider = object : AnalysisProvider {
-            override val id = ProducedLaneFixture.PROVIDER
+            override val id = ProducedLane1665Fixture.PROVIDER
             override val supportedRuleIds = f.rules.toSet()
             override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
-                if (ProducedLaneFixture.PREVIEW in input.context.policies) return typed.analyze(input, cancellation)
+                if (ProducedLane1665Fixture.PREVIEW in input.context.policies) return typed.analyze(input, cancellation)
                 cancellation.throwIfCancelled()
                 assertTrue(finalInputs.get().any { it.snapshot == input.snapshot && it.context == input.context && it.requiredRuleIds == input.requiredRuleIds })
                 val key = input.analysisKey()
@@ -67,7 +67,7 @@ class IntegratedProducedHistoryBarrierTest {
             }
         }
         val entered = CountDownLatch(1); val release = CountDownLatch(1)
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG, planAuthority = registry,
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG, planAuthority = registry,
             routingAuthority = registry, preparedInputObserver = f.observer).use { service ->
             try {
                 val clients = listOf("a", "b").map { id -> service.registerClient(
@@ -177,7 +177,7 @@ class IntegratedProducedHistoryBarrierTest {
             it.startsWith("joint_member_source_configuration_mismatch:") || it.startsWith("joint_final_scope_incomplete:") ||
             it.startsWith("current_coverage_missing:") || it == "joint_historical_patch_dispositions_incomplete" }, cut.reasons.toString())
         assertEquals(s.finals.map { it.planId }, cut.scope.members.map { it.planId })
-        assertEquals(3326, cut.scope.requiredCoverage.size)
+        assertEquals(3330, cut.scope.requiredCoverage.size)
         cut.scope.requiredCoverage.groupBy { it.context }.values.forEach { assertEquals(s.f.rules, it.map { pair -> pair.ruleId }) }
         val request = s.fence.requests.last()
         assertEquals(s.obligations.toSet(), request.historicalObligations.toSet()); assertEquals(s.obligations.size, request.historicalObligations.size)
@@ -207,7 +207,7 @@ class IntegratedProducedHistoryBarrierTest {
 
         s.release.countDown(); s.f.finished(s.service, s.clients.first(), consumerReview)
         assertEquals("ready", s.f.resolved(s.service, consumerReview))
-        val consumer = s.f.typedAttempts.single { it.execution.slotId == ProducedLaneFixture.CONSUMER }
+        val consumer = s.f.typedAttempts.single { it.execution.slotId == ProducedLane1665Fixture.CONSUMER }
         assertNotEquals(s.declared.slots.last().input.analysisKey(), consumer.original.analysisKey())
         s.clients.forEach { s.f.deliver(s.service, it) }
         val resolved = s.barrier().prepare(s.origin, "completion")

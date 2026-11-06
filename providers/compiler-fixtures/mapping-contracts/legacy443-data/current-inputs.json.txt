@@ -1,0 +1,396 @@
+{
+  "catalogs": [
+    {
+      "bytes": 4989971,
+      "path": "data/rules-core.json",
+      "sha256": "e49d7317951077d55a68df30387915c263f21dd3972caecf58f47138d885e014"
+    },
+    {
+      "bytes": 93642,
+      "path": "data/rules-ecosystem.json",
+      "sha256": "261fb5c1fadbed7b9ae3b7768cba19e9716ba5067c4932e671183d13513fd2ac"
+    },
+    {
+      "bytes": 327350,
+      "path": "data/rules-libraries.json",
+      "sha256": "3e671d030bb1734242c4f51c2de8723c11abb002b9c8a743176e7cc957592c9e"
+    },
+    {
+      "bytes": 5367326,
+      "path": "data/rules-platform.json",
+      "sha256": "0bfffdd0749353cb5b9b41485e29456037a5c669e232c6915fa5ca91aa6127af"
+    }
+  ],
+  "contexts": [
+    {
+      "bytes": 854,
+      "context_id": "current-edited-detekt-coroutine-raw-jvm-unexecuted-native-preview1",
+      "context_sha256": "94912ebf56905d89484e11dc51af8e7887d92fdaec9db13db5af776943caf91f",
+      "path": "providers/coverage/contexts/01-94912ebf56905d89484e11dc51af8e7887d92fdaec9db13db5af776943caf91f.json",
+      "sha256": "87477b5379906989278f3eb0fc7b47e5b75fbd6a5a7841816694bbe96c594c91"
+    },
+    {
+      "bytes": 985,
+      "context_id": "detekt-coroutine-raw-fixtures-native-preview1",
+      "context_sha256": "f1160d18fa35a92f788a8f1cdb430ff8f8be724a21a2935fafb1ae47a0677242",
+      "path": "providers/coverage/contexts/02-f1160d18fa35a92f788a8f1cdb430ff8f8be724a21a2935fafb1ae47a0677242.json",
+      "sha256": "d00840064120669f516217e3d8180481d4fc8819af5a1f37971411a22bfc5eb2"
+    },
+    {
+      "bytes": 792,
+      "context_id": "current-edited-detekt-syntax-jvm-unexecuted-native-preview1",
+      "context_sha256": "8011124690347fa1d70b8b980a8dbf43ae7b6268223742626ef801a9b033cfcd",
+      "path": "providers/coverage/contexts/03-8011124690347fa1d70b8b980a8dbf43ae7b6268223742626ef801a9b033cfcd.json",
+      "sha256": "35e4533796a93729885ae3cbc34464208b9cfd59328170a874711a5cc28ebf38"
+    },
+    {
+      "bytes": 1039,
+      "context_id": "detekt-syntax-fixtures-native-preview1",
+      "context_sha256": "57467ee86e3c708733009baf9fbf12c01089de33bea47738d4f0f069c02d4400",
+      "path": "providers/coverage/contexts/04-57467ee86e3c708733009baf9fbf12c01089de33bea47738d4f0f069c02d4400.json",
+      "sha256": "7bcf2b172138184b68df80e36fbfbc4d5f53c52f9dca22e8484ed7a360bbb9c4"
+    },
+    {
+      "bytes": 1099,
+      "context_id": "bounded-type_boundaries-synthetic-jvm-jdk21-2026-11-04T13-39-44.288807198Z-type_boundaries-b57a9fc9-e61e-45c7-a9c9-60afaa83032b",
+      "context_sha256": "e3e18aef6515d7d7e46cc77f46f3a49f0c655e5cea684039a4f319b604c50a91",
+      "path": "providers/coverage/contexts/05-e3e18aef6515d7d7e46cc77f46f3a49f0c655e5cea684039a4f319b604c50a91.json",
+      "sha256": "02eebe9404126a9da60b1a581ff283b572c7e03ebb5aba8338e6f8a81ec2139b"
+    },
+    {
+      "bytes": 857,
+      "context_id": "current-edited-ktlint-syntax-jvm-unexecuted-native-preview1",
+      "context_sha256": "ee1e7854d2bd55474a766802d26a0912523565540d701aa8ba766c0645dd526f",
+      "path": "providers/coverage/contexts/06-ee1e7854d2bd55474a766802d26a0912523565540d701aa8ba766c0645dd526f.json",
+      "sha256": "3689df1534fa434c5875e458b6c4d6ffb7979cf5ebdd4218904eb31b7d2fbf8b"
+    },
+    {
+      "bytes": 1109,
+      "context_id": "ktlint-syntax-fixtures-native-preview1",
+      "context_sha256": "0da96fde4587a338e4d167b68cf02ff4c2ebc0a218cd750747890e66bb374359",
+      "path": "providers/coverage/contexts/07-0da96fde4587a338e4d167b68cf02ff4c2ebc0a218cd750747890e66bb374359.json",
+      "sha256": "ffb5bce6c7546cd6b3ad7a56a54f4dfcb563a60759fd2eca0193b4a8d3ca7700"
+    },
+    {
+      "bytes": 561,
+      "context_id": "isolated-lint32.3.1-xml-main",
+      "context_sha256": "764d9187526fb34921e03cf118e45fa8c6cd30ade244cca3291c4a8ba5f9fef3",
+      "path": "providers/coverage/contexts/08-764d9187526fb34921e03cf118e45fa8c6cd30ade244cca3291c4a8ba5f9fef3.json",
+      "sha256": "3e71207ce5161e181a3f3cdbf50fd6107486b589afcd5b2df8e758e6e2775b40"
+    }
+  ],
+  "mappings": [
+    {
+      "bytes": 2307,
+      "path": "modules/provider-build-contracts/src/main/resources/build-contracts-rule-map.json",
+      "sha256": "14fc2ccf76c667069fd9314abb05621232088a43f62f3a3783fe47cc3b366222"
+    },
+    {
+      "bytes": 2609377,
+      "path": "modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+      "sha256": "f05c525e450c35cd7a7f701361fdb6467e00e7afd82a1c7cb4cfb60d728841e5"
+    },
+    {
+      "bytes": 285207,
+      "path": "modules/provider-detekt/src/main/resources/detekt-rule-map.json",
+      "sha256": "47ce5a08d971f8174441a578130188915a141e3c80724f3553609e3672aa1202"
+    },
+    {
+      "bytes": 119199,
+      "path": "modules/provider-ktlint/src/main/resources/ktlint-rule-map.json",
+      "sha256": "d4b008829ee945561ad1d2867a094746158a1aac67e499f9450c02774a1f4dad"
+    },
+    {
+      "bytes": 398037,
+      "path": "modules/provider-lint/src/main/resources/android-lint-rule-map.json",
+      "sha256": "41ce6f59aa149d8d61308a4fa2a194b881f0ae63631da33fe59b9eecac429b79"
+    },
+    {
+      "bytes": 504388,
+      "path": "modules/provider-native/src/main/resources/kotlin-native-rule-map.json",
+      "sha256": "a9d8e776fd4bcbfbce74d9f57948beb44d77ec04e11674aba45a7f74515e9eac"
+    }
+  ],
+  "reference_files": [
+    {
+      "bytes": 47505,
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "sha256": "7a9ce74cff467ca1bf60a4fcd9f05185acceda4d0f382434d393e17864262c5d"
+    },
+    {
+      "bytes": 7942,
+      "path": "modules/provider-build-contracts/src/main/kotlin/dev/ktchecker/providers/buildcontracts/GradleWrapperChecksumProvider.kt",
+      "sha256": "6ff54e8ac9e72d4fc8b6e512edbbb5b3a321bf0c914b9d3cb70796dc0969dc52"
+    },
+    {
+      "bytes": 9518,
+      "path": "modules/provider-build-contracts/src/main/kotlin/dev/ktchecker/providers/buildcontracts/InstalledWrapperContext.kt",
+      "sha256": "3a2a62e4637d210c832b2945af38cdcdc693f17ba988fa356105b22da5d4c7ea"
+    },
+    {
+      "bytes": 3415,
+      "path": "modules/provider-build-contracts/src/main/kotlin/dev/ktchecker/providers/buildcontracts/WrapperConsumerProfile.kt",
+      "sha256": "09fd786555d6d2daca96468fabd481e6d2b49c8785ee2d0690399091993a2681"
+    },
+    {
+      "bytes": 12707,
+      "path": "modules/provider-build-contracts/src/main/kotlin/dev/ktchecker/providers/buildcontracts/WrapperContracts.kt",
+      "sha256": "f14c366a2f041195af72e60ae439beeeed0046e10e9644e7b68997247cff2d74"
+    },
+    {
+      "bytes": 60242,
+      "path": "modules/provider-build-contracts/src/main/resources/dev/ktchecker/providers/buildcontracts/wrapper-consumer-profile.json",
+      "sha256": "a582d9f0d9a0b9a4063065abfa55e25723772e950d18d0fc503d8257ec43f5e2"
+    },
+    {
+      "bytes": 6408,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt",
+      "sha256": "db0048e7083bfc8d1565d0505d1b3c00ad574e6e50ef2dc39797a947912e3f3e"
+    },
+    {
+      "bytes": 4356,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt",
+      "sha256": "750ca4544a2b801bb6020838410ec92e7278a1a6a2ca4f10e58cd17b10819271"
+    },
+    {
+      "bytes": 6777,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerPhaseTimings.kt",
+      "sha256": "7716e2e472debfb4c52bae6b9c8a28856d1e04b8ad8ce9304f479139fc0c89a9"
+    },
+    {
+      "bytes": 3893,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt",
+      "sha256": "4acda521ed44c2c30232c2ebd47ef4ed7ecde85e589736d48a98937a0191e667"
+    },
+    {
+      "bytes": 9451,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt",
+      "sha256": "d089b942352d99fa4f0920338669d0fbc35bbc4112fc7d032f7e8ff0684015b7"
+    },
+    {
+      "bytes": 2634,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerVerification.kt",
+      "sha256": "a7930f91d8c3031bd39b5fab47c826db29ccd846189912b5e5f2d51d88196bd9"
+    },
+    {
+      "bytes": 5371,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/JvmCompilerModelOrigin.kt",
+      "sha256": "ab6bc829611cbe18b5f87149acededac2f4b1e5e3506c6fe09d874886ff6272f"
+    },
+    {
+      "bytes": 28624,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt",
+      "sha256": "3b631237d98703f077ac2af665c782af4213f69fdf203bd4d426f55a70274e63"
+    },
+    {
+      "bytes": 1424,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmInstallationView.kt",
+      "sha256": "9d9e12dfe7315a9e672d8d2d8a49979e044945c31cd73653155f320aafbf7738"
+    },
+    {
+      "bytes": 36881,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmModelBinding.kt",
+      "sha256": "193952ea5d7a196490d0216747da3ced5ed4dac5376275943dfcbf17742b9f64"
+    },
+    {
+      "bytes": 19187,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmRuntimeImage.kt",
+      "sha256": "b2f63b10401c42e94376aeac4998933d743d6b60346442677c5490a07a626aea"
+    },
+    {
+      "bytes": 15531,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/CompilerApplicationAuthority.kt",
+      "sha256": "aa06bcf556e133db854f121c44d3a405059dfff8fb26db9ce9c0ef3f3d183671"
+    },
+    {
+      "bytes": 6976,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/CompilerApplicationLifecycle.kt",
+      "sha256": "f1d713019fbaaa78258dd0802b7c2c1b007e9bcc36be0df6a7d89c49fcd5acc7"
+    },
+    {
+      "bytes": 34183,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/KotlinJvmCompilerApplication.kt",
+      "sha256": "9e7a949b4d9a0b22ca3b95c3467cb8d29410c4c50dc33a76540dcb79b0059c18"
+    },
+    {
+      "bytes": 12257,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/KotlinJvmLiveCompilerProvider.kt",
+      "sha256": "b09bfde3969cd9ab5c6386c472bad2bdf2472dfd752b9253af9261ed8eb9baca"
+    },
+    {
+      "bytes": 6818,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/JvmProducedDeclaredArchive.kt",
+      "sha256": "c8160489733faa22bd3d08e380cdb2ecb70abdee945a1f40c0f4a638ff914b05"
+    },
+    {
+      "bytes": 23144,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/JvmProducedOutputPreview.kt",
+      "sha256": "71bbd55dc444c8491dc61b1a99edd67812e2cd20b9e96d9ce92f60cf0360312b"
+    },
+    {
+      "bytes": 21355,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/KotlinJvmModelCompilerApplication.kt",
+      "sha256": "94414a98329a39b27897039b91a04c5687a2182529add8bab62dbac471ad3988"
+    },
+    {
+      "bytes": 16418,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/KotlinJvmModelLiveCompilerProvider.kt",
+      "sha256": "2af16909f0936df89b426147e3fbf20d47f6ed5acfdc877eea2eccc7b9e5f6be"
+    },
+    {
+      "bytes": 10625,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/ModelApplicationAuthority.kt",
+      "sha256": "bdf38f3b76364708d69281b1c052126c0169ef93fec73ffe1ae072218f241c72"
+    },
+    {
+      "bytes": 20855,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/ModelLiveInputs.kt",
+      "sha256": "abf03f03e6d61b8a6ee3568a1b27ca753d1917b514d8d152bf55ab4cd9bda1e0"
+    },
+    {
+      "bytes": 18981,
+      "path": "modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/live/model/ModelMaterialization.kt",
+      "sha256": "28281cdc4e1af7c54413c53441672b454d3bb7f9469c612db1267ac61739e6f3"
+    },
+    {
+      "bytes": 14556,
+      "path": "modules/provider-lint/src/main/kotlin/dev/ktchecker/providers/lint/AndroidLintProvider.kt",
+      "sha256": "37b7d8459c72702c74400094e7c01dab7cca6e3a3ab795df5e02896d94e6ed6b"
+    },
+    {
+      "bytes": 14375,
+      "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/KotlinNativeProvider.kt",
+      "sha256": "5dd9085ef89ba0383a38989d0789023eeed48a287005741403bb732760202f3f"
+    },
+    {
+      "bytes": 8029,
+      "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/NativeCliSelection.kt",
+      "sha256": "dfce025d8501216607aeb94631eaa168368be635f775952cd6899fc98641652e"
+    },
+    {
+      "bytes": 4526,
+      "path": "modules/provider-native/src/main/kotlin/dev/ktchecker/providers/native/NativeDiagnostics.kt",
+      "sha256": "afe3ea117434b8190a800e69fa86f83f7162fcce8a10225687a4594f1312cb36"
+    },
+    {
+      "bytes": 129530,
+      "path": "modules/provider-native/src/main/resources/dev/ktchecker/providers/native/kotlin-native-catalog.json",
+      "sha256": "597e5da9932508628993944d66ba46144a73c51e384d27f33df19ff801abd65d"
+    },
+    {
+      "bytes": 481,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-negative-config.yml",
+      "sha256": "15932fc83f9a3470a42d339ae3d8f304bc7265368833b2a25b3db087e1fd3e5c"
+    },
+    {
+      "bytes": 2202,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-negative-process.json",
+      "sha256": "f4fd967c227e8b5cbdc49a9618ec2788cbdfa8405580934dc0ebac61676d9e20"
+    },
+    {
+      "bytes": 802,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-negative-provider-result.json",
+      "sha256": "2fc35eeec817570a45655edfac0f0c837e99e7bccfefb0773cbdc1dbcfe0c688"
+    },
+    {
+      "bytes": 30203,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-negative-receipt.json",
+      "sha256": "323802c4d27062932f1caf071a395cef69d56bbc84f2dcfc907956f4efeeda8a"
+    },
+    {
+      "bytes": 997,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-negative.sarif",
+      "sha256": "516387c6b9a7fe798c60015063a08ab6117368f2c45b6f69076640390b7007aa"
+    },
+    {
+      "bytes": 481,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-positive-config.yml",
+      "sha256": "15932fc83f9a3470a42d339ae3d8f304bc7265368833b2a25b3db087e1fd3e5c"
+    },
+    {
+      "bytes": 2202,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-positive-process.json",
+      "sha256": "4927cff54fb7e08747cee1eb682f8d7db0006fd14cbe896694fb9b17c449c058"
+    },
+    {
+      "bytes": 1240,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-positive-provider-result.json",
+      "sha256": "5c45f249c6037c5b291b16e6ce514eeac762128911e2759dda63c8f51c15141b"
+    },
+    {
+      "bytes": 30203,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-positive-receipt.json",
+      "sha256": "f2866686809c21f1ad225a550f451442d3b7a2e0ea5935ba25a6e23fbdaa56c4"
+    },
+    {
+      "bytes": 1783,
+      "path": "providers/detekt-fixtures/runs/2026-11-04T11-41-12Z-e34ef956-verified-native-preview1-tuple/original/build/evidence/library-native/20261104-rerun/detekt/runs/2026-11-04T11-41-29.201763346Z-34ce257a-coroutine-native-preview1/evidence-artifacts/coroutine-positive.sarif",
+      "sha256": "8ed7e1d76ee97781dc6c9869cc2ed772c7c45a82587030ba2e68bca366edff50"
+    },
+    {
+      "bytes": 17843,
+      "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/negative.json",
+      "sha256": "f5c9ad63f6fad4cd8e7d5ed57f29f0d6986d0e961f855062f3e281f6b200ce0e"
+    },
+    {
+      "bytes": 19277,
+      "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/positive.json",
+      "sha256": "02788452972e73a2da189578efe2fe3f6a83c8df72153cf9fe0f36586164eefc"
+    },
+    {
+      "bytes": 13126,
+      "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/post-run-source/AndroidLintProvider.kt",
+      "sha256": "5ede95f7b5bc7018bcfbeac67dd74bbcef07503388e4205b40965da7a25c692d"
+    },
+    {
+      "bytes": 17858,
+      "path": "providers/platform-fixtures/runs/2026-11-04T08-52-15Z-lint32.3.1-xml/suppression.json",
+      "sha256": "c70c95293bc15b3c547417e5e19b5d2534f5da1108c35b7f6d89448eab237b53"
+    }
+  ],
+  "reporter": {
+    "bytes": 41658,
+    "path": "scripts/rule_coverage.py",
+    "sha256": "dacd925b0acf586b50f62efa14e76cb51811ccc5e2d9151f9c4f3b223888da44"
+  },
+  "schema": "ktchecker/current-coverage-selection/1",
+  "scope": {
+    "catalog_records": 1663,
+    "contexts": 8,
+    "rows": 13304,
+    "withdrawn_provider_rule_context_cells": 450
+  },
+  "selected_evidence": [
+    {
+      "bytes": 58632,
+      "path": "providers/detekt-fixtures/evidence/verified-jvm-coroutine-upstream-native-preview1.json",
+      "sha256": "844ed35a2b86f20b0a9ff746e8f9b2e36fbcfaf66354a95cc9a78971c56936da"
+    },
+    {
+      "bytes": 2852,
+      "path": "providers/detekt-fixtures/evidence/verified-jvm-coroutine-upstream.json",
+      "sha256": "400b1fae0f7a946314b5e3929dffeb2b06f49403a39df7d841d40f774669cd0d"
+    },
+    {
+      "bytes": 4512,
+      "path": "providers/detekt-fixtures/evidence/verified-jvm-syntax.json",
+      "sha256": "63fdb6ab0071d4168b9d79a8827e3fdcfd8019d21de1903f594731dad74041a4"
+    },
+    {
+      "bytes": 6441,
+      "path": "providers/ktlint-fixtures/evidence/verified-jvm-syntax.json",
+      "sha256": "c55ec3e79c0cbff37df6ef379156c5fec8d87224ec27f31453bd22f3b7806e15"
+    },
+    {
+      "bytes": 5247,
+      "path": "providers/platform-fixtures/evidence/2026-11-04T08-52-15Z-lint32.3.1-xml.json",
+      "sha256": "3a20917dfa01287ba024f17d54f063de8fddbdf8d1d8607ce6e05802ca11f0e5"
+    }
+  ],
+  "selection_note": "Coverage accounting only: explicit evidence selection and complete catalog/context visibility do not authorize providers, enable runtime defaults, renew historical stages, qualify rules or establish a release matrix. No autodiscovery fallback.",
+  "withdrawals": {
+    "bytes": 509474,
+    "path": "providers/coverage/withdrawals.json",
+    "sha256": "0523bbc701772653c964b3983f5787864ea1e6733ff728a4e79b210af3662f92"
+  }
+}

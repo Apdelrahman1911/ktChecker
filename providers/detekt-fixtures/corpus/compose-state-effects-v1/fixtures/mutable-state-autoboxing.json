@@ -1,0 +1,340 @@
+{
+  "schema_version": 1,
+  "rule_id": "ktc.compose.pack.MutableStateAutoboxing",
+  "upstream_id": "Compose:MutableStateAutoboxing",
+  "default_activation": "advisory",
+  "depth": "syntax",
+  "entity_kind": "call_expression",
+  "source_oracle": {
+    "kind": "tagged_source_prediction_not_observation",
+    "tag": "v0.6.8",
+    "commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+    "implementation": {
+      "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/MutableStateAutoboxing.kt",
+      "sha256": "55284c392bae4654779efc4d11806bb7ccdf29d3a6f59395a54108d57c5b3bc6",
+      "line_ranges": [
+        [
+          25,
+          109
+        ]
+      ]
+    },
+    "wrapper": {
+      "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/MutableStateAutoboxingCheck.kt",
+      "sha256": "d60d059aa3965ea5e78dc161af0bad0da6b2dcbc483a1a24edbc9900bae8fd57",
+      "line_ranges": [
+        [
+          11,
+          17
+        ]
+      ]
+    },
+    "tests": {
+      "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/MutableStateAutoboxingCheckTest.kt",
+      "sha256": "6239be4ea272197fea3e1acffc24a3a8181f60465043df6b3cc28dba2d1d61a3",
+      "line_ranges": [
+        [
+          18,
+          64
+        ],
+        [
+          203,
+          219
+        ]
+      ]
+    }
+  },
+  "boundary": "File/function syntax, not a Composable-only rule. This corpus covers scalar Int and String only; no claim about new primitive collection APIs, performance measurements, or compatibility of the entire pack with runtime1.5.0.",
+  "cases": [
+    {
+      "id": "positive",
+      "kind": "positive",
+      "purpose": "A numeric mutableStateOf is recognized even outside a Composable function.",
+      "source_basis": [
+        "MutableStateAutoboxing.kt:25-43",
+        "MutableStateAutoboxing.kt:190-195",
+        "MutableStateAutoboxingCheckTest.kt:18-39"
+      ],
+      "semantic_interpretation": "positive",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.mutableStateOf\n\nfun createScoreState() = mutableStateOf(7)\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 5,
+          "column": 25,
+          "end_line": 5,
+          "end_column": 42,
+          "text": "mutableStateOf(7)"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 5,
+          "column": 25,
+          "end_line": 5,
+          "end_column": 42,
+          "text": "mutableStateOf(7)"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "valid-alternative",
+      "kind": "valid_alternative",
+      "purpose": "Use the real primitive Int state API present in Compose runtime1.5.0 SOURCE.",
+      "source_basis": [
+        "MutableStateAutoboxing.kt:193-195",
+        "runtime1.5.0:mutableIntStateOf"
+      ],
+      "semantic_interpretation": "valid_alternative",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.mutableIntStateOf\n\nfun createScoreState() = mutableIntStateOf(7)\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "additional_api_source_requirements": [
+        "androidx.compose.runtime.mutableIntStateOf:verified-in-1.5.0-not-1.4.3"
+      ],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "non-numeric-state",
+      "kind": "valid_control",
+      "purpose": "String state has no primitive Int/Long/Float/Double replacement requirement.",
+      "source_basis": [
+        "MutableStateAutoboxing.kt:32-67",
+        "MutableStateAutoboxingCheckTest.kt:203-219"
+      ],
+      "semantic_interpretation": "valid_control",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.mutableStateOf\n\nfun createLabelState() = mutableStateOf(\"ready\")\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "remember-does-not-remove-boxing",
+      "kind": "positive_control",
+      "purpose": "Remembering state solves lifetime, not numeric boxing; retain the separate collection recommendation as raw upstream output but withhold its unproven advice.",
+      "source_basis": [
+        "MutableStateAutoboxing.kt:25-43",
+        "MutableStateAutoboxing.kt:79-96",
+        "MutableStateAutoboxing.kt:112-115",
+        "MutableStateAutoboxing.kt:193-195"
+      ],
+      "semantic_interpretation": "scalar_facet_with_retained_but_withheld_collection_recommendation",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\n\n@Composable\nfun ScoreHost() {\n    val score = remember { mutableStateOf(7) }\n}\n\nfun createItemsState(values: List<Int>) = mutableStateOf(values)\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 27,
+          "end_line": 9,
+          "end_column": 44,
+          "text": "mutableStateOf(7)"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 12,
+          "column": 42,
+          "end_line": 12,
+          "end_column": 64,
+          "text": "mutableStateOf(values)"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 27,
+          "end_line": 9,
+          "end_column": 44,
+          "text": "mutableStateOf(7)"
+        }
+      ],
+      "expected_withheld_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 12,
+          "column": 42,
+          "end_line": 12,
+          "end_column": 64,
+          "text": "mutableStateOf(values)"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "suppression-neighbor",
+      "kind": "suppression_neighbor",
+      "purpose": "The exact suppression works outside Composable too and leaves a neighbor visible.",
+      "source_basis": [
+        "MutableStateAutoboxing.kt:25-43",
+        "detekt:Suppressions.kt:19-45"
+      ],
+      "semantic_interpretation": "suppression_neighbor",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.mutableStateOf\n\n@Suppress(\"Compose:MutableStateAutoboxing\")\nfun createQuietState() = mutableStateOf(7)\n\nfun createVisibleState() = mutableStateOf(9)\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 27,
+          "end_line": 8,
+          "end_column": 44,
+          "text": "mutableStateOf(9)"
+        }
+      ],
+      "suppressed_targets": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 6,
+          "column": 25,
+          "end_line": 6,
+          "end_column": 42,
+          "text": "mutableStateOf(7)"
+        }
+      ],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 27,
+          "end_line": 8,
+          "end_column": 44,
+          "text": "mutableStateOf(9)"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "factory-import-alias",
+      "kind": "alias_control",
+      "purpose": "A real numeric state factory imported under an alias is a known syntax miss.",
+      "source_basis": [
+        "MutableStateAutoboxing.kt:193-195"
+      ],
+      "semantic_interpretation": "known_syntax_false_negative_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.mutableStateOf as boxedState\n\nfun createScoreState() = boxedState(7)\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "unrelated-factory-homonym",
+      "kind": "homonym_control",
+      "purpose": "An Int identity function is not boxed Compose state, but its matching name is reported.",
+      "source_basis": [
+        "MutableStateAutoboxing.kt:25-43",
+        "MutableStateAutoboxing.kt:193-195"
+      ],
+      "semantic_interpretation": "known_syntax_false_positive_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nprivate fun mutableStateOf(value: Int): Int = value\n\nfun createScore() = mutableStateOf(7)\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 5,
+          "column": 20,
+          "end_line": 5,
+          "end_column": 37,
+          "text": "mutableStateOf(7)"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 5,
+          "column": 20,
+          "end_line": 5,
+          "end_column": 37,
+          "text": "mutableStateOf(7)"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "selected-main-excludes-test",
+      "kind": "source_set_control",
+      "purpose": "Select the valid main source only; the captured test file contains the ordinary positive trigger.",
+      "source_basis": [
+        "detekt-provider:compilation-membership",
+        "fixture:positive",
+        "fixture:valid-alternative"
+      ],
+      "semantic_interpretation": "unselected_source_is_not_analyzed_or_qualified",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.mutableIntStateOf\n\nfun createScoreState() = mutableIntStateOf(7)\n",
+        "src/test/kotlin/TestOnly.kt": "package fixtures.compose.outside\n\nimport androidx.compose.runtime.mutableStateOf\n\nfun createScoreState() = mutableStateOf(7)\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "excluded_positive_oracle": [
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 5,
+          "column": 25,
+          "end_line": 5,
+          "end_column": 42,
+          "text": "mutableStateOf(7)"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    }
+  ],
+  "observation": {
+    "actual_execution": null,
+    "tested": false,
+    "qualified": false,
+    "real_world_precision": null,
+    "coverage_certificate": null
+  }
+}

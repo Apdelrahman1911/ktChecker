@@ -81,7 +81,7 @@ jobs:
         run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
       - name: Record actual environment, even on preflight failure
         if: always()
-        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 25 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 25 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json --require-ci-context
       - name: Execute Desktop/JVM KMP fixture tests
         run: python scripts/ci/run_platform_checks.py --profile desktop --output build/ci-evidence/desktop.json
       - name: Collect exact Desktop/JVM test reports
@@ -144,7 +144,7 @@ jobs:
         run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
       - name: Record actual environment, even on preflight failure
         if: always()
-        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 25 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 25 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json --require-ci-context
       - name: Execute Android host tests and clean/invalid actual Lint controls
         run: python scripts/ci/run_platform_checks.py --profile android --output build/ci-evidence/android.json
       - name: Exercise real Lint adapter against immutable fixture captures
@@ -217,7 +217,7 @@ jobs:
       - name: Verify selected Xcode version/build and record actual SDK/runtime inventory
         if: always()
         run: >-
-          python scripts/ci/record_environment.py --output build/ci-evidence/environment.json
+          python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-ci-context
           --require-java-major 25
           --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
           --require-xcode 26.4.1 --require-xcode-build 17E202

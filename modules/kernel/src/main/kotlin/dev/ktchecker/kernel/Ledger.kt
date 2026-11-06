@@ -37,16 +37,16 @@ internal class Ledger(val root: Path, config: KernelConfig) {
             // descriptor either: closing it can release this process's SQLite POSIX locks.
             // SQLite may maintain transient SHM/read marks or empty sidecars for this read;
             // rejected durable database/WAL contents and obligations are not rewritten.
-            read(readOnly = true) { c -> verifyRequiredTables(c) }
+            read(readOnly = true) { c -> verifyRequiredTables(c); verifyProviderFairness(c) }
         }
-        // No writer connection, WAL mode change, DDL or migration runs against a rejected v1/v2
-        // store. Schema3 has NO migration/reset path and never discharges historical obligations.
+        // No writer connection, WAL mode change, DDL or migration runs against a rejected v1/v2/v3
+        // store. Schema4 has NO migration/reset path and never discharges historical obligations.
         write(checkVersion = false) { c ->
             if (fresh) {
                 if (c.count("SELECT COUNT(*) FROM sqlite_schema") != 0L) unsupportedVersion()
                 SCHEMA.forEach { sql -> c.createStatement().use { it.execute(sql) } }
                 c.execute("INSERT INTO metadata(key,value) VALUES('schema_version',?)", SCHEMA_VERSION)
-            } else { verifyVersion(c); verifyRequiredTables(c) }
+            } else { verifyVersion(c); verifyRequiredTables(c); verifyProviderFairness(c) }
             // Scheduling/coverage policy is one durable authority, not a per-process mutable preference.
             val sharedPolicy = config.copy(workerCount = 0, pollMillis = 1, heartbeatMillis = 1, leaseMillis = 3)
             val digest = Digests.sha256(ContractJson.encodeToString(sharedPolicy))
@@ -141,6 +141,71 @@ internal class Ledger(val root: Path, config: KernelConfig) {
         }
     }
 
+    /**
+     * Only first admission may create an age. Call before adding this admission's work, review,
+     * or produced-admission relation, under the same writer transaction. Retained relations are
+     * the evidence of prior membership; their missing ages require owner reconciliation, not
+     * INSERT OR IGNORE restoration. Aggregate ages cannot reconstruct provider-local history.
+     */
+    internal fun admitProviderFairness(c: Connection, providerKey: String, fairKey: String, clientId: String) {
+        val treePresent = c.count("SELECT COUNT(*) FROM fair_queues WHERE fair_key=?", fairKey) == 1L
+        val clientTree = c.one("SELECT fair_key FROM fair_clients WHERE client_id=?", clientId) { it.getString(1) }
+        val providerTreePresent = c.count("SELECT COUNT(*) FROM provider_fair_queues WHERE provider_key=? AND fair_key=?", providerKey, fairKey) == 1L
+        val providerClientPresent = c.count("SELECT COUNT(*) FROM provider_fair_clients WHERE provider_key=? AND client_id=?", providerKey, clientId) == 1L
+        if ((!treePresent && (providerTreePresent || c.count("SELECT EXISTS(SELECT 1 FROM ($FAIR_TREE_DOMAINS) WHERE fair_key=?)", fairKey) != 0L)) ||
+            (clientTree == null && (providerClientPresent || c.count("SELECT EXISTS(SELECT 1 FROM reviews WHERE client_id=?)", clientId) != 0L ||
+                c.count("SELECT EXISTS(SELECT 1 FROM ($FAIR_CLIENT_DOMAINS) WHERE client_id=?)", clientId) != 0L)) ||
+            (clientTree != null && clientTree != fairKey) ||
+            (!providerTreePresent && (providerClientPresent || c.count("SELECT EXISTS(SELECT 1 FROM ($FAIR_TREE_DOMAINS) WHERE provider_key=? AND fair_key=?)", providerKey, fairKey) != 0L)) ||
+            (!providerClientPresent && c.count("SELECT EXISTS(SELECT 1 FROM ($FAIR_CLIENT_DOMAINS) WHERE provider_key=? AND client_id=?)", providerKey, clientId) != 0L)) {
+            missingProviderFairness()
+        }
+        // Both a new physical queue and a new provider membership join the current round.
+        // Existing physical/provider rows retain their exact durable age, including on reopen.
+        c.execute("""INSERT OR IGNORE INTO fair_queues(fair_key,last_served)
+            VALUES(?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", fairKey)
+        c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
+            VALUES(?,?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", clientId, fairKey)
+        c.execute("""INSERT OR IGNORE INTO provider_fair_queues(provider_key,fair_key,last_served)
+            VALUES(?,?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", providerKey, fairKey)
+        c.execute("""INSERT OR IGNORE INTO provider_fair_clients(provider_key,client_id,last_served)
+            VALUES(?,?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", providerKey, clientId)
+        requireProviderFairness(c, providerKey, fairKey, clientId)
+    }
+
+    /** Validation only: resolution/reopen/claim never initializes or resets a scheduling age. */
+    internal fun requireProviderFairness(c: Connection, providerKey: String, fairKey: String, clientId: String) {
+        if (c.count("""SELECT COUNT(*) FROM provider_fair_queues q
+            JOIN fair_queues physical_tree ON physical_tree.fair_key=q.fair_key
+            JOIN fair_clients physical_client ON physical_client.fair_key=q.fair_key AND physical_client.client_id=?
+            JOIN provider_fair_clients client_queue ON client_queue.provider_key=q.provider_key AND client_queue.client_id=physical_client.client_id
+            WHERE q.provider_key=? AND q.fair_key=?""", clientId, providerKey, fairKey) != 1L) missingProviderFairness()
+    }
+
+    internal fun verifyProviderFairness(c: Connection) {
+        // Produced admissions carry their own persisted provider/tree, even with no ready work.
+        // Never infer those identities from the provider of a broker reopening the store.
+        if (c.count("""SELECT EXISTS(SELECT 1 FROM ($FAIR_TREE_DOMAINS) domain
+            LEFT JOIN fair_queues physical_tree ON physical_tree.fair_key=domain.fair_key
+            LEFT JOIN provider_fair_queues q ON q.provider_key=domain.provider_key AND q.fair_key=domain.fair_key
+            WHERE physical_tree.fair_key IS NULL OR q.provider_key IS NULL)""") != 0L ||
+            c.count("""SELECT EXISTS(SELECT 1 FROM ($FAIR_CLIENT_DOMAINS) domain
+                LEFT JOIN fair_clients physical_client ON physical_client.client_id=domain.client_id
+                LEFT JOIN provider_fair_clients client_queue ON client_queue.provider_key=domain.provider_key AND client_queue.client_id=domain.client_id
+                LEFT JOIN provider_fair_queues q ON q.provider_key=domain.provider_key AND q.fair_key=domain.fair_key
+                WHERE physical_client.client_id IS NULL OR physical_client.fair_key<>domain.fair_key OR client_queue.client_id IS NULL OR q.provider_key IS NULL)""") != 0L ||
+            c.count("""SELECT EXISTS(SELECT 1 FROM provider_fair_clients client_queue
+                LEFT JOIN fair_clients physical_client ON physical_client.client_id=client_queue.client_id
+                LEFT JOIN provider_fair_queues q ON q.provider_key=client_queue.provider_key AND q.fair_key=physical_client.fair_key
+                WHERE physical_client.client_id IS NULL OR q.provider_key IS NULL)""") != 0L ||
+            c.count("""SELECT EXISTS(SELECT 1 FROM provider_fair_queues q
+                LEFT JOIN fair_queues physical_tree ON physical_tree.fair_key=q.fair_key
+                WHERE physical_tree.fair_key IS NULL)""") != 0L) missingProviderFairness()
+    }
+
+    private fun missingProviderFairness(): Nothing = fail("ledger_corrupt",
+        "Required schema4 provider scheduling ages or physical mappings are missing or inconsistent; offline owner reconciliation is required, not automatic restoration")
+
     private fun verifyVersion(c: Connection) {
         if (c.count("SELECT COUNT(*) FROM sqlite_schema WHERE type='table' AND name='metadata'") != 1L) unsupportedVersion()
         val version = c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) }
@@ -150,19 +215,27 @@ internal class Ledger(val root: Path, config: KernelConfig) {
     private fun verifyRequiredTables(c: Connection) {
         val present = c.query("SELECT name FROM sqlite_schema WHERE type='table'") { it.getString(1) }.toSet()
         if (!present.containsAll(REQUIRED_TABLES) || c.count("SELECT COUNT(*) FROM sqlite_schema WHERE type='view' AND name='review_executions'") != 1L) fail("ledger_corrupt",
-            "Required schema3 ledger tables are missing; offline owner reconciliation is required, not automatic repair")
+            "Required schema4 ledger tables are missing; offline owner reconciliation is required, not automatic repair")
     }
 
     private fun unsupportedVersion(): Nothing = fail("unsupported_schema",
-        "This broker requires NEW ledger schema3 for immutable declared-slot executions; schema1/2 stores are NOT migrated or reset. Preserve the old store and stop all old brokers, then obtain owner-reviewed offline reconciliation of every accepted obligation before selecting a new store")
+        "This broker requires NEW ledger schema4 for provider-local scheduling ages; schema1/2/3 stores are NOT migrated or reset. Preserve the old store and stop all old brokers. Schema3-to-4 requires owner-reviewed quiescent reconciliation of every accepted obligation and an explicit initial provider-age cutover; old aggregate ages cannot reconstruct provider history. Never select a new store automatically")
 
     companion object {
-        private const val SCHEMA_VERSION = "3"
+        private const val SCHEMA_VERSION = "4"
         private val REQUIRED_TABLES = setOf(
-            "metadata", "clients", "instances", "fair_queues", "fair_clients", "work", "reviews",
+            "metadata", "clients", "instances", "fair_queues", "fair_clients", "provider_fair_queues", "provider_fair_clients", "work", "reviews",
             "parent_plans", "plan_slots", "routing_batches", "routing_members", "work_progress",
             "work_certificates", "produced_plan_admissions", "plan_slot_resolution_claims", "plan_slot_resolutions", "work_publications", "events", "receipts", "acknowledgements", "observations", "gate_cuts",
         )
+        // These immutable admission/execution relations retain membership after completion,
+        // cancellation or loss of a live produced grant. They are not a migration age source.
+        private val FAIR_TREE_DOMAINS = """SELECT provider_key,fair_key FROM work
+            UNION ALL SELECT provider_key,fair_key FROM produced_plan_admissions"""
+        private val FAIR_CLIENT_DOMAINS = """SELECT w.provider_key,r.client_id,w.fair_key
+            FROM review_executions r JOIN work w ON w.work_key=r.work_key
+            UNION ALL SELECT a.provider_key,p.client_id,a.fair_key FROM produced_plan_admissions a
+                JOIN parent_plans p ON p.plan_id=a.plan_id"""
         private val SCHEMA = listOf(
             "CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)",
             """CREATE TABLE IF NOT EXISTS clients(
@@ -180,6 +253,12 @@ internal class Ledger(val root: Path, config: KernelConfig) {
                 FOREIGN KEY(client_id) REFERENCES clients(client_id),
                 FOREIGN KEY(fair_key) REFERENCES fair_queues(fair_key))""",
             "CREATE INDEX IF NOT EXISTS fair_clients_queue ON fair_clients(fair_key,last_served)",
+            """CREATE TABLE provider_fair_queues(
+                provider_key TEXT NOT NULL,fair_key TEXT NOT NULL,last_served INTEGER NOT NULL CHECK(last_served>=0),
+                PRIMARY KEY(provider_key,fair_key),FOREIGN KEY(fair_key) REFERENCES fair_queues(fair_key))""",
+            """CREATE TABLE provider_fair_clients(
+                provider_key TEXT NOT NULL,client_id TEXT NOT NULL,last_served INTEGER NOT NULL CHECK(last_served>=0),
+                PRIMARY KEY(provider_key,client_id),FOREIGN KEY(client_id) REFERENCES fair_clients(client_id))""",
             """CREATE TABLE IF NOT EXISTS work(
                 work_key TEXT PRIMARY KEY,input_json TEXT NOT NULL,frozen_json TEXT NOT NULL,
                 provider_key TEXT NOT NULL,fair_key TEXT NOT NULL,state TEXT NOT NULL,

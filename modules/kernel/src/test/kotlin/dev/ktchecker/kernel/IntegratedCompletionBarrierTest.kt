@@ -15,12 +15,13 @@ import kotlin.concurrent.withLock
 import kotlin.test.*
 import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 
 /**
  * Real isolated SQLite/files/threads; ALL providers, model/merge/config/fence/delivery authorities
  * are deliberately SYNTHETIC. These tests do not qualify a compiler or implement real host delivery.
- * No subprocess/crash helper is needed: retained claimed/unknown states are exercised directly.
+ * The dedicated crash history owns one fresh child JVM; other claimed/unknown states are exercised directly.
  */
 class IntegratedCompletionBarrierTest {
     @TempDir lateinit var temp: Path
@@ -369,6 +370,279 @@ class IntegratedCompletionBarrierTest {
         val cut = f.barrier.prepare(f.origin, "completion")
         assertFalse(cut.ready); assertTrue(cut.reasons.any { "review_cancelled" in it })
         assertFalse(f.barrier.complete(f.origin, cut.cutId).allowed); assertEquals(listOf("open", "open"), states(f))
+    }
+
+    @Test @Timeout(value = 90, unit = TimeUnit.SECONDS)
+    fun committedCancellationAndLostAckReplySurviveSharedWorkerDeathAndRemainInTheJointAudit() {
+        // Only this newly started child is killed. The existing reconnect suite never kills a
+        // claim owner; this history exercises recoverDead and its new per-subscriber outboxes.
+        val provider = PlanTestProvider { input, cancellation ->
+            assertFalse(cancellation.isCancelled())
+            planPassed(input)
+        }
+        fixture(history = true, workers = 0, provider = provider).use { f ->
+            val a = f.clients[0]
+            val b = f.clients[1]
+            val old = f.clients.zip(f.oldPlans).map { (client, plan) -> f.service.submitPlan(client.client, plan.request) }
+            val current = f.clients.zip(f.plans).map { (client, plan) -> f.service.submitPlan(client.client, plan.request) }
+            val oldReview = old.map { it.slots.single().reviewId }
+            fun encodedAudit(service: KernelService, cut: IntegratedCompletionCut) = service.ledger.read { c ->
+                assertNotNull(c.one("SELECT value FROM metadata WHERE key=?", IntegratedCompletionAuditCodec.key(cut.cutId)) { it.getString(1) })
+            }
+            fun audit(service: KernelService, cut: IntegratedCompletionCut) =
+                IntegratedCompletionAuditCodec(IntegratedCompletionLimits()).decode(cut.cutId, encodedAudit(service, cut))
+            fun counts(service: KernelService) = service.ledger.read { c ->
+                listOf("reviews", "parent_plans", "plan_slots", "routing_batches", "routing_members", "work", "work_certificates",
+                    "events", "acknowledgements", "observations", "receipts").associateWith { c.count("SELECT COUNT(*) FROM $it") }
+            }
+            fun gateStates(service: KernelService) = service.ledger.read { c -> f.clients.map { client ->
+                assertNotNull(c.one("SELECT gate_state FROM clients WHERE client_id=?", client.binding.clientId) { it.getString(1) })
+            } }
+            fun ack(service: KernelService, client: ClientRegistration, event: ReviewEvent) =
+                service.acknowledge(client.adapter, listOf(event.eventId), cancellationAckCrashReceipt(event))
+            fun observe(service: KernelService, client: ClientRegistration, event: ReviewEvent) =
+                service.observe(client.adapter, listOf(event.eventId), ObservationReceipt("observe-${event.eventId}",
+                    "synthetic-model-request-${event.eventId}", listOf(cancellationAckCrashReceipt(event).contextDigest)))
+            val initialCounts = counts(f.service)
+            assertEquals(mapOf("reviews" to 4L, "parent_plans" to 4L, "plan_slots" to 4L, "routing_batches" to 2L,
+                "routing_members" to 4L, "work" to 2L, "work_certificates" to 0L, "events" to 8L,
+                "acknowledgements" to 0L, "observations" to 0L, "receipts" to 0L), initialCounts)
+            val beforeCut = f.barrier.prepare(f.origin, "completion")
+            assertFalse(beforeCut.ready)
+            val beforeAudit = audit(f.service, beforeCut)
+            val expectedIdentities = f.clients.indices.flatMap { index -> listOf(old[index], current[index]).flatMap { plan ->
+                listOf(Triple(f.clients[index].binding.clientId, "parent_plan", plan.planId),
+                    Triple(f.clients[index].binding.clientId, "review", plan.slots.single().reviewId))
+            } }.toSet()
+            assertEquals(8, beforeAudit.request.historicalObligations.size)
+            assertEquals(expectedIdentities, beforeAudit.request.historicalObligations.map { Triple(it.clientId, it.kind, it.obligationId) }.toSet())
+            assertEquals(2, beforeAudit.request.routes.size)
+
+            // The application's durable checkpoint remains at B's first event. Knowing the next
+            // page in this test oracle is not an application ACK reply or a persisted new cursor.
+            val checkpoint = f.service.events(b.client, limit = 1).cursor
+            val lostPage = f.service.events(b.client, checkpoint, 1)
+            val lostEvent = lostPage.events.single()
+            assertEquals("plan_accepted", lostEvent.kind)
+            assertEquals(oldReview[1], lostEvent.reviewId)
+            assertEquals(old[1].planId, ContractJson.decodeFromString<ReviewStatus>(lostEvent.payload).parentPlan?.planId)
+            assertEquals(2L, lostEvent.sequence)
+            val receipt = cancellationAckCrashReceipt(lostEvent)
+            // Caps and deadlines are durable ledger policy; only the worker count may differ.
+            val workerConfig = config.copy(workerCount = 1)
+            val specFile = temp.resolve("owned-cancel-ack-child.json")
+            val marker = temp.resolve("owned-cancel-ack-committed")
+            val log = temp.resolve("owned-cancel-ack-child.log")
+            assertFalse(Files.exists(marker))
+            writeDurable(specFile, canonical(CancellationAckCrashSpec(workerConfig, f.clients, old[0].planId,
+                f.oldPlans[0].slots.single().input.snapshot.snapshotId, checkpoint)).toByteArray())
+            val javaExecutable = Path.of(System.getProperty("java.home"), "bin", if (System.getProperty("os.name").startsWith("Windows")) "java.exe" else "java")
+            val classpath = buildSet<String> {
+                System.getProperty("java.class.path").split(java.io.File.pathSeparator).filter { it.isNotBlank() }.forEach(::add)
+                var loader: ClassLoader? = KernelCancellationAckCrashChild::class.java.classLoader
+                while (loader != null) {
+                    if (loader is java.net.URLClassLoader) loader.urLs.filter { it.protocol == "file" }.forEach { add(Path.of(it.toURI()).toString()) }
+                    loader = loader.parent
+                }
+                listOf(KernelCancellationAckCrashChild::class.java, PlanTestProvider::class.java, KernelService::class.java,
+                    AnalysisInput::class.java, kotlin.Unit::class.java, kotlinx.serialization.KSerializer::class.java,
+                    kotlinx.serialization.json.Json::class.java, Class.forName("org.sqlite.JDBC")).forEach {
+                    add(Path.of(it.protectionDomain.codeSource.location.toURI()).toString())
+                }
+            }.joinToString(java.io.File.pathSeparator)
+            val child = ProcessBuilder(javaExecutable.toString(), "-Xmx128m", "-XX:MaxMetaspaceSize=96m", "-XX:ReservedCodeCacheSize=32m",
+                "-XX:+UseSerialGC", "-cp", classpath, KernelCancellationAckCrashChild::class.java.name,
+                f.path.toString(), specFile.toString(), marker.toString()).redirectErrorStream(true).redirectOutput(log.toFile()).start()
+            try {
+                val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
+                fun committedPhase() = Files.isRegularFile(marker) && Files.readString(marker) == "committed-local-cancel-and-peer-ack\n"
+                while (!committedPhase() && child.isAlive && System.nanoTime() < deadline) Thread.sleep(5)
+                assertTrue(committedPhase(), "Owned child did not commit its phase: " + Files.readString(log).take(2000))
+                assertTrue(child.isAlive)
+                val claim = f.service.ledger.read { c ->
+                    val keys = oldReview.map { id -> assertNotNull(c.one("SELECT work_key FROM reviews WHERE review_id=?", id) { it.getString(1) }) }
+                    assertEquals(1, keys.distinct().size)
+                    assertEquals(1L, c.count("SELECT COUNT(*) FROM work WHERE state='running'"))
+                    assertNotNull(c.one("""SELECT w.work_key,w.owner_instance,w.attempt,i.pid,i.closed FROM work w
+                        JOIN instances i ON i.instance_id=w.owner_instance WHERE w.work_key=? AND w.state='running'""", keys.first()) {
+                        assertEquals(child.pid(), it.getLong("pid"))
+                        assertEquals(0, it.getInt("closed"))
+                        Triple(it.getString("work_key"), it.getString("owner_instance"), it.getLong("attempt"))
+                    })
+                }
+                assertEquals(1L, claim.third)
+                assertEquals("cancelled", f.service.planStatus(a.client, old[0].planId).state)
+                assertTrue(f.service.status(a.client, oldReview[0]).cancelled)
+                assertEquals("running", f.service.status(b.client, oldReview[1]).state)
+                assertFalse(f.service.status(b.client, oldReview[1]).cancelled)
+                assertEquals(0, provider.calls.get(), "The parent has no worker before the crash")
+                val beforeCrashEvents = f.clients.associate { it.binding.clientId to events(f.service, it) }
+                assertEquals(listOf(5, 4), f.clients.map { beforeCrashEvents.getValue(it.binding.clientId).size })
+                val committedReceiptLog = f.service.ledger.read { c ->
+                    assertEquals(1L, c.count("SELECT COUNT(*) FROM acknowledgements"))
+                    assertEquals(0L, c.count("SELECT COUNT(*) FROM observations"))
+                    assertEquals(1L, c.count("SELECT COUNT(*) FROM receipts"))
+                    assertEquals(canonical(receipt), c.one("SELECT receipt_json FROM acknowledgements WHERE event_id=? AND client_id=?",
+                        lostEvent.eventId, b.binding.clientId) { it.getString(1) })
+                    assertNotNull(c.one("SELECT request_json FROM receipts WHERE client_id=? AND kind='ack' AND receipt_id=?",
+                        b.binding.clientId, receipt.receiptId) { it.getString(1) })
+                }
+                // No control service remains alive to perform graceful recovery or consume delivery.
+                // The child owns this real claim, and its cancellation/ACK transactions have returned.
+                f.service.close()
+                assertTrue(child.isAlive)
+                child.destroyForcibly()
+                assertTrue(child.waitFor(10, TimeUnit.SECONDS), "The newly owned child did not terminate")
+                assertFalse(child.isAlive)
+                assertNotEquals(0, child.exitValue())
+
+                data class Retained(val cut: IntegratedCompletionCut, val audit: IntegratedCompletionAudit, val encoded: String,
+                    val events: Map<String, List<ReviewEvent>>, val counts: Map<String, Long>)
+                val retained = KernelService.open(f.path, provider, workerConfig.copy(workerCount = 0)).use { recovered ->
+                    // Opening without workers gives a stable view of the dead-process transition,
+                    // before any replacement attempt can publish. No SQL fault injection is used.
+                    recovered.ledger.read { c ->
+                        assertEquals(1L, c.count("SELECT closed FROM instances WHERE instance_id=?", claim.second))
+                        val work = assertNotNull(c.one("SELECT state,owner_instance,attempt FROM work WHERE work_key=?", claim.first) {
+                            Triple(it.getString(1), it.getString(2), it.getLong(3))
+                        })
+                        assertEquals("queued", work.first); assertNull(work.second); assertEquals(claim.third + 1L, work.third)
+                        assertEquals(0L, c.count("SELECT COUNT(*) FROM work WHERE state='running'"))
+                        assertEquals(1L, c.count("SELECT COUNT(*) FROM acknowledgements"))
+                        assertEquals(0L, c.count("SELECT COUNT(*) FROM observations"))
+                        assertEquals(canonical(receipt), c.one("SELECT receipt_json FROM acknowledgements WHERE event_id=? AND client_id=?",
+                            lostEvent.eventId, b.binding.clientId) { it.getString(1) })
+                        assertEquals(committedReceiptLog, c.one("SELECT request_json FROM receipts WHERE client_id=? AND kind='ack' AND receipt_id=?",
+                            b.binding.clientId, receipt.receiptId) { it.getString(1) })
+                    }
+                    f.clients.forEachIndexed { index, client ->
+                        val stream = events(recovered, client)
+                        val prefix = beforeCrashEvents.getValue(client.binding.clientId)
+                        assertEquals(prefix, stream.take(prefix.size))
+                        val recovery = stream.drop(prefix.size).single()
+                        assertEquals("recovered", recovery.kind); assertEquals(oldReview[index], recovery.reviewId)
+                        val status = ContractJson.decodeFromString<ReviewStatus>(recovery.payload)
+                        assertEquals(index == 0, status.cancelled)
+                        assertEquals(if (index == 0) "cancelled" else "queued", status.state)
+                        assertContains(status.reasons, "dead_process_work_recovered")
+                        assertNull(status.result)
+                        assertEquals(stream, events(recovered, client), "Fetching cannot acknowledge or discard the recovery event")
+                    }
+                    val beforeRetries = counts(recovered)
+                    assertEquals("cancelled", recovered.cancelPlan(a.client, old[0].planId).state)
+                    f.clients.forEachIndexed { index, client ->
+                        listOf(f.oldPlans[index] to old[index], f.plans[index] to current[index]).forEach { (plan, accepted) ->
+                            assertEquals(accepted.planId, recovered.submitPlan(client.client, plan.request).planId)
+                        }
+                    }
+                    assertEquals(lostPage, recovered.events(b.client, checkpoint, 1))
+                    assertCode("invalid_cursor") { recovered.events(a.client, checkpoint, 1) }
+                    repeat(2) { assertEquals(ReceiptResult(b.binding.clientId, listOf(lostEvent.eventId), "acknowledged"), ack(recovered, b, lostEvent)) }
+                    assertCode("receipt_conflict") { recovered.acknowledge(b.adapter, listOf(lostEvent.eventId),
+                        receipt.copy(contextDigest = Digests.sha256("synthetic-conflicting-retry"))) }
+                    assertCode("plan_not_found") { recovered.cancelPlan(a.client, old[1].planId) }
+                    assertEquals(beforeRetries, counts(recovered), "Lost-reply retries cannot duplicate receipts, cancellations, or acceptance")
+                    assertEquals(beforeAudit, audit(recovered, beforeCut))
+
+                    KernelService.open(f.path, provider, workerConfig).use { awaitReviews(recovered, f.clients) }
+                    assertEquals(2, provider.calls.get(), "One replacement shared execution plus one clean final shared execution")
+                    f.clients.forEachIndexed { index, client ->
+                        val historical = recovered.status(client.client, oldReview[index])
+                        assertEquals(if (index == 0) "cancelled" else "complete", historical.state)
+                        assertEquals(index == 0, historical.cancelled); assertNotNull(historical.result)
+                        assertEquals("complete", recovered.planStatus(client.client, current[index].planId).state)
+                        assertEquals(if (index == 0) "cancelled" else "complete", recovered.planStatus(client.client, old[index].planId).state)
+                    }
+                    recovered.ledger.read { c ->
+                        assertEquals(claim.third + 2L, c.count("SELECT attempt FROM work WHERE work_key=?", claim.first))
+                        assertEquals(2L, c.count("SELECT COUNT(*) FROM work WHERE state='complete'"))
+                        assertEquals(2L, c.count("SELECT COUNT(*) FROM work_certificates"))
+                    }
+                    val streams = f.clients.associate { it.binding.clientId to events(recovered, it) }
+                    assertEquals(listOf(8, 7), f.clients.map { streams.getValue(it.binding.clientId).size })
+                    f.clients.forEachIndexed { index, client ->
+                        val stream = streams.getValue(client.binding.clientId)
+                        assertEquals((1L..stream.size.toLong()).toList(), stream.map { it.sequence })
+                        assertEquals(stream.size, stream.map { it.eventId }.distinct().size)
+                        stream.forEach { assertTrue(it.deliveryRequired); assertEquals(Digests.sha256(it.payload), it.payloadDigest) }
+                        assertEquals(mapOf("accepted" to 2, "plan_accepted" to 2, "recovered" to 1, "result" to 2) +
+                            if (index == 0) mapOf("cancelled" to 1) else emptyMap(), stream.groupingBy { it.kind }.eachCount())
+                    }
+                    assertTrue(streams.getValue("a").map { it.eventId }.intersect(streams.getValue("b").map { it.eventId }.toSet()).isEmpty())
+                    val freshPeerEvents = streams.getValue("b").drop(beforeCrashEvents.getValue("b").size)
+                    assertEquals(mapOf("recovered" to 1, "result" to 2), freshPeerEvents.groupingBy { it.kind }.eachCount())
+                    deliver(recovered, a)
+                    beforeCrashEvents.getValue("b").forEach { ack(recovered, b, it); observe(recovered, b, it) }
+                    val barrier = IntegratedCompletionBarrier(recovered, f.authority)
+                    val cancellationReasons = setOf("joint_parent_cancelled:a:${old[0].planId}",
+                        "review_cancelled:${oldReview[0]}:a", "joint_publication_not_quiescent:a")
+                    val missing = barrier.prepare(f.origin, "completion")
+                    assertFalse(missing.ready)
+                    assertEquals(cancellationReasons + freshPeerEvents.flatMap { listOf("joint_insertion_missing:b:${it.eventId}",
+                        "joint_model_observation_missing:b:${it.eventId}") }, missing.reasons.toSet())
+                    val missingAudit = audit(recovered, missing)
+                    assertFalse(barrier.complete(f.origin, missing.cutId).allowed)
+                    assertEquals(missingAudit, audit(recovered, missing))
+                    freshPeerEvents.forEach { ack(recovered, b, it) }
+                    val inserted = barrier.prepare(f.origin, "completion")
+                    assertFalse(inserted.ready)
+                    assertEquals(cancellationReasons + freshPeerEvents.map { "joint_model_observation_missing:b:${it.eventId}" }, inserted.reasons.toSet())
+                    assertEquals(missingAudit.request, audit(recovered, inserted).request)
+                    assertCode("event_not_found") { ack(recovered, a, freshPeerEvents.first()) }
+                    assertCode("event_not_found") { observe(recovered, a, freshPeerEvents.first()) }
+                    assertFalse(barrier.complete(f.origin, inserted.cutId).allowed)
+                    assertEquals(0, f.action.calls.get()); assertEquals(listOf("open", "open"), gateStates(recovered))
+                    freshPeerEvents.forEach { observe(recovered, b, it) }
+                    val cut = barrier.prepare(f.origin, "completion")
+                    assertEquals(cancellationReasons, cut.reasons.toSet()); assertFalse(cut.ready)
+                    val finalAudit = audit(recovered, cut)
+                    assertEquals(cut, finalAudit.cut); assertEquals("prepared", finalAudit.state); assertNull(finalAudit.receipt)
+                    assertEquals(beforeAudit.request.scope, finalAudit.request.scope)
+                    assertEquals(beforeAudit.request.scopeDigest, finalAudit.request.scopeDigest)
+                    assertEquals(beforeAudit.request.historicalObligations, finalAudit.request.historicalObligations)
+                    assertEquals(beforeAudit.request.routes, finalAudit.request.routes)
+                    assertEquals(missingAudit.request, finalAudit.request)
+                    f.clients.forEachIndexed { index, client ->
+                        val prior = beforeAudit.request.frontiers.single { it.clientId == client.binding.clientId }
+                        val frontier = finalAudit.request.frontiers.single { it.clientId == client.binding.clientId }
+                        val stream = streams.getValue(client.binding.clientId)
+                        assertEquals(2L, frontier.reviewFrontier)
+                        assertEquals(stream.size.toLong(), frontier.eventFrontier)
+                        assertEquals(stream.map { it.eventId }, frontier.requiredEventIds)
+                        assertEquals(prior.lineageEpoch + if (index == 0) 4L else 3L, frontier.lineageEpoch)
+                        assertNotEquals(prior.historyDigest, frontier.historyDigest)
+                    }
+                    assertFalse(barrier.complete(f.origin, cut.cutId).allowed)
+                    assertEquals(finalAudit, audit(recovered, cut))
+                    assertEquals(0, f.action.calls.get()); assertEquals(listOf("open", "open"), gateStates(recovered))
+                    assertEquals(initialCounts + mapOf("work_certificates" to 2L, "events" to 15L, "acknowledgements" to 15L,
+                        "observations" to 15L, "receipts" to 30L), counts(recovered))
+                    Retained(cut, finalAudit, encodedAudit(recovered, cut), streams, counts(recovered))
+                }
+                KernelService.open(f.path, provider, workerConfig.copy(workerCount = 0)).use { reopened ->
+                    val barrier = IntegratedCompletionBarrier(reopened, f.authority)
+                    assertEquals(retained.audit, audit(reopened, retained.cut))
+                    assertEquals(retained.encoded, encodedAudit(reopened, retained.cut))
+                    assertEquals("cancelled", reopened.planStatus(a.client, old[0].planId).state)
+                    assertEquals("complete", reopened.planStatus(b.client, old[1].planId).state)
+                    assertFalse(barrier.status(f.origin, retained.cut.cutId).allowed)
+                    assertFalse(barrier.complete(f.origin, retained.cut.cutId).allowed)
+                    assertEquals(retained.encoded, encodedAudit(reopened, retained.cut))
+                    f.clients.forEach { assertEquals(retained.events.getValue(it.binding.clientId), events(reopened, it)) }
+                    assertEquals(retained.counts, counts(reopened))
+                    assertEquals(listOf("open", "open"), gateStates(reopened))
+                    assertEquals(2, provider.calls.get()); assertEquals(0, f.action.calls.get())
+                }
+            } finally {
+                // Only the Process returned above is a signal target. Clear an existing test
+                // interrupt just for the finite reap, then restore it; never scan/signal by PID.
+                val interrupted = Thread.interrupted()
+                try {
+                    if (child.isAlive) child.destroyForcibly()
+                    assertTrue(child.waitFor(10, TimeUnit.SECONDS), "The newly owned child was not reaped")
+                } finally { if (interrupted) Thread.currentThread().interrupt() }
+            }
+        }
     }
 
     @Test fun missingHistoricalPatchDispositionEvenForAlreadyCompleteOldParentBlocks() = fixture(history = true).use { f ->

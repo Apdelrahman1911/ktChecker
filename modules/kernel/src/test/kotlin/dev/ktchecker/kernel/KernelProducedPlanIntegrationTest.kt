@@ -23,7 +23,7 @@ class KernelProducedPlanIntegrationTest {
         c.query("""SELECT r.review_id,r.sequence,r.input_json FROM plan_slots s JOIN reviews r ON r.review_id=s.review_id
             WHERE s.plan_id=? ORDER BY s.slot_id""", plan.planId) { Triple(it.getString(1), it.getLong(2), it.getString(3)) }
     }
-    private fun retained(service: KernelService, client: ClientRegistration, accepted: ParentPlanStatus, f: ProducedLaneFixture): ParentPlanStatus {
+    private fun retained(service: KernelService, client: ClientRegistration, accepted: ParentPlanStatus, f: ProducedLane1665Fixture): ParentPlanStatus {
         val current = service.planStatus(client.client, accepted.planId)
         assertEquals(accepted.slots.map { it.reviewId }, current.slots.map { it.reviewId })
         current.slots.forEach { assertEquals(f.rules, it.requiredRuleIds); service.status(client.client, it.reviewId) }
@@ -34,13 +34,13 @@ class KernelProducedPlanIntegrationTest {
     }
 
     @Test fun wholeParentReservesBothReviewsAndLateAResolutionCannotRetargetLatestBOrItsCapturedSuppression() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider(); val fence = ProducedLaneFixture.Fence()
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider(); val fence = ProducedLane1665Fixture.Fence()
         val entered = CountDownLatch(1); val release = CountDownLatch(1); val pool = Executors.newSingleThreadExecutor()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG, snapshotGate = fence,
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG, snapshotGate = fence,
             planAuthority = f, preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
             try {
-                val client = service.registerClient(ProducedLaneFixture.binding("alpha"))
-                val peer = service.registerClient(ProducedLaneFixture.binding("beta"))
+                val client = service.registerClient(ProducedLane1665Fixture.binding("alpha"))
+                val peer = service.registerClient(ProducedLane1665Fixture.binding("beta"))
                 val a = f.definition(client.binding, "a"); fence.install(a)
                 f.resolver[a.request.planRef] = { request ->
                     entered.countDown(); assertTrue(release.await(10, TimeUnit.SECONDS))
@@ -120,12 +120,12 @@ class KernelProducedPlanIntegrationTest {
     }
 
     @Test fun twoClientsKeepDeferredQuotaAndCancellationWhileForeignBrokerCannotClaimAndRestartCannotReplay() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val config = ProducedLaneFixture.CONFIG.copy(workerCount = 0, maxPendingPerClient = 2, maxQueuedWork = 5)
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val config = ProducedLane1665Fixture.CONFIG.copy(workerCount = 0, maxPendingPerClient = 2, maxQueuedWork = 5)
         val root = temp.resolve("ledger"); lateinit var a: ClientRegistration; lateinit var b: ClientRegistration
         lateinit var pa: ParentPlanStatus; lateinit var pb: ParentPlanStatus
         var originalA = emptyList<Triple<String, Long, String>>()
         KernelService.open(root, f.Provider(), config, planAuthority = f, preparedInputObserver = f.observer, resultPolicy = f.policy).use { origin ->
-            a = origin.registerClient(ProducedLaneFixture.binding("alpha")); b = origin.registerClient(ProducedLaneFixture.binding("beta"))
+            a = origin.registerClient(ProducedLane1665Fixture.binding("alpha")); b = origin.registerClient(ProducedLane1665Fixture.binding("beta"))
             val da = f.definition(a.binding, "a"); val db = f.definition(b.binding, "b")
             pa = origin.submitPlan(a.client, da.request); pb = origin.submitPlan(b.client, db.request); originalA = declarations(origin, pa)
             origin.ledger.read { c ->
@@ -143,13 +143,13 @@ class KernelProducedPlanIntegrationTest {
             val foreignProvider = f.Provider()
             KernelService.open(root, foreignProvider, config.copy(workerCount = 1), preparedInputObserver = f.observer, resultPolicy = f.policy).use { foreign ->
                 foreign.registerClient(a); foreign.registerClient(b)
-                val sentinel = foreign.registerClient(ProducedLaneFixture.binding("sentinel"))
+                val sentinel = foreign.registerClient(ProducedLane1665Fixture.binding("sentinel"))
                 val ordinary = f.definition(sentinel.binding, "ordinary").slots.first().input
                 f.finished(foreign, sentinel, foreign.submit(sentinel.client, SubmitRequest("ordinary", "ordinary", ordinary)).reviewId)
                 assertEquals(1, foreignProvider.calls.get(), "Sentinel proves the foreign worker actually ran")
                 foreign.ledger.read { c ->
                     assertEquals(1L, c.count("""SELECT COUNT(*) FROM work w JOIN plan_slot_resolutions r ON r.work_key=w.work_key
-                        WHERE r.plan_id=? AND r.slot_id=? AND w.state='queued' AND w.attempt=0 AND w.owner_instance IS NULL""", pa.planId, ProducedLaneFixture.PRODUCER))
+                        WHERE r.plan_id=? AND r.slot_id=? AND w.state='queued' AND w.attempt=0 AND w.owner_instance IS NULL""", pa.planId, ProducedLane1665Fixture.PRODUCER))
                 }
                 assertEquals(originalA, declarations(foreign, pa)); retained(foreign, a, pa, f)
                 assertEquals(0, f.typedAttempts.size)
@@ -172,14 +172,14 @@ class KernelProducedPlanIntegrationTest {
 
     @Test fun authorizationAndOriginalClockFailBeforeAnyAcceptanceOrProducerPreparation() {
         for (mode in listOf("default-deny", "expired", "wrong-duration", "wrong-identity")) {
-            val f = ProducedLaneFixture(temp.resolve(mode)); val clientBinding = ProducedLaneFixture.binding(mode)
+            val f = ProducedLane1665Fixture(temp.resolve(mode)); val clientBinding = ProducedLane1665Fixture.binding(mode)
             val definition = f.definition(clientBinding, mode); val original = f.clocks.getValue(definition.request.planRef)
             if (mode != "default-deny") f.clocks[definition.request.planRef] = ProducedPlanClock(original.ownerClock,
                 if (mode == "wrong-identity") "another-original-budget" else original.identity,
                 if (mode == "expired") System.nanoTime() - TimeUnit.MILLISECONDS.toNanos(original.durationMillis + 1) else original.startedAtNanos,
                 if (mode == "wrong-duration") original.durationMillis + 1 else original.durationMillis)
             val authority = if (mode == "default-deny") ReviewPlanAuthority { binding, request -> f.resolve(binding, request) } else f
-            KernelService.open(temp.resolve("ledger-$mode"), f.Provider(), ProducedLaneFixture.CONFIG.copy(workerCount = 0),
+            KernelService.open(temp.resolve("ledger-$mode"), f.Provider(), ProducedLane1665Fixture.CONFIG.copy(workerCount = 0),
                 planAuthority = authority, preparedInputObserver = f.observer).use { service ->
                 val client = service.registerClient(clientBinding)
                 val expected = when (mode) { "default-deny" -> "produced_plan_authority_unavailable"; "expired" -> "produced_live_origin_or_budget_unavailable"; else -> "produced_plan_grant_mismatch" }
@@ -196,24 +196,24 @@ class KernelProducedPlanIntegrationTest {
     }
 
     @Test fun ordinaryObserverDoesNotAuthorizeTypedWorkAndScalarEqualPDoesNotBorrowAnEarlierTypedGrant() {
-        val denied = ProducedLaneFixture(temp.resolve("sam")); val deniedProvider = denied.Provider(); val samCalls = AtomicInteger()
-        KernelService.open(temp.resolve("sam-ledger"), deniedProvider, ProducedLaneFixture.CONFIG, planAuthority = denied,
+        val denied = ProducedLane1665Fixture(temp.resolve("sam")); val deniedProvider = denied.Provider(); val samCalls = AtomicInteger()
+        KernelService.open(temp.resolve("sam-ledger"), deniedProvider, ProducedLane1665Fixture.CONFIG, planAuthority = denied,
             preparedInputObserver = PreparedInputObserver { _, _, _ -> samCalls.incrementAndGet() }).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("sam")); val definition = denied.definition(client.binding, "sam")
+            val client = service.registerClient(ProducedLane1665Fixture.binding("sam")); val definition = denied.definition(client.binding, "sam")
             val plan = service.submitPlan(client.client, definition.request)
             val result = assertNotNull(denied.finished(service, client, plan.slots.first().reviewId).result)
             assertTrue("produced_plan_observer_unavailable" in result.reasons)
             denied.await("Default denied producer must retain unavailable consumer") { denied.resolved(service, plan.slots.last().reviewId) == "unavailable" }
             assertEquals(0, deniedProvider.calls.get()); assertEquals(0, samCalls.get()); retained(service, client, plan, denied)
         }
-        val f = ProducedLaneFixture(temp.resolve("scalar")); val provider = f.Provider()
+        val f = ProducedLane1665Fixture(temp.resolve("scalar")); val provider = f.Provider()
         // First-profile deadlock control: a single worker/tree slot must reach BOTH publications.
-        KernelService.open(temp.resolve("scalar-ledger"), provider, ProducedLaneFixture.CONFIG.copy(workerCount = 1, perWorktreeParallelism = 1), planAuthority = f,
+        KernelService.open(temp.resolve("scalar-ledger"), provider, ProducedLane1665Fixture.CONFIG.copy(workerCount = 1, perWorktreeParallelism = 1), planAuthority = f,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("scalar")); val definition = f.definition(client.binding, "scalar")
+            val client = service.registerClient(ProducedLane1665Fixture.binding("scalar")); val definition = f.definition(client.binding, "scalar")
             val plan = service.submitPlan(client.client, definition.request)
             plan.slots.forEach { f.finished(service, client, it.reviewId) }
-            val producer = f.typedAttempts.single { it.execution.slotId == ProducedLaneFixture.PRODUCER }
+            val producer = f.typedAttempts.single { it.execution.slotId == ProducedLane1665Fixture.PRODUCER }
             val scalar = service.submit(client.client, SubmitRequest("equal-P", "equal-P", producer.original))
             val result = assertNotNull(f.finished(service, client, scalar.reviewId).result)
             assertTrue("synthetic_scalar_borrow_denied" in result.reasons)
@@ -227,13 +227,13 @@ class KernelProducedPlanIntegrationTest {
 
     @Test fun malformedReadyAndMismatchedDurableCertificateFailClosedWithoutLosingDeclaredReviews() {
         for (mode in listOf("slot", "source", "manifest")) {
-            val f = ProducedLaneFixture(temp.resolve(mode)); val provider = f.Provider()
-            KernelService.open(temp.resolve("ledger-$mode"), provider, ProducedLaneFixture.CONFIG, planAuthority = f,
+            val f = ProducedLane1665Fixture(temp.resolve(mode)); val provider = f.Provider()
+            KernelService.open(temp.resolve("ledger-$mode"), provider, ProducedLane1665Fixture.CONFIG, planAuthority = f,
                 preparedInputObserver = f.observer).use { service ->
-                val client = service.registerClient(ProducedLaneFixture.binding(mode)); val definition = f.definition(client.binding, mode)
+                val client = service.registerClient(ProducedLane1665Fixture.binding(mode)); val definition = f.definition(client.binding, mode)
                 f.resolver[definition.request.planRef] = { request ->
                     val good = f.consumer(request)
-                    ProducedSlotResolution.Ready(PreparedProducedExecution(if (mode == "slot") ProducedLaneFixture.PRODUCER else good.slotId,
+                    ProducedSlotResolution.Ready(PreparedProducedExecution(if (mode == "slot") ProducedLane1665Fixture.PRODUCER else good.slotId,
                         if (mode == "source") good.input.copy(changedPaths = listOf("Main.kt")) else good.input, good.bindingDigest,
                         if (mode == "manifest") good.producedManifest!!.copy(producerBindingDigest = Digests.sha256("foreign-producer")) else good.producedManifest,
                         good.verifyForAdmission))
@@ -246,9 +246,9 @@ class KernelProducedPlanIntegrationTest {
                 assertFalse(service.prepareGate(client.client).ready)
             }
         }
-        val f = ProducedLaneFixture(temp.resolve("corrupt"))
-        KernelService.open(temp.resolve("corrupt-ledger"), f.Provider(), ProducedLaneFixture.CONFIG.copy(workerCount = 0), planAuthority = f).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("corrupt")); val definition = f.definition(client.binding, "corrupt")
+        val f = ProducedLane1665Fixture(temp.resolve("corrupt"))
+        KernelService.open(temp.resolve("corrupt-ledger"), f.Provider(), ProducedLane1665Fixture.CONFIG.copy(workerCount = 0), planAuthority = f).use { service ->
+            val client = service.registerClient(ProducedLane1665Fixture.binding("corrupt")); val definition = f.definition(client.binding, "corrupt")
             val plan = service.submitPlan(client.client, definition.request); val producer = plan.slots.first().reviewId
             val certificate = service.ledger.read { c -> assertNotNull(c.one("SELECT certificate_id FROM plan_slot_resolutions WHERE review_id=?", producer) { it.getString(1) }) }
             try {
@@ -263,20 +263,20 @@ class KernelProducedPlanIntegrationTest {
 
     @Test fun foreignMalformedAndOversizedProgressRemainOperationalFaultsEvenAfterExactPartialFinalResult() {
         for (mode in listOf("foreign", "malformed", "oversized")) {
-            val f = ProducedLaneFixture(temp.resolve(mode))
+            val f = ProducedLane1665Fixture(temp.resolve(mode))
             val provider = f.Provider { input, emit ->
                 if (input.context.scope.compilation == "main") {
                     val partial = f.partial(input)
                     emit(when (mode) {
                         "foreign" -> partial.copy(providerId = "foreign-provider")
                         "malformed" -> partial.copy(findings = partial.findings.map { it.copy(location = it.location.copy(fileDigest = Digests.sha256("foreign-source"))) })
-                        else -> partial.copy(rawDiagnostics = listOf(RawDiagnostic("x".repeat(ProducedLaneFixture.CONFIG.maxResultBytes + 1))))
+                        else -> partial.copy(rawDiagnostics = listOf(RawDiagnostic("x".repeat(ProducedLane1665Fixture.CONFIG.maxResultBytes + 1))))
                     })
                 }
             }
-            KernelService.open(temp.resolve("ledger-$mode"), provider, ProducedLaneFixture.CONFIG, planAuthority = f,
+            KernelService.open(temp.resolve("ledger-$mode"), provider, ProducedLane1665Fixture.CONFIG, planAuthority = f,
                 preparedInputObserver = f.observer).use { service ->
-                val client = service.registerClient(ProducedLaneFixture.binding(mode)); val definition = f.definition(client.binding, mode)
+                val client = service.registerClient(ProducedLane1665Fixture.binding(mode)); val definition = f.definition(client.binding, mode)
                 val plan = service.submitPlan(client.client, definition.request)
                 f.await("Bad progress must deny consumer operation: $mode") { f.resolved(service, plan.slots.last().reviewId) == "unavailable" }
                 val attempt = f.typedAttempts.single()
@@ -295,10 +295,10 @@ class KernelProducedPlanIntegrationTest {
 
     @Test fun consumerReservationDeniesBeforeIoWhenFullAndIsNotReclaimedAfterFailedCallback() {
         for (fits in listOf(false, true)) {
-            val name = if (fits) "callback-fails" else "no-fit"; val f = ProducedLaneFixture(temp.resolve(name))
-            val config = if (fits) ProducedLaneFixture.CONFIG else ProducedLaneFixture.CONFIG.copy(maxArchiveBytes = 1024L * 1024)
+            val name = if (fits) "callback-fails" else "no-fit"; val f = ProducedLane1665Fixture(temp.resolve(name))
+            val config = if (fits) ProducedLane1665Fixture.CONFIG else ProducedLane1665Fixture.CONFIG.copy(maxArchiveBytes = 1024L * 1024)
             KernelService.open(temp.resolve("ledger-$name"), f.Provider(), config, planAuthority = f, preparedInputObserver = f.observer).use { service ->
-                val client = service.registerClient(ProducedLaneFixture.binding(name)); val definition = f.definition(client.binding, name)
+                val client = service.registerClient(ProducedLane1665Fixture.binding(name)); val definition = f.definition(client.binding, name)
                 f.resolver[definition.request.planRef] = { throw IllegalStateException("Synthetic callback failure; no output created") }
                 val plan = service.submitPlan(client.client, definition.request)
                 f.await("Consumer reservation failure not retained") { f.resolved(service, plan.slots.last().reviewId) == "unavailable" }
@@ -311,7 +311,7 @@ class KernelProducedPlanIntegrationTest {
                 service.ledger.read { c ->
                     val archives = assertNotNull(c.one("SELECT archives_json FROM produced_plan_admissions WHERE plan_id=?", plan.planId) {
                         ContractJson.decodeFromString<List<DeclaredArchiveIdentity>>(it.getString(1)) })
-                    val expected = if (fits) archives.single { it.slotId == ProducedLaneFixture.CONSUMER }.byteCount + 134_217_728L else 0L
+                    val expected = if (fits) archives.single { it.slotId == ProducedLane1665Fixture.CONSUMER }.byteCount + 134_217_728L else 0L
                     assertEquals(expected, c.count("SELECT reserved_archive_bytes FROM plan_slot_resolution_claims WHERE plan_id=?", plan.planId))
                     val stored = c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM produced_plan_admissions") + c.count("SELECT COALESCE(SUM(archive_bytes),0) FROM work")
                     assertEquals(stored + expected, service.archiveBytesUsed(c))
@@ -343,7 +343,7 @@ class KernelProducedPlanIntegrationTest {
             }.toList().associate { it.fileName.toString() to Files.readAllBytes(it) } }
             val before = bytes(); if (wal) assertTrue("ledger.sqlite-wal" in before)
             repeat(2) {
-                code("unsupported_schema") { Ledger(root, ProducedLaneFixture.CONFIG.copy(workerCount = 0)) }
+                code("unsupported_schema") { Ledger(root, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0)) }
                 val after = bytes(); assertEquals(before.keys, after.keys)
                 before.forEach { (name, content) -> assertContentEquals(content, after.getValue(name), name) }
             }

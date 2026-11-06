@@ -320,3 +320,51 @@ tasks.register<Jar>("compilerApplicationWorkerJar") {
         require(applicationBridgeClasses.all { "$it.class" in names }) { "Missing reviewed bridge entry class" }
     }
 }
+// A separately explicit current445 observational route; never widen/reinterpret legacy443 tasks.
+// Ordinary test/check may compile its source but cannot execute the native/compiler integration.
+tasks.named<Test>("test") {
+    exclude("**/CompilerCurrent445FixtureIntegrationTest.class")
+    useJUnitPlatform { excludeTags("compiler-current445-native-integration") }
+}
+tasks.register<Test>("compilerCurrent445Fixtures") {
+    description = "Explicit bounded nine-case current445 observations; no legacy fallback or rule qualification."
+    group = "verification"
+    dependsOn(tasks.named("testClasses"))
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    include("**/CompilerCurrent445FixtureIntegrationTest.class")
+    useJUnitPlatform { includeTags("compiler-current445-native-integration") }
+    maxParallelForks = 1
+    maxHeapSize = "384m"
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+    doFirst {
+        val consent = "current445-nine-observations-not-qualification-v1"
+        require(providers.gradleProperty("compilerCurrent445Consent").orNull == consent) {
+            "Explicit -PcompilerCurrent445Consent=" + consent + " is required"
+        }
+        val binding = providers.gradleProperty("compilerCurrent445BindingSha256").orNull
+            ?: error("Explicit owner-reviewed -PcompilerCurrent445BindingSha256=<execution-binding-file SHA256> required")
+        require(binding.matches(Regex("[0-9a-f]{64}")))
+        val selectedHome = Path.of(providers.gradleProperty("compilerFixtureJavaHome").orNull
+            ?: error("Explicit -PcompilerFixtureJavaHome=<absolute owner-prepared link-free JDK21 home> required"))
+        require(selectedHome.isAbsolute && selectedHome.normalize() == selectedHome && System.getProperty("os.name") == "Linux")
+        val heap = providers.gradleProperty("compilerFixtureHeapMiB").orNull
+        require(heap == null || heap == "512") { "Current445 compiler heap is fixed at512MiB" }
+        fun bounded(name: String, default: String, min: Long, max: Long): String {
+            val value = providers.gradleProperty(name).getOrElse(default)
+            require(value.matches(Regex("[1-9][0-9]*")) && (value.toLongOrNull() ?: 0) in min..max)
+            return value
+        }
+        systemProperty("ktchecker.compiler.current445.task", consent)
+        systemProperty("ktchecker.compiler.current445.consent", consent)
+        systemProperty("ktchecker.compiler.current445.bindingSha256", binding)
+        systemProperty("ktchecker.compiler.current445.repository", rootProject.projectDir.absolutePath)
+        systemProperty("ktchecker.compiler.current445.overallSeconds", bounded("compilerCurrent445OverallSeconds", "1200", 1, 1200))
+        systemProperty("ktchecker.compiler.current445.perJobSeconds", bounded("compilerCurrent445PerJobSeconds", "90", 1, 90))
+        systemProperty("ktchecker.compiler.current445.evidenceMiB", bounded("compilerCurrent445EvidenceMiB", "256", 24, 256))
+        systemProperty("ktchecker.compiler.java", selectedHome.resolve("bin/java").toString())
+        systemProperty("ktchecker.compiler.heapMiB", "512")
+        systemProperty("ktchecker.compiler.classpath", compilerToolchain.asPath)
+    }
+}

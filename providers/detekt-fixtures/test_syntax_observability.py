@@ -366,16 +366,16 @@ class SyntaxObservabilityAuthoringTest(unittest.TestCase):
         self.assertEqual((22, 199), (len(all_pairs), sum(int(count) for _, count in all_pairs)))
         self.assertEqual(22, len({rule for rule, _ in all_pairs}))
         gate = re.search(r'val detektCorpusCohortNames = setOf\((.*?)\)', build, re.DOTALL)
-        self.assertEqual(list(PREVIOUS_IDENTITIES) + [NAME], re.findall(r'"([^"]+)"', gate.group(1)))
+        self.assertEqual(list(PREVIOUS_IDENTITIES) + [NAME], re.findall(r'"([^"]+)"', gate.group(1))[:8])
         for anchor in ("val expansion: Boolean get() = expansionPlan != null", "val protocol: Boolean get() = protocolPlan != null",
                        "val observability: Boolean get() = observabilityPlan != null", "BASELINE_AUTHORED_RULES = 10",
                        "BASELINE_AUTHORED_ANALYSES = 91", "PRE_PROTOCOL_AUTHORED_RULES = 16", "PRE_PROTOCOL_AUTHORED_ANALYSES = 145",
                        "PRE_OBSERVABILITY_AUTHORED_RULES = 19", "PRE_OBSERVABILITY_AUTHORED_ANALYSES = 172",
-                       "FULL_AUTHORED_RULES = 22", "FULL_AUTHORED_ANALYSES = 199",
+                       "PRE_LOCAL_SHAPES_AUTHORED_RULES = 22", "PRE_LOCAL_SHAPES_AUTHORED_ANALYSES = 199",
                        "Collections.unmodifiableList(preProtocol + PROTOCOL_AND_CATCH_BOUNDARIES)",
                        "Collections.unmodifiableList(preObservability + EXCEPTION_OBSERVABILITY_POLICY)",
-                       "all.singleOrNull { it.name == name }", "listOf(expansionPlan, protocolPlan, observabilityPlan).count { it != null } <= 1",
-                       "if (!expansion && !protocol && !observability) null", "independentControlIds.getValue(rule)"):
+                       "all.singleOrNull { it.name == name }", "listOf(expansionPlan, protocolPlan, observabilityPlan, localShapesPlan).count { it != null } <= 1",
+                       "if (!expansion && !protocol && !observability && !localShapes) null", "independentControlIds.getValue(rule)"):
             self.assertIn(anchor, controls)
         self.assertNotIn('tasks.named("check")', build)
         self.assertNotIn('tasks.named("test").dependsOn', build)
@@ -391,14 +391,14 @@ class SyntaxObservabilityAuthoringTest(unittest.TestCase):
         self.assertEqual(38, len(old | protocol | added))
         for path, sha in (old | protocol | added).items():
             self.assertEqual(sha, digest((ROOT / path).read_bytes()))
-        for anchor in ("DetektCorpusExpansionPins.files + DetektCorpusProtocolPins.files + DetektCorpusObservabilityPins.files", "it.size == 38",
+        for anchor in ("DetektCorpusExpansionPins.files + DetektCorpusProtocolPins.files + DetektCorpusObservabilityPins.files", "it.size == 55",
                        "val bytes = filePins.keys.associateWith { readPinned(root, it) }", "hash(bytes) == filePins.getValue(relative)",
-                       "bytes.contentEquals(readPinned(repository, path))", "listOf(BASELINE, EXPANSION, PROTOCOL, OBSERVABILITY)",
+                       "bytes.contentEquals(readPinned(repository, path))", "listOf(BASELINE, EXPANSION, PROTOCOL, OBSERVABILITY, LOCAL_SHAPES)",
                        "Files.walk(repository.resolve(root), 3)", "it.limit(65)", "bytes.size in 1..1_048_576",
                        "Files.newInputStream(path, NOFOLLOW_LINKS)", "!Files.isSymbolicLink", "validateNamespace(EXPANSION",
                        "validateNamespace(PROTOCOL", "validateNamespace(OBSERVABILITY", "boundRuleCount", "boundAnalysisCount",
                        "DetektCorpusCohort.preProtocol, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_RULES",
-                       "DetektCorpusCohort.preObservability, DetektCorpusCohort.FULL_AUTHORED_RULES",
+                       "DetektCorpusCohort.preObservability, DetektCorpusCohort.PRE_LOCAL_SHAPES_AUTHORED_RULES",
                        "validateNamedGaps(PROTOCOL)", "validateNamedGaps(OBSERVABILITY)", "preserved_protocol_namespace_files",
                        'it.text("rule_id") in previousIds', 'it.text("rule_id") in priorIds',
                        'identity.flag("requires_explicit_owner_opt_in")', "cohort.independentControlIds.getValue"):
@@ -412,8 +412,8 @@ class SyntaxObservabilityAuthoringTest(unittest.TestCase):
                        '"providers/detekt-fixtures/test_syntax_observability.py"', "DetektCorpusObservabilityPins::class.java",
                        "path.startsWith(observabilityFixtures)", "DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_ANALYSES",
                        "DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_ANALYSES", "it.ruleId in previousIds", "it.ruleId in priorIds",
-                       'assertEquals(13, approved.count { it.activation == "advisory" })',
-                       'assertEquals(9, approved.count { it.activation == "opt_in" })',
+                       'assertEquals(15, approved.count { it.activation == "advisory" })',
+                       'assertEquals(16, approved.count { it.activation == "opt_in" })',
                        'assertEquals(6, prior.count { it.activation == "opt_in" })',
                        'assertEquals(corpus.any { it.activation == "opt_in" }, cohort.requiresExplicitOwnerOptIn)',
                        "assertEquals(!case.disabled, selectedSarifId in parsedReport.enabledSarifIds",

@@ -21,10 +21,10 @@ import kotlin.test.*
  * deliberately NOT equal request authority, a successful compiler outcome or a reuse proof.
  */
 class ModelLiveIncrementalWorkTest {
-    @Test fun fullAndIncrementalHintsKeepAll1663ParentRowsAndTheWholeCompilerBatch(): Unit = ModelLiveHostFixture().use { f ->
+    @Test fun fullAndIncrementalHintsKeepAll1665ParentRowsAndTheWholeCompilerBatch(): Unit = ModelLiveHostFixture().use { f ->
         val inventory = currentCatalog()
         val compilerRules = inventory.ruleIds.filter { it in f.provider.supportedRuleIds }
-        assertEquals(400, compilerRules.size, "The compiler child is not the full 1663-row owner obligation")
+        assertEquals(402, compilerRules.size, "The compiler child is not the full 1665-row owner obligation")
         assertTrue(compilerRules.size <= ModelLiveLimits.COMPILER_RULES)
         assertTrue(inventory.ruleIds.size <= ModelLiveLimits.PARENT_RULES)
         val activation = PlanActivation(f.modelFixture.configuration, inventory.ruleIds.map {
@@ -87,7 +87,7 @@ class ModelLiveIncrementalWorkTest {
                 assertEquals(full.context.scope, input.context.scope)
                 assertEquals(full.context.modelDigest, input.context.modelDigest)
                 assertEquals(full.context.compilationFiles, input.context.compilationFiles)
-                assertEquals(1663, ContractJson.parseToJsonElement(input.context.policies.getValue("ktchecker.activation-plan"))
+                assertEquals(1665, ContractJson.parseToJsonElement(input.context.policies.getValue("ktchecker.activation-plan"))
                     .jsonObject.getValue("decisions").jsonArray.size)
                 assertNull(input.execution)
             }
@@ -201,13 +201,19 @@ class ModelLiveIncrementalWorkTest {
     private fun currentCatalog(): OwnerCatalogInventory {
         val records = listOf("core", "libraries", "platform", "ecosystem").flatMap { group ->
             val resource = requireNotNull(javaClass.getResourceAsStream("/model-live-control-catalog/rules-$group.json")) {
-                "Use the current distributed catalog, never 1663 fabricated replacement IDs"
+                "Use the current distributed catalog, never 1665 fabricated replacement IDs"
             }
             resource.use { ContractJson.parseToJsonElement(it.readBytes().toString(Charsets.UTF_8)).jsonArray.map { value -> value.jsonObject } }
         }
-        assertEquals(1663, records.size, "Inventory changes require deliberate review of this preservation control")
+        assertEquals(1665, records.size, "Inventory changes require deliberate review of this preservation control")
         return OwnerCatalogInventory(Digests.sha256(Digests.canonical(JsonArray(records))),
-            records.map { it.getValue("id").jsonPrimitive.content }).also { assertEquals(1663, it.ruleIds.size) }
+            records.map { it.getValue("id").jsonPrimitive.content }).also {
+                assertEquals(1665, it.ruleIds.size); assertEquals(it.ruleIds.distinct().sorted(), it.ruleIds)
+                assertEquals("sha256:121660fc2a5aed084688d0c549f9e1bece2ec514e9ace4748211b55fa87cc1c5",
+                    Digests.sha256(Digests.canonical(JsonArray(it.ruleIds.map(::JsonPrimitive)))))
+                assertContains(it.ruleIds, "ktc.compiler.common.error_suppression")
+                assertContains(it.ruleIds, "ktc.compiler.common.inapplicable_operator_modifier")
+            }
     }
 
     private fun capturedWork(capture: ModelArchiveCapture, selected: List<String>, options: List<String>): String {

@@ -1,0 +1,1119 @@
+#!/usr/bin/env python3
+"""Static source/hash controls, not Kotlin compilation, compiler/provider execution or qualification."""
+from collections import Counter
+from pathlib import Path
+import ast
+import hashlib
+import json
+import re
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = ROOT / 'providers/compiler-fixtures'
+KOTLIN_REL = 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler'
+KOTLIN = ROOT / KOTLIN_REL
+# Exact one-way pins: the plan pins these Python tests; no whole-plan reverse pin or candidate imports.
+SUCCESSOR_PINS = {'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureControls.kt': 'bde583248f23979fee1c78d78b77f976dad9a302bb2c8f3e33185e7067ff8be0',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureControlsTest.kt': 'c7ce230f4637046b7333c42022763642c3389faf3bd3dd1614a4931f5874f34e',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureDiagnosticBreadthTest.kt': 'e5c67dfd4dd109f75d557052f039da6696577d277b32c8f44c469683c534c603',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureNullabilityTest.kt': '786b9cb14b8c5ea0462d82244a40a9c7dd133d13a25cf12e68a70113532bf966',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureProvenance.kt': '9b3602227e4275e514aa9cae2335de4d471cc657a783fb1a890a9569f236d72d',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureRunner.kt': '9ad5e860a3b7fe303bc28e9c5aedef51d6918909abab4c04888ef93c49935046',
+ 'providers/compiler-fixtures/test_nullability_protocols_hookup.py': '1a96f723677a80d94b2d2eb9ab10acd8856ce0cbecec19ef6e51b20cd57acbd0'}
+FROZEN_PREDECESSOR_PINS = {'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureControls.kt': 'd30a44cf54cee62a66913e044e0aa7b2523721e301ce8b6919cd592b05760d50',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureRunner.kt': '8b189d8ae46855adcc3fb109802e0d17773738c2218f85d68976eef086517b80',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureProvenance.kt': 'fb2ae29a31130d2e90f45cbf12518c0a88fd42ad7e81500991307e4a658bf32c',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureControlsTest.kt': '647731d9f7b4d962f61f8f6945bdc15f58bd6a6509d58b9261181858a8a19e99',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureNullabilityTest.kt': '5c5ffc049c0ecbbfdcb461faed17d0be8eabb35b85b0ee814fee3e9174eebf5e',
+ 'providers/compiler-fixtures/test_nullability_protocols_hookup.py': '755bc69d74a8bea117aff27ae9683d139b4374078d51d4f8b584e5cc75b72cae'}
+DATA_DOC_PINS = {'cohort-plans/diagnostic-breadth-v1.json': '4bbb0528fcd0ab9b7c5c8fb5252bbe03a481666abed1ec5bb29b6632bed8b8bd',
+ 'cohort-plans/diagnostic-breadth-source-evidence.json': 'ed4e9f5c81d0ca7383fe38b41da4d4a23e419b7afd5ecee1e178fa9ffc9b546b',
+ 'cohort-plans/diagnostic-breadth-gap-inventory.json': '9cbf6743f83d25dcef58325997552539e7c0116efff3a8523ab58c87df456c54',
+ 'cohort-plans/diagnostic-breadth-README.md': 'f28007321273fafbff8b4562977d72b15f8607cacc5359db5162ecae0818148b'}
+STABLE_SOURCE_PINS = {'modules/provider-compiler/src/main/resources/compiler-rule-map.json': '290edd0c54eb99c6d6eed4277f6f953eb8f319e60582e1f8151186721112aecf',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureEvidence.kt': '2452a1e1e4303a90366a06911fdedf4ad629fdff014756f45f763888a8ebbb46',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureNullability.kt': '7ba767b7fe660979f1b5cd6ec81bd7295eec34f0e15197a578e636b87cfb8352',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureScratch.kt': '76cf95545d5023ada15a7ec8b8bd2e55bae8a5759f2bf5bb8908a00d4a59993e',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureSupplemental.kt': 'e6104020de52316072d2e3491ca20296b5381e971a073acda69fc8ce6edd1379',
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureSupplementalTest.kt': 'd1bc76856da36be79a385f260214ddb75f3ee0060006971ba36a76c1a27c5955',
+ 'providers/compiler-fixtures/authored-input-inventory.json': 'b8c6af0b0f1d68578ad9a209e900c83668fc25f67bfd7fbf272fc28720511bad',
+ 'providers/compiler-fixtures/cases/abstract_class_member_not_implemented/negative.kt': 'd6eeb32afa4c44f8dcb1fbfa17c3d7ff8e65f73555ad66d872c35cd0eafbae20',
+ 'providers/compiler-fixtures/cases/abstract_class_member_not_implemented/positive.kt': '79534a425ffc16ef5ca5e1cea258e33402a4cb8e9ac21d9082a8c9cdcc96eb1f',
+ 'providers/compiler-fixtures/cases/abstract_member_not_implemented/negative.kt': 'd2f5117a62a36d93a46f48e76edea42cd237fe152be92407cb54165ac9c7ce42',
+ 'providers/compiler-fixtures/cases/abstract_member_not_implemented/positive.kt': '35eee0d9cf896855e70941e30214a2b2d70aa679e05ba0a5fcb1793eb04e9827',
+ 'providers/compiler-fixtures/cases/argument_passed_twice/negative.kt': '37051bf8322e7c636d451de85296d640d79121bb4fb45f0bcfc24674d1b397cc',
+ 'providers/compiler-fixtures/cases/argument_passed_twice/positive.kt': 'ea61635a65c3ff235a0bd1e8f8e2e78d4aa9bc9a6c861ffcac1a83a6d0d80470',
+ 'providers/compiler-fixtures/cases/argument_type_mismatch/negative.kt': '84ddc70e56de0a4da5dbc3c603d8978a57c146d1acfaf98b6ee3a136c5dd4c71',
+ 'providers/compiler-fixtures/cases/argument_type_mismatch/positive.kt': 'e3ca48f35c28d63c5df1a72ce786fefd02da2cb052cd104f5859951f4a76b0f7',
+ 'providers/compiler-fixtures/cases/assignment_type_mismatch/negative.kt': '0e2a8e5c13bd454f0f33f0b54c3cee6f19180852e89fbc8d2c4dcc51f0d12399',
+ 'providers/compiler-fixtures/cases/assignment_type_mismatch/positive.kt': '67b5b7ba4da08a6349637de33f955c029067001675c138e4571280df3e03d048',
+ 'providers/compiler-fixtures/cases/cannot_check_for_erased/applicability.kt': 'eae215a94605de750be76cd9dc911368ab5ab798123768651272948de460f044',
+ 'providers/compiler-fixtures/cases/cannot_check_for_erased/boundary.kt': 'cd63f250360d9bec939380d308169887d7017f562699a95e49f95c455215a6b8',
+ 'providers/compiler-fixtures/cases/cannot_check_for_erased/negative.kt': '963d057e188f6159b9af202333d67b84af907ac2caafbec5974600f1202b42f9',
+ 'providers/compiler-fixtures/cases/cannot_check_for_erased/positive.kt': '281ccfd6975f676b8b394610865f5b3ebc3be01f0366bcadc1772058772c8289',
+ 'providers/compiler-fixtures/cases/cannot_check_for_erased/suppression.kt': 'afa0a7509ae539b0b6c4dccae4977f52ff2d893b8a8a848548c7d9bec9aac087',
+ 'providers/compiler-fixtures/cases/cannot_weaken_access_privilege/negative.kt': '1aa15b6a55ad7faa2f3e7adaf3cc744516a1b09eaa3e7923b28271f288a1c8f3',
+ 'providers/compiler-fixtures/cases/cannot_weaken_access_privilege/positive.kt': '23c8dee72795dc31e20f3ca7edb1496cad49185e61042e1777fbb3ce615cdd7e',
+ 'providers/compiler-fixtures/cases/cast_never_succeeds/negative.kt': 'eec391d9fcce29e433f582ce9fdfd14bdbafac4c0b9ed5ad4eb3a1ff719f3a68',
+ 'providers/compiler-fixtures/cases/cast_never_succeeds/positive.kt': '4f48a28b4a370f9b35415b8fe64cca67bbfafa5df56704e2b80d3ef5399c0138',
+ 'providers/compiler-fixtures/cases/component_function_missing/negative.kt': '1328932f99a481611eb34394c00fb01274bfc184e601bd8fd22d014bcef0aa37',
+ 'providers/compiler-fixtures/cases/component_function_missing/positive.kt': '8696da0c1430a6d02dab5b00d0b82c0e723ac2615b943f28c798f7bfda837520',
+ 'providers/compiler-fixtures/cases/concurrent_hash_map_contains_operator_error/negative.kt': '385f3821ddafad60bbbd647a59628ad937e8284c0ad6cb57788bc25e83fe3989',
+ 'providers/compiler-fixtures/cases/concurrent_hash_map_contains_operator_error/positive.kt': '7d58fcfdc28f70b87dca63843743a17075e9be3fbfba7fdd6ef100bba987c2ff',
+ 'providers/compiler-fixtures/cases/condition_type_mismatch/negative.kt': 'a82b7fb9d1d1d59522a5cbf6bb0a4c999ce68818c3135ec3cfa4a1e9a953cdb5',
+ 'providers/compiler-fixtures/cases/condition_type_mismatch/positive.kt': '0fbd2eb6a37ea1a1d597a2fbd33457b33fdcdde4a8b3e904b73aa1913e38e28f',
+ 'providers/compiler-fixtures/cases/conflicting_upper_bounds/applicability.kt': 'f832b9c433d988981fb9167b8e9dab57531064dd0cbd60959fbe88262f51f1cb',
+ 'providers/compiler-fixtures/cases/conflicting_upper_bounds/boundary.kt': '58a7486a1f7dbdd8a72e2ea8f75e41504458925e7622bf61bc7ef2cd878d823c',
+ 'providers/compiler-fixtures/cases/conflicting_upper_bounds/negative.kt': '5bfa4499f2d64af40be295aa7bf1699b5ce14be59e26502c22da7fbbce1fc864',
+ 'providers/compiler-fixtures/cases/conflicting_upper_bounds/positive.kt': 'fc4bdd21471be6068e6cad3687ca96a8a10224bbcde45d1540a2a7b2c1f1058a',
+ 'providers/compiler-fixtures/cases/conflicting_upper_bounds/suppression.kt': 'a34f0128ad63764a731737ca044ed6d828fac2412359b7616510276a5b321fd0',
+ 'providers/compiler-fixtures/cases/cyclic_constructor_delegation_call/negative.kt': '5da8d528ed80fbc81d1068e9fa8d291c7969bec397bfa607b4e1416f7090d9a1',
+ 'providers/compiler-fixtures/cases/cyclic_constructor_delegation_call/positive.kt': 'b80ebedadb56de59997f66505ef94d5950e2852f4131020d6db8bf607c2dfaf5',
+ 'providers/compiler-fixtures/cases/delegation_by_in_jvm_record/negative.kt': '413512bb4d09ea967dc23acf9d1d9b3230b3b5be921a88778a809534891c5bcb',
+ 'providers/compiler-fixtures/cases/delegation_by_in_jvm_record/positive.kt': '8d055b9371b8592af32094034dbdbd4dbb4ce055d80ca8d98a3399a934c00557',
+ 'providers/compiler-fixtures/cases/deprecation/negative.kt': 'bd72e7cab839f26de91a9265f6a325150e0c20b736f3d16dff8080791fad54b0',
+ 'providers/compiler-fixtures/cases/deprecation/positive.kt': 'a2e39d83bc4b241581b5bb77f2353bc21b516ee87bfb74c51592cbbee4bd5399',
+ 'providers/compiler-fixtures/cases/division_by_zero/negative.kt': '768029687bcb1f822397d08592dc6dddf337c2eb1dfa1b949a4297df99c3076a',
+ 'providers/compiler-fixtures/cases/division_by_zero/positive.kt': '620cbd24b74cc65e49b5cb62f8132e32a03025794dc096f9647e066e6cb1bafc',
+ 'providers/compiler-fixtures/cases/empty_range/negative.kt': '79d3f1591aa626f44afa8cc18691dcabe9480163fa49d4d34d993e5f26bd9d78',
+ 'providers/compiler-fixtures/cases/empty_range/positive.kt': '823eb81e16992276d5cebd6fe5dc19bb7b314158e1af9c75df71caefe9fe76bd',
+ 'providers/compiler-fixtures/cases/equality_not_applicable/negative.kt': '05d044d6e4b21dc5ae2fdd23d52a00fd5514e1cc4dd8b35422fa66e3ceb5f144',
+ 'providers/compiler-fixtures/cases/equality_not_applicable/positive.kt': '0f96270187449d9bdb591e341c4dac54b435854473bf3d4bbd9eee538453bb11',
+ 'providers/compiler-fixtures/cases/exposed_function_return_type/negative.kt': 'f593184550060456f13aad945e690e8b35a5d35690aafb64b3b3cb781415ce47',
+ 'providers/compiler-fixtures/cases/exposed_function_return_type/positive.kt': '8963fb30a263ae6a268ed19743d7d7c8706781eebc15b62c1c381f963bd22d1e',
+ 'providers/compiler-fixtures/cases/exposed_parameter_type/negative.kt': 'ec5fb5304bcee052dbfe5ac7e0d6dc7ff2350dcd1579e1fce61983d245b003c2',
+ 'providers/compiler-fixtures/cases/exposed_parameter_type/positive.kt': 'c10128a902801f7cc84d909d2c909995a705e8535dd744db6cf900838e2f2ced',
+ 'providers/compiler-fixtures/cases/exposed_property_type/negative.kt': '234668fba3b2b92e655c80764fc400b9237d372513c9296f6068744f11f28472',
+ 'providers/compiler-fixtures/cases/exposed_property_type/positive.kt': '2ff0ba2456a384e068b2f7dd379bb985d6dd0ba34e12bf8d5a02187bc270a356',
+ 'providers/compiler-fixtures/cases/exposed_receiver_type/negative.kt': 'b7151bfcf975d22b312211a4c58c5d0cd55113844acb777fbdc5ca03e8a89aca',
+ 'providers/compiler-fixtures/cases/exposed_receiver_type/positive.kt': 'aeac5a238ebd076d5b07fb962f0550fd7864f2c8b48cd39b2852f6ce574b4bcb',
+ 'providers/compiler-fixtures/cases/exposed_super_class/negative.kt': '59f0b8b568adbe86a2ce7e4fa966622115ba13903bf81a3d6f85a41cd767aeb7',
+ 'providers/compiler-fixtures/cases/exposed_super_class/positive.kt': '11c39788ac5ed155db3d0af7be41a0c1bc4d0dc342b1a0e3aee6ce07b766055c',
+ 'providers/compiler-fixtures/cases/exposed_type_parameter_bound/negative.kt': 'e50250354473d1661b555e294911d4625b20e7494a80af6b2e83d3081f21f26f',
+ 'providers/compiler-fixtures/cases/exposed_type_parameter_bound/positive.kt': '23836bc80da256eb7052edeccd753d6fe4b318de407b81bbe7ee46e96099a15a',
+ 'providers/compiler-fixtures/cases/exposed_typealias_expanded_type/negative.kt': '7938eb0475bd145e09940a7a7782065b6df6ccf4675880407090ebd3678900d8',
+ 'providers/compiler-fixtures/cases/exposed_typealias_expanded_type/positive.kt': '235206623fafe122f87c84e01546df23b1a30e79bd36e79904fcf285a0a10d81',
+ 'providers/compiler-fixtures/cases/external_declaration_cannot_have_body/negative.kt': '909b551935117bb94e0432fca13903d5bb254f2775cc9c70f4bcf108cd6f5650',
+ 'providers/compiler-fixtures/cases/external_declaration_cannot_have_body/positive.kt': '8b64781a0667b325d7e715efdb3845e4210ff8bd15e974bc65b6b3c02c441669',
+ 'providers/compiler-fixtures/cases/external_declaration_in_interface/negative.kt': '8f23ebd059999667971de15b7facd71b980b8110acd6a8f4d9fcb06f1a5f5ff8',
+ 'providers/compiler-fixtures/cases/external_declaration_in_interface/positive.kt': '0d71bafa380fd1455f460969d23f0497d3de364e9e9f3044a6ac1b8f3e2512e5',
+ 'providers/compiler-fixtures/cases/field_in_jvm_record/negative.kt': 'decca913e3c2f1f3b4ac213fc74106be3df3a202e264a7e2d55e1780200600eb',
+ 'providers/compiler-fixtures/cases/field_in_jvm_record/positive.kt': '66b92c8378a9df8fd02153d7e69991736b2925be8debdbf656baaaacc1fc5a22',
+ 'providers/compiler-fixtures/cases/illegal_jvm_name/negative.kt': '37062636e6ecaf47a99e6a784923e4935008c2cbaa52fa1cb29b0b42bb1f0d56',
+ 'providers/compiler-fixtures/cases/illegal_jvm_name/positive.kt': '8f17b34b8bb1662a9cc7ab76bc381ab1d703421556b3a25d1805a9801a39b04b',
+ 'providers/compiler-fixtures/cases/inapplicable_jvm_field/negative.kt': 'f5fe1ea129f8033c79feb7440f41bf11d0b6ce8b64be34615b58932f3cf53e0d',
+ 'providers/compiler-fixtures/cases/inapplicable_jvm_field/positive.kt': 'f2da19a17c53a85c2ae3bbfe65d0d6e3b8322a344e698f7ea9cdf99e807d442f',
+ 'providers/compiler-fixtures/cases/inapplicable_jvm_name/negative.kt': 'b530c9e63d72d110f7c26a903d686f2da3974a2f883e8871496f2456a07fd4e3',
+ 'providers/compiler-fixtures/cases/inapplicable_jvm_name/positive.kt': '993e7d525e6060938c660939d1f337ba71cbd47983517dee2a18f41062f206ca',
+ 'providers/compiler-fixtures/cases/initializer_type_mismatch/negative.kt': '08997eea65a80881d420c90bf9d806bf242475791103c6e1fbaf1d0885533c44',
+ 'providers/compiler-fixtures/cases/initializer_type_mismatch/positive.kt': '09b2517fe550b84a8e18b33f99941e866fd0e76bd7bf757ea319fda4cca4f155',
+ 'providers/compiler-fixtures/cases/inline_property_with_backing_field/negative.kt': '316ed16e8c301b5d09cf35dbf0c2522112fe29a9eefc87f0a5c8315d5be7068a',
+ 'providers/compiler-fixtures/cases/inline_property_with_backing_field/positive.kt': '50efe6c65275e38567692c9397648730616c1bf397f224f44400fc3a3bf85570',
+ 'providers/compiler-fixtures/cases/int_literal_out_of_range/applicability.kt': '6e338567d56a6a600e208ebca03903c1854ca6dbba5d1c2e3ebe4f2f176e346c',
+ 'providers/compiler-fixtures/cases/int_literal_out_of_range/boundary.kt': '5317b90e45898a253afe0d5a9f58d6862e8264da8ce4dd033732a1a92f4a50ed',
+ 'providers/compiler-fixtures/cases/int_literal_out_of_range/negative.kt': '0652fc45d72342b7d22de60ec4f14d42f65f807556a3de42f00b9a87b6361f75',
+ 'providers/compiler-fixtures/cases/int_literal_out_of_range/positive.kt': 'efe8e9a9f74b50cc5dd7645659b7eed8e3928311bd350a4fc2f9d6f8e438a9c0',
+ 'providers/compiler-fixtures/cases/int_literal_out_of_range/suppression.kt': 'c8a323d1910f22dbd1d00b3598a6f8da2f47fe9adca9cb71de82e7429eb7dce7',
+ 'providers/compiler-fixtures/cases/invisible_reference/negative.kt': 'f9ffd0c5efcc6660dee7d888ce26ad0f421191509397c37c0fcae2761dd74080',
+ 'providers/compiler-fixtures/cases/invisible_reference/positive.kt': 'c2d57bbf3e09f626c1028030b1de7df442d09b33eb035309ebcecc6a3fa52aee',
+ 'providers/compiler-fixtures/cases/invisible_setter/negative.kt': 'dd06f082ca1425851359d26defa7a0d4e53b7c36744217bf0a0116165bc48cf3',
+ 'providers/compiler-fixtures/cases/invisible_setter/positive.kt': '1473d75d9bf2f859a5633c90e584984a00eec3b034c50fa3136f9a7a4e9711f1',
+ 'providers/compiler-fixtures/cases/iterator_missing/negative.kt': '642af9dc71fa4658c8b59a8b50a4e0dcdd10e4f6d7da682a789764ffb0fba3aa',
+ 'providers/compiler-fixtures/cases/iterator_missing/positive.kt': '5e663fba752b63fe14a602bc5daac3570c51848fbcec080f9dc44ee3e03bc846',
+ 'providers/compiler-fixtures/cases/jvm_inline_without_value_class/negative.kt': '25a249a86e91aba07c9b9a69f6441e2eaa12207d1aa68585d464c784d4364f94',
+ 'providers/compiler-fixtures/cases/jvm_inline_without_value_class/positive.kt': '95a5b2916882ac920002f5cc6e5e813cfe7cccd4513a385b21deccc9fc4779ce',
+ 'providers/compiler-fixtures/cases/jvm_record_extends_class/negative.kt': '241163668a2438c3701702977e153aaf355fd2f9db06bc0a4b70e30878165854',
+ 'providers/compiler-fixtures/cases/jvm_record_extends_class/positive.kt': '161b3c756294de45a5a0c1a45e14cedc8ca15a753987b4ef6335f828dd698c7d',
+ 'providers/compiler-fixtures/cases/jvm_record_not_val_parameter/negative.kt': '21afc3f91a6e01a9c991cb8a5bbec10e5a910b6e7455aed448c6210683bd63b5',
+ 'providers/compiler-fixtures/cases/jvm_record_not_val_parameter/positive.kt': '92055ea6a5f487c36a93a08fa7be1b8fd83289450e5ff7c8f0d104905f399e49',
+ 'providers/compiler-fixtures/cases/jvm_static_not_in_object_or_companion/negative.kt': 'b86ef61cf9806a9d0b0b6938a9d6973a57a79f1f5a0fb96ce01f739ab31e523f',
+ 'providers/compiler-fixtures/cases/jvm_static_not_in_object_or_companion/positive.kt': 'e7be9832a7faf93fd48fea27bed75f836145ae746c4cd0459c250549ca5f9a88',
+ 'providers/compiler-fixtures/cases/jvm_static_on_const_or_jvm_field/negative.kt': '31ad1f95ac2e20f7b1ec0c855c1b51e35a43211b4f7947bff674e1dbee480466',
+ 'providers/compiler-fixtures/cases/jvm_static_on_const_or_jvm_field/positive.kt': 'adfe1c68708396bf2cb5ef374001f323792ab28ab449c7e4b001b07028093b9d',
+ 'providers/compiler-fixtures/cases/named_parameter_not_found/negative.kt': '5c20a523e3eb890796ef6c3b21940fe0f16b0bbd1e64f6e9e1aedd3140df4545',
+ 'providers/compiler-fixtures/cases/named_parameter_not_found/positive.kt': 'd8a874bc538fcd2399712682d6d6b255c0ebedb495c8c2762a912ce567223706',
+ 'providers/compiler-fixtures/cases/no_else_in_when/negative.kt': '4aafd331666be6854bf57d3642bd7257d60163803b0dc3ae982691bd59dd6b5c',
+ 'providers/compiler-fixtures/cases/no_else_in_when/positive.kt': '5d8f5be96dcbe428c44cf261201a0a02afc48c4734e8e7850c117bfd3d14e575',
+ 'providers/compiler-fixtures/cases/no_get_method/negative.kt': 'ab955ae686e4bf7464398cb09b061374d4e694f3fc533e1715cb19f78f44b2a2',
+ 'providers/compiler-fixtures/cases/no_get_method/positive.kt': '36c4d1ca6646d98ac45c1654a8077d680371f13c73dfc69358bd8d32a63c5d05',
+ 'providers/compiler-fixtures/cases/no_set_method/negative.kt': '92a9cdd770def96626bee6bff0f49e7cf7a98aeb5876c2537229001c634367e4',
+ 'providers/compiler-fixtures/cases/no_set_method/positive.kt': '4ddbce3291b3c0b9bbb46bf71449d7658939a00a218977c86b2ca01e7a19055c',
+ 'providers/compiler-fixtures/cases/no_value_for_parameter/negative.kt': '168700c9d126cd38057b379840e8f4d722825e3d41676619ad3b255562db536f',
+ 'providers/compiler-fixtures/cases/no_value_for_parameter/positive.kt': '870e8886fa5dbdf28e79b57226ef0c303b2672f1304d8adf7f090a97c0f0634d',
+ 'providers/compiler-fixtures/cases/non_data_class_jvm_record/negative.kt': 'e28b0b5ccaa935d7ffe5c80d16fab36fc943211fd205b4368c4836fda322ce57',
+ 'providers/compiler-fixtures/cases/non_data_class_jvm_record/positive.kt': 'ca919b1c863819f48f365752a348b440fb74580576dd3bb8d43ed4dc01bcfb37',
+ 'providers/compiler-fixtures/cases/non_final_member_in_final_class/negative.kt': '99ffd4d2b349bb47949b845c583c0850f06ae0c17c7d78b02eccd24f8ba425aa',
+ 'providers/compiler-fixtures/cases/non_final_member_in_final_class/positive.kt': 'd6066a54ae1680c843fc8a0ee56f5ef2b8e734c00baea89395eea6e7ada1bb2b',
+ 'providers/compiler-fixtures/cases/non_public_call_from_public_inline/negative.kt': '21227edfa94aca82d8addf2b8ebf0298f13cfeadb702205bb701c19ada5acc39',
+ 'providers/compiler-fixtures/cases/non_public_call_from_public_inline/positive.kt': '79a173871e46fc0187b97876842eb714fd88deafaa2b75b88babfb0ca2604ab0',
+ 'providers/compiler-fixtures/cases/non_suspend_overridden_by_suspend/negative.kt': 'a30080c3ded18a3d9ab3e9e21e8ceca079707db1d5bbfbcae62c64fec2f6d09d',
+ 'providers/compiler-fixtures/cases/non_suspend_overridden_by_suspend/positive.kt': '7c50a15ac211eeeb65f0854fffdea32d7802d8401d9f3b340c3a761b7ceaf05b',
+ 'providers/compiler-fixtures/cases/non_vararg_spread/negative.kt': '8dac2d7a498631eeb6e3e235cf26e2a0b01387115c5690db91dec2f50a96a274',
+ 'providers/compiler-fixtures/cases/non_vararg_spread/positive.kt': '02dd78ac96f8906436e5cb2609f34fa2416cba1b665deac09abd6fedde4c6f90',
+ 'providers/compiler-fixtures/cases/nothing_to_override/negative.kt': 'f99dd8d6607f2fb1d0431540f440ca63bf07674ccb34109c53fd78bcba165bc5',
+ 'providers/compiler-fixtures/cases/nothing_to_override/positive.kt': 'c3c034d9fc35d2bc2705c917dd2b28951d5ad96cf1321fac574a270317e105d7',
+ 'providers/compiler-fixtures/cases/null_for_nonnull_type/negative.kt': '1bbfb915c432d6f14bcb4086ec22d6b1731ea2a640f39ab7f6773faca66b1fa9',
+ 'providers/compiler-fixtures/cases/null_for_nonnull_type/positive.kt': '960419f714930897b4c5910942d4cdedc2804949357043766e0ff14c7f508a5e',
+ 'providers/compiler-fixtures/cases/opt_in_argument_is_not_marker/negative.kt': 'e50ff533619e6ff00a99a6e43dc20c6f000b9fd87fbb6a4f9021f972b8a45b45',
+ 'providers/compiler-fixtures/cases/opt_in_argument_is_not_marker/positive.kt': '38ba5bb448403d554b756955223d43d3dd75b185ff18013938db270d0a030f36',
+ 'providers/compiler-fixtures/cases/opt_in_usage/negative.kt': '02f1aad6d372e718bcff248351c9d5bd2419326ee7fe42f482bccda2e713b2b1',
+ 'providers/compiler-fixtures/cases/opt_in_usage/positive.kt': '06fd3b9727ceed8f2520f7e689cef62ac42744a660c90f30bc15bfd9603a86cb',
+ 'providers/compiler-fixtures/cases/opt_in_usage_error/negative.kt': 'b4b78dbbea7eb6e1409d6d60978cd86ad17e8cc43110d10a0570ac7b48f333c3',
+ 'providers/compiler-fixtures/cases/opt_in_usage_error/positive.kt': '961b0490b56a48fdc2100ed7eb468acf40e484399c9900187999bcc3cb73d8d4',
+ 'providers/compiler-fixtures/cases/opt_in_without_arguments/negative.kt': '9a6e4034e60a1e94cc3ac038451e0dc242561f0dec33de64b2b8d8ff2a9ce243',
+ 'providers/compiler-fixtures/cases/opt_in_without_arguments/positive.kt': 'aaaf0943bae85de13456e717a2441ee0493ab5299f3e37b1dd92c0e21f1b0958',
+ 'providers/compiler-fixtures/cases/overloads_abstract/negative.kt': '4f1d0d2bc8de320edae518649f70176df7bfc8b81f9aed36eee221db6270cb81',
+ 'providers/compiler-fixtures/cases/overloads_abstract/positive.kt': 'f267bce2c4c7a1f302626a535208c9747476f01f6497dff5ca2fb6285d373654',
+ 'providers/compiler-fixtures/cases/overloads_interface/negative.kt': '5988fb3c335705efc1ed053807422f64fb2543c25c356f9aa8a7eb428a4d54c3',
+ 'providers/compiler-fixtures/cases/overloads_interface/positive.kt': '53ed21646366bc097838318d558128412c41861ff4e687205701d998b89ccda5',
+ 'providers/compiler-fixtures/cases/overloads_local/negative.kt': '5d28186003b55ff4fe19e890727e82a8bd7e8629157674d1027be373b55ced39',
+ 'providers/compiler-fixtures/cases/overloads_local/positive.kt': '7ce3e8de373e42c4f495e315fa98ac17c70a7c6e9a2972c4c9300a35f946519d',
+ 'providers/compiler-fixtures/cases/overloads_private/negative.kt': '431455b51295e161ae0b75398f5c25660cd977afafb95f98a92255ebd218c3b8',
+ 'providers/compiler-fixtures/cases/overloads_private/positive.kt': 'e3456298b600a0d699f475fc1a956b5d3997b5ca90bb57291fad25f895219f44',
+ 'providers/compiler-fixtures/cases/overloads_without_default_arguments/negative.kt': 'cc302a10c855f2dbe851317a4e38aac4b1ce9d5e32549b84a86f9ce20ffbd6d3',
+ 'providers/compiler-fixtures/cases/overloads_without_default_arguments/positive.kt': 'c46dd40de00400bbe0b26406c1c6b4dcaf19e757742c813feb15f72c2d53f74d',
+ 'providers/compiler-fixtures/cases/overriding_final_member/negative.kt': '96fdafe2fe75399f2e2fed4518c3b7270106e9ff707f6a8015490a9d95007365',
+ 'providers/compiler-fixtures/cases/overriding_final_member/positive.kt': 'd2cd18fc25117108dc0b91292b475922d84da990e181034642f953c35cc1ff66',
+ 'providers/compiler-fixtures/cases/parameter_name_changed_on_override/negative.kt': '873e41c5527ce865e11eaecc013753044895676efae61ae5468a5af9c1b229eb',
+ 'providers/compiler-fixtures/cases/parameter_name_changed_on_override/positive.kt': 'b51e3b7426bd8a217caf63340e055a72de54da6d02b505feb8eba0603055e026',
+ 'providers/compiler-fixtures/cases/property_type_mismatch_on_override/negative.kt': 'b2621871c6adc5fc5265d74e79fe50f976d187ddb2848f5c94b5e32e261d3bcd',
+ 'providers/compiler-fixtures/cases/property_type_mismatch_on_override/positive.kt': '6270fd4527663b409fd91ae1b7208fd421b5d48c64b87c45b6e1dda7dca6ced7',
+ 'providers/compiler-fixtures/cases/recursion_in_inline/negative.kt': '48261b52380e0b7943b973b0f113b11d037467e000fd86025911fb7ca83d545e',
+ 'providers/compiler-fixtures/cases/recursion_in_inline/positive.kt': 'c15fd1196e4dae01375c2ec782169159a3e788e718b983f49844c94f8f7dccfc',
+ 'providers/compiler-fixtures/cases/recursive_typealias_expansion/applicability.kt': '78ef670e4512bbcad9866de3d57e3a416888fe9b7cd738511e228c380b7d6140',
+ 'providers/compiler-fixtures/cases/recursive_typealias_expansion/boundary.kt': '27546e583f4ff54393af9d0ceaaf8e7d1806c884bd03af1489180bf8bad1d19b',
+ 'providers/compiler-fixtures/cases/recursive_typealias_expansion/negative.kt': '8dac0869823da179a27e8c852fb2c07df7f1394301a466cd53092a3771c653fb',
+ 'providers/compiler-fixtures/cases/recursive_typealias_expansion/positive.kt': 'be045c201b98296f8b9c09e60a2c3c7e737a26342ef93afcac2e120edf2e3593',
+ 'providers/compiler-fixtures/cases/recursive_typealias_expansion/suppression.kt': '8e089e9e6464df1fe29d6124f56289d057f0060e9bd35536c42d162b1bc40e1f',
+ 'providers/compiler-fixtures/cases/return_type_mismatch/negative.kt': '0193c131a5bb90f961699f6da6c2803a41a7b7c0986471468838da0a425bee1d',
+ 'providers/compiler-fixtures/cases/return_type_mismatch/positive.kt': 'c986ad1553c671aae2f601948702d049951977d9249a240493d7fda39f3ad88e',
+ 'providers/compiler-fixtures/cases/return_type_mismatch_on_override/negative.kt': 'fd576f80387a5b12ef96b923974aca2584e4788674301027c4d362a7a0bf8258',
+ 'providers/compiler-fixtures/cases/return_type_mismatch_on_override/positive.kt': 'ff8b134dc63f1d8b7170ce127a8136e6d1971210b58b527477fadf0ee8742f88',
+ 'providers/compiler-fixtures/cases/smartcast_impossible/negative.kt': 'd286b894b93c8c307e2cc3ba26584c30322ac62817f8f9ed7cde511fc0458dc4',
+ 'providers/compiler-fixtures/cases/smartcast_impossible/positive.kt': '85b8c106b40ec2c8c0989f71d4145ee38e6c4c1eb86d7ea17412752dc169c2c5',
+ 'providers/compiler-fixtures/cases/spread_of_nullable/negative.kt': '54133866b669f4c598a416a2085af7104e0005ba0b2418e94eccc5dbd3d10db0',
+ 'providers/compiler-fixtures/cases/spread_of_nullable/positive.kt': 'fbb0192f4de9a69c5229ada9655571d9d4c143aeb48e6b5d6873b9a9c1c44d4d',
+ 'providers/compiler-fixtures/cases/supertype_not_initialized/negative.kt': '1af2c7a56767acb5fff59826c456716e909197589b59062cf334b727ec85ee13',
+ 'providers/compiler-fixtures/cases/supertype_not_initialized/positive.kt': '62107df1f76f991026287bef42b7482fcf1c1943000716facddf3ee8cc876683',
+ 'providers/compiler-fixtures/cases/suspend_overridden_by_non_suspend/negative.kt': '6d7d0cca71beefd93935049b296a50ba4a5833a3ed8b2d783168fe2d80424f15',
+ 'providers/compiler-fixtures/cases/suspend_overridden_by_non_suspend/positive.kt': '5bb7d7a6b9c75aa8f35f3ef6ffb8a08f5771790ec9f6567043a7aedd480839e8',
+ 'providers/compiler-fixtures/cases/synchronized_on_abstract/negative.kt': '2dffa2b068a6f44545603aa4cf8246779e11c97424b0302e9f1a26bcccb64d33',
+ 'providers/compiler-fixtures/cases/synchronized_on_abstract/positive.kt': 'faa782995219cd8213520c430ed99ab2130b4102fe5bc1f11388663afbca6145',
+ 'providers/compiler-fixtures/cases/synchronized_on_inline/negative.kt': '8e69a7864553d650fcc43b3f98dd43dacda874d8bba77a57997f6c63fc12a81f',
+ 'providers/compiler-fixtures/cases/synchronized_on_inline/positive.kt': 'deed6c4c156441afcd5541bf99fe17e89f5691d5248bc974a67841c47457f8c5',
+ 'providers/compiler-fixtures/cases/synchronized_on_suspend_error/negative.kt': '08f28afe892afd4f8c23ea8290721d41ea847afd542ad8bbb46baed3aeea20fd',
+ 'providers/compiler-fixtures/cases/synchronized_on_suspend_error/positive.kt': '38cf0b428a803a6d92cf436b45e45b21104a460fb6ab1e3c33d8b7e5b6a22d3d',
+ 'providers/compiler-fixtures/cases/throwable_type_mismatch/negative.kt': 'c61d63da59e56f7300bd98874b17f4bb2d257691e9dcbc5944f8b3a0308ac88f',
+ 'providers/compiler-fixtures/cases/throwable_type_mismatch/positive.kt': '67e0af1219e84ed020aaf85c928e7e0c30c3b211eda29dfb0dae7685eedbd72d',
+ 'providers/compiler-fixtures/cases/too_many_arguments/negative.kt': 'd07b0b6ce2d154e827627cd6ce7b2f0ad2a8c750712e189875f1edd3f875ab5b',
+ 'providers/compiler-fixtures/cases/too_many_arguments/positive.kt': '94f3450e4cccca25c787bd9f2f34518d4dd9bb03e9974d372e122005be9ed7a3',
+ 'providers/compiler-fixtures/cases/type_variance_conflict_error/applicability.kt': 'b964d3824925310f5c878cef028d4f6fcece9e838f42962d25b91e59db9c9f1f',
+ 'providers/compiler-fixtures/cases/type_variance_conflict_error/boundary.kt': 'e84683626556459de8661d278d632556b49a798f54863b088470aaa037b998b6',
+ 'providers/compiler-fixtures/cases/type_variance_conflict_error/negative.kt': '0b668d62c4e2561900625e51b880a13ca166824993979ffe525855a7feac17ab',
+ 'providers/compiler-fixtures/cases/type_variance_conflict_error/positive.kt': 'a5b2acf2fc4edf6aa75e4a1efbb4cc8a25a521e6e50d1ed7029a4f180a23519e',
+ 'providers/compiler-fixtures/cases/type_variance_conflict_error/suppression.kt': 'a72f4f74a5492cd76ed5d8095169c417371bde406902a373929b9b035f4d73e9',
+ 'providers/compiler-fixtures/cases/unchecked_cast/negative.kt': '9344cad147bb3d029a687385d7156d6da0e74947a272ce9d302925062e430c44',
+ 'providers/compiler-fixtures/cases/unchecked_cast/positive.kt': '72f1209b89c0a082f28c63eb8a89b391fb20e8e7cbd61da5ad48688cbd6e7160',
+ 'providers/compiler-fixtures/cases/uninitialized_variable/negative.kt': 'a38a03ced2e492e0d67299b1ab4b12ff674435bf080b2dee38d4d67f8ff544e2',
+ 'providers/compiler-fixtures/cases/uninitialized_variable/positive.kt': '50b19de9b95ef105643f1515b5d12b5b7b6074329a982e913378533e3c946465',
+ 'providers/compiler-fixtures/cases/unnecessary_not_null_assertion/negative.kt': '3c9dbcee9ae1e837ef55c6286d76490ab04384b3f4a945fe681650429aa88e4b',
+ 'providers/compiler-fixtures/cases/unnecessary_not_null_assertion/positive.kt': '8f38ac71ea8f36cf3733fb2257e6dab26383b212ee7a86171e0dd5ca67ad3ea2',
+ 'providers/compiler-fixtures/cases/unnecessary_safe_call/negative.kt': '809ccd608c17ae112809fd952f506cf1166196b008acd1189277b9b20af5b159',
+ 'providers/compiler-fixtures/cases/unnecessary_safe_call/positive.kt': 'ccc966cea89a4f9041b23f81c5fad758de0d54012f7998396b8399b5874bb548',
+ 'providers/compiler-fixtures/cases/unreachable_code/negative.kt': 'c116121d5e27e7f351736fb701838c0ab3f793c25d81e8be4ddadb11c8b95af4',
+ 'providers/compiler-fixtures/cases/unreachable_code/positive.kt': '4c3c72e1d68b9e2c168c2a029a3aaf04f707e5753f5a80cc1932134c03dc1c8f',
+ 'providers/compiler-fixtures/cases/unresolved_import/negative.kt': '312ef33f114811ca282e51a44c617bcdc91838f79e1d86731355f2bc57c7a919',
+ 'providers/compiler-fixtures/cases/unresolved_import/positive.kt': 'ed407fd6fcb4501abac71543be3b3dbb5eb3d69c3016e900c6e52157d22dfaf7',
+ 'providers/compiler-fixtures/cases/unresolved_reference/negative.kt': 'b806e34702c37d638d0a6452ff9b6c90484a256f6e285ca51a08ae33b5f0970e',
+ 'providers/compiler-fixtures/cases/unresolved_reference/positive.kt': 'cc58d834595d3f05f4dad1f3a568ea60561c63a08974847a5024d627cc3e940a',
+ 'providers/compiler-fixtures/cases/unresolved_reference_wrong_receiver/applicability.kt': 'fad5f520c0fa0cc9e72b3cf3a88c5ee51eef3f44a6a263a4aeb1de1dc123c2b5',
+ 'providers/compiler-fixtures/cases/unresolved_reference_wrong_receiver/boundary.kt': '05f4412ed537aefc23824dc5223a8f09ed7c1474944411bfc884c895af284c0f',
+ 'providers/compiler-fixtures/cases/unresolved_reference_wrong_receiver/negative.kt': 'd0e173375718e257dbc8a269ace8a1f0f8b61d97905c482534f4f083f4dd551d',
+ 'providers/compiler-fixtures/cases/unresolved_reference_wrong_receiver/positive.kt': '53aeeeb8bc32c49c8f24a0baa483182570093924dab33689a9424e2533409dfb',
+ 'providers/compiler-fixtures/cases/unresolved_reference_wrong_receiver/suppression.kt': 'c5de166c4603fef3470e978bf72a436885a11b05fbf4227291388b5026722dcc',
+ 'providers/compiler-fixtures/cases/unsafe_call/negative.kt': 'f2a9d838a60636e6383e842c6f819fe32e9ecd60fee6b2d47215f0a02d66b9ca',
+ 'providers/compiler-fixtures/cases/unsafe_call/positive.kt': '4f903026cb19f77c8a7e8fa600cd8bbc75609f9aeb03d7bbe6297bbac5d193f0',
+ 'providers/compiler-fixtures/cases/upper_bound_violated/negative.kt': 'd48e64516ae15b1c4fb1fca18bcca2b2e2992fe8b300b80bc1793b5b10e30be3',
+ 'providers/compiler-fixtures/cases/upper_bound_violated/positive.kt': 'd4c523be141bce9e62df159a14cb7e31c3bc7842cedca3630dca17b2223b0f50',
+ 'providers/compiler-fixtures/cases/useless_cast/negative.kt': '4963806bb8acc6e0d49d6e8e711c701aae8a5fd25420a013c6de50c72dfd9d28',
+ 'providers/compiler-fixtures/cases/useless_cast/positive.kt': '08e2747e355aae41d2698f1b26518fb549e7405163d4d3a5d9099409040877b4',
+ 'providers/compiler-fixtures/cases/useless_elvis/negative.kt': 'd1e45039824ead644fbb8210895e883feb8667172da25490398b454e235a8eec',
+ 'providers/compiler-fixtures/cases/useless_elvis/positive.kt': 'a6ac2f1ea9e64a4a1077ada8e42a4b8b655495fc5f49abeb6d59a660c96c1de2',
+ 'providers/compiler-fixtures/cases/useless_is_check/negative.kt': '973eb206f6e30cdeb950eb892ebac1eecca0393c697472a116a1ffa80b7f9eb4',
+ 'providers/compiler-fixtures/cases/useless_is_check/positive.kt': '5f8b9f40b8453cbce06352ab4155f1193bfad26ce831afcb83b03d8eda6b2d1f',
+ 'providers/compiler-fixtures/cases/val_reassignment/negative.kt': '3ad282b3a83b8f21f31eb83a10aee22ad8b21a5c5b512e2694c52f85fc5d34fb',
+ 'providers/compiler-fixtures/cases/val_reassignment/positive.kt': '3bf39cc517c492848601e06ff06ee5f6ec0fec12b80b99309a129cb8a8a11ac3',
+ 'providers/compiler-fixtures/cases/value_class_without_jvm_inline_annotation/negative.kt': '066b585e95d08c5459a48bd9fc34655bae4c2eda1608c4c69df3071c31c1441c',
+ 'providers/compiler-fixtures/cases/value_class_without_jvm_inline_annotation/positive.kt': '1b1efa55fa59f3d9c9a0e71bfeefa00bf443dd1cedf5176a7232ea29beabe81b',
+ 'providers/compiler-fixtures/cases/var_overridden_by_val/negative.kt': '5886b8e269f84ef67fcf51fbf97e892436708f478aae7e6d1fd1439bea7a46fa',
+ 'providers/compiler-fixtures/cases/var_overridden_by_val/positive.kt': 'e2ec7d91db91e8bb5319dbd030cd0639c69b19f204d007d7df2b45f7ad478979',
+ 'providers/compiler-fixtures/cases/virtual_member_hidden/negative.kt': '794f48d4c3dad20b906ef0cc6eebc6ca076ec03f497832cdedce5d326ede1fbd',
+ 'providers/compiler-fixtures/cases/virtual_member_hidden/positive.kt': '64cc1688a01fa924e6839e1bde0b481572024825f14f64e1fa954f293a9c7572',
+ 'providers/compiler-fixtures/cases/wrong_annotation_target/negative.kt': '6fbe78a340fee808c5cfdfa929359a9237e370718c25bafe144707d4764a244a',
+ 'providers/compiler-fixtures/cases/wrong_annotation_target/positive.kt': '2b118d54a8d08ec37128a443af8394088f1b9006fbf5bde609e4d69fc801f2cc',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-README.md': 'a8bd4914cdc7d337add5e1eed8398ebbf32ef8d9f2f0c4ea2a182a6785d62db7',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/iterator_on_nullable/applicability.kt': '7677625ababb895156875d6f172ec555c116515a1f6ad38b90e0bab3d83220f5',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/iterator_on_nullable/boundary.kt': 'bffaee3477b8cd269a3edc8d83767173f8bae7007579a520f71fa8934e45b3a3',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/iterator_on_nullable/negative.kt': '9b4911e6de82cb703c30afc824b75fa66bbd6946504363c232e64107a62fec04',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/iterator_on_nullable/positive.kt': '3e571b48b075a567cde4d06b304159ebce2ee98c5123a33277c630498ef86163',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/iterator_on_nullable/suppression.kt': 'e82cc0ca2a434fa8cd893a10b651d02db740c6b160b263af4a9d5b26e3cd5079',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unexpected_safe_call/applicability.kt': '5454aca7e046292a36febc10710550a262dfe661f2372ab04e164c568ecd2f7b',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unexpected_safe_call/boundary.kt': 'eb6a0212a10caf44fdd1447f19a4f32e29134f4fdf3aae9a01f99fad7f83eadf',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unexpected_safe_call/negative.kt': 'caac88241f68eb0ab07f681408f50155fea8bb8d8bbc282b54da9b8303a7797c',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unexpected_safe_call/positive.kt': 'abcfbe94c77b33690b2ced052fff55c0c6a14db41b248ca241f81f09c271a3c4',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unexpected_safe_call/suppression.kt': '33c9235a65140044479c14f55f8dc04429e0942de4af692cd441a8280ec280d2',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_callable_reference/applicability.kt': 'e651fdc1199a6dc802b0930ee6ca8e4a76bc7e64aeb84006d9b86059e1629b2c',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_callable_reference/boundary.kt': '76ac4763a73a7394707edcff444fcf9c6305137b064617f61591135ab526cedc',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_callable_reference/negative.kt': 'ae6150502d1274c9298f3f8beac7bb2a1d76abd6493f72d2a61023506c654c73',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_callable_reference/positive.kt': '5a2f487292a8f3f7eb99450a46701eb7546e74879eaafa4b24c702de3ebcac7c',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_callable_reference/suppression.kt': '09af74f7a83980315d267ce8b663be456707b5f342214d9fe8eaa723711acc4c',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/applicability.kt': '1894ba6be39d7b43f2d85970182c4d2d0839c27be4d85e8b10238815ad0cfad6',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/boundary.kt': '8370b165cbf685e814ae7a02d6ca45d7e5230b349745dde556d95913c2463a51',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/negative.kt': 'afe94061f0e38539f5c6af16eecf10b3e19544725d760ec09c784e310dc3cf9b',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/positive.kt': '52ce436172dae231416bc02452151f569f8760cb9c0439a1bfac2b1f080ee6ea',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_implicit_invoke_call/suppression.kt': '8558e3a92bc5f4586a9eae836cf272687617318b483f269fdf3296b1b427ebbc',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_infix_call/applicability.kt': '7939d9a41264cb8b31219092b0f31ffee70b32f8e7a54dad791c08fbd8f95dd9',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_infix_call/boundary.kt': '843e37f6f343c5524092c12c4e30d2f29c8209b15fded1463353904c1f1fd2f4',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_infix_call/negative.kt': '653b41cebbda3d5eabe8405cb428ee9b328d9b573ebc4d8511297efa805ca562',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_infix_call/positive.kt': '6285cb534f872d68c0461217d1eb9bb080eb7958bb0a3cc1b59b3bfde2e9496e',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_infix_call/suppression.kt': 'e3f44e589b55ed9865957cb93d0aa31e6cb288ef3531ccc3531186816b89be0f',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_operator_call/applicability.kt': 'c8cd8fe0d4fb73f2c35f613f047bcea6337a750ff06ca5fb0593c021384645bf',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_operator_call/boundary.kt': '204d5ea963c341f84b4d8eed4b153e4996baf09149653292c74301ac896b99ea',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_operator_call/negative.kt': '30f620138e400107d6a75fa5a5914c16e6b663f84715de7bbb2a1797d2bb2744',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_operator_call/positive.kt': '0b4b77531c01ff2135f6d08e96d315a6e7501642e28999f01bade91a236a63ba',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-cases/unsafe_operator_call/suppression.kt': '8982dbd99ed2256c06190a631d319c8322c567cef00da01dda6634f748b60946',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-gap-inventory.json': 'dbdf33758d612786e9422d45551cdb3fda43f3f4a3fad57a7e3fab47f6c03a70',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-source-evidence.json': '2a453246ad9db2c0499c5c2c9cd488261493a786a5185618d91beafeb83ea0b5',
+ 'providers/compiler-fixtures/cohort-plans/nullability-protocols-v1.json': 'e8d9eb399768454c0ad648d2b2f61024e0924cc3589c6f0c3bddbadf2fe1af44',
+ 'providers/compiler-fixtures/cohort_expansion.py': '2dd0d0323b507da9f4ff3e758ab0951f53fcdf196a46006331e5e33681f33edb',
+ 'providers/compiler-fixtures/generate_fixtures.py': '73cfab45c982081da4088daa6fc2b266f16d24c828010772966ea201d1372b69',
+ 'providers/compiler-fixtures/manifest.json': '4854aa356caba6e90b48e10e333bf32828460dc64b04dd0d6b86db3653d49774',
+ 'providers/compiler-fixtures/nullability_protocols.py': '6e2774bd505110cca4e07eaddacd00d5a3e0a626a7a5e7b238da1798d9840ab1',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_function_with_default_arguments/negative/common.kt': 'e7f1ddb197e681fff8651989e393df7a27ee16cbb2d44f62e9b9234a718ea7dd',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_function_with_default_arguments/negative/jvm.kt': '7adf1029d48613c6d690d60284d6eb4b041b11b03115545e3ecef5ee91c639dd',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_function_with_default_arguments/positive/common.kt': 'e7f1ddb197e681fff8651989e393df7a27ee16cbb2d44f62e9b9234a718ea7dd',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_function_with_default_arguments/positive/jvm.kt': '098428a49f2018668521d9f1c1ffd84a5f801bbfd6b8deba4101fff68ecda85a',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_missing/negative/common.kt': 'c1e89d7956c0bc5b96f832ae53da72f72f14bbe77d6096950f3fb94b660f0c94',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_missing/negative/jvm.kt': '9827156000176fcbeb1696c74af9eaa6c3737a8908723fa6b2dcf8502e20cc21',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_missing/positive/common.kt': 'c1e89d7956c0bc5b96f832ae53da72f72f14bbe77d6096950f3fb94b660f0c94',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_missing/positive/jvm.kt': '442de7a7a8d4b2ff896d5648fead923bdc4fcb4d86a80badc10516574b516536',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_type_alias_to_nullable_type/negative/common.kt': '8280d624a983cc84fdb0a4fb34f58a71d59ee7137b473b8cd338c0b7620580a6',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_type_alias_to_nullable_type/negative/jvm.kt': '7290b715996d5c6ab087c914235c9e05e0a56476263c6f2e6592b780af4b40e6',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_type_alias_to_nullable_type/positive/common.kt': '8280d624a983cc84fdb0a4fb34f58a71d59ee7137b473b8cd338c0b7620580a6',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_type_alias_to_nullable_type/positive/jvm.kt': '25f6d526f1314d9580ca10e0b9035a94541745ae6bcc636ccd69210966bd8049',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_without_expect/negative/common.kt': 'f8072a229d219f2b38567a293b9bdf0b46c36c264608a9a376bec1bcefdbac4a',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_without_expect/negative/jvm.kt': 'c0838a70c3ef17477508e13bb99aebb0ee707f0240062bc543c29550cd08e775',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_without_expect/positive/common.kt': 'f8072a229d219f2b38567a293b9bdf0b46c36c264608a9a376bec1bcefdbac4a',
+ 'providers/compiler-fixtures/planned-kmp-cases/actual_without_expect/positive/jvm.kt': '89f8c1404f66a7f3cd7f6b120522ec77721573ac976d1d19c13ebcbaf4927f8f',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_parameter_names/negative/common.kt': '9c091f7e1ce76cf587c919d33f8e1826b63af8e6b341d0766670e4acb1a539d7',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_parameter_names/negative/jvm.kt': '423baae8a695dc7935487f08dd3aa13148e83f3f7e2b0a46f4033ebd6f6e6575',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_parameter_names/positive/common.kt': '9c091f7e1ce76cf587c919d33f8e1826b63af8e6b341d0766670e4acb1a539d7',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_parameter_names/positive/jvm.kt': '25667044f90ac9210f11d32e192125ee7e7796f3423cc81d7ca82462e4930f1f',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_property_kind/negative/common.kt': 'aa338d0fd3226c698f7034a0fa2dbd0f346d064299f5434152709ba9110e5221',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_property_kind/negative/jvm.kt': '6fcfc547634d0d4c562994018d9e8fcea80a9a598825123d0eaedebe1f85fa38',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_property_kind/positive/common.kt': 'aa338d0fd3226c698f7034a0fa2dbd0f346d064299f5434152709ba9110e5221',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_property_kind/positive/jvm.kt': 'd80892d07f9a9b44c5794967a8fd66a46b594962441209e0834e6998172b9d87',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_return_type/negative/common.kt': 'fb5bc1e6c7cd9b0fe7d5160eaa60496d9bbfd912f73a970ec31cc07a6561edcc',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_return_type/negative/jvm.kt': '30aca5e994c03968db323d8a960e7a2231b7c3ae8a016be0704ac2b7f2fe648d',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_return_type/positive/common.kt': 'fb5bc1e6c7cd9b0fe7d5160eaa60496d9bbfd912f73a970ec31cc07a6561edcc',
+ 'providers/compiler-fixtures/planned-kmp-cases/expect_actual_incompatible_return_type/positive/jvm.kt': 'a8c7ccec426e9d07b8cb30b413752f04c457e402929ca101766ec076725a217f',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_class_constructor_property_parameter/negative/common.kt': 'eebbd627632a00c82581b83ad31f3e5820bb3c60fe2937c7b488a9f61f6a8f44',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_class_constructor_property_parameter/negative/jvm.kt': '2be5886adad99217e7583cb8fb071807ebed97a5d8cec574efa34e94bc43a243',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_class_constructor_property_parameter/positive/common.kt': 'd96df699885265a2504226d06533bcd59ad67df451ab09f37892e3109d1b925a',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_class_constructor_property_parameter/positive/jvm.kt': '2be5886adad99217e7583cb8fb071807ebed97a5d8cec574efa34e94bc43a243',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_declaration_with_body/negative/common.kt': '23bd28a19b7b6dc4d6cb858fb7ad0d7198e54685713acd914f37bbcff102c183',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_declaration_with_body/negative/jvm.kt': '9ef05ed9e91d36f8bb9c154846e634acb09108ca9df0b6b0e76dc014cb3a8f3f',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_declaration_with_body/positive/common.kt': '935093e9ac8918ff762740db6975f319adc71fd6ed77a0c82951649adfa72139',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_declaration_with_body/positive/jvm.kt': '9ef05ed9e91d36f8bb9c154846e634acb09108ca9df0b6b0e76dc014cb3a8f3f',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_delegated_property/negative/common.kt': 'bda05c0057f7d8a101586de6c94271dd0310b44195e3001b0da5327f834b275c',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_delegated_property/negative/jvm.kt': '4bde8692249962d86f7db9c74c064204be9f9f43f69d83d593a2b4961d6b9c20',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_delegated_property/positive/common.kt': 'a7bdd91853cfc39144237c95e87762dbd37dbb69bb78f517082f9af94519b9e6',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_delegated_property/positive/jvm.kt': '4bde8692249962d86f7db9c74c064204be9f9f43f69d83d593a2b4961d6b9c20',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_lateinit_property/negative/common.kt': '436aba16e62a93b5ad7bbdaae08e11f2ecea924b2f1858f33fc8722d4627efb3',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_lateinit_property/negative/jvm.kt': '07c0077424a323e09686f187391676be2b1f34cfbf5440dc6e2e9c9e378362cd',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_lateinit_property/positive/common.kt': '8881059de9bdca45933135a94c189c36008bd1939ec4dab738f792d1686dd235',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_lateinit_property/positive/jvm.kt': '07c0077424a323e09686f187391676be2b1f34cfbf5440dc6e2e9c9e378362cd',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_private_declaration/negative/common.kt': 'ae3502679d4949879964d8dfec40236f6658680f02778372dd158c0462e99197',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_private_declaration/negative/jvm.kt': 'dec74cfaea4d1ef59d3da4c007fadaa93717d2a21cc0f14a96f1242c79700c67',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_private_declaration/positive/common.kt': 'bb22a7ff863861b3ad1ed042c5c5e7e1abdc04b4fe168aef707c54ac963565ca',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_private_declaration/positive/jvm.kt': 'dec74cfaea4d1ef59d3da4c007fadaa93717d2a21cc0f14a96f1242c79700c67',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_property_initializer/negative/common.kt': '9eef0d106ff629208b84eec24c3ea58c12a8a60c44970c66ae2924d7d412be16',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_property_initializer/negative/jvm.kt': '7236143c8ecf75778a7ee26fdfb39e980fcc745f2998cfa09092cfd877a96f5a',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_property_initializer/positive/common.kt': 'e07183f73a2a86f9732e8c6a08cd9118950ee5e39d3acbd0c045c71cfa8368a2',
+ 'providers/compiler-fixtures/planned-kmp-cases/expected_property_initializer/positive/jvm.kt': '7236143c8ecf75778a7ee26fdfb39e980fcc745f2998cfa09092cfd877a96f5a',
+ 'providers/compiler-fixtures/planned-kmp-cases/implementation_by_delegation_in_expect_class/negative/common.kt': '7017919ad679cee53ecb4470fa43f75c510cde99260b903e581f4179cc4c89c8',
+ 'providers/compiler-fixtures/planned-kmp-cases/implementation_by_delegation_in_expect_class/negative/jvm.kt': '185c45bd7ee96c625eb4f704357f97de73970d2e5f1feecc1224734d0fdcca4f',
+ 'providers/compiler-fixtures/planned-kmp-cases/implementation_by_delegation_in_expect_class/positive/common.kt': 'c6d73212b5b80104c8ba9abab922180c389524d12cfd31098f5beb5dc07e08e2',
+ 'providers/compiler-fixtures/planned-kmp-cases/implementation_by_delegation_in_expect_class/positive/jvm.kt': '185c45bd7ee96c625eb4f704357f97de73970d2e5f1feecc1224734d0fdcca4f',
+ 'providers/compiler-fixtures/planned-kmp-cases/no_actual_for_expect/negative/common.kt': 'fb8952a67548a9adae4023008c3e7d2381d9ca277675d2e54baebb3f13531043',
+ 'providers/compiler-fixtures/planned-kmp-cases/no_actual_for_expect/negative/jvm.kt': '651d92336da75d7101d643a35e11242630f3260b6ca18dc58e7d87d88d58f987',
+ 'providers/compiler-fixtures/planned-kmp-cases/no_actual_for_expect/positive/common.kt': 'fb8952a67548a9adae4023008c3e7d2381d9ca277675d2e54baebb3f13531043',
+ 'providers/compiler-fixtures/planned-kmp-cases/no_actual_for_expect/positive/jvm.kt': 'cb53917dfbdec05f5accc060070018a88b46f3764c5309147133e2208bd60d6a',
+ 'providers/compiler-fixtures/planned-kmp-cases/supertype_initialized_in_expected_class/negative/common.kt': '64a5c2c300ca71052e79b6a86bdf593ce1d6ec42fe24eb9c6b2fa49c4de55363',
+ 'providers/compiler-fixtures/planned-kmp-cases/supertype_initialized_in_expected_class/negative/jvm.kt': 'eaac8f47c8d8b618ff0965f00f349616f5abf6b6ba9d1d5d02140c6ca295bfed',
+ 'providers/compiler-fixtures/planned-kmp-cases/supertype_initialized_in_expected_class/positive/common.kt': '5c0068d3c95577c45c24c68070ebf6a54fd7729d643fe01ea706f9cd89bf7ab3',
+ 'providers/compiler-fixtures/planned-kmp-cases/supertype_initialized_in_expected_class/positive/jvm.kt': 'eaac8f47c8d8b618ff0965f00f349616f5abf6b6ba9d1d5d02140c6ca295bfed',
+ 'providers/compiler-fixtures/planned-kmp-manifest.json': '804c242c62707457ff143d16fb03bcd1bddd2ca84b3f9aef2085dc5af800b128',
+ 'providers/compiler-fixtures/test_nullability_protocols.py': '796f6d39d32527185855de0b4647e4966e5e7d6631108a42aeab98ec99836b2f'}
+LEGACY_COHORT_TEST_PINS = {'preimage': 'c94126878ad5e803b02a7f0d2e04f5fd28e5f30beed0a135cdfb59ed84327050',
+ 'postimage': '647731d9f7b4d962f61f8f6945bdc15f58bd6a6509d58b9261181858a8a19e99'}
+COHORT_ADDITION = b',\n            "diagnostic_breadth_default", "diagnostic_breadth_advisory", "diagnostic_breadth_opt_in"'
+NULLABILITY_SELECTOR_SUCCESSOR = b'CompilerFixtureSettings.COHORTS - plan.SELECTOR - CompilerFixtureDiagnosticBreadthPlan.SELECTORS'
+NULLABILITY_SELECTOR_PREDECESSOR = b'CompilerFixtureSettings.COHORTS - plan.SELECTOR'
+OLD_TEST_METHOD_NAMES = {'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureControlsTest.kt': ['explicitNamedCohortIsRequiredAndGradleAppendedRootMayComeLast',
+                                                                                                     'allIsExplicitAndStillBoundedAndNeverAcceptsUnknownAuthoredMetadata',
+                                                                                                     'typeBoundaryCohortIsExplicitBoundedAndDoesNotSelectExistingOrUnsupportedInputs',
+                                                                                                     'originalSubcohortsRequireExplicitNamesAndStableIdsInsteadOfSelectingAllOriginals',
+                                                                                                     'originalSubcohortsUseDisjointExactStableIdsAndKeepOtherInputsVisibleButUnselected',
+                                                                                                     'legacyOriginalAllAndAuthoredCohortsKeepTheirExistingPredicates',
+                                                                                                     'eachOriginalSubcohortFitsItsFullConditionalAdmissionPlanWithoutCompilerClaims',
+                                                                                                     'originalSubsetDescriptionAndSmallerOwnerBoundsNeverGrantExecutionAuthority',
+                                                                                                     'parserRejectsUnknownDuplicateUnboundedOverflowingAndMissingOptions',
+                                                                                                     'smallerOwnerBoundsRemainInsideHardMaxima',
+                                                                                                     'attemptReservationsConservativelyCountDenialsButNeverClaimExecution',
+                                                                                                     'preparationAndStartupTimeReduceEveryFreshProfileToRemainingMonotonicBudget',
+                                                                                                     'perJobHardBoundAppliesEvenWhenLargeOverallBudgetRemains',
+                                                                                                     'cooperativeOwnerStopPreventsNextAdmissionWithoutCancellingCurrentDeadlineOrResuming',
+                                                                                                     'unsafeOwnerControlAndSecondaryCleanupStopRemainExplicitLedgerReasons',
+                                                                                                     'providerEntryWithoutReturnOrObserverRequiresQuarantineButPreparationFailureDoesNot',
+                                                                                                     'confirmedExecAndExitNeverOverrideUnverifiedNativeShutdown',
+                                                                                                     'actualObserverCleanupMayRemainKnownWhenProviderThrowsAfterTheCallback',
+                                                                                                     'missingOrDifferentActualSupervisorIdentityIsConservativelyUnknown',
+                                                                                                     'cleanupAcknowledgementDoesNotRequireSuccessfulCompilerExec',
+                                                                                                     'cleanupAndReportingKeepTheFirstFailureAndDoNotSuppressItselfOrDuplicateCauses',
+                                                                                                     'deadlineReachedDuringBulkCandidateCaptureNeverPublishesACompleteSelector',
+                                                                                                     'deadlineReachedDuringFinalSelectorPublicationCorrectsItToIncomplete',
+                                                                                                     'terminalCapacityPreflightPreservesCorrectionHeadroomBeforeAnyPositiveWrite',
+                                                                                                     'failedSelectorCorrectionCannotMakeAStalePositiveStandaloneCompletionProof',
+                                                                                                     'terminalSuccessIsOneShotAndLinearizesAfterTheLastBoundedWrite',
+                                                                                                     'anIneligibleTerminalPublishesOnlyIncompleteAndNeverRetriesThatFailure'],
+ 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerFixtureNullabilityTest.kt': ['literalThirtyFileKindMajorPlanHasThirtyFiveReservationsAndThirtyFourPotentialChildCalls',
+                                                                                                        'exactSelectorCapsOnlyThisRouteAtThirtyFiveAndRejectsOrdinaryOrUnknownInputSelection',
+                                                                                                        'allOldRoutesRetainFortyEightAndUnchangedGlobalDeadlinePerJobAndEvidenceBounds',
+                                                                                                        'exactThirtySixAdditionalCapturePathsAndSixMetadataPinsRemainReadOnlySourceV1',
+                                                                                                        'loaderReadsExactlyThirtyLiteralSourceFilesOnceWithoutChangingInitialAuthoringRecords',
+                                                                                                        'manifestRowAndInputOrderCanNormalizeButCannotRescheduleTheReviewedKindMajorDeclarations',
+                                                                                                        'changedRowIdsBackendsSeveritiesPathsOrMissingDuplicateKindsFailBeforeSourceReading',
+                                                                                                        'changedInitialExpectationsFlagsStatusExecutionFieldsAndSourceHashesFailClosed',
+                                                                                                        'changedPinnedProfileScopeBookkeepingAndSourceOnlyCompletionFieldsFailClosed',
+                                                                                                        'positiveOracleRequiresHealthyNonzeroFailedTaskExactErrorInBothChannelsAndActualPointAgreement',
+                                                                                                        'positiveUnnamedUnrelatedOrMislocatedErrorsCannotBeFilteredIntoAMatchButAllWarningsStayAllowed',
+                                                                                                        'actualLocationUsesSealedDigestOneBasedLinesZeroBasedUtf16PointsNeverPinnedAnchors',
+                                                                                                        'fullRawInventoryIncludesNamedMappedAndResidualDiagnosticsAndMatchesPointsMessagesAndMultiplicity',
+                                                                                                        'negativeBoundaryAndApplicabilityRequireExit0BothChannelAbsenceAndNoErrorWithoutCleanClaim',
+                                                                                                        'allSixSuppressionsStayUnknownForActualFailureExit0SelectedErrorsWarningsOrNoDiagnostics',
+                                                                                                        'missingExecutionSupervisionVersionInputReceiptsOrExitWithholdAttributionButRetainActualFailureFacts',
+                                                                                                        'thirtyObservedReceiptValuesRequireExactDeclarationsOrdinalsSubjectsAndIntactGatesNotCountLaundering',
+                                                                                                        'thirtyFiveCorrectReservationLabelsAreArithmeticOnlyAndSmallerOwnerBoundsStayIncomplete',
+                                                                                                        'versionDenialRequiresActualNoProcessRefusalIntactReceiptAndExactThirtyFirstSubject',
+                                                                                                        'privateLatestAndCompletionOverlayCannotPromoteOrdinarySixKindSuccessQualificationOrAnotherTuple'],
+ 'providers/compiler-fixtures/test_nullability_protocols_hookup.py': ['test_literal_six_ids_thirty_paths_and_source_hashes_match_reviewed_source_v1',
+                                                                      'test_six_source_metadata_pins_are_exact_and_the_thirty_six_capture_paths_are_dedicated',
+                                                                      'test_all_historical_278_sources_main_98_graph_16_map_443_and_supplemental_18_stay_exact',
+                                                                      'test_exact_existing_common_error_mappings_are_used_without_an_ordinary_fixture_append',
+                                                                      'test_conditional_start_capture_preserves_original_four_argument_signature_and_drift_scope',
+                                                                      'test_only_new_selector_has_thirty_five_cap_with_all_old_bounds_and_selects_calls_preserved',
+                                                                      'test_schedule_is_fixed_thirty_single_sources_one_denial_four_unchanged_controls_no_fallback',
+                                                                      'test_all_nineteen_execution_ordinary_probe_supplemental_control_terminal_source_bodies_are_unchanged',
+                                                                      'test_predeclared_positive_oracle_requires_failed_nonzero_exact_selected_error_and_full_error_gates',
+                                                                      'test_actual_raw_oracle_reparses_retained_streams_and_never_uses_residual_only_or_filtered_error_totals',
+                                                                      'test_exact_actual_points_messages_and_multiplicity_bind_both_diagnostic_channels',
+                                                                      'test_alternative_oracles_need_genuine_exit0_both_channel_absence_no_errors_and_retain_warnings',
+                                                                      'test_all_six_unknown_suppressions_remain_null_for_failure_or_exit0_and_prevent_terminal_success',
+                                                                      'test_actual_failed_compiler_tasks_are_not_unmatched_counts_or_success_and_survive_withheld_attribution',
+                                                                      'test_returned_actual_input_receipts_are_persisted_even_after_execute_rejection_without_retry',
+                                                                      'test_receipt_and_reservation_count_gates_bind_exact_thirty_ordinals_and_subjects_but_are_informational',
+                                                                      'test_version_denial_is_exact_thirty_first_wrong_request_no_actual_process_with_intact_receipt',
+                                                                      'test_private_sidecar_and_completion_fields_cannot_rewrite_latest_or_promote_ordinary_credit',
+                                                                      'test_twenty_kotlin_value_controls_and_new_helper_are_source_only_without_process_writer_or_authority_apis']}
+RULES_LITERAL_SHA256 = 'c7e0f52039afdd064783c9f16572ad487fa1339c39b816bccfe5ea92bf5b3f01'
+OLD_RUNNER_SEGMENT_PINS = {'execute': ('    private fun pointMatches(', '987acbe69154a72f96cce02197eb9bc853c12bc1643abab7e34076267fe473dc'),
+ 'runFixtures': ('    private fun cohort(', '3b8a9cd031f32a0ad79f8fcb9d7a2ce02f68fede8d15f65fad6b36a69b250edd'),
+ 'cohort': ('    private fun execute(', 'bcf1e0a3e41a5d7d3aacb48a45d7dc7a9642ce6f797408c2d2b50c1a6b6e0481'),
+ 'probeFixture': ('    private fun runTimingProbeSamples(', '182142918a18cdb94d145994f89bb78c91da69ced12a66882327eb5ce2c637d8'),
+ 'runTimingProbeSamples': ('    private fun scheduledWorkComplete(',
+                           '22ffaf7a1a0a845cf2f0f20fd36a4d21a5967b4211b18cb5bd7c69b5fb5a3c9f'),
+ 'scheduledWorkComplete': ('    private fun probeScope(', 'e68de0f38d79dcff44efe95fff1f55fbfeefb890f6518a65b3f170a64cc5a247'),
+ 'probeScope': ('    private fun probeCheckpoint(', 'd33bc46695936eb5d311d1a6205ae3eb0de98cc90806b8264327a53ff3041b06'),
+ 'probeCheckpoint': ('    private fun runFixtures(', '0d5e7e8979af4d77450474c5ff82db8c24a1d6fe2a459c6a662cc40c2fda3fb5'),
+ 'runSupplementalInputs': ('    private fun probeFixture(', 'c66ff7f5cc37e52e6ea802b2fd4caeb881906a3c6350151a10e7c3ed7a99b4e2'),
+ 'supplementalScope': ('    private fun supplementalInventory(',
+                       '9cb3daa66e8f624f1358f887bb330224b63952233181975e8947cef7facc9134'),
+ 'supplementalInventory': ('    private fun supplementalCheckpoint(',
+                           'b52234c3c31bed5c19764d5afa7072d144e76e930b6c0ff2d85ff23cd7ab6b70'),
+ 'supplementalCheckpoint': ('    private fun runSupplementalInputs(',
+                            'bdda472a0317c524899537cbd93240ab5d4d2b01d6a9cb794415af9a3b08290c'),
+ 'runIntentControls': ('    private fun runTransportControls(',
+                       '77809e6e043827f726dd0e63a639659dc123609e9a25f01af2963e34265c0ccd'),
+ 'runTransportControls': ('    private fun recordControl(', 'f11cb5e195594c16856f142956647a311cb9759f505e3ddc76965683df92bafc'),
+ 'recordControl': ('    private data class Checkpoint(', '86b782010d057499a01004951d5258c40de3b48522a8ab32a02afe80ceaebf75'),
+ 'pointMatches': ('    private fun actualVersion(', '744d35fe068b750c949a8cdbbec71b6d84265dae6fcdbd3e448c5b614ffdf49e'),
+ 'publishTerminal': ('    private fun saveTerminal(', '06c8a2816892e0a401793943a0b404c8464b137992c803d8a73da8d493b4931b'),
+ 'saveTerminal': ('    private fun references(', '0f352c818942be67e7c93c8b7af2c6960e6d85c7cd496c73a8bfc0961118407e'),
+ 'references': ('    private fun reference(', '2fe3d6d84298df896773eb2fb207fe33d7224a65c198be6b550ae16784647e0b')}
+OLD_NULLABILITY_SEGMENT_PINS = {'nullabilitySelected': ('    private fun nullabilityScope(', '235e1ede2a9fb508986ea093ed38b8b7061cd9c165c3316c361b4d6eb8873da4'),
+ 'nullabilityScope': ('    private fun nullabilityInventory(',
+                      '2a6eb03f2f2a9866507682f4edba5039b75799c39b47ac44a581d9be141c15c7'),
+ 'nullabilityInventory': ('    private fun nullabilityCheckpoint(',
+                          'dcb00f8bf09f70f0e81e2011c83bf7e274d522298322543994390976fbdd919b'),
+ 'nullabilityCheckpoint': ('    private fun runNullabilityInputs(',
+                           '1efc9cc4fa48ea3795ad7c594a1df95d5ee8021ea82a909491705230c83f9210'),
+ 'runNullabilityInputs': ('    private fun recordNullabilityObservation(',
+                          'c3964eae5c669b86242f70c214e60e2f01da50d7ca38020b6f8f890f2abeb3bb'),
+ 'recordNullabilityObservation': ('    private fun recordNullabilityVersionDenial(',
+                                  'b4991ad333f30731ba65d7e55f8b1b7f6627305946780033e9867a2fc129a8d5'),
+ 'recordNullabilityVersionDenial': ('    private fun supplementalSelected(',
+                                    '55ce6d87e3afb7cdf7875cfba4f066797e60095ffada3113d581a712adb420bd')}
+OLD_BUDGET_SUFFIX_SHA256 = 'ac8928c742c4d6630d2a5a45cd03ee23b8183c3896f7c46a4065ca7dd681d81c'
+OLD_AUTHORED_NAME_SHA256 = '27fc0602b55e718ecea8c2e4923da48131fe0b56f376069f6a64a204c1cbb723'
+OLD_PROVENANCE_LITERAL_PINS = {'SOURCE_ROOTS': '89611c69a61af7fae452efe5afaa6deef0b01f541003654a5542a88cadd9fb38',
+ 'SOURCE_FILES': '11a82f383d4cffb23d214063f570336127a82effbeec91539c3ec32e7c7cf525'}
+
+# Existing registry semantics retain the exact historical map pin in STABLE_SOURCE_PINS.
+# Only this reviewed22-source implementation inventory may reconstruct that original443-row file.
+REGISTRY_IMPLEMENTATION_REFRESH_POSTIMAGE = '0db373ac11f29b911317d12a51426ce690c50c3a02e327d086879541df7cc29c'
+# Later, independently reviewed runtime+metadata correction. The previous map remains a full pinned preimage.
+REGISTRY_CHECKER_ACTIVATION_POSTIMAGE = 'f05c525e450c35cd7a7f701361fdb6467e00e7afd82a1c7cb4cfb60d728841e5'
+REGISTRY_CHECKER_ACTIVATION_FLAGS_SHA256 = '750ca4544a2b801bb6020838410ec92e7278a1a6a2ca4f10e58cd17b10819271'
+COMMON_CHECKER_ACTIVATION_IDS = (
+    'ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS',
+    'REDUNDANT_CALL_OF_CONVERSION_METHOD',
+    'UNUSED_EXPRESSION',
+    'UNUSED_LAMBDA_EXPRESSION',
+)
+FROZEN_REGISTRY_IMPLEMENTATION_EVIDENCE = [{'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerDiagnosticParser.kt',
+  'sha256': 'db0048e7083bfc8d1565d0505d1b3c00ad574e6e50ef2dc39797a947912e3f3e'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt',
+  'sha256': 'fb19a9de4bab6c1f2273b1d7466ce1fb4dd18fa9ca38e5e09139f12612af3b37'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerPhaseTimings.kt',
+  'sha256': '7716e2e472debfb4c52bae6b9c8a28856d1e04b8ad8ce9304f479139fc0c89a9'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerRuleRegistry.kt',
+  'sha256': '4acda521ed44c2c30232c2ebd47ef4ed7ecde85e589736d48a98937a0191e667'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerSnapshot.kt',
+  'sha256': 'd089b942352d99fa4f0920338669d0fbc35bbc4112fc7d032f7e8ff0684015b7'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerVerification.kt',
+  'sha256': 'a7930f91d8c3031bd39b5fab47c826db29ccd846189912b5e5f2d51d88196bd9'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmCompilerProvider.kt',
+  'sha256': '3b631237d98703f077ac2af665c782af4213f69fdf203bd4d426f55a70274e63'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmInstallationView.kt',
+  'sha256': '9d9e12dfe7315a9e672d8d2d8a49979e044945c31cd73653155f320aafbf7738'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmModelBinding.kt',
+  'sha256': 'd69ec15a7ca1eff04cf5cfd0fbfe5c73ff9c3e09fb02755e61bfc0a836c37e28'},
+ {'path': 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/KotlinJvmRuntimeImage.kt',
+  'sha256': 'b2f63b10401c42e94376aeac4998933d743d6b60346442677c5490a07a626aea'}]
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def source_segment(source, name, next_marker, private=True):
+    marker = '    private fun ' if private else '    fun '
+    start = source.index(marker + name + '(')
+    return source[start:source.index(next_marker, start)]
+
+
+def literal_constant(path, name):
+    """Read one literal source constant via AST; never import/exec a candidate test module."""
+    tree = ast.parse(path.read_text(encoding='utf-8'))
+    matches = [node.value for node in tree.body if isinstance(node, ast.Assign)
+               and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+    if len(matches) != 1:
+        raise ValueError('Expected one literal source constant: ' + name)
+    return ast.literal_eval(matches[0])
+
+
+def reconstruct_exact_successor(data, successor_digest, predecessor_digest, exact_inserted_bytes, exact_old_bytes):
+    """A named one-occurrence correction only; unrelated mutations may not disappear."""
+    if digest(data) != successor_digest or data.count(exact_inserted_bytes) != 1:
+        raise ValueError('Not the exact reviewed successor and insertion')
+    predecessor = data.replace(exact_inserted_bytes, exact_old_bytes, 1)
+    if digest(predecessor) != predecessor_digest:
+        raise ValueError('Unrelated bytes changed outside the exact compatibility correction')
+    return predecessor
+
+
+def registry_implementation_evidence_block(references):
+    """Exact generated JSON field bytes, including indentation; never normalize unrelated bytes."""
+    return ('      "implementation_evidence": ' + json.dumps(references, indent=2).replace('\n', '\n      ')).encode()
+
+
+def reconstruct_registry_implementation_refresh(data, successor_digest, current_evidence):
+    """Exactly443 current22-reference blocks may revert to the frozen10-reference predecessor."""
+    if len(current_evidence) != 22 or len({row['path'] for row in current_evidence}) != 22:
+        raise ValueError('Not the complete reviewed recursive main-source inventory')
+    inserted = registry_implementation_evidence_block(current_evidence)
+    if digest(data) != successor_digest or data.count(inserted) != 443:
+        raise ValueError('Not the exact reviewed registry successor and443 identical evidence blocks')
+    predecessor = data.replace(inserted, registry_implementation_evidence_block(FROZEN_REGISTRY_IMPLEMENTATION_EVIDENCE))
+    if digest(predecessor) != STABLE_SOURCE_PINS['modules/provider-compiler/src/main/resources/compiler-rule-map.json']:
+        raise ValueError('Registry bytes changed outside the exact implementation-reference refresh')
+    return predecessor
+
+
+def registry_mapping_row_bytes(row):
+    """Exact generated row bytes; no whole-document normalization may erase unrelated changes."""
+    return ('    ' + json.dumps(row, indent=2).replace('\n', '\n    ')).encode()
+
+
+def reconstruct_common_checker_activation_refresh(data, successor_digest, current_evidence):
+    """Only four false prerequisites and443 copies of the one changed Flags identity may revert."""
+    flags_path = 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/CompilerFlags.kt'
+    flags_refs = [row for row in current_evidence if row['path'] == flags_path]
+    if (len(current_evidence) != 22 or len({row['path'] for row in current_evidence}) != 22 or
+            len(flags_refs) != 1 or flags_refs[0]['sha256'] != REGISTRY_CHECKER_ACTIVATION_FLAGS_SHA256):
+        raise ValueError('Not the exact current22 references and reviewed Flags successor')
+    current_block = registry_implementation_evidence_block(current_evidence)
+    if digest(data) != successor_digest or data.count(current_block) != 443:
+        raise ValueError('Not the exact activation successor and443 implementation blocks')
+    old_flags_sha = next(row['sha256'] for row in FROZEN_REGISTRY_IMPLEMENTATION_EVIDENCE if row['path'] == flags_path)
+    prior_evidence = [dict(row, sha256=old_flags_sha) if row['path'] == flags_path else dict(row) for row in current_evidence]
+    predecessor = data.replace(current_block, registry_implementation_evidence_block(prior_evidence))
+    document = json.loads(predecessor)
+    mappings = document.get('mappings', []) if isinstance(document, dict) else []
+    if len(mappings) != 443 or not all(isinstance(row, dict) for row in mappings):
+        raise ValueError('Not the complete443 map')
+    reviewed = [row for row in mappings if row.get('upstream_id') in COMMON_CHECKER_ACTIVATION_IDS]
+    if len(reviewed) != 4 or {row['upstream_id'] for row in reviewed} != set(COMMON_CHECKER_ACTIVATION_IDS):
+        raise ValueError('Not exactly the four reviewed common IDs')
+    generic_gap = 'Exact mapping availability alone does not establish per-ID fixture testing or tuple qualification'
+    old_false_gap = 'Pinned checker registration requires explicit -Wextra; factory-file section alone is not activation evidence.'
+    for row in reviewed:
+        if (row.get('backend') != 'common' or row.get('source_section') != 'Extra checkers' or
+                row.get('known_checker_activation_flags') != [] or row.get('gaps') != [generic_gap]):
+            raise ValueError('The reviewed four-ID activation correction changed shape')
+        changed_row = registry_mapping_row_bytes(row)
+        if predecessor.count(changed_row) != 1:
+            raise ValueError('Not one exact generated row; unrelated whitespace must remain visible')
+        restored_row = dict(row, known_checker_activation_flags=['-Wextra'], gaps=[generic_gap, old_false_gap])
+        predecessor = predecessor.replace(changed_row, registry_mapping_row_bytes(restored_row), 1)
+    if digest(predecessor) != REGISTRY_IMPLEMENTATION_REFRESH_POSTIMAGE:
+        raise ValueError('Unrelated bytes changed outside four prerequisites and one implementation identity')
+    return predecessor, prior_evidence
+
+
+class DiagnosticBreadthHookupSourceTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.plan = (KOTLIN / 'CompilerFixtureDiagnosticBreadth.kt').read_text(encoding='utf-8')
+        cls.kotlin_tests = (KOTLIN / 'CompilerFixtureDiagnosticBreadthTest.kt').read_text(encoding='utf-8')
+        cls.runner = (KOTLIN / 'CompilerFixtureRunner.kt').read_text(encoding='utf-8')
+        cls.controls = (KOTLIN / 'CompilerFixtureControls.kt').read_text(encoding='utf-8')
+        cls.provenance = (KOTLIN / 'CompilerFixtureProvenance.kt').read_text(encoding='utf-8')
+        cls.manifest = json.loads((FIXTURES / 'cohort-plans/diagnostic-breadth-v1.json').read_bytes())
+        cls.legacy_python = FIXTURES / 'test_nullability_protocols_hookup.py'
+
+    def test_all_seven_whole_file_successor_pins_and_four_data_doc_pins_bind_the_reviewed_dependency_graph(self):
+        self.assertEqual(7, len(SUCCESSOR_PINS))
+        for relative, expected in SUCCESSOR_PINS.items():
+            self.assertEqual(expected, digest((ROOT / relative).read_bytes()), relative)
+        self.assertEqual(4, len(DATA_DOC_PINS))
+        for relative, expected in DATA_DOC_PINS.items():
+            self.assertEqual(expected, digest((FIXTURES / relative).read_bytes()), relative)
+        # Do not pin the whole plan here: it pins this Python file, so that would create a hash cycle.
+        self.assertNotIn(KOTLIN_REL + '/CompilerFixtureDiagnosticBreadth.kt', SUCCESSOR_PINS)
+        self.assertEqual(6, len(FROZEN_PREDECESSOR_PINS))
+        self.assertEqual(LEGACY_COHORT_TEST_PINS, literal_constant(self.legacy_python, 'COHORT_CONTROLS_TEST_PINS'))
+
+    def test_all_325_old_source_pins_keep_278_ordinary_graph_sources_30_nullability_and_existing_metadata(self):
+        self.assertEqual(325, len(STABLE_SOURCE_PINS))
+        registry_path = 'modules/provider-compiler/src/main/resources/compiler-rule-map.json'
+        current_main = sorted((ROOT / 'modules/provider-compiler/src/main/kotlin').rglob('*.kt'))
+        self.assertEqual(22, len(current_main))
+        self.assertTrue(all(path.is_file() and not path.is_symlink() for path in current_main))
+        current_evidence = [{'path': path.relative_to(ROOT).as_posix(), 'sha256': digest(path.read_bytes())}
+                            for path in current_main]
+        activation_registry_bytes = (ROOT / registry_path).read_bytes()
+        activation_evidence = current_evidence
+        registry_bytes, current_evidence = reconstruct_common_checker_activation_refresh(
+            activation_registry_bytes, REGISTRY_CHECKER_ACTIVATION_POSTIMAGE, activation_evidence)
+        for relative, expected in STABLE_SOURCE_PINS.items():
+            data = (ROOT / relative).read_bytes()
+            if relative == registry_path:
+                # First invert the separately reviewed four-ID correction, then the earlier inventory-only refresh.
+                # Neither inverse grants current execution credit to either historical source version.
+                data = reconstruct_registry_implementation_refresh(registry_bytes, REGISTRY_IMPLEMENTATION_REFRESH_POSTIMAGE, current_evidence)
+            self.assertEqual(expected, digest(data), relative)
+        original_registry = reconstruct_registry_implementation_refresh(registry_bytes,
+            REGISTRY_IMPLEMENTATION_REFRESH_POSTIMAGE, current_evidence)
+        self.assertEqual(10, len(FROZEN_REGISTRY_IMPLEMENTATION_EVIDENCE))
+        current_block = registry_implementation_evidence_block(current_evidence)
+        bad_evidence = (
+            current_evidence[:-1], current_evidence + current_evidence[:1],
+            current_evidence[:1] + current_evidence[:-1], list(reversed(current_evidence)),
+            [dict(row, sha256='0' * 64) if row['path'].endswith('/KotlinJvmModelBinding.kt') else row
+             for row in current_evidence],
+            [dict(row, path=row['path'] + '.renamed') if index == 0 else row
+             for index, row in enumerate(current_evidence)],
+        )
+        mutations = [registry_bytes.replace(current_block, registry_implementation_evidence_block(refs))
+                     for refs in bad_evidence]
+        mutations += [
+            original_registry,
+            registry_bytes.replace(b'"default_activation": "enabled_when_validated"', b'"default_activation": "opt_in"', 1),
+            registry_bytes.replace(b'"declared_severity": "ERROR"', b'"declared_severity": "WARNING"', 1),
+            registry_bytes.replace(b'"gaps": [', b'"changed_gaps": [', 1),
+            registry_bytes + b'\n', registry_bytes + current_block,
+        ]
+        for mutation in mutations:
+            self.assertNotEqual(registry_bytes, mutation)
+            for postimage in (REGISTRY_IMPLEMENTATION_REFRESH_POSTIMAGE, digest(mutation)):
+                # Supplying a mutation's own digest still cannot waive the independently frozen full preimage.
+                with self.assertRaises(ValueError):
+                    reconstruct_registry_implementation_refresh(mutation, postimage, current_evidence)
+        activation_mutations = [registry_bytes, activation_registry_bytes + b'\n',
+            activation_registry_bytes.replace(b'"default_activation": "enabled_when_validated"', b'"default_activation": "opt_in"', 1),
+            activation_registry_bytes.replace(b'"declared_severity": "ERROR"', b'"declared_severity": "WARNING"', 1),
+            activation_registry_bytes.replace(b'"gaps": [', b'"changed_gaps": [', 1)]
+        for refs in (activation_evidence[:-1], list(reversed(activation_evidence)),
+                     [dict(row, sha256='0' * 64) if row['path'].endswith('/CompilerFlags.kt') else row
+                      for row in activation_evidence]):
+            activation_mutations.append(activation_registry_bytes.replace(
+                registry_implementation_evidence_block(activation_evidence), registry_implementation_evidence_block(refs)))
+        for id_, field, value in (
+            ('UNUSED_EXPRESSION', 'known_checker_activation_flags', ['-Wextra']),
+            ('UNUSED_EXPRESSION', 'source_section', 'Common checkers'),
+            ('UNUSED_EXPRESSION', 'default_activation', 'enabled_when_validated'),
+            ('UNUSED_LAMBDA_EXPRESSION', 'declared_severity', 'ERROR'),
+            ('UNUSED_LAMBDA_EXPRESSION', 'upstream_id', 'UNUSED_EXPRESSION'),
+            ('UNUSED_VARIABLE', 'known_checker_activation_flags', []),
+            ('UNREACHABLE_CODE', 'known_checker_activation_flags', []),
+            ('EMPTY_RANGE', 'known_checker_activation_flags', []),
+        ):
+            document = json.loads(activation_registry_bytes)
+            next(row for row in document['mappings'] if row['upstream_id'] == id_)[field] = value
+            activation_mutations.append((json.dumps(document, indent=2) + '\n').encode())
+        for mutation in activation_mutations:
+            self.assertNotEqual(activation_registry_bytes, mutation)
+            for postimage in (REGISTRY_CHECKER_ACTIVATION_POSTIMAGE, digest(mutation)):
+                with self.assertRaises(ValueError):
+                    reconstruct_common_checker_activation_refresh(mutation, postimage, activation_evidence)
+        old_sources = sorted([*(FIXTURES / 'cases').rglob('*.kt'), *(FIXTURES / 'planned-kmp-cases').rglob('*.kt')],
+                             key=lambda path: path.relative_to(FIXTURES).as_posix())
+        self.assertEqual(278, len(old_sources))
+        inventory = ''.join(digest(path.read_bytes()) + '  ' + path.relative_to(FIXTURES).as_posix() + '\n' for path in old_sources)
+        self.assertEqual('378127f94364be6ac94bf84d56769ea25126f28840686f03fa5adafc55c7bc00', digest(inventory.encode()))
+        nullable = list((FIXTURES / 'cohort-plans/nullability-protocols-cases').rglob('*.kt'))
+        self.assertEqual(30, len(nullable))
+        for path in old_sources + nullable:
+            self.assertIn(path.relative_to(ROOT).as_posix(), STABLE_SOURCE_PINS)
+
+    def test_exact_compatibility_reconstruction_preserves_historical_identities_and_rejects_unrelated_mutations(self):
+        cases = (
+            (KOTLIN_REL + '/CompilerFixtureControlsTest.kt', COHORT_ADDITION, b''),
+            (KOTLIN_REL + '/CompilerFixtureNullabilityTest.kt', NULLABILITY_SELECTOR_SUCCESSOR, NULLABILITY_SELECTOR_PREDECESSOR),
+        )
+        for relative, inserted, prior in cases:
+            data = (ROOT / relative).read_bytes()
+            successor = SUCCESSOR_PINS[relative]
+            predecessor = FROZEN_PREDECESSOR_PINS[relative]
+            reconstructed = reconstruct_exact_successor(data, successor, predecessor, inserted, prior)
+            self.assertEqual(predecessor, digest(reconstructed))
+            # Both fixed postimage pins and independently retained preimage pins reject unrelated changes.
+            mutated = data.replace(b'assertEquals(48,', b'assertEquals(47,', 1)
+            self.assertNotEqual(data, mutated)
+            for wrong in (mutated, data + b'// unrelated mutation\n', data + inserted, data.replace(inserted, prior, 1)):
+                with self.assertRaises(ValueError):
+                    reconstruct_exact_successor(wrong, successor, predecessor, inserted, prior)
+                with self.assertRaises(ValueError):
+                    reconstruct_exact_successor(wrong, digest(wrong), predecessor, inserted, prior)
+        cohort = (KOTLIN / 'CompilerFixtureControlsTest.kt').read_bytes()
+        nullability_predecessor = reconstruct_exact_successor(cohort, SUCCESSOR_PINS[KOTLIN_REL + '/CompilerFixtureControlsTest.kt'],
+            LEGACY_COHORT_TEST_PINS['postimage'], COHORT_ADDITION, b'')
+        oldest = reconstruct_exact_successor(nullability_predecessor, LEGACY_COHORT_TEST_PINS['postimage'], LEGACY_COHORT_TEST_PINS['preimage'],
+            b', "nullability_protocols"), CompilerFixtureSettings.COHORTS)', b'), CompilerFixtureSettings.COHORTS)')
+        self.assertEqual(LEGACY_COHORT_TEST_PINS['preimage'], digest(oldest))
+        self.assertEqual(COHORT_ADDITION, literal_constant(self.legacy_python, 'BREADTH_COHORT_TEST_ADDITION'))
+        self.assertEqual(SUCCESSOR_PINS[KOTLIN_REL + '/CompilerFixtureControlsTest.kt'], literal_constant(self.legacy_python, 'BREADTH_COHORT_TEST_POSTIMAGE'))
+        for relative, names in OLD_TEST_METHOD_NAMES.items():
+            text = (ROOT / relative).read_text(encoding='utf-8')
+            if relative.endswith('.kt'):
+                actual = re.findall(r'@Test fun (\w+)\(', text)
+            else:
+                actual = [node.name for node in ast.walk(ast.parse(text)) if isinstance(node, ast.FunctionDef) and node.name.startswith('test_')]
+            self.assertEqual(names, actual, relative)
+
+    def test_literal_fifteen_rules_ninety_cases_flags_regions_and_companions_are_bound_without_manifest_scheduling(self):
+        start = self.plan.index('    private val RULES = listOf(')
+        end = self.plan.index('    val SOURCE_METADATA_PINS: ', start)
+        literals = self.plan[start:end]
+        self.assertEqual(RULES_LITERAL_SHA256, digest(literals.encode()))
+        rules = re.findall(r'Rule\("(ktc\.compiler\.common\.[a-z_]+)", "([A-Z_]+)", "([a-z_]+)", "(ERROR|WARNING)", "([a-z_]+)"', literals)
+        expected = [(row['rule_id'], row['upstream_id'], row['selector'], row['declared_severity'], row['default_activation']) for row in self.manifest['fixtures']]
+        self.assertEqual(expected, rules)
+        cases = re.findall(r'Case\("([a-z_]+)", "([a-zA-Z0-9_./-]+)", "([0-9a-f]{64})", (null|0|1),', literals)
+        expected_cases = [(item['kind'], item['path'], item['source_sha256'], 'null' if item['oracle']['selected_expected_count'] is None else str(item['oracle']['selected_expected_count']))
+                          for row in self.manifest['fixtures'] for item in row['inputs']]
+        self.assertEqual(expected_cases, cases)
+        self.assertEqual((15, 90), (len(rules), len(cases)))
+        self.assertEqual(48, literals.count('CompilerFixtureDiagnosticBreadthRegion('))
+        self.assertEqual(2, literals.count('CompilerFixtureDiagnosticBreadthCompanion('))
+        self.assertIn('val sources = KINDS.flatMap { kind -> selected.map { rule -> rule to rule.cases.single { it.kind == kind } } }', self.plan)
+        self.assertIn('declaration(31 + index, rule, positive, optionOff = true)', self.plan)
+        self.assertIn('SELECTORS.flatMap(::declarations)', self.plan)
+
+    def test_six_exact_metadata_pins_capture_all_ninety_sources_plus_data_docs_and_both_python_controls(self):
+        block = self.plan[self.plan.index('    val SOURCE_METADATA_PINS: '):self.plan.index('    val RULE_IDS: ')]
+        pins = dict(re.findall(r'"([a-zA-Z0-9_./-]+)" to "([0-9a-f]{64})"', block))
+        self.assertEqual(6, len(pins))
+        self.assertEqual(set(DATA_DOC_PINS) | {'test_diagnostic_breadth.py', 'test_diagnostic_breadth_hookup.py'}, set(pins))
+        for relative, expected in pins.items():
+            self.assertEqual(expected, digest((FIXTURES / relative).read_bytes()), relative)
+        for relative, expected in DATA_DOC_PINS.items():
+            self.assertEqual(expected, pins[relative])
+        self.assertIn('RULES.flatMap { rule -> rule.cases.map { it.path } } + SOURCE_METADATA_PINS.keys', self.plan)
+        self.assertIn('START_CAPTURE_PATHS.size == 96 && START_CAPTURE_PATHS.toSet().size == 96', self.plan)
+        self.assertIn('SOURCE_METADATA_PINS.forEach { (path, digest) -> require(Digests.sha256(readCaptured(path)).removePrefix("sha256:") == digest)', self.plan)
+        self.assertNotIn('GENERATED_METADATA_PINS', self.plan)
+
+    def test_only_three_closed_selectors_add_separate_35_40_40_bounds_without_altering_any_old_cap_or_selects_call(self):
+        self.assertIn('val SELECTORS: Set<String> = linkedSetOf(DEFAULT_SELECTOR, ADVISORY_SELECTOR, OPT_IN_SELECTOR)', self.plan)
+        self.assertIn('mapOf(DEFAULT_SELECTOR to 35, ADVISORY_SELECTOR to 40, OPT_IN_SELECTOR to 40)', self.plan)
+        self.assertIn('val maxAttempts: Int = maximumAttemptsFor(cohort),', self.controls)
+        self.assertIn('CompilerFixtureNullabilityPlan.SELECTOR + CompilerFixtureDiagnosticBreadthPlan.SELECTORS', self.controls)
+        limit = self.controls[self.controls.index('        fun maximumAttemptsFor('):self.controls.index('        /** Gradle JavaExec')]
+        self.assertIn('cohort == CompilerFixtureNullabilityPlan.SELECTOR -> CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS', limit)
+        self.assertIn('cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS -> CompilerFixtureDiagnosticBreadthPlan.maxAttempts(cohort)', limit)
+        self.assertIn('else -> MAX_ATTEMPTS', limit)
+        self.assertIn('number("max-attempts", attemptLimit, attemptLimit).toInt()', self.controls)
+        for bound in ('MAX_ATTEMPTS = 48', 'MAX_OVERALL_MILLIS = 1_200_000L', 'MAX_PER_JOB_MILLIS = 90_000L',
+                      'MAX_EVIDENCE_BYTES = 268_435_456L', 'JOB_RESERVE_BYTES = 16_777_216L', 'TERMINAL_RESERVE_BYTES = 8_388_608L'):
+            self.assertIn(bound, self.controls)
+        for cap in ('if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) require(maxAttempts <= CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS)',
+                    'if (cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS) require(maxAttempts <= CompilerFixtureDiagnosticBreadthPlan.maxAttempts(cohort))'):
+            self.assertIn(cap, self.controls)
+        select = source_segment(self.controls, 'selectsDiagnosticBreadth', '    fun description(', private=False)
+        for gate in ('if (cohort !in CompilerFixtureDiagnosticBreadthPlan.SELECTORS) return false',
+                     'require(authoredCohort == CompilerFixtureDiagnosticBreadthPlan.AUTHORED_COHORT)',
+                     'require(ruleId in CompilerFixtureDiagnosticBreadthPlan.RULE_IDS)',
+                     'require(kind in CompilerFixtureDiagnosticBreadthPlan.KINDS + "option_off")',
+                     'if (ruleId !in CompilerFixtureDiagnosticBreadthPlan.ruleIds(cohort)) return false',
+                     'require(kind != "option_off" || cohort != CompilerFixtureDiagnosticBreadthPlan.DEFAULT_SELECTOR)'):
+            self.assertIn(gate, select)
+        self.assertIn('if (cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS) return false // Private source oracles are not ordinary pairs.', self.controls)
+        calls = re.findall(r'\bsettings\.selects\(([^)]*)\)', self.runner)
+        self.assertEqual(Counter({'it.authoredCohort, it.ruleId': 4, 'fixture.authoredCohort, fixture.ruleId': 7}), Counter(calls))
+        authored = self.controls[self.controls.index('        fun authoredName('):self.controls.index('        fun maximumAttemptsFor(')]
+        self.assertEqual(OLD_AUTHORED_NAME_SHA256, digest(authored.encode()))
+
+    def test_conditional_provenance_keeps_old_signatures_scopes_and_checks_the_same_96_paths_at_start_and_terminal(self):
+        self.assertEqual(3, self.provenance.count('fun capture(repositoryPath: Path, runPath: Path, evidence: CompilerFixtureEvidence,'))
+        self.assertIn('capture(repositoryPath, runPath, evidence, includeNullabilitySourcePlan = false, checkpoint = checkpoint)', self.provenance)
+        self.assertIn('captureSelected(repositoryPath, runPath, evidence, includeNullabilitySourcePlan, null, checkpoint)', self.provenance)
+        self.assertIn('return captureSelected(repositoryPath, runPath, evidence, false, diagnosticBreadthSelector, checkpoint)', self.provenance)
+        self.assertIn('require(!includeNullabilitySourcePlan || diagnosticBreadthSelector == null)', self.provenance)
+        for target in ('val currentPaths = runCatching { sourceFiles(repository, includeNullabilitySourcePlan, diagnosticBreadthSelector) }',
+                       'val sources = sourceFiles(repository, includeNullabilitySourcePlan, diagnosticBreadthSelector).map'):
+            self.assertIn(target, self.provenance)
+        for name, expected in OLD_PROVENANCE_LITERAL_PINS.items():
+            start = self.provenance.index('        private val ' + name + ' = listOf(')
+            end = self.provenance.index('\n\n', start) if name == 'SOURCE_FILES' else self.provenance.index('\n        private val SOURCE_FILES', start)
+            self.assertEqual(expected, digest(self.provenance[start:end].encode()), name)
+        paths = self.provenance[self.provenance.index('        private fun diagnosticBreadthSourceFiles('):self.provenance.index('        private fun artifactFiles(')]
+        for gate in ('if (selector == null) return emptyList()', 'require(selector in CompilerFixtureDiagnosticBreadthPlan.SELECTORS)',
+                     'CompilerFixtureDiagnosticBreadthPlan.START_CAPTURE_PATHS.map', 'CompilerSnapshot.relative(it)',
+                     'Files.isRegularFile(path, NOFOLLOW_LINKS) && path.toRealPath() == path.toAbsolutePath().normalize()'):
+            self.assertIn(gate, paths)
+        self.assertIn('if (diagnosticBreadthSelector != null) {\n                roleClasses["fixture_diagnostic_breadth_plan"]', self.provenance)
+        self.assertIn('roleClasses["fixture_diagnostic_breadth_observation"] = CompilerFixtureDiagnosticBreadthObservation::class.java', self.provenance)
+        self.assertIn('else if (diagnosticBreadthSelected()) CompilerFixtureProvenance.capture(repository, runRoot, evidence,\n                    diagnosticBreadthSelector = settings.cohort)', self.runner)
+
+    def test_loader_validates_all_headers_records_and_oracles_before_source_reads_then_reuses_unchanged_positives(self):
+        load = source_segment(self.plan, 'load', '    fun authoredPointMatches(', private=False)
+        read = load.index('val source = readCapturedSource(declaration.path)')
+        for gate in ('require(JsonObject(manifest.filterKeys { it != "fixtures" }) == expectedHeader)',
+                     'require(rows.size == RULES.size', 'row.filterKeys { it !in setOf("inputs", "option_off_probe") }',
+                     'require(inputs.size == KINDS.size', 'require(record == expected.authoringRecord())',
+                     'require(records.put(rule.ruleId to expected.kind, record) == null)',
+                     'if (rule.offFlags == null) require(row.getValue("option_off_probe") == JsonNull)'):
+            self.assertLess(load.index(gate), read)
+        self.assertIn('allDeclarations().filter { it.kind != "option_off" }', load)
+        self.assertIn('Digests.sha256(source).removePrefix("sha256:") == declaration.sourceSha256', load)
+        self.assertIn('declaration.selectedRegions + declaration.companions.flatMap { it.regions }', load)
+        self.assertIn('require(sources.size == SOURCE_FILE_COUNT)', load)
+        self.assertIn('sources.getValue(it.path), records.getValue(it.ruleId to it.kind)', load)
+        self.assertNotIn('readCapturedSource(', load[:load.index('val sourceDeclarations =')])
+        self.assertIn('if (optionOff) checkNotNull(rule.offFlags) else rule.flags', self.plan)
+        self.assertIn('if (optionOff) 0 else source.expectedCount', self.plan)
+        self.assertIn('if (optionOff) "exit0" else source.compilation', self.plan)
+
+    def test_runner_registers_ninety_unique_paths_once_binds_existing_mapping_and_never_appends_ordinary_assessments(self):
+        load = source_segment(self.runner, 'loadFixtureInventory', '    private fun fixtureScope(')
+        start = load.index('        if (diagnosticBreadthSelected()) {')
+        breadth = load[start:load.index('        val planned =', start)]
+        for gate in ('CompilerFixtureDiagnosticBreadthPlan.verifyCapturedMetadata(provenance::readFixture)',
+                     'CompilerFixtureDiagnosticBreadthPlan.load(sourceManifest, provenance::readFixture)',
+                     'require(registry.mappings.none { it.upstreamId == "INAPPLICABLE_OPERATOR_MODIFIER" })',
+                     'diagnosticBreadthInputs.groupBy { it.declaration.path }.forEach',
+                     'it.declaration.ruleId == declaration.ruleId && it.declaration.sourceSha256 == declaration.sourceSha256 && it.source == inputs.first().source',
+                     'mapping.upstreamId == declaration.upstreamId && mapping.backend == "common"',
+                     'mapping.declaredSeverity == declaration.severity && mapping.defaultActivation == declaration.defaultActivation',
+                     'declaration.ruleId !in assessments && declaration.ruleId !in CompilerFixtureNullabilityPlan.RULE_IDS',
+                     'fixtureRuleIdsByPath.put(path, declaration.ruleId) == null',
+                     'selectedDiagnosticBreadthInputs().map { it.declaration } == CompilerFixtureDiagnosticBreadthPlan.declarations(settings.cohort)'):
+            self.assertIn(gate, breadth)
+        self.assertNotIn('assessments[', breadth)
+        self.assertNotIn('allFixtures +=', breadth)
+        self.assertIn('require(allFixtures.size == 98', load)
+        self.assertIn('registry.mappings.size == 443', load)
+        self.assertIn('plannedFixtures.size == 16', load)
+
+    def test_fixed_single_source_calls_denial_and_four_unchanged_controls_have_no_transform_retry_or_custody_fallback(self):
+        run = source_segment(self.runner, 'runDiagnosticBreadthInputs', '    private fun recordDiagnosticBreadthObservation(')
+        self.assertEqual(2, len(re.findall(r'\bexecute\(', run)))
+        self.assertIn('inputs.forEach { input ->', run)
+        self.assertIn('execute(d.label, mapOf(d.path to input.source), d.flags)', run)
+        self.assertIn('execute(CompilerFixtureDiagnosticBreadthPlan.VERSION_DENIAL_LABEL,', run)
+        self.assertIn('requestedVersion = CompilerFixtureDiagnosticBreadthPlan.VERSION_DENIAL_REQUESTED_VERSION', run)
+        self.assertIn('jobs.singleOrNull { it.attempt.number == d.number && it.label == d.label }', run)
+        self.assertIn('recordDiagnosticBreadthObservation(input, actual, executionFailure = failure)', run)
+        self.assertIn('catch (persistence: Throwable) { preserveCompilerFixtureFailure(failure, persistence) }', run)
+        self.assertIn('throw failure // No fallback, replacement or later admission', run)
+        self.assertEqual(2, run.count('throw failure'))
+        for forbidden in ('cohort(', 'ensureEmit(', 'suppress(', 'changePackage(', 'assess(', 'while (', 'Thread.sleep', 'ProcessBuilder('):
+            self.assertNotIn(forbidden, run)
+        self.assertIn('if (diagnosticBreadthSelected()) runDiagnosticBreadthInputs()\n                else if (nullabilitySelected()) runNullabilityInputs()', self.runner)
+        self.assertIn('else if (supplementalSelected()) runSupplementalInputs()', self.runner)
+        self.assertIn('runIntentControls()\n                runTransportControls()', self.runner)
+        for field in ('"source_transforms" to 0', '"batches" to 0', '"retries_or_replacements" to 0', '"ordinary_six_kind_jobs" to 0',
+                      '"budget_pooling_resume_or_merge" to false'):
+            self.assertIn(field, self.plan)
+
+    def test_actual_full_raw_and_mapped_inventories_custody_fields_and_execute_failures_are_retained_without_residual_only_oracles(self):
+        record = source_segment(self.runner, 'recordDiagnosticBreadthObservation', '    private fun recordDiagnosticBreadthVersionDenial(')
+        for field in ('CompilerDiagnosticParser().parse((job.process?.stderr ?: "") + "\\n" + (job.process?.stdout ?: ""), sourcePaths)',
+                      'val fullRaw = CompilerFixtureNullabilityPlan.fullActualRawDiagnostics(parsed)',
+                      'CompilerFixtureNullabilityPlan.residualDiagnosticsAccountedFor(fullRaw, job.result.rawDiagnostics)',
+                      'executionFailure == null && job.persistenceComplete && job.receiptInvariantsPassed',
+                      'job.directory !in rejectedJobAttribution && job.process?.supervisorIdentity == provenance.supervisorIdentity',
+                      'job.attempt.number == d.number && job.attempt.label == d.label && job.attempt.ruleIds == setOf(d.ruleId)',
+                      'job.fixtureRuleIds == setOf(d.ruleId) && job.sources == mapOf(d.path to input.source)',
+                      'job.input.context.compilerVersion == VERSION && job.input.context.compilerArguments == d.flags',
+                      'job.input.context.compilationFiles == listOf(d.path) && residualAccountedFor',
+                      'CompilerFixtureDiagnosticBreadthPlan.snapshotMembersMatch(input, job.input.snapshot.files)',
+                      'actualExitCode = job.process?.exitCode, providerStatus = job.result.status, parserMalformed = parsed.malformed',
+                      '"full_actual_raw_diagnostic_oracle_inventory" to ContractJson.encodeToJsonElement(fullRaw)',
+                      '"provider_residual_raw_diagnostics" to ContractJson.encodeToJsonElement(job.result.rawDiagnostics)',
+                      '"full_normalized_finding_oracle_inventory" to ContractJson.encodeToJsonElement(job.result.findings)',
+                      '"attribution_withheld_after_execute_failure" to (executionFailure != null)',
+                      'terminal = executionFailure != null', 'diagnosticBreadthReceipts += DiagnosticBreadthReceipt(observation, receipt)'):
+            self.assertIn(field, record)
+        for forbidden in ('fullRaw.filter', 'job.result.rawDiagnostics.filter', 'job.result.findings.filter'):
+            self.assertNotIn(forbidden, record)
+        for field in ('it.successfulExecution && !it.cancelled && !it.timedOut && !it.truncated',
+                      '"owned_process_group_shutdown_unverified" !in it.reasons', 'parsed.reportedVersion == VERSION'):
+            self.assertIn(field, record)
+
+    def test_two_member_snapshot_gate_matches_unchanged_executor_metadata_without_filtering_extra_members(self):
+        execute = source_segment(self.runner, 'execute', OLD_RUNNER_SEGMENT_PINS['execute'][0])
+        record = source_segment(self.runner, 'recordDiagnosticBreadthObservation', '    private fun recordDiagnosticBreadthVersionDenial(')
+        members = source_segment(self.plan, 'snapshotMembersMatch', '    fun authoredPointMatches(', private=False)
+        captured = re.findall(r'val captured = sources \+ \("build\.gradle\.kts" to ("(?:[^"\\]|\\.)*")\)', execute)
+        metadata = re.findall(r'val metadata = ("(?:[^"\\]|\\.)*")\.toByteArray\(Charsets\.UTF_8\)', members)
+        self.assertEqual(1, len(captured))
+        self.assertEqual(captured, metadata)
+        self.assertEqual('// Synthetic captured fixture metadata; never executed or compiled.\n', json.loads(captured[0]))
+        for gate in ('val sourceBytes = input.source.toByteArray(Charsets.UTF_8)',
+                     'if (Digests.sha256(sourceBytes) != "sha256:" + d.sourceSha256) return false',
+                     'SnapshotFile(d.path, "sha256:" + d.sourceSha256, sourceBytes.size.toLong())',
+                     'SnapshotFile("build.gradle.kts", Digests.sha256(metadata), metadata.size.toLong())',
+                     'return files.size == 2 && files.sortedBy { it.path } == expected.sortedBy { it.path }'):
+            self.assertIn(gate, members)
+        for forbidden in ('filter', '.first(', '.firstOrNull(', '.singleOrNull(', '.toSet(', '.associate'):
+            self.assertNotIn(forbidden, members)
+        self.assertNotIn('job.input.snapshot.files.singleOrNull()', record)
+        self.assertIn('CompilerFixtureDiagnosticBreadthPlan.snapshotMembersMatch(input, job.input.snapshot.files)', record)
+        self.assertIn('job.sources == mapOf(d.path to input.source)', record)
+        self.assertIn('job.input.context.compilationFiles == listOf(d.path)', record)
+        self.assertIn('job.input.context.compilerVersion == VERSION && job.input.context.compilerArguments == d.flags', record)
+        self.assertIn('compilationFiles = sources.keys.toList()', execute)
+        self.assertIn('SnapshotFile(relative, Digests.sha256(bytes), bytes.size.toLong())', execute)
+        self.assertIn('val manifest = SnapshotManifest(', execute)
+        self.assertIn('val actualJob = Job(label, directory, input, result, process, sources, subjects, attempt)', execute)
+        for name in ('authoredSnapshotBindingAcceptsEveryExactTwoMemberExecutorSnapshotWithoutCompilingMetadata',
+                     'authoredSnapshotBindingRejectsMissingDuplicateExtraAndRenamedMembers',
+                     'authoredSnapshotBindingRejectsDigestSizeAndSourceDriftForEitherMember'):
+            self.assertIn('@Test fun ' + name + '()', self.kotlin_tests)
+        self.assertIn('assertEquals(100, authoredInputs.size)', self.kotlin_tests)
+
+    def test_selected_pair_regions_exact_counts_severities_multisets_and_raw_unmapped_companion_cannot_hide_errors(self):
+        point = source_segment(self.plan, 'authoredPointMatches', '    fun diagnostics(', private=False)
+        for gate in ('location.path != declaration.path', 'location.fileDigest != "sha256:" + declaration.sourceSha256',
+                     'Digests.sha256(source).removePrefix("sha256:") != declaration.sourceSha256',
+                     'location.endLine != location.line || location.endColumn != location.column',
+                     'region.belongsTo(source) && location.line == region.line',
+                     'location.column in region.startColumn until region.endColumnExclusive'):
+            self.assertIn(gate, point)
+        matcher = source_segment(self.plan, 'diagnostics', '    fun versionDenialMatches(', private=False)
+        for gate in ('fullRaw.filter { it.upstreamId == d.upstreamId }',
+                     'fullFindings.filter { it.ruleId == d.ruleId || it.upstreamId == d.upstreamId }',
+                     'it.ruleId == d.ruleId && it.upstreamId == d.upstreamId',
+                     'raw.size == d.expectedCount && mapped.size == d.expectedCount && rawValid && mappedValid',
+                     'raw.groupingBy { key(checkNotNull(it.location), it.message) }.eachCount()',
+                     'mapped.groupingBy { key(it.location, it.diagnosis) }.eachCount()',
+                     'actual.size == expected.expectedRawCount && actual.all { it.severity == "error" && point(it.location, expected.regions) }',
+                     'fullFindings.none { it.upstreamId == expected.upstreamId }',
+                     'fullRaw.count { it.severity == "error" && !allowedRawError(it) }',
+                     'fullFindings.count { it.severity == "error"',
+                     'fullRaw.count { it.upstreamId == "ERROR_SUPPRESSION" }'):
+            self.assertIn(gate, matcher)
+        self.assertIn('val unexpectedRaw = if (d.unknownExpectation) null else', matcher)
+        self.assertIn('val unexpectedMapped = if (d.unknownExpectation) null else', matcher)
+        self.assertIn('"predeclared_unmapped_raw_companion_diagnostic_count" to predeclaredRawCompanionCount', self.plan)
+        self.assertIn('unexpectedRawErrorCount == 0 && unexpectedMappedErrorCount == 0', self.plan)
+        self.assertIn('selectedCountsAndRegionsMatch && selectedRawAndMappedPointsAgree', self.plan)
+
+    def test_exact_schedule_receipt_and_denial_value_gates_never_replace_actual_permit_or_process_evidence(self):
+        receipts = source_segment(self.plan, 'observedReceiptsComplete', '    fun expectedVariantsValidated(', private=False)
+        for gate in ('observations.size == expected.size && attempts.size >= expected.size',
+                     'o.declaration == d && o.attemptNumber == d.number && o.observedReceiptComplete',
+                     'a.number == d.number && a.label == d.label && a.ruleIds == setOf(d.ruleId)'):
+            self.assertIn(gate, receipts)
+        schedule = source_segment(self.plan, 'exactAttemptScheduleMatches', '    fun observedReceiptsComplete(', private=False)
+        self.assertIn('attempts.size == maxAttempts(selector)', schedule)
+        self.assertIn('attempts[index].number == index + 1 && attempts[index].label == labels[index]', schedule)
+        self.assertIn('expected.getOrNull(index)?.let { setOf(it.ruleId) }.orEmpty()', schedule)
+        denial = source_segment(self.plan, 'versionDenialMatches', '    /** Full reservation', private=False)
+        for gate in ('attempt.number == versionDenialAttempt(selector)', 'attempt.label == VERSION_DENIAL_LABEL && attempt.ruleIds.isEmpty()',
+                     'requestedVersion == VERSION_DENIAL_REQUESTED_VERSION && !actualProcessObserved && providerStatus == "unavailable"',
+                     '"compiler_version_not_pinned_2_4_21" in reasons && receiptsAndInputIntact'):
+            self.assertIn(gate, denial)
+        record = source_segment(self.runner, 'recordDiagnosticBreadthVersionDenial', '    private fun nullabilitySelected(')
+        self.assertIn('actualProcessObserved = job.process != null', record)
+        self.assertIn('executionFailure == null && job.persistenceComplete && job.receiptInvariantsPassed', record)
+        self.assertIn('job.sources == mapOf("version-control.kt" to "fun versionControl() = 1\\n")', record)
+        self.assertIn('job.input.context.compilerArguments == CompilerFixtureDiagnosticBreadthPlan.BASE_FLAGS', record)
+        self.assertIn('"actual_provider_reasons" to job.result.reasons', record)
+        self.assertIn('"actual_job_evidence" to references(job)', record)
+        self.assertIn('const val VERSION_DENIAL_REQUESTED_VERSION = "2.4.20"', self.plan)
+
+    def test_unknown_error_suppression_and_actual_failed_tasks_remain_unvalidated_without_ordinary_global_or_latest_promotion(self):
+        match = self.plan[self.plan.index('    val expectationMatched:'):self.plan.index('    val expectedErrorMatched:')]
+        for gate in ('if (declaration.unknownExpectation) null else', 'observedReceiptComplete && diagnostics.matches',
+                     '"nonzero" -> actualExitCode != 0 && providerStatus == "failed"',
+                     '"exit0" -> actualExitCode == 0 && providerStatus == "partial"'):
+            self.assertIn(gate, match)
+        self.assertNotIn('parserMalformed', match)
+        self.assertIn('val actualCompilerTaskFailed: Boolean get() = executionConfirmed && actualExitCode != null && actualExitCode != 0', self.plan)
+        self.assertIn('val actualProviderFailed: Boolean get() = providerStatus == "failed"', self.plan)
+        self.assertIn('observations.map { it.declaration } == declarations(selector) && observations.all { it.expectationMatched == true }', self.plan)
+        self.assertIn('complete && CompilerFixtureDiagnosticBreadthPlan.unknownSuppressionCount(selector) == 0', self.plan)
+        self.assertIn('"ordinary_six_kind_assessments_complete" to false', self.plan)
+        self.assertIn('private_diagnostic_breadth_local_schedule_only_no_global_stage_credit', self.plan)
+        self.assertIn('if (selected) null else ordinarySidecar', self.plan)
+        self.assertIn('compilerFixtureDiagnosticBreadthLatestSidecar(diagnosticBreadthSelected(),', self.runner)
+        gate = source_segment(self.runner, 'boundedWorkComplete', '    private fun supplementalScope(')
+        for required in ('CompilerFixtureDiagnosticBreadthPlan.observedReceiptsComplete(',
+                         'CompilerFixtureDiagnosticBreadthPlan.expectedVariantsValidated(',
+                         'CompilerFixtureDiagnosticBreadthPlan.exactAttemptScheduleMatches(',
+                         'diagnosticBreadthVersionDenial == true && controls.values.all { it == true }'):
+            self.assertIn(required, gate)
+        self.assertIn('val completionEligible = terminal && runFailure == null && budget.stopReason == null && intactProvenance && boundedWorkComplete()', self.runner)
+        self.assertIn('val implementationObserved = cases.any { it.kind == "positive" && it.passed }', self.runner)
+        self.assertIn('"tested" to (implemented && allCases)', self.runner)
+        self.assertIn('"qualified" to false', self.runner)
+        self.assertIn('no ordinary external latest sidecar or historical stage transfer', self.runner)
+
+    def test_invocation_scope_checkpoints_rule_inventory_and_terminal_keep_all_selected_unselected_and_failed_observations_visible(self):
+        scope_join = '+ nullabilityScope() + diagnosticBreadthScope()'
+        direct_sites = (
+            ('            save(runRoot.resolve("invocation.json"),', '            timingProbe?.let {'),
+            ('                } else save(runRoot.resolve("summary.json"),', '            } catch (failure: Throwable) {'),
+        )
+
+        def assert_direct_scope_sites(source):
+            self.assertEqual(2, source.count(scope_join))
+            for begin, end in direct_sites:
+                start = source.index(begin)
+                stop = source.index(end, start)
+                self.assertEqual(1, source[start:stop].count(scope_join))
+
+        assert_direct_scope_sites(self.runner)
+        for begin, _ in direct_sites:
+            index = self.runner.index(scope_join, self.runner.index(begin))
+            deleted = self.runner[:index] + self.runner[index + len(scope_join):]
+            for wrong in (deleted, deleted + '\n// displaced ' + scope_join + '\n'):
+                # An identical total count in the wrong place cannot replace either named evidence site.
+                with self.assertRaises(AssertionError):
+                    assert_direct_scope_sites(wrong)
+        self.assertEqual(1, self.runner.count('+ diagnosticBreadthCheckpoint(terminal = false)'))
+        self.assertEqual(2, self.runner.count('+ diagnosticBreadthCheckpoint(terminal)'))
+        self.assertEqual(2, self.runner.count('+ diagnosticBreadthCheckpoint(terminal, intactProvenance)'))
+        for field in ('"diagnostic_breadth_input_inventory" to diagnosticBreadthInventory(terminal, mapping.ruleId)',
+                      '"diagnostic_breadth_local_oracle_match_counts_by_kind"', '"diagnostic_breadth_actual_failed_compiler_task_count"',
+                      '"diagnostic_breadth_actual_failed_provider_count"', '"diagnostic_breadth_unknown_hard_error_suppression_count"',
+                      '"diagnostic_breadth_unexpected_or_unmatched_variant_count"',
+                      '"diagnostic_breadth_current_START_attributed_oracle_match_count" to if (provenanceIntact == true)',
+                      '"diagnostic_breadth_observed_receipts_complete" to (provenanceIntact != false',
+                      '"diagnostic_breadth_version_denial_evidence"', '"diagnostic_breadth_schedule_evidence"',
+                      '"diagnostic_breadth_initial_manifest_evidence"',
+                      '"diagnostic_breadth_observations_are_not_ordinary_implementation_test_or_qualification_credit" to true'):
+            self.assertIn(field, self.runner)
+        inventory = source_segment(self.runner, 'diagnosticBreadthInventory', '    private fun diagnosticBreadthCheckpoint(')
+        self.assertIn('diagnosticBreadthInputs.filter { ruleId == null || it.declaration.ruleId == ruleId }', inventory)
+        self.assertIn('"unselected_not_run_not_excluded"', inventory)
+        self.assertIn('"actual_observation" to retained?.observation?.description()', inventory)
+        self.assertIn('"initial_authoring_record_never_rewritten" to true', inventory)
+        self.assertIn('not_run_ordinary_six_kind_outside_diagnostic_breadth_schedule', self.runner)
+        self.assertIn('unselected_diagnostic_breadth_not_run_not_excluded', self.runner)
+
+    def test_nineteen_existing_engine_sections_seven_nullability_sections_and_entire_budget_suffix_are_byte_identical(self):
+        self.assertEqual(19, len(OLD_RUNNER_SEGMENT_PINS))
+        self.assertEqual(OLD_RUNNER_SEGMENT_PINS, literal_constant(self.legacy_python, 'UNCHANGED_RUNNER_SEGMENTS'))
+        for name, (next_marker, expected) in OLD_RUNNER_SEGMENT_PINS.items():
+            self.assertEqual(expected, digest(source_segment(self.runner, name, next_marker).encode()), name)
+        self.assertEqual(7, len(OLD_NULLABILITY_SEGMENT_PINS))
+        for name, (next_marker, expected) in OLD_NULLABILITY_SEGMENT_PINS.items():
+            self.assertEqual(expected, digest(source_segment(self.runner, name, next_marker).encode()), name)
+        budget = self.controls[self.controls.index('internal enum class CompilerFixtureStopReason'):]
+        self.assertEqual(OLD_BUDGET_SUFFIX_SHA256, digest(budget.encode()))
+        self.assertEqual('987acbe69154a72f96cce02197eb9bc853c12bc1643abab7e34076267fe473dc', OLD_RUNNER_SEGMENT_PINS['execute'][1])
+
+    def test_thirty_five_kotlin_and_source_data_controls_do_not_create_processes_authority_or_execution_receipts(self):
+        kotlin_names = re.findall(r'@Test fun (\w+)\(', self.kotlin_tests)
+        self.assertEqual(35, len(kotlin_names))
+        self.assertEqual(35, len(set(kotlin_names)))
+        for name in ('mandatoryUnmappedOperatorCompanionCannotDisappearChangeSeverityMoveOrAcquireInventedMapping',
+                     'sixHardErrorSuppressionsAlwaysStayUnknownWithEveryActualFailureAndWarningRetained',
+                     'locationsRequireActualAuthoredDigestPathPointAndNarrowSourceRegionNotAnyValidFilePosition',
+                     'parserValueControlsKeepGlobalWarningsMalformedStatusAndQuotedNamesSeparateFromEmissions',
+                     'privateCompletionOverlayAndLatestSidecarNeverGrantOrdinaryMatrixOrQualificationCredit'):
+            self.assertIn(name, kotlin_names)
+        # Match actual complete authority type tokens, not the suffix of the unchanged @Test method name.
+        # This is a source-control lexical check, not a general Kotlin parser or security boundary.
+        authority_types = ('ExecutionAuthority', 'ExactExecutionAuthority',
+                           'ExactDetektModelExecutionAuthority', 'ExactDetektFullModelExecutionAuthority')
+        authority_constructor = r'(?<![\w$])(?:' + '|'.join(authority_types) + r')\s*(?:\(|\{)'
+        other_forbidden = ('ProcessOutcome(', 'ProcessBuilder(', 'KotlinJvmCompilerProvider(', '.analyze(', '.analyzeObserved(',
+                           'Runtime.getRuntime(', 'Files.write', 'Files.create', 'Files.delete', 'ExecutionPermit(')
+
+        def assert_no_execution_surface(source):
+            for forbidden in other_forbidden:
+                self.assertNotIn(forbidden, source)
+            self.assertNotRegex(source, authority_constructor)
+
+        assert_no_execution_surface(self.plan + self.kotlin_tests)
+        assert_no_execution_surface('@Test fun optionOffSourceIdentityAndExactFlagChangeAreNotArbitraryManifestExecutionAuthority() {')
+        for authority in authority_types:
+            for prefix in ('', 'dev.ktchecker.example.'):
+                for opening in ('(', ' (', '\t(', '\n(', '{', ' {', '\n{'):
+                    with self.assertRaises(AssertionError):
+                        assert_no_execution_surface(prefix + authority + opening)
+        for forbidden in other_forbidden:
+            with self.assertRaises(AssertionError):
+                assert_no_execution_surface(forbidden)
+        self.assertIn('No actual compiler/provider/native process or receipt is created or simulated', self.kotlin_tests)
+        self.assertIn('unit_value_only_not_run', self.kotlin_tests)
+        for filename, expected_count in (('test_diagnostic_breadth.py', 16), ('test_diagnostic_breadth_hookup.py', 18)):
+            source = (FIXTURES / filename).read_text(encoding='utf-8')
+            tree = ast.parse(source)
+            names = [node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name.startswith('test_')]
+            self.assertEqual(expected_count, len(names))
+            imports = {alias.name.split('.')[0] for node in ast.walk(tree) if isinstance(node, ast.Import) for alias in node.names}
+            imports |= {node.module.split('.')[0] for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.module}
+            self.assertFalse(imports & {'subprocess', 'socket', 'urllib', 'requests', 'importlib', 'nullability_protocols'})
+            for call in [node for node in ast.walk(tree) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)]:
+                self.assertNotIn(call.func.id, ('eval', 'exec', 'compile', '__import__'))
+
+
+if __name__ == '__main__':
+    unittest.main()

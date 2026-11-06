@@ -11,9 +11,33 @@ import type { ClientBinding, ModelRequest } from '../src/types.js';
 const MAX_EVENTS = 256, MAX_ROWS = 1_024, MAX_PAGE = 100, MAX_PENDING = 16;
 const SHA256 = /^sha256:[0-9a-f]{64}$/;
 const KINDS = new Set(['accepted', 'progress', 'result', 'recovered', 'cancelled', 'plan_accepted', 'plan_resolved', 'plan_unavailable']);
-// Exact sorted IDs of the FOUR reviewed catalog inputs, shared with fullRealRules' source pin.
-// This is a closed experiment's data commitment, never authority to execute those rules.
-const PRODUCED_RULE_VECTOR_DIGEST = 'sha256:fc45c20ddecf87113dc392a3127f4dfa9d2dd75177a71252f8fd9c67929e316b';
+/** Closed SOURCE catalog commitments, not execution/activation/qualification authority.
+ * Historical capture keeps its exact1663 default. Current acceptance explicitly selects
+ * the1665 successor; neither vector size nor event assurance can select a catalog. */
+export type ProducedRuleVectorProfile = 'historical-full1663' | 'current-full1665';
+type ProducedRuleVector = Readonly<{ count: number; digest: string }>;
+const HISTORICAL_PRODUCED_RULE_VECTOR: ProducedRuleVector = Object.freeze({ count: 1663,
+  digest: 'sha256:fc45c20ddecf87113dc392a3127f4dfa9d2dd75177a71252f8fd9c67929e316b' });
+const CURRENT_PRODUCED_RULE_VECTOR: ProducedRuleVector = Object.freeze({ count: 1665,
+  digest: 'sha256:121660fc2a5aed084688d0c549f9e1bece2ec514e9ace4748211b55fa87cc1c5' });
+function selectedProducedRuleVector(profile: unknown): ProducedRuleVector {
+  if (profile === 'historical-full1663') return HISTORICAL_PRODUCED_RULE_VECTOR;
+  if (profile === 'current-full1665') return CURRENT_PRODUCED_RULE_VECTOR;
+  throw new HostError('delivery_capture_produced_rule_profile');
+}
+/** Fixed CURRENT-only entry: no legacy fallback, sorting, trimming or caller-supplied pin.
+ * fullRealRules retains the distinct historical1663 contract for already recorded data. */
+export function fullCurrentRules(value: unknown): string[] {
+  const expected = CURRENT_PRODUCED_RULE_VECTOR;
+  if (!Array.isArray(value) || value.length !== expected.count || !value.every(item => typeof item === 'string')) {
+    throw new HostError('current_acceptance_full_rule_vector_required');
+  }
+  const ids = value as string[];
+  if (new Set(ids).size !== expected.count || digest(canonical(ids)) !== expected.digest) {
+    throw new HostError('current_acceptance_full_rule_vector_changed');
+  }
+  return ids;
+}
 const OBSERVED_PRODUCED_ASSURANCE = 'ktchecker/observed-export-one-shot/1';
 const OBSERVED_CONFIGURATION_GAP = 'configuration_input_closure_unproven';
 export interface DeliveryReceiptCaptureOptions {
@@ -21,6 +45,9 @@ export interface DeliveryReceiptCaptureOptions {
    * The current-image runner must select observed before the first event request.
    * This nominal data expectation is not compiler/model/qualification authority. */
   readonly expectedProducedAssurance?: 'legacy-strict' | typeof OBSERVED_PRODUCED_ASSURANCE;
+  /** Independent closed catalog choice, captured before the first event. Omission preserves
+   * historical1663; current acceptance must explicitly select current1665. */
+  readonly expectedProducedRuleVector?: ProducedRuleVectorProfile;
 }
 type ObjectValue = Record<string, unknown>;
 function object(value: unknown): ObjectValue {
@@ -89,7 +116,7 @@ function eventMetadata(value: unknown): Readonly<DeliveryEventMetadata> {
  * NOT successful parent completion, authority to execute, or qualification evidence.
  * Only explicitly selected public fields are read; no credential-bearing object is cloned.
  */
-function validateProducedPlanNotification(rawEvent: unknown, payload: string, observed: boolean): void {
+function validateProducedPlanNotification(rawEvent: unknown, payload: string, observed: boolean, expectedRules: ProducedRuleVector): void {
   const event = object(rawEvent);
   // Default generic/legacy plan_accepted capture is unchanged. The explicit observed
   // produced lane must retain its taint already at acceptance, not only at resolution.
@@ -127,13 +154,13 @@ function validateProducedPlanNotification(rawEvent: unknown, payload: string, ob
         throw new HostError('delivery_capture_produced_context');
       }
     }
-    if (!Array.isArray(slot.requiredRuleIds) || slot.requiredRuleIds.length !== 1663) {
+    if (!Array.isArray(slot.requiredRuleIds) || slot.requiredRuleIds.length !== expectedRules.count) {
       throw new HostError('delivery_capture_produced_rules');
     }
     const rules = slot.requiredRuleIds.map(identifier);
     if (new Set(rules).size !== rules.length) throw new HostError('delivery_capture_produced_rules');
     same(rules, [...rules].sort(), 'delivery_capture_produced_rules');
-    if (digest(canonical(rules)) !== PRODUCED_RULE_VECTOR_DIGEST) throw new HostError('delivery_capture_produced_rules');
+    if (digest(canonical(rules)) !== expectedRules.digest) throw new HostError('delivery_capture_produced_rules');
   }
   if (new Set(slotIds).size !== 2 || new Set(reviewIds).size !== 2 || reviewIds[1] !== event.reviewId) {
     throw new HostError('delivery_capture_produced_anchor');
@@ -190,6 +217,7 @@ type Intent = { readonly clientIdDigest: string; readonly kind: 'review.events' 
  */
 export class DeliveryReceiptCapture {
   private readonly observedProduced: boolean;
+  private readonly producedRuleVector: ProducedRuleVector;
   private readonly bindings = new Map<string, Readonly<DeliveryBinding>>();
   private readonly events = new Map<string, Readonly<DeliveryEventMetadata>>();
   private readonly rows: Readonly<DeliveryConfirmationRow>[] = [];
@@ -200,6 +228,8 @@ export class DeliveryReceiptCapture {
     const expected = options.expectedProducedAssurance ?? 'legacy-strict';
     if (expected !== 'legacy-strict' && expected !== OBSERVED_PRODUCED_ASSURANCE) throw new HostError('delivery_capture_produced_assurance');
     this.observedProduced = expected === OBSERVED_PRODUCED_ASSURANCE;
+    const profile = options.expectedProducedRuleVector;
+    this.producedRuleVector = selectedProducedRuleVector(profile === undefined ? 'historical-full1663' : profile);
   }
   bind(value: ClientBinding): void {
     this.healthy();
@@ -267,7 +297,7 @@ export class DeliveryReceiptCapture {
         const event = eventMetadata(raw), payload = object(raw).payload;
         if (typeof payload !== 'string' || payload.length > 2_097_152 || Buffer.byteLength(payload) > 2_097_152 || digest(payload) !== event.payloadDigest ||
             event.clientIdDigest !== binding.clientIdDigest || event.generation !== binding.generation) throw new HostError('delivery_capture_event_binding');
-        validateProducedPlanNotification(raw, payload, this.observedProduced);
+        validateProducedPlanNotification(raw, payload, this.observedProduced, this.producedRuleVector);
         const previous = additions.get(event.eventIdDigest) ?? this.events.get(event.eventIdDigest);
         if (previous) same(previous, event, 'delivery_capture_event_revision');
         additions.set(event.eventIdDigest, event);

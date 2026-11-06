@@ -6,7 +6,6 @@ import dev.ktchecker.compiler.live.model.ModelCompilerGenerationPermit
 import dev.ktchecker.compiler.live.model.ModelCompilerGenerationRequest
 import dev.ktchecker.contracts.CancellationToken
 import dev.ktchecker.contracts.Digests
-import dev.ktchecker.providers.runtime.OwnedApplicationCleanupDisposition
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.workerprotocol.ApplicationWire as Wire
 import dev.ktchecker.workerprotocol.CompilerModelWire as ModelWire
@@ -29,11 +28,12 @@ internal class OwnerModelGeneration(
     private val runtime: OwnerLiveModelRuntime,
     namespace: CompilerApplicationNamespace,
     root: Path,
-    private val originalDeadline: OwnedApplicationDeadline,
+    private val clock: OwnerModelCommandClock,
     private val custody: OwnerModelCommandCustody,
 ) {
+    private val originalDeadline: OwnedApplicationDeadline get() = clock.originalDeadline
     private val openAttempted = AtomicBoolean()
-    private val retirementAttempted = AtomicBoolean()
+    private val retirement: OwnerModelGenerationRetirement
     private val quarantined = AtomicBoolean()
     private val roots: List<OwnerModelRootPin>
     private val originalBridge: OwnerModelFilePin
@@ -41,11 +41,9 @@ internal class OwnerModelGeneration(
     private val files: List<OwnerModelFilePin>
     val request: ModelCompilerGenerationRequest
     private val permit: ModelCompilerGenerationPermit
-    private val cancellation = CancellationToken { quarantined.get() || originalDeadline.isExpired() || Thread.currentThread().isInterrupted }
+    private val cancellation = CancellationToken { quarantined.get() || clock.cancelled() }
     private var opened: OwnerLiveGenerationStatus? = null
-    private var retired: OwnerLiveGenerationStatus? = null
     private var openFailure = false
-    private var retirementFailure = false
 
     init {
         checkpoint()
@@ -101,6 +99,7 @@ internal class OwnerModelGeneration(
         val launchPin = ownerModelWrite(root.resolve("launch.bin"), Wire.encodeLaunch(launch), Wire.MAX_LAUNCH_BYTES, ::checkpoint)
         files = copies + bridge + launchPin
         request = ModelCompilerGenerationRequest(runtime.owner, namespace, runtime.installation, launch, originalDeadline)
+        retirement = OwnerModelGenerationRetirement(launch.identity().generation(), namespace.digest)
         permit = ModelCompilerGenerationPermit(request, verifyBeforeStart = {
             ownerModelRequire(ownerModelNames(jobsRoot.path, 0).isEmpty() && ownerModelNames(tmpRoot.path, 0).isEmpty(),
                 "owner_model_generation_not_fresh")
@@ -131,27 +130,24 @@ internal class OwnerModelGeneration(
     }
 
     /** Only explicit command-owner cleanup calls this once, even after original budget expiry. */
-    fun retire(): OwnerLiveGenerationStatus {
-        ownerModelRequire(openAttempted.get() && retirementAttempted.compareAndSet(false, true),
-            "owner_model_retirement_not_owned_or_replayed")
-        return try { runtime.retire(request).also { retired = it } }
-        catch (failure: Throwable) { retirementFailure = true; throw failure }
-    }
+    fun retire(): OwnerLiveGenerationStatus = retirement.retire(openAttempted.get()) { runtime.retire(request) }
 
-    val retirementVerified: Boolean get() = retired?.retirement?.disposition == OwnedApplicationCleanupDisposition.CLOSED
+    val retirementVerified: Boolean get() = retirement.verified
     val wasOpened: Boolean get() = openAttempted.get()
+    val retirementWasAttempted: Boolean get() = retirement.attempted
 
     /** State-only denial after the one explicit retirement failed; never another cleanup attempt. */
     fun quarantine() { quarantined.set(true) }
 
     /** Detached real call/receipt evidence only. Neither CLOSED nor HELLO is a compiler-job success. */
     fun evidence(): JsonObject = buildJsonObject {
+        val retired = retirement.returned
         put("generationId", request.launch.identity().generation()); put("profile", request.generation.profile())
         put("launchDigest", request.launchDigest); put("installationDigest", runtime.installation.digest)
         put("originalDeadlineIdentity", originalDeadline.identity); put("originalDeadlineMillis", originalDeadline.durationMillis)
         put("openAttempted", openAttempted.get()); put("openThrew", openFailure)
         put("quarantined", quarantined.get())
-        put("retirementAttempted", retirementAttempted.get()); put("retirementThrew", retirementFailure)
+        put("retirementAttempted", retirement.attempted); put("retirementThrew", retirement.threw)
         put("state", retired?.state ?: opened?.state ?: if (openFailure) "open_failed_retained" else "prepared_not_opened")
         put("openReason", opened?.reason?.let(::JsonPrimitive) ?: JsonNull)
         val result = opened?.opened
@@ -173,6 +169,6 @@ internal class OwnerModelGeneration(
 
     private fun checkpoint() {
         ownerModelRequire(!quarantined.get(), "owner_model_generation_quarantined")
-        ownerModelCheckpoint(originalDeadline)
+        clock.checkpoint()
     }
 }

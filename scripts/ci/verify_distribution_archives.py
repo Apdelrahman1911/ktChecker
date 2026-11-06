@@ -14,8 +14,15 @@ rechecks detect observed drift; they are not an atomic snapshot, lock, sandbox,
 hard I/O deadline or guarantee against a writer changing and restoring state.
 
 Supported archives are single-volume non-ZIP64 ZIP (stored/raw deflate, Unix
-regular/directory modes) and uncompressed standard USTAR. GNU/PAX/sparse TAR and
-unrecognized ZIP metadata are explicitly unsupported, never silently normalized.
+regular/directory modes) and uncompressed USTAR file/directory headers, with only
+canonical GNU ././@LongLink filename records additionally allowed. One bounded,
+NUL-terminated UTF-8 filename must immediately precede a matching USTAR member;
+no alternate short/prefixed name is accepted. GNU ordinary headers, long-link,
+PAX and sparse extensions remain unsupported, never silently normalized. The
+TAR report format identifier remains "ustar" for its materialized member headers;
+its explicit tar_name_profile describes this narrow accepted filename extension.
+Filename metadata consumes entry/decoded-byte budgets, not file inventories.
+Unrecognized ZIP metadata is explicitly unsupported.
 Directory entries may omit implied nonempty parents; every staged directory with
 no regular-file descendant must be explicit. No extra directories are accepted.
 Paths are literal portable UTF-8/NFC names; depth includes an archive's prefix.
@@ -694,11 +701,14 @@ def tar_members(archive: HeldPath, budget: Budget) -> list[Member]:
         raise VerificationError("tar_truncated_or_unaligned")
     position = 0
     members = []
-    total = regular_count = 0
+    total = regular_count = entries = 0
+    pending_name = None
     while position < size:
         budget.check()
         raw = archive.read_exact(position, 512)
         if raw == b"\0" * 512:
+            if pending_name is not None:
+                raise VerificationError("tar_dangling_long_name")
             if position + 1024 > size or archive.read_exact(position + 512, 512) != b"\0" * 512:
                 raise VerificationError("tar_missing_second_end_block")
             position += 1024
@@ -711,20 +721,25 @@ def tar_members(archive: HeldPath, budget: Budget) -> list[Member]:
                 raise VerificationError("tar_empty_archive")
             budget.reserve_decoded(total)
             return members
-        if len(members) >= budget.limits.max_entries:
+        # Count physical extension headers too; they never become extra files.
+        if entries >= budget.limits.max_entries:
             raise VerificationError("tar_member_count_limit")
-        if raw[257:263] != b"ustar\0" or raw[263:265] != b"00":
+        entries += 1
+        flag = raw[156:157]
+        long_header = flag == b"L" and raw[257:265] == b"ustar  \0"
+        if (raw[257:263] != b"ustar\0" or raw[263:265] != b"00") and not long_header:
             raise VerificationError("unsupported_tar_format", state="unsupported")
         expected_checksum = _tar_number(raw[148:156])
         if sum(raw[:148]) + 8 * 32 + sum(raw[156:]) != expected_checksum:
             raise VerificationError("tar_header_checksum_mismatch")
-        flag = raw[156:157]
-        if flag in {b"x", b"g", b"L", b"K", b"S"}:
+        if flag in {b"x", b"g", b"K", b"S"} or flag == b"L" and not long_header:
             raise VerificationError("unsupported_tar_extension_or_sparse", state="unsupported")
-        if flag not in {b"0", b"\0", b"5"}:
+        if flag not in {b"0", b"\0", b"5"} and not long_header:
             raise VerificationError("tar_link_or_special_member")
+        if long_header and pending_name is not None:
+            raise VerificationError("tar_repeated_long_name")
         kind = "directory" if flag == b"5" else "file"
-        if kind == "file":
+        if kind == "file" and not long_header:
             regular_count += 1
             if regular_count > budget.limits.max_files:
                 raise VerificationError("archive_regular_file_count_limit")
@@ -742,16 +757,31 @@ def tar_members(archive: HeldPath, budget: Budget) -> list[Member]:
         expanded = _tar_number(raw[124:136])
         if expanded > budget.limits.max_file_bytes:
             raise VerificationError("archive_member_bytes_limit")
+        # At most one optional directory slash plus one required terminating NUL.
+        if long_header and not 2 <= expanded <= budget.limits.max_path_bytes + 2:
+            raise VerificationError("tar_long_name_bytes_limit")
         if kind == "directory" and expanded:
             raise VerificationError("archive_directory_has_data")
         total += expanded
         if total > budget.limits.max_decompressed_bytes:
             raise VerificationError("archive_decompressed_bytes_limit")
         raw_name = _tar_text(raw[:100])
-        prefix = _tar_text(raw[345:500])
-        if prefix:
-            raw_name = prefix + b"/" + raw_name
-        name = _member_name(raw_name, directory=kind == "directory", utf8=True, limits=budget.limits)
+        if long_header:
+            # No GNU sparse/atime/offset fields or USTAR prefix interpretation.
+            if raw_name != b"././@LongLink" or any(raw[345:500]):
+                raise VerificationError("tar_invalid_gnu_long_name_header")
+        else:
+            prefix = _tar_text(raw[345:500])
+            if pending_name is not None:
+                # Do not accept a conflicting alternate short/prefixed name.
+                # The 100-byte wire prefix may split a UTF-8 codepoint; only the
+                # complete long name is decoded, strictly, by _member_name.
+                if prefix or raw_name != pending_name[:100]:
+                    raise VerificationError("tar_long_name_header_mismatch")
+                raw_name, pending_name = pending_name, None
+            elif prefix:
+                raw_name = prefix + b"/" + raw_name
+            name = _member_name(raw_name, directory=kind == "directory", utf8=True, limits=budget.limits)
         data_offset = position + 512
         padding = (-expanded) % 512
         position = data_offset + expanded + padding
@@ -759,7 +789,16 @@ def tar_members(archive: HeldPath, budget: Budget) -> list[Member]:
             raise VerificationError("tar_member_extent_truncated")
         if padding and any(archive.read_exact(data_offset + expanded, padding)):
             raise VerificationError("tar_nonzero_member_padding")
-        members.append(Member(name, kind, expanded, executable, data_offset, expanded))
+        if long_header:
+            payload = archive.read_exact(data_offset, expanded)
+            budget.decoded(expanded)
+            if not payload.endswith(b"\0") or b"\0" in payload[:-1]:
+                raise VerificationError("tar_invalid_long_name_payload")
+            pending_name = payload[:-1]
+        else:
+            members.append(Member(name, kind, expanded, executable, data_offset, expanded))
+    if pending_name is not None:
+        raise VerificationError("tar_dangling_long_name")
     raise VerificationError("tar_missing_terminator")
 
 
@@ -902,6 +941,7 @@ def verify_archive(archive: HeldPath, snapshot: Snapshot, budget: Budget) -> dic
         raise VerificationError("archive_content_drift", state="stale")
     archive.check_binding()
     return {"format": format_name, "sha256": compressed_sha, "bytes": archive.initial.st_size,
+            **({"tar_name_profile": "ustar_with_optional_gnu_longname_v1"} if format_name == "ustar" else {}),
             "prefix": prefix, "member_count": len(members), "regular_file_count": len(observed),
             "decoded_file_bytes": sum(row["bytes"] for row in observed),
             "actual_file_inventory_sha256": canonical_sha256(observed, budget),

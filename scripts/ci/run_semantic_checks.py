@@ -47,6 +47,14 @@ ASSERTIONS = {"positive": POSITIVE_ASSERTIONS, "malformed": NEGATIVE_ASSERTIONS,
               "unresolved": NEGATIVE_ASSERTIONS | {"explicit_unknown_or_unvisited_scope"},
               "missing-dependency": NEGATIVE_ASSERTIONS | {"missing_binary_not_a_fabricated_resolved_target"}}
 LABELS = {"dependency", *ASSERTIONS}
+NATIVE_EXPECT_ACTUAL_ASSERTIONS = {
+    "actual_compiler_rejected_incompatible_actual", "compiler_failure_not_successful_facts",
+    "exact_incompatible_return_type_diagnostic_point", "native_graph_and_request_bound",
+    "native_leaf_fir_context_observed", "expect_actual_sources_and_return_types_exact",
+    "expect_actual_candidate_relation_observed", "facts_do_not_qualify_rules",
+}
+NATIVE_ASSERTIONS = {**ASSERTIONS, "incompatible-actual": NATIVE_EXPECT_ACTUAL_ASSERTIONS}
+NATIVE_LABELS = {"dependency", *NATIVE_ASSERTIONS}
 # Closed public failure vocabulary emitted by the selected one-shot runtime.
 # Preserve causal diagnostics without accepting arbitrary exception text or
 # treating a child exit (including zero) as a successful semantic execution.
@@ -144,10 +152,17 @@ def safe_reasons(value: object, unknown: bool = False) -> list[str]:
     return sorted({item if isinstance(item, str) and item in allowed else "unrecognized_reason_omitted" for item in value[:64]})
 
 
+def fixture_assertions(mode: str) -> dict:
+    """The existing JVM suite remains four cases; only Native adds the paired rejection."""
+    return NATIVE_ASSERTIONS if mode == "native" else ASSERTIONS
+
+
 def metadata_projection(value: object, mode: str, target: str) -> dict | None:
     """Explicit allowlist, including failure paths; never copy the original JSON."""
     if not isinstance(value, dict):
         return None
+    case_assertions = fixture_assertions(mode)
+    labels = {"dependency", *case_assertions}
     projected = {key: value[key] for key in ("schemaVersion", "evidenceKind", "metadataProjection", "adapterId", "mode", "target")
                  if value.get(key) == {"schemaVersion": 1, "evidenceKind": "executed_semantic_fact_fixtures", "metadataProjection": "metadata-only-v1",
                                        "adapterId": "kotlin-fir-2.4.21/v1", "mode": mode, "target": target}[key]}
@@ -181,8 +196,8 @@ def metadata_projection(value: object, mode: str, target: str) -> dict | None:
             projected["artifacts"].append({"coordinate": "unrecognized_coordinate_omitted",
                                            "digest": row["digest"] if valid_digest(row.get("digest")) else "invalid_digest",
                                            "omittedCoordinateDigest": digest_bytes(coordinate.encode("utf-8")) if isinstance(coordinate, str) else None})
-    for row in value.get("cases", [])[:4] if isinstance(value.get("cases"), list) else []:
-        if not isinstance(row, dict) or not choice(row.get("name"), set(ASSERTIONS)):
+    for row in value.get("cases", [])[:len(case_assertions)] if isinstance(value.get("cases"), list) else []:
+        if not isinstance(row, dict) or not choice(row.get("name"), set(case_assertions)):
             continue
         output = {"name": row["name"], "passed": row.get("passed") is True, "assertions": {},
                   "state": row.get("state") if choice(row.get("state"), {"extracted", "incomplete", "failed", "unavailable"}) else "invalid",
@@ -194,7 +209,7 @@ def metadata_projection(value: object, mode: str, target: str) -> dict | None:
             output[key] = row[key] if valid_digest(row.get(key)) else "invalid_digest"
         assertions = row.get("assertions")
         if isinstance(assertions, dict):
-            output["assertions"] = {key: item for key, item in assertions.items() if key in ASSERTIONS[row["name"]] and type(item) is bool}
+            output["assertions"] = {key: item for key, item in assertions.items() if key in case_assertions[row["name"]] and type(item) is bool}
         counts = row.get("counts")
         if isinstance(counts, dict):
             output["counts"] = {key: item for key, item in counts.items() if key in COUNTS and type(item) is int and 0 <= item <= 1_000_000}
@@ -205,8 +220,8 @@ def metadata_projection(value: object, mode: str, target: str) -> dict | None:
                     safe_key = key if key in UNKNOWN_REASONS else "unrecognized_reason_omitted"
                     output["unknownReasonCounts"][safe_key] = output["unknownReasonCounts"].get(safe_key, 0) + item
         projected["cases"].append(output)
-    for row in value.get("executions", [])[:5] if isinstance(value.get("executions"), list) else []:
-        if not isinstance(row, dict) or not choice(row.get("label"), LABELS):
+    for row in value.get("executions", [])[:len(labels)] if isinstance(value.get("executions"), list) else []:
+        if not isinstance(row, dict) or not choice(row.get("label"), labels):
             continue
         output = {"label": row["label"], "status": row.get("status") if choice(row.get("status"), {"executed", "failed", "unavailable", "not_executed", "cancelled", "timeout"}) else "invalid",
                   "exitCode": row.get("exitCode") if type(row.get("exitCode")) is int and -1 <= row["exitCode"] <= 255 else None,
@@ -230,13 +245,14 @@ def valid_count_map(value: object, keys: set | None = None) -> bool:
         and all(isinstance(key, str) and CODE.fullmatch(key) and type(item) is int and 0 <= item <= 1_000_000 for key, item in value.items())
 
 
-def valid_case_metadata(row: object) -> bool:
-    if not isinstance(row, dict) or set(row) != CASE_KEYS or not choice(row.get("name"), set(ASSERTIONS)):
+def valid_case_metadata(row: object, mode: str = "jvm") -> bool:
+    case_assertions = fixture_assertions(mode)
+    if not isinstance(row, dict) or set(row) != CASE_KEYS or not choice(row.get("name"), set(case_assertions)):
         return False
     assertions = row.get("assertions")
     versions = row.get("observedCompilerVersions")
     return type(row.get("passed")) is bool and type(row.get("completeForSupportedVocabulary")) is bool \
-        and isinstance(assertions, dict) and set(assertions) == ASSERTIONS[row["name"]] and all(type(item) is bool for item in assertions.values()) \
+        and isinstance(assertions, dict) and set(assertions) == case_assertions[row["name"]] and all(type(item) is bool for item in assertions.values()) \
         and valid_count_map(row.get("counts"), COUNTS) and valid_count_map(row.get("unknownReasonCounts")) \
         and sum(row["unknownReasonCounts"].values()) == row["counts"]["unknownFacts"] \
         and valid_reason_list(row.get("reasons")) and choice(row.get("state"), {"extracted", "incomplete", "failed", "unavailable"}) \
@@ -245,8 +261,9 @@ def valid_case_metadata(row: object) -> bool:
         and all(valid_digest(row.get(key)) for key in ("snapshotId", "requestDigest", "analysisId"))
 
 
-def valid_execution_metadata(row: object) -> bool:
-    if not isinstance(row, dict) or set(row) != EXECUTION_KEYS or not choice(row.get("label"), LABELS):
+def valid_execution_metadata(row: object, mode: str = "jvm") -> bool:
+    labels = {"dependency", *fixture_assertions(mode)}
+    if not isinstance(row, dict) or set(row) != EXECUTION_KEYS or not choice(row.get("label"), labels):
         return False
     metrics = row.get("metrics")
     return choice(row.get("status"), {"executed", "failed", "unavailable", "not_executed", "cancelled", "timeout"}) \
@@ -285,19 +302,21 @@ def validate_summary(value: object, mode: str, target: str, commit: str, project
             or len({row["coordinate"] for row in projection["artifacts"]}) != len(projection["artifacts"]):
         errors.append("semantic_summary_artifacts_invalid")
     cases, executions = value.get("cases"), value.get("executions")
-    if not isinstance(cases, list) or len(cases) > 4 or len(cases) != len(projection["cases"]) \
+    case_assertions = fixture_assertions(mode)
+    labels = {"dependency", *case_assertions}
+    if not isinstance(cases, list) or len(cases) > len(case_assertions) or len(cases) != len(projection["cases"]) \
             or len({row["name"] for row in projection["cases"]}) != len(projection["cases"]) \
-            or any(not valid_case_metadata(row) for row in cases):
+            or any(not valid_case_metadata(row, mode) for row in cases):
         errors.append("semantic_summary_case_metadata_invalid")
-    if not isinstance(executions, list) or len(executions) > 5 or len(executions) != len(projection["executions"]) \
+    if not isinstance(executions, list) or len(executions) > len(labels) or len(executions) != len(projection["executions"]) \
             or len({row["label"] for row in projection["executions"]}) != len(projection["executions"]) \
-            or any(not valid_execution_metadata(row) for row in executions):
+            or any(not valid_execution_metadata(row, mode) for row in executions):
         errors.append("semantic_summary_execution_metadata_invalid")
     if value.get("state") != "passed":
         errors.append("semantic_fixture_assertions_did_not_pass")
         return errors
-    if value.get("reasons") != [] or {row["name"] for row in projection["cases"]} != set(ASSERTIONS) \
-            or {row["label"] for row in projection["executions"]} != LABELS:
+    if value.get("reasons") != [] or {row["name"] for row in projection["cases"]} != set(case_assertions) \
+            or {row["label"] for row in projection["executions"]} != labels:
         errors.append("semantic_summary_missing_exact_fixture_cases")
     expected_artifacts = {"ktchecker:kotlin-fir-2.4.21/v1", "selected-semantic-jdk:bin/java", "selected-semantic-jdk:release", "selected-semantic-jdk:lib/modules",
                           f"fixture-dependency:{'klib' if mode == 'native' else 'jar'}:{target}"}
@@ -308,13 +327,15 @@ def validate_summary(value: object, mode: str, target: str, commit: str, project
         errors.append("semantic_summary_missing_selected_compiler_inputs")
     for row in projection["cases"]:
         positive = row["name"] == "positive"
-        if row["passed"] is not True or set(row["assertions"]) != ASSERTIONS[row["name"]] or not all(row["assertions"].values()) \
+        if row["passed"] is not True or set(row["assertions"]) != case_assertions[row["name"]] or not all(row["assertions"].values()) \
                 or row["observedCompilerVersions"] != ["2.4.21"] or row["compilerExitCode"] != (0 if positive else 1) \
                 or row["state"] != ("extracted" if positive else "incomplete") or row["completeForSupportedVocabulary"] is not positive \
                 or set(row["counts"]) != COUNTS or any(not valid_digest(row[key]) for key in ("snapshotId", "requestDigest", "analysisId")) \
                 or positive and (row["reasons"] or row["counts"]["unknownFacts"] != 0 or row["counts"]["visitedSourceInputs"] != 5
                                  or row["counts"]["shards"] != 5 or row["counts"]["calls"] == 0) \
-                or not positive and "semantic_compilation_failed" not in row["reasons"]:
+                or not positive and "semantic_compilation_failed" not in row["reasons"] \
+                or row["name"] == "incompatible-actual" and (row["counts"]["visitedSourceInputs"] != 2 or row["counts"]["shards"] != 2
+                    or row["counts"]["declarations"] < 2 or row["counts"]["expectActualCandidates"] < 1):
             errors.append("semantic_summary_fixture_assertions_invalid")
             break
     for row in projection["executions"]:
@@ -421,7 +442,7 @@ def run(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
     if any(private.iterdir()):
         result["errors"].append("native_semantic_output_directory_not_fresh")
         return result
-    monitored = (raw_result, raw_summary) + tuple(private / f"{label}-{stream}.txt" for label in LABELS for stream in ("stdout", "stderr"))
+    monitored = (raw_result, raw_summary) + tuple(private / f"{label}-{stream}.txt" for label in NATIVE_LABELS for stream in ("stdout", "stderr"))
     command, _ = gradle_result(
         ["--rerun-tasks", "--no-build-cache", TASK, "-PsemanticMode=native", f"-PsemanticTarget={args.target}",
          f"-PsemanticNativeHome={home}", f"-PsemanticJavaHome={java_home}", f"-PsemanticResult={raw_result.absolute()}"],

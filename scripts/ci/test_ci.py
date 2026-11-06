@@ -330,6 +330,98 @@ class ReportTests(unittest.TestCase):
             self.assertEqual("incomplete", value["state"])
             self.assertTrue(any("same actual source" in error for error in value["errors"]))
 
+    def collect_source_control(self, environment, command):
+        """Owned synthetic JSON/JUnit only; no tool, target or hosted execution."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            environment_path = root / "environment.json"
+            environment_path.write_text(json.dumps(environment), encoding="utf-8")
+            command_path = root / "command.json"
+            command_path.write_text(json.dumps(command), encoding="utf-8")
+            (root / "test.xml").write_text(
+                '<testsuite tests="1"><testcase name="synthetic-source-binding-control"/></testsuite>',
+                encoding="utf-8")
+            args = argparse.Namespace(profile="synthetic-source-binding", environment=environment_path,
+                                      reports=["test.xml"], require_report=["test.xml"], require_tests=True,
+                                      artifact=[], require_artifact=[], command_result=[command_path])
+            with patch.object(collect_evidence, "source_identity", return_value=IDENTITY), \
+                 patch.dict(os.environ, {"KT_CI_JOB_STATUS": "success"}):
+                return collect_evidence.collect(args, root)
+
+    def test_collector_exact_commit_and_bytes_positive_control(self):
+        value = self.collect_source_control({"state": "passed", "source": IDENTITY},
+                                            {"state": "passed", "source": IDENTITY})
+        self.assertEqual("passed", value["state"])
+        self.assertEqual(1, value["counts"]["passed"])
+        self.assertEqual([], value["errors"])
+        self.assertEqual([], value["missing_evidence"])
+        self.assertEqual(IDENTITY, value["source"])
+        self.assertEqual(IDENTITY, value["command_results"][0]["source"])
+
+    def test_collector_different_commit_with_identical_bytes_is_incomplete(self):
+        stale = {**IDENTITY, "commit": "3" * 40}
+        self.assertEqual(IDENTITY["working_tree_digest"], stale["working_tree_digest"])
+        for role in ("environment", "command"):
+            with self.subTest(role=role):
+                environment = {"state": "passed", "source": stale if role == "environment" else IDENTITY}
+                command = {"state": "passed", "source": stale if role == "command" else IDENTITY}
+                value = self.collect_source_control(environment, command)
+                self.assertEqual("incomplete", value["state"])
+                self.assertEqual(1, value["counts"]["passed"])
+                self.assertEqual([], value["missing_evidence"])
+                expected = "Environment and reports do not bind the same actual source tree" if role == "environment" \
+                    else "Command evidence source differs from the tested tree: command.json"
+                self.assertEqual([expected], value["errors"])
+
+    def test_collector_present_identity_requires_nonmissing_commit(self):
+        for commit in (None, "", "omitted"):
+            invalid = {**IDENTITY, "commit": commit}
+            if commit == "omitted":
+                invalid.pop("commit")
+            for role in ("environment", "command"):
+                with self.subTest(role=role, commit=commit):
+                    environment = {"state": "passed", "source": invalid if role == "environment" else IDENTITY}
+                    command = {"state": "passed", "source": invalid if role == "command" else IDENTITY}
+                    value = self.collect_source_control(environment, command)
+                    self.assertEqual("incomplete", value["state"])
+                    self.assertEqual(1, value["counts"]["passed"])
+                    self.assertEqual(1, len(value["errors"]))
+                    self.assertEqual([], value["missing_evidence"])
+
+    def test_collector_same_commit_still_rejects_different_source_bytes(self):
+        changed = {**IDENTITY, "working_tree_digest": "sha256:" + "4" * 64}
+        for role in ("environment", "command"):
+            with self.subTest(role=role):
+                environment = {"state": "passed", "source": changed if role == "environment" else IDENTITY}
+                command = {"state": "passed", "source": changed if role == "command" else IDENTITY}
+                value = self.collect_source_control(environment, command)
+                self.assertEqual("incomplete", value["state"])
+                self.assertEqual(1, value["counts"]["passed"])
+                self.assertEqual(1, len(value["errors"]))
+                self.assertEqual([], value["missing_evidence"])
+
+    def test_collector_unbound_sdk_availability_does_not_gain_a_source_claim(self):
+        for explicit_null in (False, True):
+            with self.subTest(explicit_null=explicit_null):
+                command = {"state": "passed", "evidence_kind": "sdk_provisioning",
+                           "qualification": "SDK availability, not Android target execution"}
+                if explicit_null:
+                    command["source"] = None
+                value = self.collect_source_control({"state": "passed", "source": IDENTITY}, command)
+                self.assertEqual("passed", value["state"])
+                self.assertEqual([command], value["command_results"])
+                self.assertEqual(explicit_null, "source" in value["command_results"][0])
+                self.assertIsNone(value["command_results"][0].get("source"))
+
+    def test_collector_unavailable_or_skipped_commands_never_pass_with_matching_source(self):
+        for state in ("unavailable", "skipped", "failed", "incomplete"):
+            with self.subTest(state=state):
+                value = self.collect_source_control({"state": "passed", "source": IDENTITY},
+                                                    {"state": state, "source": IDENTITY})
+                self.assertEqual("incomplete", value["state"])
+                self.assertEqual(["Command/smoke evidence did not pass: command.json"], value["errors"])
+                self.assertEqual([], value["missing_evidence"])
+
 
 class SmokeAndEnvironmentTests(unittest.TestCase):
     def test_doctor_must_explicitly_be_preview(self):

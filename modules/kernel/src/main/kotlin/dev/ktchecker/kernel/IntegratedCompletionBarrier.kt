@@ -352,6 +352,9 @@ class IntegratedCompletionBarrier(
         val binding = service.authenticate(c, member.adapter)
         if (binding != member.binding) fail("joint_member_binding_mismatch", "A recipient's full enrolled binding changed")
         val client = binding.clientId
+        if (c.count("SELECT COUNT(*) FROM events WHERE client_id=? AND kind=?", client, PolicyReassessments.EVENT_KIND) != 0L) {
+            fail("joint_policy_reassessment_unsupported", "Policy reassessment views cannot authorize integrated completion in this version")
+        }
         val epoch = c.count("SELECT epoch FROM clients WHERE client_id=?", client)
         val reviewFrontier = c.count("SELECT next_review-1 FROM clients WHERE client_id=?", client)
         val eventFrontier = c.count("SELECT next_event-1 FROM clients WHERE client_id=?", client)

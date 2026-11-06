@@ -4,6 +4,7 @@ import dev.ktchecker.compiler.KotlinJvmToolchain
 import dev.ktchecker.compiler.live.CompilerApplicationNamespace
 import dev.ktchecker.compiler.live.model.*
 import dev.ktchecker.contracts.*
+import dev.ktchecker.kernel.OwnerFullCatalog1665
 import dev.ktchecker.providers.runtime.*
 import dev.ktchecker.workerprotocol.ApplicationWire as Wire
 import dev.ktchecker.workerprotocol.CompilerModelWire as ModelWire
@@ -81,7 +82,8 @@ internal class RealProducedJvmGeneration(
         val implementation = Digests.sha256(Digests.canonical(buildJsonObject {
             put("schema", "ktchecker/real-produced-jvm-test-owner/1"); put("selection", selectionDigest)
             put("installedCodeImage", startup.image.digest); put("profile", ModelWire.PRODUCED_PROFILE)
-            put("compilerChildCap", 1024); put("parentCap", 4096); put("requiredParentRules", 1663)
+            put("compilerChildCap", 1024); put("parentCap", 4096); put("requiredParentRules", OwnerFullCatalog1665.RULE_COUNT)
+            put("catalogContract", OwnerFullCatalog1665.ID); put("catalogRuleIdsDigest", OwnerFullCatalog1665.RULE_IDS_DIGEST)
         }))
         val identity = Wire.Identity(UUID.randomUUID().toString().replace("-", ""), owner.identity, namespace.digest,
             implementation, bridge.digest, ModelWire.compilerClosureDigest(descriptor), ModelWire.toolchainDigest(descriptor),

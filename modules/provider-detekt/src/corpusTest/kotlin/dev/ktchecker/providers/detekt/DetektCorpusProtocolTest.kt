@@ -51,8 +51,8 @@ class DetektCorpusProtocolTest {
         assertEquals(172, preserved.sumOf { 6 + controls(it).size })
         assertEquals(13, preserved.count { it.text("default_activation") == "advisory" })
         assertEquals(6, preserved.count { it.text("default_activation") == "opt_in" })
-        assertEquals(22, inventory.fixtures.size)
-        assertEquals(199, inventory.fixtures.sumOf { 6 + controls(it).size })
+        assertEquals(DetektCorpusCohort.FULL_AUTHORED_RULES, inventory.fixtures.size)
+        assertEquals(DetektCorpusCohort.FULL_AUTHORED_ANALYSES, inventory.fixtures.sumOf { 6 + controls(it).size })
         val priorIds = DetektCorpusCohort.preProtocol.flatMap { it.analysesByRule.keys }.toSet()
         val prior = inventory.fixtures.filter { it.text("rule_id") in priorIds }
         assertEquals(16, prior.size)
@@ -259,7 +259,7 @@ class DetektCorpusProtocolTest {
     @Test fun `protocol pins controls combined pins and scheduled plan cannot be mutated`() {
         assertEquals(8, DetektCorpusProtocolPins.files.size)
         assertEquals(30, (DetektCorpusExpansionPins.files + DetektCorpusProtocolPins.files).size)
-        assertEquals(38, DetektCorpusInventory.filePins.size)
+        assertEquals(55, DetektCorpusInventory.filePins.size)
         assertTrue(DetektCorpusExpansionPins.files.keys.intersect(DetektCorpusProtocolPins.files.keys).isEmpty())
         assertFailsWith<UnsupportedOperationException> { (DetektCorpusProtocolPins.files as MutableMap<String, String>).clear() }
         assertFailsWith<UnsupportedOperationException> { (DetektCorpusProtocolPins.planIdentities as MutableMap<String, String>).clear() }

@@ -27,14 +27,14 @@ class KernelProducedPlanRetryRetirementTest {
     }
     private fun claim(service: KernelService, planId: String): Claim = service.ledger.read { c ->
         val rows = c.query("""SELECT origin_instance,claim_nonce,reserved_archive_bytes FROM plan_slot_resolution_claims
-            WHERE plan_id=? AND slot_id=?""", planId, ProducedLaneFixture.CONSUMER) {
+            WHERE plan_id=? AND slot_id=?""", planId, ProducedLane1665Fixture.CONSUMER) {
             Claim(it.getString(1), it.getString(2), it.getLong(3))
         }
         assertEquals(1, rows.size)
         rows.single().also { row ->
             val archives = assertNotNull(c.one("SELECT archives_json FROM produced_plan_admissions WHERE plan_id=?", planId) {
                 ContractJson.decodeFromString<List<DeclaredArchiveIdentity>>(it.getString(1)) })
-            assertEquals(archives.single { it.slotId == ProducedLaneFixture.CONSUMER }.byteCount + 134_217_728L, row.reserved)
+            assertEquals(archives.single { it.slotId == ProducedLane1665Fixture.CONSUMER }.byteCount + 134_217_728L, row.reserved)
         }
     }
     private fun charge(service: KernelService): Charge = service.ledger.read { c ->
@@ -73,7 +73,7 @@ class KernelProducedPlanRetryRetirementTest {
         }
     }
 
-    private class ReadyBarrier(private val fixture: ProducedLaneFixture) {
+    private class ReadyBarrier(private val fixture: ProducedLane1665Fixture) {
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)
         val captured = AtomicReference<Pair<ProducedSlotResolutionRequest, PreparedProducedExecution>>()
@@ -94,7 +94,7 @@ class KernelProducedPlanRetryRetirementTest {
     private fun removePublicationFault(service: KernelService) = service.ledger.transaction { c ->
         c.execute("DROP TRIGGER IF EXISTS synthetic_ready_publication_abort")
     }
-    private fun twoFailedPublications(service: KernelService, f: ProducedLaneFixture) {
+    private fun twoFailedPublications(service: KernelService, f: ProducedLane1665Fixture) {
         var failures = 0
         f.await("Two real SQL publication rollbacks were not observed") {
             try { service.producedPlans.resolveNext() }
@@ -119,11 +119,11 @@ class KernelProducedPlanRetryRetirementTest {
     }
 
     @Test fun sqlPublicationRetriesKeepOnePreparedReadyNonceOutputAndChargeUntilTheSameConsumerPublishes() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider(); val barrier = ReadyBarrier(f)
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG, planAuthority = f,
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider(); val barrier = ReadyBarrier(f)
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG, planAuthority = f,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
             try {
-                val client = service.registerClient(ProducedLaneFixture.binding("retry")); val definition = f.definition(client.binding, "retry")
+                val client = service.registerClient(ProducedLane1665Fixture.binding("retry")); val definition = f.definition(client.binding, "retry")
                 f.resolver[definition.request.planRef] = barrier::resolve
                 val plan = service.submitPlan(client.client, definition.request)
                 assertTrue(barrier.entered.await(5, TimeUnit.SECONDS))
@@ -155,7 +155,7 @@ class KernelProducedPlanRetryRetirementTest {
 
                 removePublicationFault(service)
                 val result = f.finished(service, client, plan.slots.last().reviewId)
-                val consumer = f.typedAttempts.single { it.execution.slotId == ProducedLaneFixture.CONSUMER }
+                val consumer = f.typedAttempts.single { it.execution.slotId == ProducedLane1665Fixture.CONSUMER }
                 assertSame(request.admission, consumer.admission)
                 assertEquals(prepared.input, consumer.original)
                 assertEquals(prepared.bindingDigest, consumer.execution.certificate.compilerBindingDigest)
@@ -182,12 +182,12 @@ class KernelProducedPlanRetryRetirementTest {
     }
 
     @Test fun preparedButUnpublishedResidueRemainsChargedAndCannotReplayAfterOwnedCloseAndDenyRestart() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider(); val barrier = ReadyBarrier(f)
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider(); val barrier = ReadyBarrier(f)
         val root = temp.resolve("ledger")
-        val origin = KernelService.open(root, provider, ProducedLaneFixture.CONFIG, planAuthority = f,
+        val origin = KernelService.open(root, provider, ProducedLane1665Fixture.CONFIG, planAuthority = f,
             preparedInputObserver = f.observer, resultPolicy = f.policy)
         try {
-            val client = origin.registerClient(ProducedLaneFixture.binding("residue")); val definition = f.definition(client.binding, "residue")
+            val client = origin.registerClient(ProducedLane1665Fixture.binding("residue")); val definition = f.definition(client.binding, "residue")
             f.resolver[definition.request.planRef] = barrier::resolve
             val plan = origin.submitPlan(client.client, definition.request)
             assertTrue(barrier.entered.await(5, TimeUnit.SECONDS))
@@ -219,7 +219,7 @@ class KernelProducedPlanRetryRetirementTest {
             removePublicationFault(origin)
 
             val replay = f.Provider()
-            KernelService.open(root, replay, ProducedLaneFixture.CONFIG, planAuthority = ReviewPlanAuthority.DENY,
+            KernelService.open(root, replay, ProducedLane1665Fixture.CONFIG, planAuthority = ReviewPlanAuthority.DENY,
                 preparedInputObserver = f.observer, resultPolicy = f.policy).use { restarted ->
                 restarted.registerClient(client); assertNotEquals(origin.instanceId, restarted.instanceId)
                 val retained = restarted.planStatus(client.client, plan.planId)
@@ -247,13 +247,13 @@ class KernelProducedPlanRetryRetirementTest {
     }
 
     @Test fun failedChargedOutputSpendsOnlyItsResolverTurnAndTheOtherReadyQueuePrecedesMoreSameQueueWork() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider()
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider()
         val entered = CountDownLatch(1); val release = CountDownLatch(1); val order = ConcurrentLinkedQueue<String>()
         val residue = AtomicReference<PreparedProducedExecution>()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG, planAuthority = f,
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG, planAuthority = f,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
             try {
-                val a = service.registerClient(ProducedLaneFixture.binding("fair-a")); val b = service.registerClient(ProducedLaneFixture.binding("fair-b"))
+                val a = service.registerClient(ProducedLane1665Fixture.binding("fair-a")); val b = service.registerClient(ProducedLane1665Fixture.binding("fair-b"))
                 val a1 = f.definition(a.binding, "a1")
                 f.resolver[a1.request.planRef] = { request ->
                     order += "a1"; residue.set(f.consumer(request)); entered.countDown()
@@ -282,7 +282,7 @@ class KernelProducedPlanRetryRetirementTest {
                 assertEquals(listOf("a1", "b1", "a2", "a3"), order.toList())
                 assertTrue("produced_consumer_resolution_unavailable" in service.planStatus(a.client, first.planId).slots.last().reasons)
                 assertEquals(selected, claim(service, first.planId)); ownedJar(service, first.planId, selected, prepared)
-                assertFalse(f.typedAttempts.any { it.admission.planId == first.planId && it.execution.slotId == ProducedLaneFixture.CONSUMER })
+                assertFalse(f.typedAttempts.any { it.admission.planId == first.planId && it.execution.slotId == ProducedLane1665Fixture.CONSUMER })
                 plans.forEach { (client, plan) ->
                     assertEquals(declaredRowsByPlan.getValue(plan.planId), declarations(service, plan))
                     val retained = service.planStatus(client.client, plan.planId)
@@ -307,10 +307,10 @@ class KernelProducedPlanRetryRetirementTest {
     }
 
     @Test fun realRetirementSelectorSkipsMoreThan4096TerminalAdmissionsBeforeItsBoundedActionableBatch() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG.copy(workerCount = 0)).use { service ->
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider()
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0)).use { service ->
             // DISJOINT selector-only metadata: no valid declarations/certificates or admitted authority.
-            // Never pass these rows to load/retire/admit; the other tests exercise real full1663 histories.
+            // Never pass these rows to load/retire/admit; the other tests exercise real full1665 histories.
             DriverManager.getConnection("jdbc:sqlite::memory:").use { c ->
                 c.execute("CREATE TABLE instances(instance_id TEXT PRIMARY KEY,closed INTEGER NOT NULL)")
                 c.execute("CREATE TABLE produced_plan_admissions(plan_id TEXT PRIMARY KEY,origin_instance TEXT NOT NULL)")
@@ -331,7 +331,7 @@ class KernelProducedPlanRetryRetirementTest {
                 // Calls the factored PRODUCTION selector, not a test copy of its SQL.
                 assertEquals(listOf("late-unresolved", "late-queued", "late-running"), service.producedPlans.closedOriginCandidateIds(c))
                 c.execute("INSERT INTO plan_slot_resolutions(plan_id,slot_id,state,work_key) VALUES(?,?,'unavailable',NULL)",
-                    "late-unresolved", ProducedLaneFixture.CONSUMER)
+                    "late-unresolved", ProducedLane1665Fixture.CONSUMER)
                 c.execute("UPDATE work SET state='complete' WHERE work_key IN (?,?)", "late-queued:consumer", "late-running:consumer")
                 c.commit()
                 assertEquals(emptyList(), service.producedPlans.closedOriginCandidateIds(c))
@@ -345,7 +345,7 @@ class KernelProducedPlanRetryRetirementTest {
     }
 
     @Test fun caughtBadProgressPublicationRollbackCannotEraseItsIntrinsicFaultBeforeAnExactPartialFinalResult() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val swallowed = AtomicInteger()
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val swallowed = AtomicInteger()
         val provider = f.Provider { input, emit ->
             if (input.context.scope.compilation == "main") {
                 try { emit(f.partial(input).copy(providerId = "foreign-provider")) }
@@ -356,7 +356,7 @@ class KernelProducedPlanRetryRetirementTest {
                 }
             }
         }
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG, planAuthority = f,
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG, planAuthority = f,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
             try {
                 service.ledger.transaction { c ->
@@ -364,12 +364,12 @@ class KernelProducedPlanRetryRetirementTest {
                     c.execute("""CREATE TRIGGER synthetic_progress_insert_abort BEFORE INSERT ON work_progress
                         BEGIN SELECT RAISE(ABORT,'synthetic_progress_insert_rollback'); END""")
                 }
-                val client = service.registerClient(ProducedLaneFixture.binding("progress-rollback"))
+                val client = service.registerClient(ProducedLane1665Fixture.binding("progress-rollback"))
                 val definition = f.definition(client.binding, "progress-rollback")
                 val plan = service.submitPlan(client.client, definition.request)
                 val producerResult = f.finished(service, client, plan.slots.first().reviewId)
                 assertEquals(1, swallowed.get(), "The provider must actually catch the failed progress INSERT")
-                val producer = f.typedAttempts.single { it.execution.slotId == ProducedLaneFixture.PRODUCER }
+                val producer = f.typedAttempts.single { it.execution.slotId == ProducedLane1665Fixture.PRODUCER }
                 val expectedRaw = f.partial(producer.effective)
                 val required = listOf("progress_provider_identity_mismatch", "progress_publication_failed").sorted()
                 assertEquals(expectedRaw, producerResult.result); assertEquals("incomplete", producerResult.state)
@@ -408,15 +408,15 @@ class KernelProducedPlanRetryRetirementTest {
 
     private fun selectorMetadata(c: Connection, id: String, origin: String, consumer: String?) {
         c.execute("INSERT INTO produced_plan_admissions(plan_id,origin_instance) VALUES(?,?)", id, origin)
-        listOf(ProducedLaneFixture.PRODUCER, ProducedLaneFixture.CONSUMER).forEach { slot ->
+        listOf(ProducedLane1665Fixture.PRODUCER, ProducedLane1665Fixture.CONSUMER).forEach { slot ->
             c.execute("INSERT INTO plan_slots(plan_id,slot_id) VALUES(?,?)", id, slot)
         }
         c.execute("INSERT INTO work(work_key,state) VALUES(?,'complete')", "$id:producer")
         c.execute("INSERT INTO plan_slot_resolutions(plan_id,slot_id,state,work_key) VALUES(?,?,'ready',?)",
-            id, ProducedLaneFixture.PRODUCER, "$id:producer")
+            id, ProducedLane1665Fixture.PRODUCER, "$id:producer")
         if (consumer == null) return
         if (consumer != "unavailable") c.execute("INSERT INTO work(work_key,state) VALUES(?,?)", "$id:consumer", consumer)
-        c.execute("INSERT INTO plan_slot_resolutions(plan_id,slot_id,state,work_key) VALUES(?,?,?,?)", id, ProducedLaneFixture.CONSUMER,
+        c.execute("INSERT INTO plan_slot_resolutions(plan_id,slot_id,state,work_key) VALUES(?,?,?,?)", id, ProducedLane1665Fixture.CONSUMER,
             if (consumer == "unavailable") "unavailable" else "ready", if (consumer == "unavailable") null else "$id:consumer")
     }
 }

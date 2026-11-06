@@ -42,7 +42,10 @@ An explicit named `--cohort=` is required: `original`, `overrides`, `visibility`
 `types_conventions`, `inline_constructors`, `opt_in`, `jvm`, or explicit `all`.
 There is no default-all run. These are trusted harness scheduling choices, not
 project-policy JSON or execution authority. Every invocation creates a fresh
-UUID/cohort run directory; resuming or merging prior runs is prohibited.
+UUID/cohort run directory under repository-root `build/compiler-fixtures/runs/`;
+resuming or merging prior runs is prohibited. New generated runs use the existing
+ignored `build/` output area. Tracked history under `providers/compiler-fixtures/runs/`
+is not moved, deleted, or ignored and remains in the source-identity inventory.
 
 Hard maximums (also the defaults) are **48 reserved provider attempts, 20 minutes
 overall, 90 seconds per job, and 256 MiB retained evidence**. Smaller bounds use
@@ -58,7 +61,8 @@ last bounded completion-selector write; all bulk serialization, reference
 hashing and checkpoint writes count before it. Later terminal notices do not
 make a second, contradictory completion decision.
 
-The runner prints its owner-private `runs/<run>/control/stop` path. Creating a
+The runner prints its owner-private `build/compiler-fixtures/runs/<run>/control/stop`
+path. Creating a
 regular, non-linked file of at most 4 KiB there requests stop before the next
 admission; it neither reads the contents nor signals a PID, and the current job
 keeps its deadline. Unsafe/replaced control paths fail closed. Owner stop,
@@ -97,11 +101,15 @@ image is required for compiler execution, with no launcher-only fallback.
 
 `manifest.json` and `cases/` contain original synthetic inputs, not copied or
 disabled upstream execution evidence. The manifest's initial input status is
-not updated to claim execution. Each actual run writes unique `runs/<run>/`
+not updated to claim execution. Each actual run writes unique repository-root
+`build/compiler-fixtures/runs/<run>/`
 input manifests, captured source bytes, exact commands, version banners,
 stdout/stderr, provider results and explicit assessments. The sidecar
-`evidence/compiler-jvm-2.4.21.json` references those real files with SHA-256 and
-reports **every** mapped rule, including unrun and Native gaps.
+`evidence/compiler-jvm-2.4.21.json` under `providers/compiler-fixtures/` keeps its
+ordinary convenience-publication path and references those real files with SHA-256,
+reporting **every** mapped rule, including unrun and Native gaps. Private timing,
+supplemental, nullability, and diagnostic-breadth runs have no external latest
+sidecar destination; only those routes avoid changing this source-visible sidecar.
 
 All **92 ordinary pairs, 16 unsupported graph plans, and 443 mappings** remain
 visible before cohort selection. Unselected, not-run, incomplete and failed
@@ -150,8 +158,9 @@ live source hashes. Artifacts/resources are checked before each compiler job;
 sources and artifacts are checked at run end. Drift fails the task and withholds
 implementation/test attribution while keeping original copies and actual
 attempt results. Each run also keeps its own sidecar so later runs cannot erase
-historical failures. Raw stdout/stderr and bytecode remain byte-preserving Git
-evidence, not whitespace-cleaned text.
+historical failures. Existing tracked raw stdout/stderr and bytecode remain
+byte-preserving Git evidence, not whitespace-cleaned text; new untracked run output
+stays in the ignored build area until separately preserved by its owner.
 
 The runner also preserves the native C source, builder and README, plus the
 exact installed supervisor manifest, binary and informational build receipt at

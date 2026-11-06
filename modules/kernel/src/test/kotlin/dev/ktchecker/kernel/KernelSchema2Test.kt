@@ -84,7 +84,7 @@ class KernelSchema2Test {
                 assertEquals(if (mode == "wal-checkpointed") 2L else 1L, old.count("SELECT COUNT(*) FROM retained_obligations"))
                 assertEquals("1", old.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
                 // Version rejection cannot stop an already-open old process. This write is the
-                // fixture's old owner, NOT a schema3 write or permission for mixed binaries.
+                // fixture's old owner, NOT a schema4 write or permission for mixed binaries.
                 // No raw byte snapshots occur while this connection is open.
                 rejected { Ledger(root, config) }
                 old.execute("INSERT INTO retained_obligations VALUES('old-owner-still-running','shutdown-required')")
@@ -93,7 +93,7 @@ class KernelSchema2Test {
         }
     }
 
-    @Test fun newSchema3StateDoesNotCopyResetOrDischargeAnOldStore() {
+    @Test fun newSchema4StateDoesNotCopyResetOrDischargeAnOldStore() {
         val oldRoot = temp.resolve("old")
         database(oldRoot).use { c ->
             c.execute("CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
@@ -105,7 +105,7 @@ class KernelSchema2Test {
         rejected { Ledger(oldRoot, config) }
         val fresh = Ledger(temp.resolve("separately-owner-selected-new-state"), config)
         fresh.read { c ->
-            assertEquals("3", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+            assertEquals("4", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
             assertEquals(0L, c.count("SELECT COUNT(*) FROM reviews"))
             assertTrue("routing_id" in c.query("PRAGMA table_info(parent_plans)") { it.getString("name") })
             assertTrue("routed_obligations" in c.query("PRAGMA table_info(clients)") { it.getString("name") })
@@ -115,9 +115,57 @@ class KernelSchema2Test {
                 assertEquals(1L, c.count("SELECT COUNT(*) FROM sqlite_schema WHERE type='table' AND name=?", table))
             }
             assertEquals(1L, c.count("SELECT COUNT(*) FROM sqlite_schema WHERE type='view' AND name='review_executions'"))
+            assertEquals(listOf("provider_key" to 1, "fair_key" to 2, "last_served" to 0),
+                c.query("PRAGMA table_info(provider_fair_queues)") { it.getString("name") to it.getInt("pk") })
+            assertEquals(listOf("provider_key" to 1, "client_id" to 2, "last_served" to 0),
+                c.query("PRAGMA table_info(provider_fair_clients)") { it.getString("name") to it.getInt("pk") })
+            assertEquals(listOf("fair_queues"), c.query("PRAGMA foreign_key_list(provider_fair_queues)") { it.getString("table") })
+            assertEquals(listOf("fair_clients"), c.query("PRAGMA foreign_key_list(provider_fair_clients)") { it.getString("table") })
         }
         unchanged(oldRoot, original)
         database(oldRoot).use { c -> assertEquals(1L, c.count("SELECT COUNT(*) FROM retained_obligations")) }
+    }
+
+    @Test fun schema3AggregateAgesAndRetainedRecordsAreRefusedWithoutProviderAgeReconstruction() {
+        listOf("delete", "wal-only", "wal-checkpointed").forEach { mode ->
+            val root = temp.resolve("schema3-$mode")
+            initializeWithReadOnlyLastClose(root) { old ->
+                if (mode != "delete") old.createStatement().use { it.execute("PRAGMA journal_mode=WAL"); it.execute("PRAGMA wal_autocheckpoint=0") }
+                old.execute("CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
+                old.execute("INSERT INTO metadata VALUES('schema_version','3')")
+                old.execute("INSERT INTO metadata VALUES('dispatch_counter','31')")
+                old.execute("CREATE TABLE fair_queues(fair_key TEXT PRIMARY KEY,last_served INTEGER NOT NULL,produced_last_served INTEGER NOT NULL)")
+                old.execute("INSERT INTO fair_queues VALUES('physical-H',27,19)")
+                old.execute("CREATE TABLE fair_clients(client_id TEXT PRIMARY KEY,fair_key TEXT NOT NULL,last_served INTEGER NOT NULL)")
+                old.execute("INSERT INTO fair_clients VALUES('retained-client','physical-H',23)")
+                old.execute("CREATE TABLE retained_obligations(id TEXT PRIMARY KEY,record TEXT NOT NULL)")
+                old.execute("INSERT INTO retained_obligations VALUES('accepted-review','original accepted obligation; no terminal delivery inferred')")
+                old.execute("INSERT INTO retained_obligations VALUES('accepted-parent','immutable declared slots and unresolved consumer remain required')")
+                if (mode == "wal-checkpointed") {
+                    old.createStatement().use { it.execute("PRAGMA wal_checkpoint(TRUNCATE)") }
+                    old.execute("INSERT INTO retained_obligations VALUES('wal-event','unobserved retained outbox payload')")
+                }
+            }
+            val before = files(root)
+            if (mode != "delete") assertTrue("ledger.sqlite-wal" in before)
+            repeat(2) {
+                val failure = assertFailsWith<KernelException> { Ledger(root, config) }
+                assertEquals("unsupported_schema", failure.code)
+                assertTrue(failure.message.orEmpty().contains("schema4"))
+                assertTrue(failure.message.orEmpty().contains("schema1/2/3"))
+                assertTrue(failure.message.orEmpty().contains("provider-age cutover"))
+                unchanged(root, before)
+            }
+            database(root, readOnly = true).use { old ->
+                assertEquals("3", old.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+                assertEquals("31", old.one("SELECT value FROM metadata WHERE key='dispatch_counter'") { it.getString(1) })
+                assertEquals(27L to 19L, old.one("SELECT last_served,produced_last_served FROM fair_queues") { it.getLong(1) to it.getLong(2) })
+                assertEquals(23L, old.count("SELECT last_served FROM fair_clients"))
+                assertEquals(if (mode == "wal-checkpointed") 3L else 2L, old.count("SELECT COUNT(*) FROM retained_obligations"))
+                assertEquals(0L, old.count("SELECT COUNT(*) FROM sqlite_schema WHERE name IN ('provider_fair_queues','provider_fair_clients')"))
+            }
+            unchanged(root, before)
+        }
     }
 
     @Test fun readOnlyPreflightUsesLatestCommittedWalSchemaInsteadOfAStaleMainFile() {
@@ -130,7 +178,7 @@ class KernelSchema2Test {
             owner.execute("INSERT INTO metadata VALUES('old-required-obligation','retained-in-wal')")
         }
         val before = files(root)
-        assertContentEquals(originalMain, before.getValue("ledger.sqlite"), "Main file must still contain the previous schema3 image")
+        assertContentEquals(originalMain, before.getValue("ledger.sqlite"), "Main file must still contain the previous schema4 image")
         assertTrue("ledger.sqlite-wal" in before)
         rejected { Ledger(root, config) }
         unchanged(root, before)
@@ -147,7 +195,7 @@ class KernelSchema2Test {
         database(root, readOnly = true).use { reader ->
             reader.execute("BEGIN")
             try {
-                assertEquals("3", reader.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+                assertEquals("4", reader.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
                 val denied = assertFailsWith<SQLException> {
                     reader.execute("INSERT INTO metadata VALUES('must-not-write','forbidden')")
                 }
@@ -210,7 +258,7 @@ class KernelSchema2Test {
                 repeat(16) {
                     rounds.await(10, TimeUnit.SECONDS)
                     Ledger(root, config).read { c ->
-                        assertEquals("3", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+                        assertEquals("4", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
                         assertEquals("unchanged", c.one("SELECT value FROM metadata WHERE key='retained-test'") { it.getString(1) })
                     }
                 }
@@ -232,7 +280,7 @@ class KernelSchema2Test {
         val beforeEmpty = files(empty)
         rejected { Ledger(empty, config) }
         unchanged(empty, beforeEmpty)
-        listOf<String?>(null, "0", "2", "4").forEachIndexed { index, version ->
+        listOf<String?>(null, "0", "2", "3", "5").forEachIndexed { index, version ->
             val root = temp.resolve("unrecognized-$index")
             database(root).use { c ->
                 c.execute("CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
@@ -250,7 +298,7 @@ class KernelSchema2Test {
         val root = temp.resolve("ledger")
         val ledger = Ledger(root, config)
         ledger.transaction { it.execute("INSERT INTO metadata VALUES('retained-test','unchanged')") }
-        listOf<String?>("1", "2", "4", null).forEach { version ->
+        listOf<String?>("1", "2", "3", "5", null).forEach { version ->
             database(root).use { c ->
                 c.execute("DELETE FROM metadata WHERE key='schema_version'")
                 if (version != null) c.execute("INSERT INTO metadata VALUES('schema_version',?)", version)
@@ -262,9 +310,9 @@ class KernelSchema2Test {
             database(root).use { c ->
                 assertEquals("unchanged", c.one("SELECT value FROM metadata WHERE key='retained-test'") { it.getString(1) })
                 c.execute("DELETE FROM metadata WHERE key='schema_version'")
-                c.execute("INSERT INTO metadata VALUES('schema_version','3')")
+                c.execute("INSERT INTO metadata VALUES('schema_version','4')")
             }
-            assertEquals("3", ledger.read { c -> c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) } })
+            assertEquals("4", ledger.read { c -> c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) } })
         }
     }
 

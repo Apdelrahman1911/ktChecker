@@ -38,7 +38,7 @@ class DetektCorpusObservabilityTest {
         it.text("corpus_id") == "detekt-syntax-exception-observability-v1"
     }
 
-    /** Copy thirty-eight bounded authored-data files only, not installed tools, caches or evidence. */
+    /** Copy the complete bounded authored-data inventory only, not installed tools, caches or evidence. */
     private fun copyData(): Path {
         val copy = Files.createDirectory(temporary.resolve("observability-${++copies}"))
         for (relative in DetektCorpusInventory.filePins.keys) {
@@ -52,10 +52,13 @@ class DetektCorpusObservabilityTest {
     @Test fun `twenty two exact syntax rules preserve all nineteen prior fixtures and nine opt in activations`() {
         val inventory = load()
         inventory.verify()
-        assertEquals(22, inventory.fixtures.size)
-        assertEquals(199, inventory.fixtures.sumOf { 6 + controls(it).size })
-        assertEquals(13, inventory.fixtures.count { it.text("default_activation") == "advisory" })
-        assertEquals(9, inventory.fixtures.count { it.text("default_activation") == "opt_in" })
+        val preLocalIds = DetektCorpusCohort.preLocalShapes.flatMap { it.analysesByRule.keys }.toSet()
+        val preLocal = inventory.fixtures.filter { it.text("rule_id") in preLocalIds }
+        assertEquals(22, preLocal.size)
+        assertEquals(199, preLocal.sumOf { 6 + controls(it).size })
+        assertEquals(13, preLocal.count { it.text("default_activation") == "advisory" })
+        assertEquals(9, preLocal.count { it.text("default_activation") == "opt_in" })
+        assertEquals(DetektCorpusCohort.FULL_AUTHORED_RULES, inventory.fixtures.size)
         val priorIds = DetektCorpusCohort.preObservability.flatMap { it.analysesByRule.keys }.toSet()
         val prior = inventory.fixtures.filter { it.text("rule_id") in priorIds }
         assertEquals(19, prior.size)
@@ -284,7 +287,7 @@ class DetektCorpusObservabilityTest {
     @Test fun `observability pins control IDs and scheduled plan cannot mutate any preserved data map`() {
         assertEquals(8, DetektCorpusObservabilityPins.files.size)
         assertEquals(30, (DetektCorpusExpansionPins.files + DetektCorpusProtocolPins.files).size)
-        assertEquals(38, DetektCorpusInventory.filePins.size)
+        assertEquals(55, DetektCorpusInventory.filePins.size)
         assertTrue((DetektCorpusExpansionPins.files.keys + DetektCorpusProtocolPins.files.keys).intersect(DetektCorpusObservabilityPins.files.keys).isEmpty())
         assertFailsWith<UnsupportedOperationException> { (DetektCorpusObservabilityPins.files as MutableMap<String, String>).clear() }
         assertFailsWith<UnsupportedOperationException> { (DetektCorpusObservabilityPins.planIdentities as MutableMap<String, String>).clear() }

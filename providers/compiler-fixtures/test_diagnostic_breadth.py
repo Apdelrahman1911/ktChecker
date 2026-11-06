@@ -1,0 +1,432 @@
+#!/usr/bin/env python3
+"""Source/data assertions only: no compiler, provider, subprocess, generated input or execution receipt."""
+from collections import Counter
+from pathlib import Path, PurePosixPath
+import hashlib
+import json
+import unittest
+
+import compiler_mapping_contracts as contracts
+
+ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = ROOT / 'providers/compiler-fixtures'
+PLAN_DIR = FIXTURES / 'cohort-plans'
+KINDS = ('positive', 'negative', 'boundary', 'applicability', 'suppression', 'regression')
+SELECTORS = ('diagnostic_breadth_default', 'diagnostic_breadth_advisory', 'diagnostic_breadth_opt_in')
+GROUPS = {
+    'diagnostic_breadth_default': ('enabled_when_validated', (
+        'HAS_NEXT_MISSING', 'HAS_NEXT_FUNCTION_TYPE_MISMATCH', 'DELEGATE_SPECIAL_FUNCTION_MISSING',
+        'DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH', 'DSL_SCOPE_VIOLATION')),
+    'diagnostic_breadth_advisory': ('advisory', (
+        'SENSELESS_COMPARISON', 'DUPLICATE_BRANCH_CONDITION_IN_WHEN', 'TRIM_MARGIN_BLANK_PREFIX',
+        'ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS', 'ASSIGNED_VALUE_IS_NEVER_READ')),
+    'diagnostic_breadth_opt_in': ('opt_in', (
+        'CAN_BE_VAL', 'REDUNDANT_CALL_OF_CONVERSION_METHOD', 'USELESS_CALL_ON_NOT_NULL',
+        'NO_EXPLICIT_RETURN_TYPE_IN_API_MODE', 'RETURN_VALUE_NOT_USED')),
+}
+FLAGS = ['-jvm-target', '17', '-language-version', '2.4', '-api-version', '2.4']
+EXTRA_IDS = {'ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS', 'ASSIGNED_VALUE_IS_NEVER_READ',
+             'CAN_BE_VAL', 'REDUNDANT_CALL_OF_CONVERSION_METHOD', 'USELESS_CALL_ON_NOT_NULL'}
+COMPANION = 'INAPPLICABLE_OPERATOR_MODIFIER'
+BASE_PATH = 'cohort-plans/diagnostic-breadth-cases/'
+
+
+def stable_id(name):
+    return 'ktc.compiler.common.' + name.lower()
+
+
+def utf16_token(source, region):
+    """Interpret proposed source coordinates, never infer an actual diagnostic position."""
+    for key in ('line', 'start_column', 'end_column_exclusive'):
+        if type(region[key]) is not int:
+            raise ValueError('Coordinates must be literal integers, not bools')
+    line, start, end = (region[key] for key in ('line', 'start_column', 'end_column_exclusive'))
+    lines = source.split('\n')
+    if not 1 <= line <= len(lines) or not 0 <= start < end:
+        raise ValueError('Invalid authored region')
+    encoded = lines[line - 1].encode('utf-16-le')
+    if 2 * end > len(encoded):
+        raise ValueError('Region exceeds the UTF-16 line')
+    return encoded[2 * start:2 * end].decode('utf-16-le')
+
+
+class DiagnosticBreadthSourceDataTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Affirmative445 production contract, distinct from every frozen legacy443 oracle below.
+        cls.current_mapping = contracts.current445(ROOT)
+        contracts.require_legacy_runner_refusal_source(ROOT)
+        cls.manifest = json.loads((PLAN_DIR / 'diagnostic-breadth-v1.json').read_bytes())
+        cls.rows = cls.manifest['fixtures']
+        cls.evidence = json.loads((PLAN_DIR / 'diagnostic-breadth-source-evidence.json').read_bytes())
+        cls.gaps = json.loads((PLAN_DIR / 'diagnostic-breadth-gap-inventory.json').read_bytes())
+        cls.readme = (PLAN_DIR / 'diagnostic-breadth-README.md').read_text(encoding='utf-8')
+        cls.names = [name for _, names in GROUPS.values() for name in names]
+        # Closed source paths, not arbitrary manifest-selected filesystem reads.
+        cls.sources = {(name, kind): (FIXTURES / BASE_PATH / name.lower() / (kind + '.kt')).read_bytes()
+                       for name in cls.names for kind in KINDS}
+        # Legacy breadth-v1 expectations apply only to these immutable443 metadata rows.
+        cls.mapping = contracts.legacy_mapping(ROOT)['mappings']
+        cls.ordinary = json.loads((FIXTURES / 'manifest.json').read_bytes())['fixtures']
+        cls.nullability = json.loads((PLAN_DIR / 'nullability-protocols-v1.json').read_bytes())['fixtures']
+        cls.graphs = json.loads((FIXTURES / 'planned-kmp-manifest.json').read_bytes())['fixtures']
+
+    def test_manifest_header_is_authored_only_with_exact_three_routes_fifteen_ids_and_ninety_sources(self):
+        self.assertEqual({
+            'schema_version': 1, 'kotlin_version': '2.4.21', 'status': 'authored_source_only_additive_plan',
+            'run_complete': False, 'ordinary_six_kind_assessments_complete': False, 'qualification': 'none',
+            'ordered_kinds': list(KINDS), 'source_file_count': 90, 'rule_count': 15, 'selectors': list(SELECTORS),
+            'source_plan_and_oracle_are_execution_authority': False,
+        }, {key: value for key, value in self.manifest.items() if key != 'fixtures'})
+        self.assertEqual(self.names, [row['upstream_id'] for row in self.rows])
+        self.assertEqual(15, len(self.rows))
+        self.assertEqual(15, len({row['rule_id'] for row in self.rows}))
+        self.assertEqual(Counter({selector: 5 for selector in SELECTORS}), Counter(row['selector'] for row in self.rows))
+
+    def test_fifteen_selected_ids_are_disjoint_existing_exact_mappings_with_preserved_activation_groups(self):
+        self.assertEqual(443, len(self.mapping))
+        self.assertEqual(445, len(self.current_mapping['mappings']))
+        self.assertEqual(402, sum(row['backend'] != 'native' for row in self.current_mapping['mappings']))
+        self.assertIn(COMPANION, {row['upstream_id'] for row in self.current_mapping['mappings']})
+        self.assertFalse(set(contracts.NEW_IDS) & {row['rule_id'] for row in self.rows})
+        by_id = {row['rule_id']: row for row in self.mapping}
+        selected = {row['rule_id'] for row in self.rows}
+        old = {row['rule_id'] for row in self.ordinary}
+        nullable = {row['rule_id'] for row in self.nullability}
+        self.assertEqual((98, 6, 15), (len(old), len(nullable), len(selected)))
+        self.assertFalse(old & selected or nullable & selected or old & nullable)
+        self.assertEqual(119, len(old | nullable | selected))
+        self.assertNotIn(COMPANION, {row['upstream_id'] for row in self.mapping})
+        for selector, (activation, names) in GROUPS.items():
+            rows = [row for row in self.rows if row['selector'] == selector]
+            self.assertEqual(list(names), [row['upstream_id'] for row in rows])
+            for row in rows:
+                self.assertEqual(stable_id(row['upstream_id']), row['rule_id'])
+                expected_severity = 'ERROR' if selector == SELECTORS[0] or row['upstream_id'] == 'NO_EXPLICIT_RETURN_TYPE_IN_API_MODE' else 'WARNING'
+                actual = by_id[row['rule_id']]
+                self.assertEqual(('common', expected_severity, activation, 'exact', row['upstream_id']),
+                                 (actual['backend'], actual['declared_severity'], actual['default_activation'], actual['relation'], actual['upstream_id']))
+                self.assertEqual((expected_severity, activation, 'common'),
+                                 (row['declared_severity'], row['default_activation'], row['backend']))
+
+    def test_ninety_fixed_regular_source_paths_and_digests_have_six_kinds_no_runtime_harness_markers(self):
+        expected_paths = set()
+        for row in self.rows:
+            self.assertEqual(list(KINDS), [item['kind'] for item in row['inputs']])
+            self.assertEqual(6, len({item['path'] for item in row['inputs']}))
+            for item in row['inputs']:
+                relative = BASE_PATH + row['upstream_id'].lower() + '/' + item['kind'] + '.kt'
+                self.assertEqual(relative, item['path'])
+                expected_paths.add(relative)
+                path = FIXTURES / relative
+                self.assertTrue(path.is_file())
+                self.assertFalse(path.is_symlink())
+                self.assertEqual(path.absolute(), path.resolve())
+                data = self.sources[row['upstream_id'], item['kind']]
+                self.assertEqual(item['source_sha256'], hashlib.sha256(data).hexdigest())
+                self.assertTrue(data.endswith(b'\n'))
+                for forbidden in (b'\r', b'\x00', b'<!', b'// FILE:', b'// MODULE:', b'// LANGUAGE:', b'// RUN_PIPELINE'):
+                    self.assertNotIn(forbidden, data)
+        actual_paths = {path.relative_to(FIXTURES).as_posix() for path in (FIXTURES / BASE_PATH).rglob('*.kt')}
+        self.assertEqual(90, len(expected_paths))
+        self.assertEqual(expected_paths, actual_paths)
+
+    def test_all_authored_oracles_have_independent_exact_counts_and_no_prefilled_observation_credit(self):
+        counts = Counter()
+        for row in self.rows:
+            self.assertEqual('2026-11-05-diagnostic_breadth', row['authored_cohort'])
+            for item in row['inputs']:
+                self.assertEqual({'kind', 'path', 'source_sha256', 'execution_state', 'status',
+                                  'expected_outcome_matched', 'executed_by_current_harness', 'oracle'}, set(item))
+                self.assertEqual('not_run', item['execution_state'])
+                self.assertEqual('authored_source_only_not_execution_evidence', item['status'])
+                self.assertIsNone(item['expected_outcome_matched'])
+                self.assertIs(False, item['executed_by_current_harness'])
+                oracle = item['oracle']
+                error = row['declared_severity'] == 'ERROR'
+                unknown = error and item['kind'] == 'suppression'
+                expected = None if unknown else int(item['kind'] in ('positive', 'regression') or
+                    (item['kind'] == 'suppression' and not error) or
+                    (item['kind'] == 'boundary' and row['upstream_id'] == 'USELESS_CALL_ON_NOT_NULL'))
+                self.assertEqual(expected, oracle['selected_expected_count'])
+                counts[expected] += 1
+                self.assertEqual(row['declared_severity'].lower(), oracle['selected_severity'])
+                self.assertEqual('unknown' if unknown else 'nonzero' if error and expected == 1 else 'exit0', oracle['compilation_expectation'])
+                self.assertEqual('retain_all_unknown_not_validated' if unknown else 'reject_and_retain_all', oracle['unexpected_errors'])
+                self.assertEqual('allow_and_retain_all_without_clean_coverage_claim', oracle['non_error_diagnostics'])
+                self.assertEqual('one_based_line_zero_based_UTF16_point_only_no_invented_end_span', oracle['point_policy'])
+                self.assertIs(False, oracle['ordinary_six_kind_assessment'])
+                self.assertEqual('none', oracle['qualification'])
+        self.assertEqual(Counter({0: 44, 1: 40, None: 6}), counts)
+
+    def test_separate_kind_major_reservation_arithmetic_is_thirty_five_forty_forty_not_a_receipt(self):
+        caps = dict(zip(SELECTORS, (35, 40, 40)))
+        for selector, (_, names) in GROUPS.items():
+            sources = [(name, kind) for kind in KINDS for name in names]
+            off = [] if selector == SELECTORS[0] else [(name, 'option_off') for name in names]
+            self.assertEqual(30, len(sources))
+            self.assertEqual(30, len(set(sources)))
+            reservations = len(sources) + len(off) + 1 + 4
+            self.assertEqual(caps[selector], reservations)
+            self.assertEqual(31 if not off else 36, len(sources) + len(off) + 1)
+            self.assertEqual(34 if not off else 39, reservations - 1)
+            self.assertIn('`' + selector + '`', self.readme)
+        self.assertIn('kind-major', self.readme)
+        self.assertIn('never proof of execution', self.readme)
+        self.assertIn('budget pooling', self.readme)
+
+    def test_exact_on_flags_use_base_target_language_api_and_only_reviewed_diagnostic_options(self):
+        for row in self.rows:
+            name = row['upstream_id']
+            expected = FLAGS + (['-Wextra'] if name in EXTRA_IDS else [])
+            if name == 'NO_EXPLICIT_RETURN_TYPE_IN_API_MODE':
+                expected += ['-Xexplicit-api=strict']
+            elif name == 'RETURN_VALUE_NOT_USED':
+                expected += ['-Xreturn-value-checker=full']
+            self.assertEqual(expected, row['flags'])
+            for forbidden in ('-Werror', '-nowarn', '-Xmulti-platform', '-Xuse-fir-experimental-checkers'):
+                self.assertNotIn(forbidden, row['flags'])
+            self.assertTrue(row['boundary_scope'])
+            self.assertTrue(row['applicability_scope'])
+        self.assertEqual(5, sum('-Wextra' in row['flags'] for row in self.rows))
+
+    def test_ten_genuine_option_off_probes_reuse_identical_positive_bytes_and_disable_exact_reporting_or_mode(self):
+        count = 0
+        for row in self.rows:
+            off = row['option_off_probe']
+            if row['selector'] == SELECTORS[0]:
+                self.assertIsNone(off)
+                continue
+            count += 1
+            positive = next(item for item in row['inputs'] if item['kind'] == 'positive')
+            self.assertEqual((positive['path'], positive['source_sha256']), (off['path'], off['source_sha256']))
+            self.assertEqual(('option_off', 'positive', 'not_run'), (off['kind'], off['source_kind'], off['execution_state']))
+            self.assertEqual(0, off['oracle']['selected_expected_count'])
+            self.assertEqual('exit0', off['oracle']['compilation_expectation'])
+            self.assertEqual([], off['oracle']['selected_point_regions'])
+            self.assertEqual([], off['oracle']['required_raw_companions'])
+            self.assertIsNone(off['expected_outcome_matched'])
+            self.assertIs(False, off['executed_by_current_harness'])
+            name = row['upstream_id']
+            expected = FLAGS + ['-Xexplicit-api=disable'] if name == 'NO_EXPLICIT_RETURN_TYPE_IN_API_MODE' else \
+                FLAGS + ['-Xreturn-value-checker=disable'] if name == 'RETURN_VALUE_NOT_USED' else \
+                row['flags'] + ['-Xwarning-level=' + name + ':disabled']
+            self.assertEqual(expected, off['flags'])
+            self.assertNotEqual(row['flags'], off['flags'])
+        self.assertEqual(10, count)
+        self.assertNotIn(b'@', self.sources['RETURN_VALUE_NOT_USED', 'positive'])
+        self.assertIn(b'@IgnorableReturnValue', self.sources['RETURN_VALUE_NOT_USED', 'boundary'])
+        self.assertIn('unannotated', self.evidence['return_value_mode_caveat'])
+
+    def test_proposed_regions_match_exact_source_utf16_tokens_but_never_claim_observed_end_spans(self):
+        selected_regions = companion_regions = 0
+        for row in self.rows:
+            for item in row['inputs']:
+                source = self.sources[row['upstream_id'], item['kind']].decode('utf-8')
+                oracle = item['oracle']
+                regions = oracle['selected_point_regions']
+                self.assertEqual(0 if oracle['selected_expected_count'] == 0 else 1, len(regions))
+                selected_regions += len(regions)
+                companions = [region for companion in oracle['required_raw_companions'] for region in companion['point_regions']]
+                companion_regions += len(companions)
+                for region in regions + companions:
+                    self.assertEqual({'line', 'start_column', 'end_column_exclusive', 'source_token'}, set(region))
+                    self.assertTrue(region['source_token'])
+                    self.assertEqual(region['source_token'], utf16_token(source, region))
+        self.assertEqual((46, 2), (selected_regions, companion_regions))
+        emoji = 'prefix \U0001f600 token'
+        start = len(emoji[:emoji.index('token')].encode('utf-16-le')) // 2
+        region = {'line': 1, 'start_column': start, 'end_column_exclusive': start + 5, 'source_token': 'token'}
+        self.assertEqual('token', utf16_token(emoji, region))
+        self.assertNotEqual('token', utf16_token(emoji, dict(region, start_column=start - 1, end_column_exclusive=start + 4)))
+        for changed in (dict(region, line=True), dict(region, end_column_exclusive=1000), dict(region, start_column=-1)):
+            with self.assertRaises(ValueError):
+                utf16_token(emoji, changed)
+
+    def test_regressions_are_independent_pinned_two_line_prefix_files_with_exactly_shifted_proposed_regions(self):
+        for row in self.rows:
+            items = {item['kind']: item for item in row['inputs']}
+            positive, regression = items['positive'], items['regression']
+            name = row['upstream_id']
+            self.assertEqual(b'\n\n' + self.sources[name, 'positive'], self.sources[name, 'regression'])
+            self.assertNotEqual(positive['path'], regression['path'])
+            self.assertNotEqual(positive['source_sha256'], regression['source_sha256'])
+            p, r = positive['oracle'], regression['oracle']
+            self.assertEqual([dict(region, line=region['line'] + 2) for region in p['selected_point_regions']], r['selected_point_regions'])
+            self.assertEqual([dict(companion, point_regions=[dict(region, line=region['line'] + 2) for region in companion['point_regions']])
+                              for companion in p['required_raw_companions']], r['required_raw_companions'])
+            self.assertEqual({key: value for key, value in p.items() if key not in ('selected_point_regions', 'required_raw_companions')},
+                             {key: value for key, value in r.items() if key not in ('selected_point_regions', 'required_raw_companions')})
+
+    def test_nine_warning_suppressions_require_the_separate_unsuppressed_control_not_a_file_wide_drop(self):
+        count = 0
+        for row in self.rows:
+            if row['declared_severity'] != 'WARNING':
+                continue
+            count += 1
+            item = next(item for item in row['inputs'] if item['kind'] == 'suppression')
+            text = self.sources[row['upstream_id'], 'suppression'].decode('utf-8')
+            self.assertEqual(1, text.count('@Suppress("' + row['upstream_id'] + '")'))
+            self.assertNotIn('@file:', text)
+            self.assertIn('fun suppressed(', text)
+            self.assertIn('fun control(', text)
+            self.assertEqual('local_scope_unsuppressed_control_required', item['oracle']['suppression_expectation'])
+            self.assertEqual(1, item['oracle']['selected_expected_count'])
+            region = item['oracle']['selected_point_regions'][0]
+            control_line = next(i + 1 for i, line in enumerate(text.split('\n')) if 'fun control(' in line)
+            self.assertGreaterEqual(region['line'], control_line)
+            self.assertTrue(any(region['source_token'] in line for line in text.split('\n')[:control_line - 1]))
+        self.assertEqual(9, count)
+
+    def test_six_error_suppressions_always_stay_unknown_even_after_exit_zero_and_keep_failure_gaps(self):
+        unknown = []
+        by_selector = Counter()
+        for row in self.rows:
+            if row['declared_severity'] != 'ERROR':
+                continue
+            unknown.append(row['rule_id'])
+            by_selector[row['selector']] += 1
+            item = next(item for item in row['inputs'] if item['kind'] == 'suppression')
+            self.assertEqual(('@file:Suppress("' + row['upstream_id'] + '")\n').encode() + self.sources[row['upstream_id'], 'positive'],
+                             self.sources[row['upstream_id'], 'suppression'])
+            self.assertIsNone(item['oracle']['selected_expected_count'])
+            self.assertEqual('unknown', item['oracle']['compilation_expectation'])
+            self.assertEqual('unknown_not_validated', item['oracle']['suppression_expectation'])
+            self.assertEqual('retain_all_unknown_not_validated', item['oracle']['unexpected_errors'])
+        self.assertEqual(6, len(unknown))
+        self.assertEqual([5, 0, 1], [by_selector[selector] for selector in SELECTORS])
+        self.assertEqual(unknown, self.gaps['hard_error_suppression_unknown_ids'])
+        self.assertIn('unknown and unvalidated', self.readme)
+        self.assertIn('all\nactual errors and `ERROR_SUPPRESSION` warnings remain visible', self.readme)
+
+    def test_exact_named_unmapped_operator_companion_is_required_raw_only_not_a_sixteenth_rule(self):
+        companions = [(row, item, companion) for row in self.rows for item in row['inputs']
+                      for companion in item['oracle']['required_raw_companions']]
+        self.assertEqual(2, len(companions))
+        self.assertEqual(['positive', 'regression'], [item['kind'] for _, item, _ in companions])
+        for row, item, companion in companions:
+            self.assertEqual('HAS_NEXT_FUNCTION_TYPE_MISMATCH', row['upstream_id'])
+            self.assertEqual(COMPANION, companion['upstream_id'])
+            self.assertEqual('error', companion['severity'])
+            self.assertEqual(1, companion['expected_raw_count'])
+            self.assertIsNone(companion['mapped_stable_id'])
+            self.assertEqual('required_unmapped_raw_companion_not_a_sixteenth_breadth_rule', companion['scope'])
+            self.assertEqual('operator', companion['point_regions'][0]['source_token'])
+            self.assertEqual('nonzero', item['oracle']['compilation_expectation'])
+        record = self.evidence['mandatory_unmapped_companion']
+        self.assertIs(False, record['mapped_in_current_443_registry'])
+        self.assertIs(False, record['extra_breadth_rule_credit'])
+        self.assertIn('Actual compilation/provider remains failed', record['policy'])
+        self.assertNotIn(stable_id(COMPANION), {row['rule_id'] for row in self.rows})
+        # The actual445 provider maps this companion; the unchanged443 oracle must be refused, not upgraded.
+        self.assertIn(stable_id(COMPANION), {row['rule_id'] for row in self.current_mapping['mappings']})
+        contracts.require_legacy_runner_refusal_source(ROOT)
+
+    def test_boundaries_include_a_positive_smartcast_warning_and_two_explicitly_retained_blind_spots(self):
+        tokens = {
+            'HAS_NEXT_MISSING': 'operator fun Cursor.hasNext()',
+            'HAS_NEXT_FUNCTION_TYPE_MISMATCH': 'typealias Availability = Boolean',
+            'DELEGATE_SPECIAL_FUNCTION_MISSING': 'operator fun Slot.getValue(',
+            'DELEGATE_SPECIAL_FUNCTION_RETURN_TYPE_MISMATCH': 'val stored: CharSequence by Slot()',
+            'DSL_SCOPE_VIOLATION': '@InnerMark class Inner', 'SENSELESS_COMPARISON': 'fun <T> present(value: T)',
+            'DUPLICATE_BRANCH_CONDITION_IN_WHEN': 'aliasCode ->', 'TRIM_MARGIN_BLANK_PREFIX': 'trimMargin(blankPrefix)',
+            'ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS': 'left === right',
+            'ASSIGNED_VALUE_IS_NEVER_READ': 'var value by kotlin.properties.Delegates.observable',
+            'CAN_BE_VAL': 'var answer by kotlin.properties.Delegates.observable',
+            'REDUNDANT_CALL_OF_CONVERSION_METHOD': '7.toInt()', 'USELESS_CALL_ON_NOT_NULL': 'if (values == null) return emptyList()',
+            'NO_EXPLICIT_RETURN_TYPE_IN_API_MODE': 'internal fun answer()', 'RETURN_VALUE_NOT_USED': '@IgnorableReturnValue',
+        }
+        for row in self.rows:
+            name = row['upstream_id']
+            boundary = next(item for item in row['inputs'] if item['kind'] == 'boundary')
+            self.assertIn(tokens[name], self.sources[name, 'boundary'].decode('utf-8'))
+            self.assertEqual(int(name == 'USELESS_CALL_ON_NOT_NULL'), boundary['oracle']['selected_expected_count'])
+            if name in ('DUPLICATE_BRANCH_CONDITION_IN_WHEN', 'TRIM_MARGIN_BLANK_PREFIX'):
+                self.assertIn('blind spot', row['boundary_scope'])
+        self.assertIn('KT-11971', self.readme)
+        self.assertIn('not safe alternatives', self.readme)
+        self.assertIn('CommonExpressionCheckers', self.evidence['activation_caveat'])
+        self.assertIn('does not edit that map', self.evidence['activation_caveat'])
+
+    def test_tagged_primary_quote_structure_is_pinned_attributed_and_explicitly_not_observed_output(self):
+        evidence = self.evidence
+        self.assertEqual(('2.4.21', 'authored_primary_source_oracles_not_execution', 0, 'none'),
+                         (evidence['kotlin_version'], evidence['status'], evidence['current_execution_count'], evidence['qualification']))
+        self.assertIs(False, evidence['historical_stage_transfer'])
+        archive = evidence['primary_archive']
+        self.assertEqual('https://codeload.github.com/JetBrains/kotlin/tar.gz/refs/tags/v2.4.21', archive['url'])
+        self.assertEqual(('6ee2c2026ab8fdde96e6f14b84262dfa3ac22ea7510e82b42489d846735b9202', 48793351), (archive['sha256'], archive['bytes']))
+        self.assertEqual('329e50eda4cf590f649ae27d6939e2c6b302847dc9bca7456c846295003f5318', archive['acquisition_receipt_sha256'])
+        self.assertEqual('Apache-2.0', evidence['upstream_license']['name'])
+        self.assertIs(False, evidence['upstream_license']['project_license_decision'])
+        self.assertEqual(self.names, [row['upstream_id'] for row in evidence['rules']])
+        self.assertEqual(16, len(evidence['shared_primary_references']))
+        references = list(evidence['shared_primary_references'])
+        for row in evidence['rules']:
+            self.assertEqual(stable_id(row['upstream_id']), row['rule_id'])
+            self.assertGreaterEqual(len(row['references']), 3)
+            self.assertIn('val ' + row['upstream_id'] + ':', row['references'][0]['quote'])
+            self.assertIn('<!' + row['upstream_id'], row['references'][1]['quote'])
+            self.assertIn('no actual or historical diagnostic output used', row['oracle_authoring'])
+            references += row['references']
+        for reference in references:
+            self.assertEqual('v2.4.21', reference['tag'])
+            self.assertRegex(reference['sha256'], r'^[0-9a-f]{64}$')
+            self.assertGreater(reference['bytes'], len(reference['quote'].encode('utf-8')))
+            self.assertGreater(reference['line_start'], 0)
+            self.assertEqual(reference['line_end'] - reference['line_start'] + 1, len(reference['quote'].split('\n')))
+            path = PurePosixPath(reference['path'])
+            self.assertFalse(path.is_absolute())
+            self.assertNotIn('..', path.parts)
+            expected = 'https://github.com/JetBrains/kotlin/blob/v2.4.21/' + reference['path'] + '#L' + str(reference['line_start']) + '-L' + str(reference['line_end'])
+            self.assertEqual(expected, reference['url'])
+            self.assertEqual('tagged_primary_source_not_observed_compiler_output', reference['evidence_kind'])
+        # Actual archive/copy/quote correspondence is reviewed separately in the private source packet; no network here.
+
+    def test_complete_443_gap_inventory_retains_every_mapping_unrun_without_importing_historical_status(self):
+        self.assertEqual('additive_source_inventory_not_execution_status_transfer', self.gaps['status'])
+        rows = self.gaps['mappings']
+        self.assertEqual(443, len(rows))
+        self.assertEqual([row['rule_id'] for row in self.mapping], [row['rule_id'] for row in rows])
+        ordinary = {row['rule_id'] for row in self.ordinary}
+        nullable = {row['rule_id'] for row in self.nullability}
+        breadth = {row['rule_id']: row for row in self.rows}
+        graphs = {row['rule_id'] for row in self.graphs}
+        for actual, mapping in zip(rows, self.mapping):
+            for key in ('rule_id', 'upstream_id', 'backend', 'declared_severity', 'default_activation'):
+                self.assertEqual(mapping[key], actual[key])
+            rule_id = mapping['rule_id']
+            self.assertEqual(rule_id in ordinary, actual['ordinary_pair_authored'])
+            self.assertEqual(rule_id in nullable, actual['nullability_sources_authored'])
+            self.assertEqual(rule_id in breadth, actual['breadth_sources_authored'])
+            self.assertEqual(breadth.get(rule_id, {}).get('selector'), actual['breadth_selector'])
+            self.assertEqual(rule_id in graphs, actual['planned_unsupported_kmp_graph'])
+            self.assertEqual('not_run', actual['current_breadth_execution_state'])
+            self.assertEqual('none', actual['new_stage_credit'])
+            self.assertIs(False, actual['historical_status_imported'])
+        self.assertEqual(324, sum(not any(row[key] for key in ('ordinary_pair_authored', 'nullability_sources_authored', 'breadth_sources_authored')) for row in rows))
+        self.assertEqual(16, sum(row['planned_unsupported_kmp_graph'] for row in rows))
+
+    def test_1663_by_eight_global_cells_legacy_inventories_and_all_unqualified_gaps_are_not_narrowed(self):
+        self.assertEqual({'ids': 1663, 'contexts': 8, 'cells': 13304, 'historical_stage_transfer': False, 'inventory_narrowing': False},
+                         self.gaps['global_invariant'])
+        self.assertEqual(1663 * 8, self.gaps['global_invariant']['cells'])
+        self.assertEqual({'implemented': 0, 'tested': 0, 'qualified': 0, 'source_authorship_is_execution': False}, self.gaps['new_stage_credit'])
+        self.assertEqual({'ordinary_pairs': 98, 'nullability_source_ids': 6, 'nullability_source_files': 30,
+                          'type_boundary_supplemental_sources': 18, 'planned_unsupported_kmp_graphs': 16}, self.gaps['preserved_source_inventories'])
+        self.assertEqual({'breadth_ids': 15, 'source_files': 90, 'option_off_reused_positive_calls': 10,
+                          'ordinary_plus_nullability_plus_breadth_authored_ids': 119, 'outside_these_authored_sets': 324,
+                          'planned_graphs_remain_visible_within_the_443_not_removed_as_exclusions': True}, self.gaps['additive_authoring_only'])
+        self.assertEqual({'enabled_when_validated': 329, 'advisory': 62, 'opt_in': 52}, self.gaps['existing_compiler_registry']['default_activation_counts'])
+        mapping_data = contracts.legacy_source_bytes(ROOT, contracts.MAP_REL)
+        self.assertEqual(self.gaps['existing_compiler_registry']['sha256'], hashlib.sha256(mapping_data).hexdigest())
+        self.assertNotEqual(self.gaps['existing_compiler_registry']['sha256'], contracts.CURRENT_MAP_SHA256)
+        gaps = '\n'.join(self.gaps['retained_gaps'])
+        for scope in ('Kotlin/Native', 'iOS', 'Java interop', 'KMP/refines', 'external libraries', 'real-world', 'alternate JDK/OS', 'project-scale'):
+            self.assertIn(scope, gaps)
+        self.assertIn('not ordinary six-kind', gaps)
+        self.assertIn('No automatic fix or suppressibility safety', gaps)
+
+
+if __name__ == '__main__':
+    unittest.main()

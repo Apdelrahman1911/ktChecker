@@ -78,18 +78,132 @@ jobs:
           --output build/ci-evidence/python/python-checks.json
           --junit build/ci-evidence/python/python-checks.xml
           --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Verify compiler diagnostic breadth source controls
+        if: always()
+        # Additive fixture-source controls outside scripts/ci, not a provider cohort.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_diagnostic_breadth*.py"
+          --output build/ci-evidence/compiler-breadth/python-checks.json
+          --junit build/ci-evidence/compiler-breadth/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler breadth source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-breadth-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-breadth/python-checks.json
+            build/ci-evidence/compiler-breadth/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler checker activation source controls
+        if: always()
+        # Additive registration/source controls, not a compiler/provider execution cohort.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_checker_activation*.py"
+          --output build/ci-evidence/checker-activation/python-checks.json
+          --junit build/ci-evidence/checker-activation/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain checker activation source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-checker-activation-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/checker-activation/python-checks.json
+            build/ci-evidence/checker-activation/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler mapping contract source controls
+        if: always()
+        # Explicit mapping SOURCE contracts, not a compiler/provider execution cohort.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_compiler_mapping_contracts.py"
+          --output build/ci-evidence/compiler-mapping-contracts/python-checks.json
+          --junit build/ci-evidence/compiler-mapping-contracts/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler mapping contract source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-mapping-contracts-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-mapping-contracts/python-checks.json
+            build/ci-evidence/compiler-mapping-contracts/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler nullability protocol source controls
+        if: always()
+        # Both authored protocol modules remain selected; no compiler is invoked here.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_nullability_protocols*.py"
+          --output build/ci-evidence/compiler-nullability-protocols/python-checks.json
+          --junit build/ci-evidence/compiler-nullability-protocols/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler nullability protocol source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-nullability-protocols-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-nullability-protocols/python-checks.json
+            build/ci-evidence/compiler-nullability-protocols/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler original42 selector source controls
+        if: always()
+        # Literal legacy selector SOURCE checks do not replay any historical evidence.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_original42_selectors.py"
+          --output build/ci-evidence/compiler-original42-selectors/python-checks.json
+          --junit build/ci-evidence/compiler-original42-selectors/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler original42 selector source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-original42-selectors-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-original42-selectors/python-checks.json
+            build/ci-evidence/compiler-original42-selectors/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify compiler type-boundary supplemental source controls
+        if: always()
+        # Supplemental SOURCE contracts remain separate from provider/runtime qualification.
+        run: >-
+          python scripts/ci/run_python_checks.py --start-directory providers/compiler-fixtures
+          --pattern "test_type_boundaries_supplemental.py"
+          --output build/ci-evidence/compiler-type-boundaries-supplemental/python-checks.json
+          --junit build/ci-evidence/compiler-type-boundaries-supplemental/python-checks.xml
+          --host "${{ matrix.os }}" --require-ci-context --timeout "${{ matrix.python_timeout_seconds }}"
+      - name: Retain compiler type-boundary supplemental source-control diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compiler-type-boundaries-supplemental-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build/ci-evidence/compiler-type-boundaries-supplemental/python-checks.json
+            build/ci-evidence/compiler-type-boundaries-supplemental/python-checks.xml
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify synthetic Lint receipt privacy without relying on Python assertions
         if: runner.os == 'Linux'
         run: |
           python providers/platform-fixtures/test_retain_lint_evidence.py -q
           python -O providers/platform-fixtures/test_retain_lint_evidence.py -q
       - name: Record initial host and pinned wrapper
-        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment-initial.json --require-java-major 21
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment-initial.json --require-java-major 21 --require-ci-context
       - name: Execute the checksum-pinned Gradle wrapper
         run: python scripts/ci/run_gradle.py --output build/ci-evidence/gradle-version.json --timeout 180 -- --version
       - name: Bind observed Gradle to the selected JVM
         if: always()
-        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 21 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json
+        run: python scripts/ci/record_environment.py --output build/ci-evidence/environment.json --require-java-major 21 --require-gradle 9.6.1 --gradle-result build/ci-evidence/gradle-version.json --require-ci-context
       - name: Observe exact helper build inputs and compiler or explicit unsupported host
         if: always()
         # Version probes only, under the builder's minimal environment. No
@@ -163,6 +277,68 @@ jobs:
           -PdetektIntegration=${{ matrix.library_opt_in }} -PktlintIntegration=${{ matrix.library_opt_in }}
           -PlibraryFixtureEvidenceRoot=build/ci-evidence/raw/library-fixtures
           -PnativeSupervisorPython=${{ matrix.supervisor_python }} ${{ matrix.supervisor_cc_property }}
+      - name: Select exact audited Node runtime for real broker interoperability
+        if: success() && runner.os == 'Linux'
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.20.0'
+          check-latest: false
+      - name: Build locked MCP bridge for real broker interoperability
+        if: success() && runner.os == 'Linux'
+        working-directory: bridges/mcp
+        shell: bash
+        env:
+          NODE_OPTIONS: ''
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.20.0
+          npm ci --include=dev --ignore-scripts --no-audit --no-fund
+          npm run build --ignore-scripts
+      - name: Require real broker wire interoperability from the fresh installation
+        if: success() && runner.os == 'Linux'
+        working-directory: bridges/mcp
+        shell: bash
+        timeout-minutes: 8
+        env:
+          KTC_TEST_CLI_DISTRIBUTION: ${{ github.workspace }}/modules/cli/build/install/ktchecker
+          NODE_OPTIONS: ''
+        # Local Linux broker wire only; no provider/model or publication claim.
+        # The same-job installDist above is required and forced, not an old image.
+        # Raw reporter bytes stay in owned runner temp files, never artifact globs.
+        run: |
+          set -euo pipefail
+          test "$(node --version)" = v24.20.0
+          test -d "$KTC_TEST_CLI_DISTRIBUTION"
+          test -x "$KTC_TEST_CLI_DISTRIBUTION/bin/ktchecker"
+          test -f dist/test/real-broker-wire.test.js
+          umask 077
+          report_dir="$(mktemp -d "${RUNNER_TEMP:?}/ktc-real-broker-wire.XXXXXX")"
+          trap 'rm -rf -- "$report_dir"' EXIT
+          if node --test --test-concurrency=1 --test-reporter=tap dist/test/real-broker-wire.test.js >"$report_dir/results.tap" 2>"$report_dir/stderr.txt"; then
+            :
+          else
+            status=$?
+            echo "::error::Real broker interoperability tests failed (Node exit $status); no qualification."
+            exit "$status"
+          fi
+          python - "$report_dir/results.tap" <<'PYTHON'
+          import re
+          import sys
+          with open(sys.argv[1], encoding="utf-8") as report:
+              body = report.read(1_048_577)
+          if len(body) > 1_048_576:
+              raise SystemExit("Real broker TAP report exceeds its bound; no qualification")
+          observed = re.findall(r"^# (tests|suites|pass|fail|cancelled|skipped|todo) ([0-9]+)$", body, re.MULTILINE)
+          expected = {"tests": "3", "suites": "0", "pass": "3", "fail": "0", "cancelled": "0", "skipped": "0", "todo": "0"}
+          if len(observed) != len(expected) or dict(observed) != expected:
+              raise SystemExit("Real broker gate requires exactly three passes and zero skips/failures/cancellations/todos")
+          print("Real Linux broker wire interoperability: 3 passed, 0 skipped; not provider/model or publication qualification.")
+          PYTHON
+      - name: Declare real broker interoperability unavailable on non-Linux hosts
+        if: always() && runner.os != 'Linux'
+        # Informational only: these rows do not pass or qualify the Linux gate.
+        run: >-
+          echo "Real broker interoperability is unavailable on non-Linux hosts; these rows do not qualify the broker wire."
       - name: Verify exact genuine library controls or visible Windows opt-out skips
         if: always()
         run: >-

@@ -4,7 +4,151 @@
 The release inventory has not been reduced. Catalog membership does not imply
 implementation, integration testing, precision validation, or default activation.
 The [implementation contract](implementation-contract.md) and baseline gates still
-apply. This document describes actual commands, not the future protocol-1 CLI.
+apply. This document describes preview commands, not the future protocol-1 CLI.
+The explicitly labelled private reassessment section is an unadopted SOURCE
+proposal, not a capability of the retained installation.
+
+## Fresh-source quickstart: two independent clients
+
+This checkout-relative recipe is for a **new source build**, not an update of the
+retained local handoff below. It is an API recipe, **not a fresh execution receipt**.
+It reviews two synthetic, one-file JVM compilations from immutable JSON overlays;
+there is no project discovery, live-worktree capture or full-project certification.
+
+### Build and inspect
+
+From the selected fresh checkout, choose a JDK 21 for `JAVA_HOME`, with Python 3
+and a C11 compiler available for a Linux/macOS build (see [build options](#build-install-and-remove)).
+Use a fresh POSIX shell; `set -eu` stops this recipe on unexpected failures:
+
+```sh
+set -eu
+./gradlew --no-daemon --max-workers=1 :cli:installDist
+KTC_HOME="$PWD/modules/cli/build/install/ktchecker"
+"$KTC_HOME/bin/ktchecker" doctor --format json
+```
+
+Keep the **whole distribution** together if you move it; Java is not bundled.
+`doctor` reports the preview contract/catalog, not installed-provider readiness or
+a passing review. Windows uses `gradlew.bat` and `bin\ktchecker.bat`; the shell
+recipe below is POSIX, and unavailable Windows provider containment is not a pass.
+
+Choose a **new** private directory outside all reviewed sources, with an existing
+parent. Keep request/credential files beside, not inside, the initially empty
+state directory. Replace both example absolute paths before continuing:
+
+```sh
+RUN="/absolute/private/ktchecker-demo-new"
+COMPILER_JAVA_HOME="/absolute/path/to/complete-link-free-jdk21"
+umask 077
+mkdir "$RUN"
+STATE="$RUN/state"
+ktc() {
+  "$KTC_HOME/bin/ktchecker" --state "$STATE" \
+    --compiler-java-home "$COMPILER_JAVA_HOME" "$@"
+}
+ktc --workers 0 providers
+```
+
+Stop on a failed command. Read the provider response: `toolchain_bound` is an
+inspection result, not observed execution. The compiler needs a **complete,
+link-free JDK 21 image**, independently of the launcher JDK. A missing/rejected
+image or unsupported containment stays unavailable; it never grants a fallback.
+See [compiler runtime selection](#compiler-runtime-selection) for the explicit
+source-checkout image-preparation utility. Utilities under `scripts/` are not
+bundled in the installed distribution. Zero workers prevents provider worker
+loops, **not** private-state initialization, heartbeat or recovery maintenance.
+
+### Register and capture exactly the supplied source
+
+Use different, state-global client IDs and independent worktrees. The loop below
+creates two owner request files per client; its Python command only reads the
+returned snapshot ID. `workspace`/`worktree` are logical identities, not paths to
+scan. Registration files contain private client/adapter credentials: keep them
+out of model context and version control.
+
+```sh
+for c in a b; do
+  ktc --workers 0 register --workspace demo --worktree "tree-$c" \
+    --client "demo-agent-$c" --session "session-$c" --lineage "task-$c" \
+    --out "$RUN/$c-credentials.json"
+  cat > "$RUN/$c-overlay.json" <<EOF
+{
+  "workspaceId": "demo", "worktreeId": "tree-$c",
+  "clientId": "demo-agent-$c", "sessionId": "session-$c", "patchId": "patch-1",
+  "baseSnapshotId": null, "expectedHeadRevision": 0,
+  "changes": [{"operation": "put", "path": "src/Example.kt",
+    "content": "interface Contract { fun answer(): Int }\nclass Broken : Contract\n"}]
+}
+EOF
+  ktc --workers 0 overlay --request "$RUN/$c-overlay.json" --out "$RUN/$c-capture.json"
+  snapshot_id="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["manifest"]["snapshotId"])' "$RUN/$c-capture.json")"
+  cat > "$RUN/$c-compilation.json" <<EOF
+{
+  "clientId": "demo-agent-$c", "snapshotId": "$snapshot_id",
+  "patchId": "patch-1", "idempotencyKey": "review-patch-1",
+  "compilationFiles": ["src/Example.kt"], "compilerVersion": "2.4.21",
+  "scope": {"module": ":demo-$c", "sourceSet": "main", "target": "jvm", "compilation": "main"},
+  "requiredRuleIds": ["ktc.compiler.common.abstract_member_not_implemented"]
+}
+EOF
+done
+```
+
+The source is the complete `content` string, not an on-disk `src/Example.kt`.
+For a real manual compilation, explicitly capture **all** compilation inputs,
+classpath and settings, not only changed lines. This path remains partial-project.
+The one-rule list is an **experimental subset**, not reduced release coverage.
+For a later patch, use a new patch/idempotency identity and the prior capture's
+`manifest.snapshotId` and `headRevision` as its base; do not reset an existing
+worktree to revision zero. Output filenames must be new; do not overwrite a
+retained capture, preparation or credential file.
+
+### Explicit consent, then two queued clients and one persistent broker
+
+Only proceed with the following flag if the owner permits execution of the
+exact prepared provider profiles. **Omit `--authorize-execution` to prepare
+without granting that permission**; editing a prepared JSON file or submitting a
+review cannot grant it. Missing providers and unqualified rules still do not
+become available/qualified merely because execution is authorized.
+
+```sh
+for c in a b; do
+  ktc --workers 0 prepare --request "$RUN/$c-compilation.json" \
+    --authorize-execution --out "$RUN/$c-prepared.json"
+  ktc --workers 0 submit --prepared "$RUN/$c-prepared.json" \
+    --out "$RUN/$c-submitted.json"
+done
+```
+
+Both clients are admitted without provider workers in these commands. `submit`
+without `--wait-ms` exits **0 for acceptance only**. Now keep this owner broker
+running in a terminal, with its standard input open:
+
+```sh
+ktc --workers 2 rpc
+```
+
+`rpc` is private NDJSON application RPC, **not an MCP server**. Do not launch it
+with a bare `&` and assume closed/background stdin will keep it alive. In another
+terminal, use the same `KTC_HOME`, `RUN`, `STATE`, `COMPILER_JAVA_HOME` and `ktc`
+function, then poll each client separately while the broker runs:
+
+```sh
+ktc --workers 0 events --client demo-agent-a --limit 20
+ktc --workers 0 events --client demo-agent-b --limit 20
+ktc --workers 0 status --client demo-agent-a --review REVIEW_ID_FROM_A_SUBMITTED_JSON
+ktc --workers 0 status --client demo-agent-b --review REVIEW_ID_FROM_B_SUBMITTED_JSON
+```
+
+Each event stream has its **own** returned cursor for the next `--cursor` poll.
+Event reads are neither ACKs nor proof that a model observed anything; status/
+event exit 0 means retrieval, not passing analysis. Two workers permit these
+independent clients to progress concurrently, but do not promise simultaneous
+execution or release-scale concurrency. Pending, unavailable, incomplete and
+unqualified results remain visible, including a clean-looking finding array.
+A waited `submit --wait-ms 10000` returns **2** for those states; **3** is an
+operation failure. This preview cannot certify final live-worktree success.
 
 ## Use the retained local handoff
 
@@ -42,7 +186,8 @@ These are Linux x86_64 unsigned preview artifacts, not universal binaries or a
 publication/license grant. Keep their installation unchanged while its receipts
 are evidence; remove/archive it deliberately when no longer needed.
 
-The remaining commands are **current API recipes, not a fresh execution claim**.
+Except for explicitly labelled unadopted SOURCE, commands below are **current
+API recipes, not a fresh execution claim**.
 Add the selected `"$KTC_HOME/bin"` to your own PATH before using `ktchecker` below,
 or invoke its absolute launcher. Replace `/owner/...` with owner-selected paths;
 use the same private `--state DIR` and compiler JDK for every operation in a run.
@@ -244,7 +389,39 @@ context. `--authorize-execution` explicitly permits the generated exact profiles
 source text, JSON `approved:true`, review requests and MCP calls cannot grant it.
 It is not a sandbox for arbitrary Gradle/project/plugin code.
 
-Example `overlay.json`:
+### Several projects in one per-user store
+
+`--workspace` is a logical project identity, not a source-directory discovery
+command. `register` binds a client; it does not capture a project, run Gradle or
+permit provider execution. **Client IDs are unique across the chosen state**,
+not just within one workspace. Use project-specific client IDs; worktree names
+may repeat under different workspace IDs:
+
+```sh
+ktchecker --state /owner/private/ktchecker-state --workers 0 register \
+  --workspace app-one --worktree task-tree --client app-one-agent-a \
+  --session session-one --lineage feature-one --out /owner/private/app-one-agent-a.json
+ktchecker --state /owner/private/ktchecker-state --workers 0 register \
+  --workspace app-two --worktree task-tree --client app-two-agent-a \
+  --session session-two --lineage feature-two --out /owner/private/app-two-agent-a.json
+```
+
+Use that same state and the matching client/workspace/worktree/session IDs for
+subsequent overlay and preparation requests. Zero workers avoids starting queued
+provider work during registration; broker maintenance may still update private
+state. Preparation remains read-only with respect to project source, and running
+project/provider code still requires the separate explicit execution consent.
+
+Registration retries must repeat the **entire original binding**; choose a new
+output filename if the first credential file already exists. A different project,
+worktree, session or lineage requires a different client ID, not moving the old
+binding. The source registration path rejects malformed binding identifiers
+before retaining an enrollment intent, so an invalid identifier can be corrected
+without stranding the client ID. Existing intents/bindings are never silently
+replaced or deleted; a historical conflicting intent requires a distinct client
+ID or a separately chosen state, not an automatic overwrite.
+
+Example `overlay.json` for the earlier `sample`/`agent-a` registration:
 
 ```json
 {
@@ -416,6 +593,90 @@ Owner input documents use bounded, strict UTF-8 JSON: duplicate keys (including
 escaped aliases), unknown DTO fields and malformed Unicode fail closed. Machine
 output is UTF-8 regardless of the console encoding. An invalid wait limit is
 rejected before accepting a patch.
+
+## Private policy reassessment CLI (unadopted)
+
+**SOURCE-only, implemented-in-private and unadopted:** the following is syntax
+for the private CLI/kernel/Workbench proposal, not an invocation supported by the
+retained handoff above. No build, command execution or runtime validation is
+claimed here. TypeScript MCP/reference-host wiring is pending; these are not
+advertised as available MCP tools. Do not rebuild or replace an evidence-bound
+installation merely because these forms are documented.
+
+After a **separate explicit owner policy action**, compatible suppression/baseline
+accounting can be requested against the same certified raw result. The action is
+not part of `reassess`: no configuration, source, execution or completion authority
+is granted by a review request. Only unchanged effective rule settings and
+analysis authority qualify; enabling/disabling a rule or changing source/analysis
+inputs requires the appropriate new preparation/review, not this shortcut.
+
+Exact command forms (syntax only):
+
+```text
+ktchecker reassess --client ID --request policy-review.json [--out result.json]
+ktchecker policy-status --client ID --id REQUEST_ID [--out result.json]
+```
+
+`--id` is the reassessment **idempotency key**, not a review ID or returned view ID.
+Use the same chosen private state and enrolled client binding. The request file
+is a closed JSON object with **exactly four fields**; this example is synthetic,
+not a captured policy or executed review:
+
+```json
+{
+  "reviewId": "OWNER_SELECTED_REVIEW_ID",
+  "idempotencyKey": "policy-review-1",
+  "generation": 1,
+  "expectedPolicyDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+```
+
+Replace the example review/digest with the owned original review and owner-observed
+current full policy digest. `generation` must equal the enrolled client's current
+generation; it is not incremented for each reassessment. IDs must be nonblank,
+at most 512 characters and contain no NUL/control characters. Generation is a
+positive ASCII decimal JSON integer fitting a signed 64-bit `Long`, not a quoted,
+fractional or exponent-form value. The digest is `sha256:` plus 64 lowercase hex
+digits. Unknown/duplicate fields and malformed JSON fail closed. Do not add raw
+results, input/prepared documents, certificates, policy captures or permits.
+
+`--request` selects an explicit bounded regular owner file (at most 8,388,608
+bytes), **not stdin `-`**. JSON is the only format (`--format json` is optional).
+Both commands default to `--workers 0` and reject a nonzero worker count before
+opening Workbench. Zero workers disables provider worker loops, not all broker
+startup maintenance or writes. Reassessment/status themselves do not authorize
+new analysis. Unrelated options, positional arguments, duplicate options,
+`--owner-action` and `--authorize-execution` are rejected for these two commands.
+
+An optional `--out` must name a **new, nonexistent file in an existing writable
+directory**, checked before acceptance. That check is not an output reservation.
+If later output I/O fails after publication, recover with `policy-status` using
+the same request ID, or replay the exact request; do not invent a new key to hide
+an uncertain result. Exact accepted replay is historical and emits no new event;
+changed fields under that key conflict. A new key with the last view's policy
+digest (or the original policy digest if no view exists) is rejected. Neither
+replay nor status reclassifies or substitutes current policy.
+
+The CLI obtains the retained client credential itself and calls
+`review.policy.reassess` with `{credential, request}`, or `review.policy.status`
+with `{credential, idempotencyKey}`. Never put credential tokens in command
+examples or model context. Exit **0** means only that a historical policy view was
+published/replayed/fetched, not a current or passing full-project review;
+operation errors emit a failed object and exit **3**. The returned
+`state: "policy_reassessed"` and `auditOnly` are preserved, not normalized into a
+passing review. Status is not a fresh policy/archive/currentness validation, ACK
+or model-observation receipt.
+
+Original input, raw/effective results, captured policy and certified execution stay
+immutable. The new view adds its own required per-client historical delivery
+event; older obligations/receipts persist. Original raw coverage must be complete
+for its original input even when the view is audit-only. Ordinary Workbench still
+has partial-project, nonauthoritative scope and therefore **audit-only** views.
+Plan/routed/produced reassessment and integrated use are unsupported.
+`auditOnly=false` is not full-project success either: live source/policy authority,
+all coverage/history/delivery and guarded-action checks still apply. See
+[capture retention and bounds](suppressions.md#retained-captures-and-bounds).
+This documentation upgrades no provider qualification or runtime/host evidence.
 
 ## Providers, host delivery and honest limitations
 

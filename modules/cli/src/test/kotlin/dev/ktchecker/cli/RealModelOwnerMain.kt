@@ -51,6 +51,8 @@ object RealModelOwnerMain {
             val selection = ContractJson.decodeFromString<RealModelRunSelection>(strictJsonDocument(selectedBytes, "real_model_selection_json"))
             realExpect(selection.schemaVersion == 1 && selection.fixture == RealModelFixture.CASE,
                 "real_model_selection_schema")
+            // Current catalog contract is checked BEFORE startup, generation launch or owner mutation.
+            realExpect(OwnerFullCatalog1665.accepts(Catalog().ids.sorted()), "real_model_catalog_contract_changed")
             val run = realPath(selection.runRoot)
             realKey(run, true)
             val privateOwner = run.resolve("owner")
@@ -98,6 +100,7 @@ object RealModelOwnerMain {
                 put("compilerRosterDigest", Digests.sha256(Digests.canonical(ContractJson.encodeToJsonElement(installation.compilerClasspath))))
                 put("ownerInputsDigest", inputs.ownerManifestDigest); put("runtimeInputsDigest", inputs.runtimeDigest)
                 put("executionHomeDigest", home.digest); put("qualified", false)
+                put("catalogContract", OwnerFullCatalog1665.ID); put("catalogRuleIdsDigest", OwnerFullCatalog1665.RULE_IDS_DIGEST)
             })
             RpcServer(owner).serve(System.`in`, System.out)
             // Closing the transport is NEVER the retirement operation. It happens afterwards only.
@@ -161,10 +164,10 @@ private class RealModelOwner(
     private val registration = work.register(namespace.workspaceId, namespace.worktreeId, "real-no-test-feasibility-client",
         "real-no-test-feasibility-session", "real-no-test-feasibility-lineage")
     init {
+        realExpect(OwnerFullCatalog1665.accepts(Catalog().ids.sorted()), "real_model_catalog_contract_changed")
         val config = work.configs.capture(modelConfigBinding(registration.binding))
         work.mutateConfig(registration.binding.clientId, ConfigLayer.SHARED, config.revisionToken,
             ConfigAction.SetRuleEnabled(RealModelFixture.RULE, true))
-        realExpect(Catalog().ids.size == 1663, "real_model_catalog_size_changed")
     }
     override fun call(method: String, params: JsonObject): JsonObject {
         if (!method.startsWith("owner.")) return work.call(method, params)
@@ -176,6 +179,7 @@ private class RealModelOwner(
                         put("fixture", RealModelFixture.CASE); put("selectionDigest", selectionDigest)
                         put("registration", ContractJson.encodeToJsonElement(registration))
                         put("generation", generation.evidence()); put("fullRequiredRuleIds", JsonArray(Catalog().ids.sorted().map(::JsonPrimitive)))
+                        put("catalogContract", OwnerFullCatalog1665.ID); put("catalogRuleIdsDigest", OwnerFullCatalog1665.RULE_IDS_DIGEST)
                         put("qualified", false)
                     }
                 }
@@ -330,7 +334,7 @@ private class RealModelOwner(
             put("qualified", false)
         })
         realExpect(prepared.assembly.plan.slots.isNotEmpty() && prepared.assembly.plan.slots.all {
-            it.input.requiredRuleIds == Catalog().ids.sorted() && it.input.requiredRuleIds.size == 1663
+            it.input.requiredRuleIds == Catalog().ids.sorted() && OwnerFullCatalog1665.accepts(it.input.requiredRuleIds)
         }, "real_model_full_parent_vector_changed")
         // Residual gaps retain the entire unavailable parent. They do not gain a live grant.
         if (prepared.preparationReasons.isEmpty() && model.issues.isEmpty() && model.compilationIds == listOf(RealModelFixture.COMPILATION)) {

@@ -6,6 +6,15 @@ used. Artifacts called .class/.sarif/process.json are inert synthetic bytes.
 Source-only reviewers can read this fixture builder without importing it.
 Use a separately authorized, bounded unittest lane; these are not real-cohort
 receipts and confer no rule/global tested credit or activation/qualification.
+
+The 44 prior cases remain explicit: 33 semantic/source controls keep their real
+reporter I/O on POSIX and use owned-fixture reader/publication doubles only on
+unsupported Windows; 11 native I/O controls remain real POSIX-only exercises.
+The Windows semantic adapter calls the real validator but is NOT native I/O
+evidence. Separate all-host controls exercise both its success and rejection.
+The native class is explicitly skipped where required POSIX APIs are absent;
+skips never count as passes or Windows support. Additional applicability controls
+exercise unsupported gates without any real open. Production stays POSIX-only.
 """
 
 import ast
@@ -17,6 +26,7 @@ import io
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 import stat
 import tempfile
 import unittest
@@ -41,7 +51,9 @@ class SyntheticRun:
     """An explicitly named, tiny original-relative mirror. No current originals."""
 
     def __init__(self, directory):
-        self.base = Path(directory)
+        # Canonicalize only this newly owned fixture root. Production input and
+        # output spellings still reach the unchanged no-follow reporter checks.
+        self.base = Path(directory).resolve(strict=True)
         self.root = self.base / "inputs"
         self.root.mkdir()
         self.output = self.base / "report.json"
@@ -309,7 +321,73 @@ class SyntheticRun:
         return [part for key, value in values.items() for part in ("--" + key, value)]
 
 
-class FixtureExecutionReportTests(unittest.TestCase):
+# This observes API availability, not a successful native filesystem operation.
+# Unsupported Windows still executes semantic/applicability controls.
+NATIVE_REPORT_IO = all(hasattr(os, name) for name in ("O_NOFOLLOW", "O_DIRECTORY")) and \
+    os.open in os.supports_dir_fd
+WINDOWS_PORTABLE_SEMANTICS = os.name == "nt" and not NATIVE_REPORT_IO
+NATIVE_IO_SKIP = ("Actual POSIX no-follow/dir-fd I/O unavailable; portable semantic and "
+                  "fail-closed controls still run; no emulated native pass or Windows qualification")
+
+
+class PortableFixtureReadSet:
+    """Ordinary reads of owned inert fixtures, NOT the production I/O contract.
+
+    This double supplies bytes and reference pins to the real semantic validator.
+    It does not emulate inode custody, no-follow behavior, ACLs, atomicity or
+    publication. Those properties belong only to the separate native I/O cases.
+    """
+
+    def __init__(self, root):
+        self.root = root
+        self.files = {}
+        self.total = 0
+        self.closed = False
+        self.rechecks = 0
+
+    def owned_path(self, name):
+        # Independent fixture-boundary check: do not rely on candidate validation
+        # to stop a malformed reference from reading outside the owned fixture.
+        if type(name) is not str or not name or "\\" in name or ":" in name or \
+                any(part in ("", ".", "..") for part in name.split("/")):
+            raise AssertionError("unsafe portable fixture reference")
+        return self.root.joinpath(*name.split("/"))
+
+    def read(self, reference, repeat=False):
+        reference = report.ref(reference)
+        name, expected = reference["path"], reference["sha256"]
+        path = self.owned_path(name)
+        if name in self.files:
+            report.same(expected, self.files[name][0], "reference digest conflict")
+            if not repeat:
+                return self.files[name][2]
+        with path.open("rb") as stream:
+            raw = stream.read(report.MAX_FILE + 1)
+        report.need(len(raw) <= report.MAX_FILE, "portable fixture byte bound")
+        report.same(digest(raw), expected, "evidence digest mismatch")
+        if name not in self.files:
+            self.total += len(raw)
+            # None is deliberate: this double supplies no physical identity.
+            self.files[name] = (expected, None, raw)
+        return raw
+
+    def document(self, reference):
+        return report.parse_json(self.read(reference))
+
+    def recheck(self):
+        self.rechecks += 1
+        for name, (expected, _, _) in list(self.files.items()):
+            self.read({"path": name, "sha256": expected}, repeat=True)
+
+    def close(self):
+        if self.closed:
+            raise AssertionError("portable fixture reader closed twice")
+        self.closed = True
+
+
+class FixtureExecutionReportSupport:
+    """Shared assertions; no test methods and no implicit test discovery."""
+
     def make_run(self):
         temporary = tempfile.TemporaryDirectory(prefix="inert-detekt-projection-")
         self.addCleanup(temporary.cleanup)
@@ -334,6 +412,52 @@ class FixtureExecutionReportTests(unittest.TestCase):
         self.assertEqual(2, result, error)
         self.assertFalse(fixture.output.exists())
         return error
+
+
+class FixtureExecutionReportTests(FixtureExecutionReportSupport, unittest.TestCase):
+    """Keep integrated POSIX cases; use explicit fixture I/O on Windows only."""
+
+    def call(self, fixture, **arguments):
+        if WINDOWS_PORTABLE_SEMANTICS:
+            return self.portable_call(fixture, **arguments)
+        return super().call(fixture, **arguments)
+
+    def portable_call(self, fixture, **arguments):
+        """Exercise the real validator, not native reads or report publication."""
+        reader = PortableFixtureReadSet(fixture.root)
+        opened = []
+
+        def fixture_reader(root):
+            self.assertEqual(str(fixture.root), root)
+            opened.append(root)
+            return reader
+
+        def fixture_publication(actual_reader, output, value):
+            self.assertIs(reader, actual_reader)
+            self.assertEqual(str(fixture.output), output)
+            # Serialize the validator's actual return; never substitute a pass
+            # object. This fresh ordinary write is NOT production publication.
+            with fixture.output.open("xb") as stream:
+                stream.write(encoded(value))
+
+        with mock.patch.object(report, "ReadSet", side_effect=fixture_reader), \
+                mock.patch.object(report, "write_report", side_effect=fixture_publication) as publish, \
+                mock.patch.object(report, "create_report", wraps=report.create_report) as validate, \
+                mock.patch.object(report, "open_directory", side_effect=AssertionError(
+                    "production no-follow I/O forbidden in portable semantic controls")) as native_open:
+            result = super().call(fixture, **arguments)
+        self.assertEqual([str(fixture.root)], opened)
+        validate.assert_called_once()
+        self.assertIs(reader, validate.call_args.args[0])
+        self.assertTrue(reader.closed)
+        native_open.assert_not_called()
+        if result[0] == 0:
+            publish.assert_called_once()
+            self.assertEqual(1, reader.rechecks)
+        else:
+            publish.assert_not_called()
+            self.assertFalse(fixture.output.exists())
+        return result
 
     def test_historical_receipts_do_not_retarget_to_changed_or_absent_current_source(self):
         fixture = self.make_run()
@@ -517,17 +641,6 @@ class FixtureExecutionReportTests(unittest.TestCase):
                     bindings.append(deepcopy(bindings[0]))
                 self.rejected(fixture)
 
-    def test_retained_source_missing_even_when_current_original_matches_is_rejected(self):
-        fixture = self.make_run()
-        fixture.materialize()
-        binding = fixture.selection["original_inputs"][0]
-        original = fixture.root / binding["original"]["path"]
-        original.parent.mkdir(parents=True)
-        original.write_bytes(fixture.originals[binding["original"]["path"]])
-        (fixture.root / binding["retained"]["path"]).unlink()
-        self.assertEqual(2, self.call(fixture)[0])
-        self.assertFalse(fixture.output.exists())
-
     def test_dropped_not_run_rows_ids_scope_exclusions_and_borrowed_credit_rejected(self):
         mutations = (lambda f: f.sidecar["rules"].pop(), lambda f: f.sidecar.update(not_run_rule_ids=[]),
                      lambda f: f.sidecar.update(scope_exclusions=[f.not_run[0]]), lambda f: f.sidecar.update(full_corpus_state="complete"),
@@ -699,20 +812,6 @@ class FixtureExecutionReportTests(unittest.TestCase):
                     item[key] = [deepcopy(foreign) if r["path"] == original else r for r in item[key]]
                 self.rejected(fixture)
 
-    def test_opaque_evidence_tampering_is_detected_without_body_projection(self):
-        fixture = self.make_run()
-        fixture.materialize()
-        (fixture.root / (fixture.run + "/cases/rule-0/positive/process.json")).write_bytes(b"OPAQUE_INERT_TAMPER")
-        self.assertEqual(2, self.call(fixture)[0])
-        self.assertFalse(fixture.output.exists())
-
-    def test_missing_explicit_selection_never_searches_for_alternative_receipts(self):
-        fixture = self.make_run()
-        fixture.materialize()
-        (fixture.root / fixture.selection_path).unlink()
-        self.assertEqual(2, self.call(fixture)[0])
-        self.assertFalse(fixture.output.exists())
-
     def test_duplicate_json_nonfinite_deep_and_malformed_inputs_fail_closed(self):
         for body in (b'{"schema_version":1,"schema_version":1}', b'{"value":NaN}', b'{"value":Infinity}',
                      b'{"value":' + b'[' * 34 + b'0' + b']' * 34 + b'}', b'\xff', b'{'):
@@ -728,6 +827,82 @@ class FixtureExecutionReportTests(unittest.TestCase):
         for path in ("../outside.json", "/outside.json", "build//outside.json", "build/./outside.json", "C:\\outside.json", "build/../outside.json"):
             with self.subTest(path=path):
                 self.rejected(self.make_run(), **{"run-evidence": path})
+
+    def test_stdlib_only_report_has_no_launcher_network_or_dynamic_import_calls(self):
+        tree = ast.parse(Path(report.__file__).read_text())
+        imports = []
+        calls = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imports.extend(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom):
+                imports.append(node.module)
+            elif isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    calls.append(node.func.id)
+                elif isinstance(node.func, ast.Attribute):
+                    calls.append(node.func.attr)
+        self.assertEqual({"argparse", "datetime", "hashlib", "json", "math", "os", "re", "stat", "sys", "xml.etree.ElementTree"}, set(imports))
+        forbidden = {"exec", "eval", "__import__", "system", "popen", "fork", "forkpty", "posix_spawn", "posix_spawnp",
+                     "spawnl", "spawnle", "spawnlp", "spawnlpe", "spawnv", "spawnve", "spawnvp", "spawnvpe",
+                     "execv", "execve", "execl", "execvp", "execvpe", "connect", "urlopen", "getaddrinfo"}
+        self.assertFalse(forbidden.intersection(calls))
+
+    def test_portable_adapter_does_not_replace_validator_rejection_with_success(self):
+        fixture = self.make_run()
+        fixture.materialize()
+        rejection = "synthetic semantic validator rejection"
+        with mock.patch.object(report, "create_report", side_effect=report.ReportError(rejection)) as validate:
+            result, output, error = self.portable_call(fixture)
+        validate.assert_called_once()
+        self.assertEqual(2, result)
+        self.assertEqual("", output)
+        self.assertEqual("fixture-execution report rejected: " + rejection + "\n", error)
+        self.assertFalse(fixture.output.exists())
+
+    def test_portable_adapter_positive_path_executes_real_semantic_validation_on_every_host(self):
+        fixture = self.make_run()
+        fixture.materialize()
+        result, output, error = self.portable_call(fixture)
+        self.assertEqual(0, result, error)
+        self.assertIn("unqualified", output)
+        value = json.loads(fixture.output.read_bytes())
+        self.assertEqual("fixture_execution_checked", value["state"])
+        self.assertEqual(3, value["summary"]["fixture_execution_checked_rules"])
+        self.assertEqual(37, value["summary"]["checked_invocations"])
+        self.assertGreater(value["evidence_read_set"]["files"], 113)
+        for field in ("qualified", "release_qualified", "native_qualification", "coverage_ledger_updated", "activation_changed"):
+            self.assertIs(False, value[field])
+
+
+@unittest.skipUnless(NATIVE_REPORT_IO, NATIVE_IO_SKIP)
+class FixtureNativeIoReportTests(FixtureExecutionReportSupport, unittest.TestCase):
+    """Actual POSIX no-follow/dir-fd fixtures; no reader/publisher substitution."""
+
+    def test_retained_source_missing_even_when_current_original_matches_is_rejected(self):
+        fixture = self.make_run()
+        fixture.materialize()
+        binding = fixture.selection["original_inputs"][0]
+        original = fixture.root / binding["original"]["path"]
+        original.parent.mkdir(parents=True)
+        original.write_bytes(fixture.originals[binding["original"]["path"]])
+        (fixture.root / binding["retained"]["path"]).unlink()
+        self.assertEqual(2, self.call(fixture)[0])
+        self.assertFalse(fixture.output.exists())
+
+    def test_opaque_evidence_tampering_is_detected_without_body_projection(self):
+        fixture = self.make_run()
+        fixture.materialize()
+        (fixture.root / (fixture.run + "/cases/rule-0/positive/process.json")).write_bytes(b"OPAQUE_INERT_TAMPER")
+        self.assertEqual(2, self.call(fixture)[0])
+        self.assertFalse(fixture.output.exists())
+
+    def test_missing_explicit_selection_never_searches_for_alternative_receipts(self):
+        fixture = self.make_run()
+        fixture.materialize()
+        (fixture.root / fixture.selection_path).unlink()
+        self.assertEqual(2, self.call(fixture)[0])
+        self.assertFalse(fixture.output.exists())
 
     def test_symlink_leaf_ancestor_and_input_root_rejected(self):
         for variant in ("leaf", "ancestor", "root"):
@@ -753,6 +928,7 @@ class FixtureExecutionReportTests(unittest.TestCase):
                 self.assertEqual(2, self.call(fixture, **arguments)[0])
                 self.assertFalse(fixture.output.exists())
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "Actual FIFO fixture API unavailable; not an emulated native pass")
     def test_hardlinked_leaf_and_nonregular_fifo_fail_without_blocking(self):
         for variant in ("hardlink", "fifo"):
             with self.subTest(variant=variant):
@@ -848,25 +1024,128 @@ class FixtureExecutionReportTests(unittest.TestCase):
         with self.assertRaises(report.ReportError):
             report.identity(type("Unavailable", (), {"st_ino": 0, "st_dev": 0})())
 
-    def test_stdlib_only_report_has_no_launcher_network_or_dynamic_import_calls(self):
-        tree = ast.parse(Path(report.__file__).read_text())
-        imports = []
-        calls = []
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                imports.extend(alias.name for alias in node.names)
-            elif isinstance(node, ast.ImportFrom):
-                imports.append(node.module)
-            elif isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name):
-                    calls.append(node.func.id)
-                elif isinstance(node.func, ast.Attribute):
-                    calls.append(node.func.attr)
-        self.assertEqual({"argparse", "datetime", "hashlib", "json", "math", "os", "re", "stat", "sys", "xml.etree.ElementTree"}, set(imports))
-        forbidden = {"exec", "eval", "__import__", "system", "popen", "fork", "forkpty", "posix_spawn", "posix_spawnp",
-                     "spawnl", "spawnle", "spawnlp", "spawnlpe", "spawnv", "spawnve", "spawnvp", "spawnvpe",
-                     "execv", "execve", "execl", "execvp", "execvpe", "connect", "urlopen", "getaddrinfo"}
-        self.assertFalse(forbidden.intersection(calls))
+    def test_actual_posix_positive_report_keeps_real_input_and_publication_paths(self):
+        fixture = self.make_run()
+        value = self.accepted(fixture)
+        self.assertEqual(fixture.base, fixture.base.resolve(strict=True))
+        self.assertEqual("fixture_execution_checked", value["state"])
+        self.assertEqual(3, value["summary"]["fixture_execution_checked_rules"])
+        self.assertEqual(37, value["summary"]["checked_invocations"])
+        self.assertGreater(value["evidence_read_set"]["files"], 113)
+        self.assertEqual(0o600, stat.S_IMODE(fixture.output.stat().st_mode))
+        for field in ("qualified", "release_qualified", "native_qualification", "coverage_ledger_updated", "activation_changed"):
+            self.assertIs(False, value[field])
+
+    def test_outer_input_and_output_aliases_are_not_silently_canonicalized_by_reporter(self):
+        for target in ("input-root", "output"):
+            with self.subTest(target=target):
+                fixture = self.make_run()
+                fixture.materialize()
+                alias = fixture.base / "outer-alias"
+                alias.symlink_to(fixture.base, target_is_directory=True)
+                spelling = alias / ("inputs" if target == "input-root" else fixture.output.name)
+                self.assertEqual(2, self.call(fixture, **{target: str(spelling)})[0])
+                self.assertTrue(alias.is_symlink())
+                self.assertTrue((fixture.root / fixture.selection_path).is_file())
+                self.assertFalse(fixture.output.exists())
+
+
+class SyntheticRootOpenReached(Exception):
+    """An intercepted first open, never a returned or fabricated descriptor."""
+
+
+class FixtureApplicabilityTests(unittest.TestCase):
+    """Portable gates, including observed Windows absence; no native I/O claim."""
+
+    @staticmethod
+    def facade():
+        opened = mock.Mock(side_effect=SyntheticRootOpenReached)
+        return SimpleNamespace(O_RDONLY=0, O_DIRECTORY=1, O_NOFOLLOW=2,
+                               open=opened, supports_dir_fd={opened})
+
+    def test_new_owned_fixture_root_is_canonicalized_before_children_are_created(self):
+        with tempfile.TemporaryDirectory(prefix="inert-cohort-root-spelling-") as temporary:
+            actual = Path(temporary).resolve(strict=True)
+            alias = actual.parent / (actual.name + "-synthetic-outer-alias")
+            self.assertFalse(alias.exists())
+            # Model a trusted /var -> /private/var outer spelling without
+            # requiring host symlink privileges or changing production paths.
+            with mock.patch.object(Path, "resolve", autospec=True, return_value=actual) as resolve:
+                fixture = SyntheticRun(alias)
+            resolve.assert_called_once_with(alias, strict=True)
+            self.assertEqual(actual, fixture.base)
+            self.assertEqual(actual / "inputs", fixture.root)
+            self.assertEqual(actual / "report.json", fixture.output)
+            self.assertTrue(fixture.root.is_dir())
+            self.assertFalse(alias.exists())
+
+    def test_each_missing_posix_capability_rejects_before_any_open(self):
+        original_os, host_name = report.os, os.name
+        for missing in ("O_NOFOLLOW", "O_DIRECTORY", "open_dir_fd"):
+            with self.subTest(missing=missing):
+                facade = self.facade()
+                if missing == "open_dir_fd":
+                    facade.supports_dir_fd.clear()
+                else:
+                    delattr(facade, missing)
+                with mock.patch.object(report, "os", facade):
+                    with self.assertRaisesRegex(report.ReportError, "^POSIX no-follow handles required$"):
+                        report.open_directory("/synthetic/unopened")
+                facade.open.assert_not_called()
+        self.assertIs(original_os, report.os)
+        self.assertEqual(host_name, os.name)
+
+    def test_supported_capability_gate_reaches_exact_no_follow_root_open(self):
+        facade = self.facade()
+        with mock.patch.object(report, "os", facade):
+            with self.assertRaises(SyntheticRootOpenReached):
+                report.open_directory("/synthetic/unopened")
+        facade.open.assert_called_once_with("/", facade.O_RDONLY | facade.O_DIRECTORY | facade.O_NOFOLLOW)
+
+    def test_observed_host_gate_is_not_overridden_to_manufacture_windows_support(self):
+        observed = report.os
+        opened = mock.Mock(side_effect=SyntheticRootOpenReached)
+        facade = SimpleNamespace(open=opened, supports_dir_fd={opened} if observed.open in observed.supports_dir_fd else set())
+        for name in ("O_RDONLY", "O_DIRECTORY", "O_NOFOLLOW"):
+            if hasattr(observed, name):
+                setattr(facade, name, getattr(observed, name))
+        supported = all(hasattr(observed, name) for name in ("O_NOFOLLOW", "O_DIRECTORY")) and \
+            observed.open in observed.supports_dir_fd
+        self.assertEqual(supported, NATIVE_REPORT_IO)
+        self.assertEqual(observed.name == "nt" and not supported, WINDOWS_PORTABLE_SEMANTICS)
+        # Copy only the actual capability observations and intercept first open.
+        # Windows lacks the required capabilities: it must fail before opening.
+        with mock.patch.object(report, "os", facade):
+            if supported:
+                with self.assertRaises(SyntheticRootOpenReached):
+                    report.open_directory("/synthetic/unopened")
+            else:
+                with self.assertRaisesRegex(report.ReportError, "^POSIX no-follow handles required$"):
+                    report.open_directory("/synthetic/unopened")
+        if supported:
+            opened.assert_called_once_with("/", facade.O_RDONLY | facade.O_DIRECTORY | facade.O_NOFOLLOW)
+        else:
+            opened.assert_not_called()
+        self.assertIs(observed, report.os)
+
+    def test_drive_and_unc_roots_fail_closed_in_real_cli_before_directory_io(self):
+        roots = ("C:\\synthetic\\input", "C:/synthetic/input", "\\\\server\\share\\synthetic")
+        for root in roots:
+            with self.subTest(root=root):
+                args = {"input-root": root, "run-evidence": "selection.json", "expect-run-evidence-sha256": "1" * 64,
+                        "expect-source-digest": "sha256:" + "2" * 64, "expect-context-digest": "sha256:" + "3" * 64,
+                        "expect-provider-version": "synthetic", "current-source-digest": "sha256:" + "4" * 64,
+                        "output": "/synthetic/unopened-report.json"}
+                argv = [part for key, value in args.items() for part in ("--" + key, value)]
+                output, error = io.StringIO(), io.StringIO()
+                with redirect_stdout(output), redirect_stderr(error), \
+                        mock.patch.object(report, "open_directory", side_effect=AssertionError(
+                            "native directory I/O reached for an unsupported root")) as opened:
+                    result = report.main(argv)
+                self.assertEqual(2, result)
+                self.assertEqual("", output.getvalue())
+                self.assertEqual("fixture-execution report rejected: absolute path required\n", error.getvalue())
+                opened.assert_not_called()
 
 
 if __name__ == "__main__":

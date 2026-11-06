@@ -129,8 +129,20 @@ export class CodexAppServer {
         reject(new HostError('codex_request_timeout_outcome_unknown'));
       }, this.options.timeoutMs);
       this.pending.set(id, { resolve: value => resolve(value as T), reject, timer });
-      this.child!.stdin.write(serialized + '\n', error => { if (error) this.fail('codex_disconnected'); });
+      const disconnected = (): void => {
+        try { this.fail('codex_disconnected'); }
+        catch {
+          // fail latches/rejects and clears timers before signaling; keep that failure if signaling throws.
+          reject(this.failure ?? new HostError('codex_disconnected'));
+        }
+      };
+      // A synchronous write exception and its error callback have the same uncertain-send outcome. Never retry.
+      try {
+        this.child!.stdin.write(serialized + '\n', error => { if (error) disconnected(); });
+      } catch { disconnected(); }
     });
+    // A response can precede an owned reroute later in the SAME decoded batch.
+    this.assertNoModelReroute();
     return { result, evidence };
   }
   async runTurn(

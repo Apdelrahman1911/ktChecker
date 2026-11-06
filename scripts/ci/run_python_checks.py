@@ -51,7 +51,8 @@ FIXTURES = {"setUpClass", "tearDownClass", "setUpModule", "tearDownModule", "uni
 WORKER_DIAGNOSTIC_CODES = {
     "unsupported_checkout_metadata", "nonregular_input", "input_byte_limit", "invalid_checkout_head",
     "invalid_checkout_ref", "missing_or_ambiguous_checkout_ref", "invalid_checkout_commit",
-    "symlinked_path_ancestor", "checkout_commit_mismatch", "symlinked_test_directory",
+    "symlinked_path_ancestor", "junctioned_path_ancestor", "checkout_commit_mismatch",
+    "symlinked_test_directory", "junctioned_test_directory",
     "source_verification_timeout", "unreportable_source_path", "selected_source_limit",
     "selected_source_walk_incomplete", "selected_test_tree_unavailable", "checkout_commit_changed_during_inventory",
     "structured_report_limit", "discovery_case_limit", "worker_or_discovery_exception", "post_execution_source_unavailable",
@@ -153,7 +154,7 @@ def checkout_commit(root: Path) -> str:
     gitfiles/alternate metadata fail closed rather than guessing a commit.
     """
     git = root / ".git"
-    if not git.is_dir() or git.is_symlink():
+    if not git.is_dir() or git.is_symlink() or git.is_junction():
         raise GuardError("unsupported_checkout_metadata")
     head = read_small(git / "HEAD", 4096).decode("ascii").strip()
     if HEX.fullmatch(head):
@@ -187,12 +188,14 @@ def portable_relative(value: str) -> bool:
 
 
 def reject_symlink_ancestors(path: Path, base: Path) -> None:
-    """Reject symlinks from a trusted, already-resolved base to a child path."""
+    """Reject symlinks and Windows junctions below an already-resolved base."""
     cursor = base
     for part in path.relative_to(base).parts:
         cursor = cursor / part
         if cursor.is_symlink():
             raise GuardError("symlinked_path_ancestor")
+        if cursor.is_junction():
+            raise GuardError("junctioned_path_ancestor")
 
 
 def normalized(config: Config) -> Config:
@@ -258,6 +261,9 @@ def source_snapshot(config: Config, deadline: float | None = None) -> dict:
         dirs[:] = sorted(name for name in dirs if name != "__pycache__")
         if any((Path(directory) / name).is_symlink() for name in dirs):
             raise GuardError("symlinked_test_directory")
+        # Python 3.12 os.walk(followlinks=False) still traverses NTFS junctions.
+        if any((Path(directory) / name).is_junction() for name in dirs):
+            raise GuardError("junctioned_test_directory")
         for name in sorted(names):
             if not name.endswith(".py"):
                 continue

@@ -1,6 +1,7 @@
 package dev.ktchecker.projectmodel
 
 import dev.ktchecker.contracts.ContractJson
+import dev.ktchecker.contracts.RuleContext
 import kotlinx.serialization.json.encodeToJsonElement
 
 /** Full conservative obligations for observed imports. Not an equivalence or COMPLETE certificate. */
@@ -28,17 +29,22 @@ class ObservedProjectImpactPlanner {
         fun obligation(selected: ObservedProjectModel, id: String, removed: Boolean, retargeted: Boolean): CompilationObligation {
             val compilation = requireNotNull(selected.compilation(id))
             val context = selected.context(id, selected.identity.configurationDigest)
+            // An admitted tuple is an audit label even when ambiguity prevents AnalysisContext
+            // resolution. Keep every observed assurance gap; no certificate or execution follows.
+            val scope = context.context?.scope ?: RuleContext(compilation.target,
+                requireNotNull(selected.sourceSet(compilation.defaultSourceSetId)).name, compilation.moduleId, compilation.name)
+            val labelReasons = if (context.context == null) listOf("exported_context_label_only") else emptyList()
             val unresolved = when {
                 retargeted -> listOf("required_context_retargeted_unresolved", "consumer_context_changed_without_retirement_evidence")
                 removed -> listOf("consumer_removed_without_retirement_evidence")
                 else -> emptyList()
             }
-            return CompilationObligation(id, context.context?.scope,
+            return CompilationObligation(id, scope,
                 canonicalDigest(ContractJson.encodeToJsonElement(compilation.sourceFiles)),
                 selected.identity.modelDigest, context.context?.dependencyDigest, context.context?.toolchainDigest,
                 after.identity.configurationDigest, if (removed) "removed_unresolved" else "unsupported",
                 immutable((listOf(CONFIGURATION_INPUT_CLOSURE_UNPROVEN, "observed_export_requires_all_before_after_contexts") +
-                    context.issues.map { it.kind } + unresolved).distinct()))
+                    context.issues.map { it.kind } + labelReasons + unresolved).distinct()))
         }
         val obligations = ids.flatMap { id ->
             val current = after.compilation(id)

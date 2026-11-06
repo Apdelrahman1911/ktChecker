@@ -22,6 +22,32 @@ QUALIFIED_CONTEXT = {
 }
 
 
+def frozen_1663_catalog_root(test):
+    """Exact old catalog SOURCE DATA, not a current selector or artifact reader."""
+    repository = Path(__file__).resolve().parents[1]
+    frozen = repository / "providers/compiler-fixtures/mapping-contracts/legacy443-data"
+    selector_bytes = (frozen / "current-inputs.json.txt").read_bytes()
+    test.assertEqual("08d88559f95f86557efaa9b7663c8b16e66991f3548d119ec71af1b756f4b7a3", digest(selector_bytes))
+    selection = json.loads(selector_bytes)
+    catalog_paths = {"data/rules-core.json", "data/rules-ecosystem.json",
+                     "data/rules-libraries.json", "data/rules-platform.json"}
+    test.assertEqual(catalog_paths, {item["path"] for item in selection["catalogs"]})
+    temporary = tempfile.TemporaryDirectory(prefix="frozen1663-catalog-data-")
+    test.addCleanup(temporary.cleanup)
+    root = Path(temporary.name)
+    # Only these four catalog bodies are copied. All evidence, mapping, context
+    # and reference fields in the frozen selector remain opaque metadata.
+    for item in selection["catalogs"]:
+        relative = item["path"]
+        source = frozen / "rules-core.json.txt" if relative == "data/rules-core.json" else repository / relative
+        body = source.read_bytes()
+        test.assertEqual((item["bytes"], item["sha256"]), (len(body), digest(body)))
+        destination = root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(body)
+    return root
+
+
 class CoverageTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -469,8 +495,8 @@ class CoverageTests(unittest.TestCase):
         self.assertIn("rule coverage error", error.getvalue())
 
     def test_repository_inventory_retains_all_1663_records(self):
-        root = Path(__file__).resolve().parents[1]
-        # Ignore transient worker sidecars in this structural count test.
+        # Frozen predecessor regression, deliberately NOT current1665 admission.
+        root = frozen_1663_catalog_root(self)
         output = generate_coverage(root, mapping_paths=[], evidence_paths=[])
         self.assertEqual(1663, output["catalog_records"])
         self.assertEqual(1663, output["row_count"])
@@ -737,7 +763,8 @@ class CoverageTests(unittest.TestCase):
         projection.assert_not_called()
 
     def test_full_declared_catalog_counts_are_real_records_not_context_multiplication(self):
-        root = Path(__file__).resolve().parents[1]
+        # Preserve the old1663 arithmetic instead of silently rebasing its oracle.
+        root = frozen_1663_catalog_root(self)
         contexts = [CONTEXT, {**CONTEXT, "kotlin_version": "2.4.10"}]
         visibility = catalog_visibility(root, evidence_paths=[], contexts=contexts)
         self.assertEqual((1663, 46, 1617), tuple(visibility[field] for field in ("catalog_records", "excluded_records", "candidate_records")))
@@ -989,6 +1016,70 @@ class CoverageTests(unittest.TestCase):
             self.assertEqual(2, main(["--root", str(self.root)]))
         probe.assert_not_called()
         self.assertEqual("", out.getvalue())
+
+
+class Successor1665CoverageTests(unittest.TestCase):
+    """New-generation SOURCE/declared-ledger bookkeeping, not old-report validation."""
+
+    def test_current_1665_vector_is_explicit_and_legacy1663_stays_frozen(self):
+        root = Path(__file__).resolve().parents[1]
+        old = (root / "modules/kernel/src/test/resources/joint-completion-full-catalog-1663.txt").read_bytes()
+        new = (root / "modules/kernel/src/test/resources/joint-completion-full-catalog-1665.txt").read_bytes()
+        self.assertEqual("4c00ec83059325b8ee2fac672e6c53948746bda6920d900a9d1942ce1b03520d", digest(old))
+        self.assertEqual("f7bc5eb975499c10ced7fc10ec7938984f98eb19079f9fcce32d451a8a5de431", digest(new))
+        old_ids, new_ids = old.decode().splitlines(), new.decode().splitlines()
+        self.assertEqual((1663, 1665), (len(old_ids), len(new_ids)))
+        self.assertEqual(sorted(set(new_ids)), new_ids)
+        self.assertEqual({"ktc.compiler.common.error_suppression", "ktc.compiler.common.inapplicable_operator_modifier"},
+                         set(new_ids) - set(old_ids))
+        self.assertTrue(set(old_ids) < set(new_ids))
+        compact = json.dumps(new_ids, separators=(",", ":"), ensure_ascii=False).encode()
+        self.assertEqual("121660fc2a5aed084688d0c549f9e1bece2ec514e9ace4748211b55fa87cc1c5", digest(compact))
+
+    def test_current_1665_keeps_all_frozen_records_and_two_planned_additions(self):
+        root = Path(__file__).resolve().parents[1]
+        frozen = frozen_1663_catalog_root(self)
+        before, after = {}, {}
+        for name in ("core", "ecosystem", "libraries", "platform"):
+            relative = "data/rules-" + name + ".json"
+            before.update({record["id"]: record for record in json.loads((frozen / relative).read_bytes())})
+            after.update({record["id"]: record for record in json.loads((root / relative).read_bytes())})
+        self.assertEqual((1663, 1665), (len(before), len(after)))
+        self.assertEqual(before, {key: after[key] for key in before})
+        additions = {
+            "ktc.compiler.common.error_suppression": ("advisory", "probable_defect", "intent_dependent", "warning"),
+            "ktc.compiler.common.inapplicable_operator_modifier": ("enabled_when_validated", "correctness", "high", "error"),
+        }
+        self.assertEqual(set(additions), set(after) - set(before))
+        for identifier, expected in additions.items():
+            record = after[identifier]
+            self.assertEqual("planned", record["status"])
+            self.assertEqual(expected, tuple(record[key] for key in ("default_activation", "kind", "certainty", "severity")))
+
+    def test_current_1665_declared_eight_contexts_retain_all_obligations_without_credit(self):
+        root = Path(__file__).resolve().parents[1]
+        selection = json.loads((root / "providers/coverage/current-inputs-1665-v1.json").read_bytes())
+        self.assertEqual("ktchecker/owner-full-catalog/1665-u2/1", selection["contract_id"])
+        contexts = []
+        for item in selection["contexts"]:
+            body = (root / item["path"]).read_bytes()
+            self.assertEqual((item["bytes"], item["sha256"]), (len(body), digest(body)))
+            contexts.append(json.loads(body))
+        # This explicit SOURCE metadata projection never reads provider envelopes,
+        # strict mapping references, historical reports or case artifacts.
+        visible = catalog_visibility(root, evidence_paths=[], contexts=contexts)
+        self.assertEqual((1665, 46, 1619), tuple(visible[key] for key in ("catalog_records", "excluded_records", "candidate_records")))
+        self.assertEqual((8, 13320, 368, 12952), tuple(visible[key] for key in ("context_count", "row_count", "excluded_cells", "candidate_cells")))
+        ids = {record["rule_id"] for record in visible["catalog_rules"]}
+        by_context = {}
+        for row in visible["rows"]:
+            by_context.setdefault(row["context_sha256"], set()).add(row["rule_id"])
+            self.assertIsNone(row["mapped"])
+            self.assertFalse(row["implemented"] or row["tested"] or row["qualified"] or row["runtime_default_enabled"])
+            self.assertEqual("unavailable", row["evidence_status"])
+        self.assertEqual(8, len(by_context))
+        self.assertTrue(all(identifiers == ids for identifiers in by_context.values()))
+        self.assertFalse(visible["current_coverage_known"] or visible["release_qualified"])
 
 
 if __name__ == "__main__":

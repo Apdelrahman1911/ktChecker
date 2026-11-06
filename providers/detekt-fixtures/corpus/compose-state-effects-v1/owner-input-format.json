@@ -1,0 +1,44 @@
+{
+  "schema": "ktchecker/compose-state-effects-owner-compilations/1",
+  "kind": "format_documentation_not_a_filled_owner_descriptor",
+  "top_level_required_fields": [
+    "schema",
+    "dependency_vector_kind",
+    "reviewed",
+    "unsupported_runtime"
+  ],
+  "dependency_vector_kind": "complete_owner_resolved_jvm_compile_classpath",
+  "environment_required_fields": [
+    "compilation_id",
+    "scope",
+    "platform",
+    "source_set_ids",
+    "compiler_version",
+    "compiler_arguments",
+    "dependencies"
+  ],
+  "fixed_fixture_scope": {
+    "module": ":compose-state-effects-corpus",
+    "source_set": "main",
+    "target": "jvm",
+    "compilation": "main"
+  },
+  "compilation_id": ":compose-state-effects-corpus:jvm:main",
+  "platform": "jvm",
+  "source_set_ids": [
+    "main"
+  ],
+  "compiler_version": "2.4.21",
+  "dependency_entry_required_fields": [
+    "coordinate",
+    "digest",
+    "path",
+    "size"
+  ],
+  "dependency_entry_constraints": "Actual regular non-symlink JVM binary .jar; absolute normalized path; independently expected sha256:<64 lowercase hex>; exact size; unique coordinate/path; complete ordered vector including non-API transitive dependencies. No sources classifier or -sources.jar.",
+  "reviewed": "Actual complete ordered owner vector containing exact runtime-desktop1.12.1 and runtime-annotation-jvm1.12.1 advertised binaries. The UnstableCollections job also needs immutable-jvm0.3.8. Kotlin stdlib and coroutines JVM dependencies and all other owner-resolved dependencies are retained, not reduced to API-only three.",
+  "unsupported_runtime": "A separately owner-resolved/pinned complete vector containing an actual different-version runtime-desktop binary. Do not relabel1.12.1 bytes, fabricate a digest, or use a SOURCE jar. Preparation verifies its actual bytes before the tuple denial is asserted.",
+  "descriptor_trust": "Explicit task path plus independent owner-selected descriptor SHA256 binds fixture-owner metadata. A project request cannot install this harness or supply its authority. This synthetic compilation owner is not proof that a production importer resolved the same project.",
+  "materialized_source_membership": "Harness derives this independently from the selected pinned corpus case and registered SnapshotStore commit; it does not read source membership back from AnalysisInput.",
+  "actual_descriptor_or_runtime_bytes_in_this_packet": null
+}

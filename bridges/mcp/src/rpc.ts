@@ -2,6 +2,8 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
 export const PREVIEW_CONTRACT = 'ktchecker/preview-1' as const;
+/** Exact per-operation wire admission; not authorization or an ACK/delivery receipt. */
+export const FINDING_WIRE_PROFILE = 'ktchecker/finding-retrieval-attachments-1' as const;
 /** Kernel event pages may contain 8 MiB of payloads plus JSON-string escaping/envelopes. */
 export const PRIVATE_RPC_LINE_BYTES = 16 * 1024 * 1024;
 export type JsonObject = Record<string, unknown>;
@@ -72,7 +74,8 @@ export class JsonLineRpc implements BrokerPort {
     if (!/^[a-z][a-zA-Z0-9_.]*$/.test(method) || !object(params)) throw new BrokerError('invalid_request', 'Invalid application request');
     if (this.pending.size >= this.maxPending) throw new BrokerError('backpressure', 'Too many outstanding broker requests');
     const id = randomUUID();
-    const bytes = Buffer.from(JSON.stringify({ id, method, params }) + '\n');
+    // The transport owns this declaration. No model argument, remembered grant or retry.
+    const bytes = Buffer.from(JSON.stringify({ id, method, params, findingWireProfile: FINDING_WIRE_PROFILE }) + '\n');
     if (bytes.length > this.maxLineBytes) throw new BrokerError('request_too_large', 'Request exceeds the transport bound');
     const child = this.start();
     return new Promise<T>((resolve, reject) => {
@@ -108,6 +111,11 @@ export class JsonLineRpc implements BrokerPort {
           this.fail('invalid_broker_response', 'Malformed broker error'); return;
         }
         pending.reject(new BrokerError(error.code, error.message));
+      } else if (envelope.findingWireProfile !== FINDING_WIRE_PROFILE) {
+        // Check every successful reply before exposing application bytes. Errors need no echo.
+        // A mutation may already have happened: this is an unknown outcome, never a replay.
+        pending.reject(new BrokerError('incompatible_finding_wire_profile', 'Broker did not confirm the required Finding wire profile'));
+        this.fail('incompatible_finding_wire_profile', 'Broker did not confirm the required Finding wire profile'); return;
       } else pending.resolve(envelope.result);
     }
     if (this.buffer.length > this.maxLineBytes) this.fail('invalid_broker_response', 'Unterminated broker line exceeds the bound');

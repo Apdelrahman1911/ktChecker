@@ -1,0 +1,384 @@
+{
+  "schema": "ktchecker/detekt-syntax-local-shapes-cohorts/1",
+  "state": "CONNECTED_SOURCE_CANDIDATE_UNCOMPILED_UNEXECUTED_NOT_ADMITTED",
+  "corpus_id": "detekt-syntax-local-shapes-v1",
+  "default_cohort": null,
+  "allowed_cohort_names": [
+    "local-declaration-use-v1",
+    "guarded-expression-policy-v1",
+    "constant-and-body-policy-v1"
+  ],
+  "multi_cohort_or_all_selector_allowed": false,
+  "scope_reference": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/scope.json",
+  "scope_sha256": "f3d813a06ce3093d782600bbd54efa4ca7a74764a5c73a35a1b7f4776287f274",
+  "cohorts": [
+    {
+      "cohort_id": "local-declaration-use-v1",
+      "case_matrix_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/cohorts/local-declaration-use-v1.json",
+      "case_matrix_sha256": "00b1aa74d6aa10911212cd10e5d7f9c612c1c9a4bbf3dc07b3172bdbb378bb4d",
+      "selected_rules": [
+        {
+          "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+          "upstream_id": "style:UnusedParameter",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+          "fixture_sha256": "8f6dd50d7e417d1569fabdc6f997e1ac87300e27f45445f902ecb785feaf88b6",
+          "default_activation": "advisory",
+          "analyses": 10
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+          "upstream_id": "style:UnusedPrivateClass",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+          "fixture_sha256": "23bb1603193597cee45bda6ef2e2186e95907fe511ea8751e742c7aaff732afd",
+          "default_activation": "advisory",
+          "analyses": 9
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+          "upstream_id": "style:ProtectedMemberInFinalClass",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+          "fixture_sha256": "d2e1e228a5507e7c79cd9e4b8123bf4a686b6e1c0f60d2bc799ce75db320b6bc",
+          "default_activation": "opt_in",
+          "analyses": 10
+        }
+      ],
+      "plan_identity": {
+        "schema": "ktchecker/detekt-syntax-local-shapes-cohort-identity/1",
+        "cohort_id": "local-declaration-use-v1",
+        "case_matrix_sha256": "00b1aa74d6aa10911212cd10e5d7f9c612c1c9a4bbf3dc07b3172bdbb378bb4d",
+        "scope_sha256": "f3d813a06ce3093d782600bbd54efa4ca7a74764a5c73a35a1b7f4776287f274",
+        "integration_contract_sha256": "61bb66f7af26b636010fd39d9065dda3864746812cb4a627ddcbaaaea227f610",
+        "selected_rules": [
+          {
+            "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+            "upstream_id": "style:UnusedParameter",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-parameter.json",
+            "fixture_sha256": "8f6dd50d7e417d1569fabdc6f997e1ac87300e27f45445f902ecb785feaf88b6",
+            "default_activation": "advisory",
+            "analyses": 10
+          },
+          {
+            "rule_id": "ktc.kotlin.detekt.style.unused-private-class",
+            "upstream_id": "style:UnusedPrivateClass",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/unused-private-class.json",
+            "fixture_sha256": "23bb1603193597cee45bda6ef2e2186e95907fe511ea8751e742c7aaff732afd",
+            "default_activation": "advisory",
+            "analyses": 9
+          },
+          {
+            "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+            "upstream_id": "style:ProtectedMemberInFinalClass",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/protected-member-in-final-class.json",
+            "fixture_sha256": "d2e1e228a5507e7c79cd9e4b8123bf4a686b6e1c0f60d2bc799ce75db320b6bc",
+            "default_activation": "opt_in",
+            "analyses": 10
+          }
+        ],
+        "limits": {
+          "max_invocations": 40,
+          "aggregate_millis": 1200000,
+          "child_millis": 60000
+        },
+        "planned_invocations": {
+          "detector_analysis": 29,
+          "cli_probe": 1,
+          "unsupported_target_abstention": 6,
+          "changed_configuration_authorization_denial": 3
+        },
+        "previous_stages_accepted": false,
+        "aggregate_context_activation": false,
+        "requires_explicit_owner_opt_in": true,
+        "opt_in_rule_ids": [
+          "ktc.kotlin.detekt.style.protected-member-in-final-class"
+        ]
+      },
+      "plan_identity_sha256": "6d25a25bf350e4a4ed97e0514bc08b9e2fa0feb6f27420cf29ac42f847e0b8c2",
+      "counts": {
+        "authored_analyses": 29,
+        "all_calls": 39,
+        "native_launch_ceiling": 30,
+        "expected_runtime_callbacks": 33,
+        "planned_progress_events": 119,
+        "independent_controls": 11,
+        "authored_alert_bearing_analyses": 13,
+        "authored_zero_finding_analyses": 16,
+        "authored_expected_finding_observations": 13,
+        "unique_rule_source_sets": 20,
+        "unique_rule_source_configuration_sets": 23,
+        "independent_control_assessments": {
+          "predicate_boundary": 6,
+          "genuine_upstream_option": 1,
+          "anticipated_upstream_false_negative": 2,
+          "anticipated_upstream_false_positive": 1,
+          "opt_in_policy_limit": 1
+        },
+        "actual_executions": 0,
+        "actual_findings": null,
+        "natural_project_observations": 0,
+        "precision_reviewed_natural_observations": 0
+      },
+      "requires_explicit_owner_opt_in": true,
+      "opt_in_rule_ids": [
+        "ktc.kotlin.detekt.style.protected-member-in-final-class"
+      ],
+      "runtime_registration_state": "connected_source_candidate_uncompiled_unexecuted",
+      "execution_admitted": false,
+      "proposed_sidecar": "evidence/verified-jvm-syntax-local-shapes-local-declaration-use-v1-native-preview1.json"
+    },
+    {
+      "cohort_id": "guarded-expression-policy-v1",
+      "case_matrix_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/cohorts/guarded-expression-policy-v1.json",
+      "case_matrix_sha256": "1188b3e8f0e70a80a2be3d6580afe0e0c35807b90062149c12a6f86d6bd858b0",
+      "selected_rules": [
+        {
+          "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+          "upstream_id": "style:CollapsibleIfStatements",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+          "fixture_sha256": "7ca0d460c131bd7390b37eb0b4f373d3ed35228b3323f085cfe705dfdfe5adf7",
+          "default_activation": "opt_in",
+          "analyses": 9
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+          "upstream_id": "style:SafeCast",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+          "fixture_sha256": "8f4f47c264ebbca5d7121de6b1ff7e8362eba6b4ae5bc2e0eee05ce79fdd754f",
+          "default_activation": "opt_in",
+          "analyses": 10
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+          "upstream_id": "style:UseIfInsteadOfWhen",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+          "fixture_sha256": "a535cb0006508657382d33e8a42e204c36c6530b4219b36233201e631a183ec4",
+          "default_activation": "opt_in",
+          "analyses": 10
+        }
+      ],
+      "plan_identity": {
+        "schema": "ktchecker/detekt-syntax-local-shapes-cohort-identity/1",
+        "cohort_id": "guarded-expression-policy-v1",
+        "case_matrix_sha256": "1188b3e8f0e70a80a2be3d6580afe0e0c35807b90062149c12a6f86d6bd858b0",
+        "scope_sha256": "f3d813a06ce3093d782600bbd54efa4ca7a74764a5c73a35a1b7f4776287f274",
+        "integration_contract_sha256": "61bb66f7af26b636010fd39d9065dda3864746812cb4a627ddcbaaaea227f610",
+        "selected_rules": [
+          {
+            "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+            "upstream_id": "style:CollapsibleIfStatements",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+            "fixture_sha256": "7ca0d460c131bd7390b37eb0b4f373d3ed35228b3323f085cfe705dfdfe5adf7",
+            "default_activation": "opt_in",
+            "analyses": 9
+          },
+          {
+            "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+            "upstream_id": "style:SafeCast",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+            "fixture_sha256": "8f4f47c264ebbca5d7121de6b1ff7e8362eba6b4ae5bc2e0eee05ce79fdd754f",
+            "default_activation": "opt_in",
+            "analyses": 10
+          },
+          {
+            "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+            "upstream_id": "style:UseIfInsteadOfWhen",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+            "fixture_sha256": "a535cb0006508657382d33e8a42e204c36c6530b4219b36233201e631a183ec4",
+            "default_activation": "opt_in",
+            "analyses": 10
+          }
+        ],
+        "limits": {
+          "max_invocations": 40,
+          "aggregate_millis": 1200000,
+          "child_millis": 60000
+        },
+        "planned_invocations": {
+          "detector_analysis": 29,
+          "cli_probe": 1,
+          "unsupported_target_abstention": 6,
+          "changed_configuration_authorization_denial": 3
+        },
+        "previous_stages_accepted": false,
+        "aggregate_context_activation": false,
+        "requires_explicit_owner_opt_in": true,
+        "opt_in_rule_ids": [
+          "ktc.kotlin.detekt.style.collapsible-if-statements",
+          "ktc.kotlin.detekt.style.safe-cast",
+          "ktc.kotlin.detekt.style.use-if-instead-of-when"
+        ]
+      },
+      "plan_identity_sha256": "9785b432ee33540b262e4ae1f94e38c80cae2e14a909ade85303f6ad30c3f38c",
+      "counts": {
+        "authored_analyses": 29,
+        "all_calls": 39,
+        "native_launch_ceiling": 30,
+        "expected_runtime_callbacks": 33,
+        "planned_progress_events": 119,
+        "independent_controls": 11,
+        "authored_alert_bearing_analyses": 12,
+        "authored_zero_finding_analyses": 17,
+        "authored_expected_finding_observations": 12,
+        "unique_rule_source_sets": 19,
+        "unique_rule_source_configuration_sets": 23,
+        "independent_control_assessments": {
+          "predicate_boundary": 6,
+          "anticipated_upstream_false_negative": 2,
+          "anticipated_upstream_false_positive": 1,
+          "opt_in_policy_limit": 1,
+          "genuine_upstream_option": 1
+        },
+        "actual_executions": 0,
+        "actual_findings": null,
+        "natural_project_observations": 0,
+        "precision_reviewed_natural_observations": 0
+      },
+      "requires_explicit_owner_opt_in": true,
+      "opt_in_rule_ids": [
+        "ktc.kotlin.detekt.style.collapsible-if-statements",
+        "ktc.kotlin.detekt.style.safe-cast",
+        "ktc.kotlin.detekt.style.use-if-instead-of-when"
+      ],
+      "runtime_registration_state": "connected_source_candidate_uncompiled_unexecuted",
+      "execution_admitted": false,
+      "proposed_sidecar": "evidence/verified-jvm-syntax-local-shapes-guarded-expression-policy-v1-native-preview1.json"
+    },
+    {
+      "cohort_id": "constant-and-body-policy-v1",
+      "case_matrix_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/cohorts/constant-and-body-policy-v1.json",
+      "case_matrix_sha256": "64394455053f8b0ad500c5d8b83d442d3d2a54d488292ccaa478f512d64314fa",
+      "selected_rules": [
+        {
+          "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+          "upstream_id": "style:FunctionOnlyReturningConstant",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+          "fixture_sha256": "d1670b0ef648328c7bbaa17ad8ebf151f93713f9feb9560606ab10ae0da6b52f",
+          "default_activation": "opt_in",
+          "analyses": 10
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+          "upstream_id": "style:ExpressionBodySyntax",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+          "fixture_sha256": "1125a3c8053d8588d718c12e97a1aa841c843b245131c82483abb4e34d7ab681",
+          "default_activation": "opt_in",
+          "analyses": 10
+        },
+        {
+          "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+          "upstream_id": "style:MayBeConstant",
+          "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+          "fixture_sha256": "a19072e1512e5a55725a350af8d67c0ff8aa308b8202f617df051acdd433acf4",
+          "default_activation": "opt_in",
+          "analyses": 10
+        }
+      ],
+      "plan_identity": {
+        "schema": "ktchecker/detekt-syntax-local-shapes-cohort-identity/1",
+        "cohort_id": "constant-and-body-policy-v1",
+        "case_matrix_sha256": "64394455053f8b0ad500c5d8b83d442d3d2a54d488292ccaa478f512d64314fa",
+        "scope_sha256": "f3d813a06ce3093d782600bbd54efa4ca7a74764a5c73a35a1b7f4776287f274",
+        "integration_contract_sha256": "61bb66f7af26b636010fd39d9065dda3864746812cb4a627ddcbaaaea227f610",
+        "selected_rules": [
+          {
+            "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+            "upstream_id": "style:FunctionOnlyReturningConstant",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/function-only-returning-constant.json",
+            "fixture_sha256": "d1670b0ef648328c7bbaa17ad8ebf151f93713f9feb9560606ab10ae0da6b52f",
+            "default_activation": "opt_in",
+            "analyses": 10
+          },
+          {
+            "rule_id": "ktc.kotlin.detekt.style.expression-body-syntax",
+            "upstream_id": "style:ExpressionBodySyntax",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/expression-body-syntax.json",
+            "fixture_sha256": "1125a3c8053d8588d718c12e97a1aa841c843b245131c82483abb4e34d7ab681",
+            "default_activation": "opt_in",
+            "analyses": 10
+          },
+          {
+            "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+            "upstream_id": "style:MayBeConstant",
+            "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/may-be-constant.json",
+            "fixture_sha256": "a19072e1512e5a55725a350af8d67c0ff8aa308b8202f617df051acdd433acf4",
+            "default_activation": "opt_in",
+            "analyses": 10
+          }
+        ],
+        "limits": {
+          "max_invocations": 40,
+          "aggregate_millis": 1200000,
+          "child_millis": 60000
+        },
+        "planned_invocations": {
+          "detector_analysis": 30,
+          "cli_probe": 1,
+          "unsupported_target_abstention": 6,
+          "changed_configuration_authorization_denial": 3
+        },
+        "previous_stages_accepted": false,
+        "aggregate_context_activation": false,
+        "requires_explicit_owner_opt_in": true,
+        "opt_in_rule_ids": [
+          "ktc.kotlin.detekt.style.function-only-returning-constant",
+          "ktc.kotlin.detekt.style.expression-body-syntax",
+          "ktc.kotlin.detekt.style.may-be-constant"
+        ]
+      },
+      "plan_identity_sha256": "3b2dd4bc06d68d4f67ffed571aa07df91abbba5e7b19976f6aeb613d903bcc4b",
+      "counts": {
+        "authored_analyses": 30,
+        "all_calls": 40,
+        "native_launch_ceiling": 31,
+        "expected_runtime_callbacks": 34,
+        "planned_progress_events": 122,
+        "independent_controls": 12,
+        "authored_alert_bearing_analyses": 16,
+        "authored_zero_finding_analyses": 14,
+        "authored_expected_finding_observations": 16,
+        "unique_rule_source_sets": 19,
+        "unique_rule_source_configuration_sets": 24,
+        "independent_control_assessments": {
+          "predicate_boundary": 7,
+          "genuine_upstream_option": 3,
+          "anticipated_upstream_false_positive": 2
+        },
+        "actual_executions": 0,
+        "actual_findings": null,
+        "natural_project_observations": 0,
+        "precision_reviewed_natural_observations": 0
+      },
+      "requires_explicit_owner_opt_in": true,
+      "opt_in_rule_ids": [
+        "ktc.kotlin.detekt.style.function-only-returning-constant",
+        "ktc.kotlin.detekt.style.expression-body-syntax",
+        "ktc.kotlin.detekt.style.may-be-constant"
+      ],
+      "runtime_registration_state": "connected_source_candidate_uncompiled_unexecuted",
+      "execution_admitted": false,
+      "proposed_sidecar": "evidence/verified-jvm-syntax-local-shapes-constant-and-body-policy-v1-native-preview1.json"
+    }
+  ],
+  "unchanged_hard_maxima": {
+    "max_invocations": 40,
+    "aggregate_millis": 1200000,
+    "child_millis": 60000,
+    "progress_events": 124
+  },
+  "required_admission": "Independent source/oracle review, root adoption, actual fresh compilation/control verification and separate current single-cohort source/code/data-bound owner admission acknowledging only its opt-in rules, with unchanged hard limits. Registration or a plan hash is not consent or evidence.",
+  "full_scope_retained": {
+    "existing_fixtures": 22,
+    "existing_analyses": 199,
+    "new_fixtures": 9,
+    "new_analyses": 88,
+    "proposed_combined_fixtures": 31,
+    "proposed_combined_analyses": 287
+  },
+  "actual_tests_executed": 0,
+  "actual_provider_invocations": 0,
+  "historical_stage_transfer": 0,
+  "additive_registry_and_control_code_changes": true,
+  "old_data_registry_or_fixture_bytes_changed": false,
+  "old_fixture_expectations_or_plan_identities_changed": false,
+  "integration_contract_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/integration-contract.json",
+  "integration_contract_sha256": "61bb66f7af26b636010fd39d9065dda3864746812cb4a627ddcbaaaea227f610"
+}

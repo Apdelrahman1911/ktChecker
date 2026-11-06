@@ -1,0 +1,736 @@
+// Explicit version-isolated KGP/compiler 2.4.10 configured-input experiment.
+// Executable project configuration still requires exact authenticated owner authority.
+// This is NOT a compiler invocation, configuration-read closure proof, old JVM role
+// adapter, FIR extractor or extension of default/observed 2.4.21 admission.
+// Primary gradle813 source JAR: 70e277a44fbcf4d58444bb8b1459cb80686380537aa7414b80745a71607b36bb.
+// See docs/experimental-kgp2410-model-exporter.md for source pins and deliberate gaps.
+import groovy.json.JsonOutput
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.security.MessageDigest
+
+// BEGIN KTCHECKER_2410_PINNED_MODEL_API
+class KtChecker2410ModelCaptureFailure extends IllegalStateException {
+    final String stage
+    final String failureKind
+
+    KtChecker2410ModelCaptureFailure(String stage, Throwable cause) {
+        super(stage + ': ' + cause.getClass().getSimpleName(), cause)
+        this.stage = stage
+        this.failureKind = cause.getClass().getSimpleName()
+    }
+}
+
+class KtChecker2410PinnedModelApi {
+    static Object at(String stage, Closure operation) {
+        try { return operation.call() }
+        catch (KtChecker2410ModelCaptureFailure error) { throw error }
+        catch (Exception error) {
+            Throwable cause = error
+            int depth = 0
+            while ((cause instanceof java.lang.reflect.InvocationTargetException ||
+                cause instanceof java.lang.reflect.UndeclaredThrowableException ||
+                cause instanceof org.codehaus.groovy.runtime.InvokerInvocationException) && cause.getCause() != null && depth++ < 16) cause = cause.getCause()
+            if (cause instanceof KtChecker2410ModelCaptureFailure) throw cause
+            if (cause instanceof VirtualMachineError || cause instanceof ThreadDeath) throw cause
+            throw new KtChecker2410ModelCaptureFailure(stage, cause)
+        } catch (LinkageError error) { throw new KtChecker2410ModelCaptureFailure(stage, error) }
+    }
+
+    static Object getter(Object instance, String name) {
+        if (instance == null) throw new IllegalStateException('Missing instance for pinned getter ' + name)
+        instance.getClass().getMethod(name).invoke(instance)
+    }
+
+    static List<String> strings(Object value) {
+        if (!(value instanceof List) || value.size() > 16384 || value.any {
+            !(it instanceof String) || it.length() > 8192 || it.indexOf('\u0000') >= 0
+        }) throw new IllegalStateException('Unavailable bounded exact string-vector vocabulary')
+        new ArrayList<String>(value)
+    }
+
+    static List<String> pathArray(Object value) {
+        // A successfully created arguments object's null field means no such operand.
+        // It does not establish that a missing plugin/friend provider was verified empty.
+        if (value == null) return []
+        if (!(value instanceof String[])) throw new IllegalStateException('Unsupported pinned path-array vocabulary')
+        strings(Arrays.asList((String[]) value))
+    }
+
+    static Map fullCompilerArguments(Object task) {
+        def api = at('compiler-api-load') {
+            if (task == null || task.getClass().getClassLoader() == null) throw new IllegalStateException('Missing pinned task loader')
+            // Resolve ONLY through this actual task/plugin loader. No context/root/system
+            // loader retries, guessed overloads, deprecated setup flags, or ignored errors.
+            def loader = task.getClass().getClassLoader()
+            def producer = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer')
+            def context = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer$CreateCompilerArgumentsContext')
+            def argumentType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer$ArgumentType')
+            def toolArguments = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.CommonToolArguments')
+            def factoryType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducerKt')
+            def serializerType = loader.loadClass('org.jetbrains.kotlin.compilerRunner.ArgumentUtils')
+            if (!producer.isInterface() || !producer.isInstance(task) || !argumentType.isEnum()) {
+                throw new IllegalStateException('Unsupported pinned compiler producer/type identity')
+            }
+            def types = argumentType.getEnumConstants().toList()
+            if (types.collect { it.name() } != ['Primitive', 'PluginClasspath', 'DependencyClasspath', 'Sources']) {
+                throw new IllegalStateException('Unsupported pinned complete argument-type domain')
+            }
+            def factory = factoryType.getMethod('CreateCompilerArgumentsContext', Set.class, Boolean.TYPE)
+            def create = producer.getMethod('createCompilerArguments', context)
+            def serialize = serializerType.getMethod('convertArgumentsToStringList', toolArguments)
+            if (!java.lang.reflect.Modifier.isStatic(factory.modifiers) || factory.returnType != context ||
+                create.returnType != toolArguments || !java.lang.reflect.Modifier.isStatic(serialize.modifiers) ||
+                !List.class.isAssignableFrom(serialize.returnType)) {
+                throw new IllegalStateException('Unsupported pinned compiler method signatures')
+            }
+            [factory: factory, create: create, serialize: serialize, types: new LinkedHashSet(types),
+                contextType: context, argumentsType: toolArguments]
+        }
+        def context = at('compiler-arguments-context') {
+            def value = api.factory.invoke(null, api.types, false)
+            if (!api.contextType.isInstance(value)) throw new IllegalStateException('Missing exact compiler argument context')
+            value
+        }
+        def value = at('compiler-arguments-create') {
+            def arguments = api.create.invoke(task, context)
+            if (!api.argumentsType.isInstance(arguments)) throw new IllegalStateException('Missing exact compiler arguments object')
+            arguments
+        }
+        def arguments = at('compiler-arguments-serialize') { strings(api.serialize.invoke(null, value)) }
+        // Intended full task-configuration serialization at the exporter lifecycle point,
+        // NOT evidence that this compiler task or a compiler child process actually ran.
+        [value: value, arguments: arguments]
+    }
+
+    static Object optionalPluginData(Object task) {
+        def provider = at('compiler-plugin-data-provider') { getter(task, 'getKotlinPluginData$kotlin_gradle_plugin_common') }
+        if (provider == null) return [state: 'provider_absent', value: null]
+        def value = at('compiler-plugin-data-value') { getter(provider, 'getOrNull') }
+        [state: value == null ? 'value_absent' : 'available', value: value]
+    }
+
+    static List<File> effectivePluginFiles(Object task, Object pluginData) {
+        def files = getter(task, 'getPluginClasspath')
+        if (files == null) throw new IllegalStateException('Missing default compiler plugin classpath')
+        // The pinned KGP composes FileCollections in this order. Do not sort, flatten
+        // into an inferred union, or discard the default scripting compiler plugins.
+        if (pluginData != null) files = files.plus(getter(pluginData, 'getClasspath'))
+        def result = files.toList()
+        if (result.any { !(it instanceof File) }) throw new IllegalStateException('Unsupported compiler plugin file vocabulary')
+        result
+    }
+
+    static void samePaths(List<String> operands, List<File> files) {
+        if (operands != files.collect { it.absolutePath }) throw new IllegalStateException('Exact ordered task/argument path roles differ')
+    }
+
+    static Map ordinaryJvmProducer(Object task, Object fullCapture) {
+        at('compiler-jvm-original-producer') {
+            if (task == null || task.getClass().getClassLoader() == null || !(fullCapture instanceof Map)) {
+                throw new IllegalStateException('Missing original JVM producer capture')
+            }
+            // The registered owner runtime supplies the byte pins. A class name alone is
+            // NOT origin authority. These checks additionally reject custom dispatch and
+            // argument-object implementations for the reviewed KGP lowering semantics.
+            def loader = task.getClass().getClassLoader()
+            def taskType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.KotlinCompile')
+            def baseType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile')
+            def contextType = loader.loadClass('org.jetbrains.kotlin.gradle.plugin.KotlinCompilerArgumentsProducer$CreateCompilerArgumentsContext')
+            def argumentsType = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments')
+            def commonArgumentsType = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments')
+            def toolArgumentsType = loader.loadClass('org.jetbrains.kotlin.cli.common.arguments.CommonToolArguments')
+            def changesType = loader.loadClass('org.gradle.work.InputChanges')
+            def backupType = loader.loadClass('org.jetbrains.kotlin.gradle.tasks.TaskOutputsBackup')
+            def providerType = loader.loadClass('org.gradle.api.provider.Provider')
+            if (!taskType.isInstance(task) || fullCapture.value == null || !fullCapture.value.getClass().is(argumentsType)) {
+                throw new IllegalStateException('Unsupported ordinary JVM producer/argument object')
+            }
+            def creates = task.getClass().getMethods().findAll { method ->
+                method.name == 'createCompilerArguments' && method.parameterTypes.toList() == [contextType]
+            }
+            def lowers = task.getClass().getMethods().findAll { method ->
+                method.name == 'callCompilerAsync$kotlin_gradle_plugin_common' && method.parameterCount == 3 &&
+                    method.parameterTypes[1].is(changesType) && method.parameterTypes[2].is(backupType)
+            }
+            if (creates.size() != 2 || creates.collect { it.returnType }.toSet() != [argumentsType, toolArgumentsType].toSet() ||
+                lowers.size() != 2 || lowers.collect { it.parameterTypes[0] }.toSet() != [argumentsType, commonArgumentsType].toSet() ||
+                (creates + lowers).any { method -> !method.declaringClass.is(taskType) ||
+                    java.lang.reflect.Modifier.isStatic(method.modifiers) || java.lang.reflect.Modifier.isAbstract(method.modifiers) } ||
+                lowers.any { !it.returnType.is(Void.TYPE) }) {
+                throw new IllegalStateException('Custom or unavailable pinned JVM producer/lowering dispatch')
+            }
+            def pluginGetter = task.getClass().getMethod('getKotlinPluginData$kotlin_gradle_plugin_common')
+            if (!pluginGetter.declaringClass.is(baseType) || !pluginGetter.returnType.is(providerType) ||
+                !java.lang.reflect.Modifier.isFinal(pluginGetter.modifiers)) {
+                throw new IllegalStateException('Unknown nullable plugin metadata producer')
+            }
+            [taskType: taskType, argumentsType: argumentsType]
+        }
+    }
+
+    static List<File> originalFiles(Object collection) {
+        def files = getter(collection, 'getFiles')
+        if (!(files instanceof Set) || files.size() > 16384 || files.any { !(it instanceof File) }) {
+            throw new IllegalStateException('Unavailable exact bounded Gradle file collection')
+        }
+        new ArrayList<File>(files)
+    }
+
+    static String emptyJvmInputDomain(Object task, Object fullCapture, Object pluginCapture, Object effectiveFiles) {
+        ordinaryJvmProducer(task, fullCapture)
+        if (!(pluginCapture instanceof Map) || !(effectiveFiles instanceof List) || !effectiveFiles.isEmpty() ||
+            !(pluginCapture.state in ['provider_absent', 'value_absent']) || pluginCapture.value != null) {
+            throw new IllegalStateException('Missing independent empty plugin-domain observations')
+        }
+        def arguments = fullCapture.value
+        ['getPluginClasspaths', 'getPluginOptions', 'getPluginConfigurations', 'getPluginOrderConstraints'].each { name ->
+            if (!pathArray(getter(arguments, name)).isEmpty()) throw new IllegalStateException('Nonempty compiler plugin argument domain')
+        }
+        if (getter(arguments, 'getIntellijPluginRoot') != null || strings(fullCapture.arguments).any { token ->
+            token.startsWith('@') || token == '-P' || token.startsWith('-P=') || token.startsWith('-Xplugin') ||
+                token.startsWith('-Xcompiler-plugin') || token.startsWith('-Xintellij-plugin-root')
+        }) throw new IllegalStateException('Plugin/response argument semantics are not an empty domain')
+        // Narrower than the legacy route: no unreviewed allOptions()/lazy-config
+        // semantics. Even a nonnull apparently empty plugin-data/config object is a gap.
+        def taskOptions = getter(getter(task, 'getPluginOptions'), 'get')
+        if (!(taskOptions instanceof List) || !taskOptions.isEmpty()) {
+            throw new IllegalStateException('Only an independently empty task plugin-option list is supported')
+        }
+        if (!effectivePluginFiles(task, pluginCapture.value).isEmpty() || !originalFiles(getter(task, 'getJavaSources')).isEmpty()) {
+            throw new IllegalStateException('Nonempty actual plugin or Java input domain')
+        }
+        def scripts = getter(task, 'getScriptSources$kotlin_gradle_plugin_common')
+        if (!originalFiles(scripts).isEmpty() || !originalFiles(getter(scripts, 'getAsFileTree')).isEmpty() ||
+            getter(getter(task, 'getMultiPlatformEnabled'), 'get') != Boolean.FALSE ||
+            getter(arguments, 'getMultiPlatform') != Boolean.FALSE || getter(arguments, 'getScript') != Boolean.FALSE ||
+            getter(arguments, 'getRepl') != Boolean.FALSE || getter(arguments, 'getExpression') != null ||
+            getter(arguments, 'getBuildFile') != null || getter(arguments, 'getJavaPackagePrefix') != null ||
+            getter(arguments, 'getUseFirLT') != Boolean.TRUE) {
+            throw new IllegalStateException('Nonordinary script/Java/refinement/frontend domain')
+        }
+        def declaredFriends = getter(task, 'getFriendPaths').toList()
+        if (!declaredFriends.isEmpty() || !pathArray(getter(arguments, 'getFriendPaths')).isEmpty()) {
+            throw new IllegalStateException('No friend/associated/deferred output is supported by this new route')
+        }
+        // The exact pinned2.4.10 hierarchy has these fragment getters, not getFragmentIncrementalClasspath.
+        // A missing real getter remains an error; do not graft later-version getters or optional fallbacks.
+        ['getCommonSources', 'getFragments', 'getFragmentSources', 'getFragmentRefines',
+            'getFragmentDependencies', 'getFragmentFriendDependencies',
+            'getJavaSourceRoots', 'getScriptTemplates', 'getScriptResolverEnvironment'].each { name ->
+            if (!pathArray(getter(arguments, name)).isEmpty()) throw new IllegalStateException('Nonordinary source/input argument domain')
+        }
+        pluginCapture.state
+    }
+
+    static boolean verifyConfiguredJvmInputs(Object task, Object fullCapture, Object sourceRoot, Object selectedHome,
+        Object sourceFiles, Object classpath, Object pluginDomain) {
+        ordinaryJvmProducer(task, fullCapture)
+        if (File.separator != '/' || File.pathSeparator != ':' || !(sourceRoot instanceof java.nio.file.Path) ||
+            !(selectedHome instanceof String) || !(sourceFiles instanceof List) || !(classpath instanceof List) ||
+            !(pluginDomain in ['provider_absent', 'value_absent'])) {
+            throw new IllegalStateException('Unavailable original POSIX JVM role domain')
+        }
+        def root = sourceRoot.toAbsolutePath().normalize()
+        if (root != sourceRoot || root.toRealPath() != root) throw new IllegalStateException('Unaliased original snapshot root required')
+        def arguments = fullCapture.value
+        // The pinned Sources producer appends scripts + Java + Kotlin, with Kotlin in
+        // this actual FileTree iteration order. Java/scripts were independently empty.
+        def files = originalFiles(getter(getter(task, 'getSources'), 'getAsFileTree'))
+        samePaths(strings(getter(arguments, 'getFreeArgs')), files)
+        def paths = files.collect { file ->
+            def path = file.toPath().toAbsolutePath().normalize()
+            if (path.toString() != file.absolutePath || !path.startsWith(root) || path == root ||
+                !file.name.endsWith('.kt') || !java.nio.file.Files.isRegularFile(path, java.nio.file.LinkOption.NOFOLLOW_LINKS) ||
+                path.toRealPath() != path) throw new IllegalStateException('Nonregular or aliased original Kotlin source')
+            root.relativize(path).toString()
+        }
+        if (sourceFiles.any { !(it instanceof Map) || !(it.path instanceof String) } ||
+            paths.size() != paths.toSet().size() || sourceFiles.collect { it.path }.size() != sourceFiles.collect { it.path }.toSet().size() ||
+            paths.toSet() != sourceFiles.collect { it.path }.toSet()) {
+            throw new IllegalStateException('Original source order is not a bijection of complete model membership')
+        }
+        def declared = originalFiles(getter(task, 'getLibraries'))
+        def operand = getter(arguments, 'getClasspath')
+        if ((operand != null && !(operand instanceof String)) || classpath.any { !(it instanceof Map) || !(it.path instanceof String) } ||
+            classpath.collect { it.path } != declared.collect { it.absolutePath } || declared.any { file ->
+                def path = file.toPath().toAbsolutePath().normalize()
+                path.toString() != file.absolutePath || !file.name.endsWith('.jar') ||
+                    !java.nio.file.Files.isRegularFile(path, java.nio.file.LinkOption.NOFOLLOW_LINKS) || path.toRealPath() != path
+            } || (operand == null ? !declared.findAll { it.exists() }.isEmpty() :
+                operand != declared.collect { it.absolutePath }.join(File.pathSeparator))) {
+            throw new IllegalStateException('Original full ordered classpath role differs from independently captured task files')
+        }
+        def destination = getter(arguments, 'getDestination')
+        def directory = getter(getter(getter(task, 'getDestinationDirectory'), 'get'), 'getAsFile')
+        def jdk = getter(arguments, 'getJdkHome')
+        def selected = new File(selectedHome).toPath()
+        if (!(destination instanceof String) || !(directory instanceof File) || destination != directory.absolutePath ||
+            directory.toPath().toAbsolutePath().normalize().toString() != destination || directory.canonicalPath != destination ||
+            !selected.isAbsolute() || selected.normalize() != selected || selected.toRealPath() != selected ||
+            (jdk != null && (!(jdk instanceof String) || jdk != selectedHome))) {
+            throw new IllegalStateException('Original destination/JDK task roles are not exact')
+        }
+        true // A checked configuration fact only; never a JVM argument-layout capability.
+    }
+
+    static String projectBuildPath(Object id, Class projectType, Class buildType) {
+        if (!projectType.isInstance(id)) throw new IllegalStateException('Missing actual ProjectComponentIdentifier')
+        def build = projectType.getMethod('getBuild').invoke(id)
+        if (!buildType.isInstance(build)) throw new IllegalStateException('Missing actual BuildIdentifier')
+        def path = buildType.getMethod('getBuildPath').invoke(build)
+        if (!(path instanceof String) || path.length() < 1 || path.length() > 4096 || path.isBlank() ||
+            path.toCharArray().any { Character.isISOControl(it as char) }) throw new IllegalStateException('Missing exact buildPath')
+        path
+    }
+}
+// END KTCHECKER_2410_PINNED_MODEL_API
+
+gradle.beforeProject { p ->
+    def buildRoot = p.findProperty('ktcheckerModelBuildRoot')
+    if (buildRoot != null) {
+        def suffix = MessageDigest.getInstance('SHA-256').digest(p.path.getBytes('UTF-8')).encodeHex().toString()
+        p.layout.buildDirectory.set(new File(buildRoot.toString(), suffix))
+    }
+}
+
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    root.tasks.register('ktCheckerKgp2410ModelExport') {
+        group = 'verification'
+        description = 'Explicit exact KGP 2.4.10 configured-input experiment; no compiler roles, closure or execution proof.'
+        doLast {
+            def rootPath = root.projectDir.toPath().toAbsolutePath().normalize()
+            def issues = []
+            def issue = { String kind, String scope, String detail ->
+                issues << [kind: kind, scopeId: scope, detail: detail.take(8192)]
+            }
+            def logical = { File file, String scope ->
+                def path = file.toPath().toAbsolutePath().normalize()
+                if (!path.startsWith(rootPath)) {
+                    issue('external_model_input', scope, 'Model input/root is outside the registered source snapshot: ' + file.name)
+                    return null
+                }
+                rootPath.relativize(path).toString().replace(File.separatorChar, '/' as char)
+            }
+            def sha = { File file ->
+                def hash = MessageDigest.getInstance('SHA-256')
+                file.withInputStream { stream ->
+                    byte[] buffer = new byte[65536]
+                    for (int count = stream.read(buffer); count >= 0; count = stream.read(buffer)) {
+                        if (count > 0) hash.update(buffer, 0, count)
+                    }
+                }
+                def result = 'sha256:' + hash.digest().encodeHex().toString()
+                result
+            }
+            def sourceFile = { File file, String scope ->
+                def path = logical(file, scope)
+                if (path == null) return null
+                if (Files.isSymbolicLink(file.toPath()) || !Files.isRegularFile(file.toPath(), LinkOption.NOFOLLOW_LINKS) ||
+                    file.toPath().toAbsolutePath().normalize().toString() != file.absolutePath ||
+                    file.toPath().toRealPath() != file.toPath().toAbsolutePath().normalize()) {
+                    issue('model_input_unavailable', scope, 'Missing/nonregular captured input: ' + path)
+                    return null
+                }
+                [path: path, digest: sha(file), size: file.length()]
+            }
+            def artifact = { File file, String coordinate, String scope ->
+                // Preserve the original absolute role. Never canonicalize a linked input
+                // into an apparently different regular dependency with new authority.
+                def actual = file.absoluteFile
+                def path = actual.toPath().toAbsolutePath().normalize()
+                if (path.toString() != actual.absolutePath || !Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) ||
+                    Files.isSymbolicLink(path) || path.toRealPath() != path) {
+                    issue('artifact_unavailable', scope, 'Missing/directory resolved artifact: ' + coordinate)
+                    return [coordinate: coordinate, path: actual.absolutePath, digest: null, size: null]
+                }
+                [coordinate: coordinate, path: actual.absolutePath, digest: sha(actual), size: actual.length()]
+            }
+            def known = { Object instance, String getter ->
+                KtChecker2410PinnedModelApi.getter(instance, getter)
+            }
+            def capture = { String kind, String scope, String stage, Closure operation ->
+                try { return KtChecker2410PinnedModelApi.at(stage, operation) }
+                catch (KtChecker2410ModelCaptureFailure error) {
+                    issue(kind, scope, error.stage + ': ' + error.failureKind + ': pinned task-configuration capture unavailable')
+                    return null
+                }
+            }
+            def attributes = { container ->
+                def values = [:]
+                container.keySet().toList().sort { it.name }.each { key ->
+                    values[key.name] = container.getAttribute(key).toString()
+                }
+                values
+            }
+            def capturedTree = { Collection<File> roots, String scope ->
+                def result = []
+                roots.toList().sort { it.absolutePath }.each { file ->
+                    if (Files.isSymbolicLink(file.toPath())) {
+                        issue('model_input_unavailable', scope, 'Symlink tree input is not inferred as a captured source root')
+                    } else if (file.isDirectory()) {
+                        Files.walk(file.toPath()).withCloseable { paths ->
+                            paths.sorted().forEach { path ->
+                                if (Files.isSymbolicLink(path)) issue('model_input_unavailable', scope, 'Symlink member in captured source tree')
+                                else if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+                                    def fact = sourceFile(path.toFile(), scope)
+                                    if (fact != null) result << fact
+                                }
+                            }
+                        }
+                    } else if (file.isFile()) {
+                        def fact = sourceFile(file, scope)
+                        if (fact != null) result << fact
+                    }
+                }
+                result.unique { it.path }.sort { it.path }
+            }
+            def propertyValue
+            propertyValue = { value ->
+                if (value == null || value instanceof String || value instanceof Boolean || value instanceof Number) return value
+                if (value instanceof Enum) return value.name()
+                if (value instanceof Collection) return value.collect { propertyValue(it) }
+                if (value instanceof Map && value.keySet().every { it instanceof String }) {
+                    def map = [:]
+                    value.keySet().sort().each { key -> map[key] = propertyValue(value[key]) }
+                    return map
+                }
+                throw new IllegalStateException('Unqualified non-scalar generation input property')
+            }
+            def runtimeCache = [:]
+            def runtime = { File home, String label, String scope ->
+                def selected = home.toPath().toAbsolutePath().normalize()
+                if (selected.toString() != home.absolutePath || selected.toRealPath() != selected) {
+                    throw new IllegalStateException('Unaliased selected runtime home required')
+                }
+                def canonical = selected.toFile()
+                if (runtimeCache.containsKey(canonical.absolutePath)) {
+                    return runtimeCache[canonical.absolutePath].collect { it + [coordinate: label + ':' + it.relative] }
+                        .collect { it.findAll { key, value -> key != 'relative' } }
+                }
+                def values = []
+                def seen = [] as Set
+                def visit
+                visit = { File file, String relative ->
+                    if (Files.isSymbolicLink(file.toPath()) || file.toPath().toRealPath() != file.toPath().toAbsolutePath().normalize()) {
+                        throw new IllegalStateException('Linked runtime entries are unsupported')
+                    }
+                    if (seen.size() + values.size() >= 20000) throw new IllegalStateException('Runtime member bound exceeded')
+                    if (file.isDirectory()) {
+                        def actual = file.toPath().toRealPath().toString()
+                        if (!seen.add(actual)) throw new IllegalStateException('Cyclic runtime directory aliases')
+                        file.listFiles().toList().sort { it.name }.each { child -> visit(child, relative ? relative + '/' + child.name : child.name) }
+                    } else {
+                        values << (artifact(file, label + ':' + relative, scope) + [relative: relative])
+                    }
+                }
+                visit(canonical, '')
+                runtimeCache[canonical.absolutePath] = values
+                values.collect { it.findAll { key, value -> key != 'relative' } }
+            }
+            def modules = []
+            def sourceSets = []
+            def compilations = []
+            def compilationObjects = []
+            def targetObjects = []
+            def generatedByTask = [:]
+            def configuration = [:]
+            def buildscript = []
+            def externalConfiguration = []
+            root.allprojects.toList().sort { it.path }.each { p ->
+                def moduleDir = logical(p.projectDir, p.path)
+                if (moduleDir == null) return
+                def build = p.buildFile.exists() ? logical(p.buildFile, p.path) : null
+                def pluginIds = []
+                ['org.jetbrains.kotlin.multiplatform', 'org.jetbrains.kotlin.jvm', 'org.jetbrains.kotlin.android',
+                 'com.android.application', 'com.android.library', 'com.google.devtools.ksp',
+                 'org.jetbrains.kotlin.plugin.serialization', 'org.jetbrains.compose', 'org.jetbrains.kotlin.plugin.compose'].each { name ->
+                    if (p.pluginManager.hasPlugin(name)) pluginIds << name
+                }
+                modules << [id: p.path, directory: moduleDir, buildFile: build, pluginIds: pluginIds]
+                if (p.extensions.findByName('android') != null) issue('android_variants_unmodeled', p.path,
+                    'AGP variants/resources/manifest/generated/friend inputs need a separately qualified Android model adapter.')
+                def kotlin = p.extensions.findByName('kotlin')
+                if (kotlin == null) {
+                    if (p != root || p.subprojects.isEmpty()) issue('non_kotlin_project_unmodeled', p.path,
+                        'Non-Kotlin project graph is explicitly outside this KMP exporter vocabulary.')
+                    return
+                }
+                try {
+                    def plugin = p.plugins.find { it.class.methods.any { m -> m.name == 'getPluginVersion' && m.parameterCount == 0 } }
+                    if (plugin == null || known(plugin, 'getPluginVersion') != '2.4.10') {
+                        issue('kotlin_plugin_version_unsupported', p.path, 'The model API is pinned to Kotlin Gradle plugin 2.4.10.')
+                    }
+                    kotlin.sourceSets.toList().sort { it.name }.each { s ->
+                        def id = "${p.path}|${s.name}".toString()
+                        def roots = s.kotlin.srcDirs.collect { logical(it, id) }.findAll { it != null }.unique().sort()
+                        def resourceRoots = s.resources.srcDirs.collect { logical(it, id) }.findAll { it != null }.unique().sort()
+                        def sources = s.kotlin.files.toList().sort { it.absolutePath }.collect { sourceFile(it, id) }.findAll { it != null }
+                        def resources = s.resources.files.toList().sort { it.absolutePath }.collect { sourceFile(it, id) }.findAll { it != null }
+                        sourceSets << [id: id, moduleId: p.path, name: s.name,
+                            dependsOn: s.dependsOn.collect { "${p.path}|${it.name}".toString() }.sort(),
+                            sourceRoots: roots, resourceRoots: resourceRoots, sources: sources, resources: resources]
+                        if (!s.dependsOn.isEmpty() || !resources.isEmpty()) issue('kgp2410_source_domain_unsupported', id,
+                            'Actual source refinement/resource members are retained but unsupported by this initial route.')
+                        try {
+                            s.kotlin.sourceDirectories.buildDependencies.getDependencies(null).toList().sort { it.path }.each { producer ->
+                                issue('kgp2410_generated_inputs_unsupported', id, 'Actual source generator retained; no generated-input authority is inferred.')
+                                def outputs = producer.outputs.files.files.toList()
+                                def files = capturedTree(outputs, id)
+                                def inputs = capturedTree(producer.inputs.files.files.toList(), id)
+                                def properties = [:]
+                                producer.inputs.properties.keySet().sort().each { key ->
+                                    try { properties[key] = JsonOutput.toJson(propertyValue(producer.inputs.properties[key])) }
+                                    catch (Exception error) { issue('generation_properties_unmodeled', id, error.class.simpleName + ': generator property vocabulary unavailable') }
+                                }
+                                def fact = [taskPath: producer.path, sourceSetIds: [id], inputFiles: inputs, outputFiles: files,
+                                    outputRoots: outputs.collect { logical(it, id) }.findAll { it != null }.unique().sort(),
+                                    state: files.isEmpty() ? 'pending' : 'captured', inputProperties: properties]
+                                if (generatedByTask.containsKey(producer.path)) {
+                                    generatedByTask[producer.path].sourceSetIds = (generatedByTask[producer.path].sourceSetIds + [id]).unique().sort()
+                                } else generatedByTask[producer.path] = fact
+                            }
+                        } catch (Exception error) { issue('generation_model_unavailable', id, error.class.simpleName + ': source generator provenance unavailable') }
+                    }
+                    def targets = kotlin.hasProperty('targets') ? kotlin.targets.toList() : [kotlin.target]
+                    targets.sort { it.name }.each { target -> targetObjects << [project: p, target: target] }
+                } catch (Exception error) { issue('kotlin_model_unavailable', p.path, error.class.simpleName + ': source-set/target extraction failed') }
+            }
+            targetObjects.each { entry ->
+                def p = entry.project
+                def target = entry.target
+                target.compilations.toList().sort { it.name }.each { c ->
+                    def id = "${p.path}|${target.name}|${c.name}".toString()
+                    if (target.platformType.toString() != 'jvm') issue('kgp2410_compilation_domain_unsupported', id,
+                        'Only the independently reviewed ordinary JVM 2.4.10 producer is supported.')
+                    def members = c.allKotlinSourceSets.collect { "${p.path}|${it.name}".toString() }.sort()
+                    def actualFiles = []
+                    def task = null
+                    def args = []
+                    def toolchain = null
+                    def friends = []
+                    def cp = []
+                    def auxiliaryFiles = []
+                    def auxiliaryArtifacts = []
+                    capture('compilation_task_inputs_unmodeled', id, 'compilation-task-sources') {
+                        task = c.compileTaskProvider.get()
+                        actualFiles = task.sources.files.toList().sort { it.absolutePath }.collect { sourceFile(it, id) }.findAll { it != null }
+                    }
+                    def fullArguments = capture('compiler_arguments_unmodeled', id, 'compiler-full-arguments') {
+                        KtChecker2410PinnedModelApi.fullCompilerArguments(task)
+                    }
+                    if (fullArguments != null) args = fullArguments.arguments
+                    // Do not replace a failed all-type capture with serializedCompilerArguments:
+                    // that KGP getter intentionally excludes DependencyClasspath and Sources.
+                    def friendFiles = capture('compiler_arguments_unmodeled', id, 'compiler-friend-files') {
+                        def files = known(task, 'getFriendPaths').toList()
+                        if (files.any { !(it instanceof File) }) throw new IllegalStateException('Unsupported friend file vocabulary')
+                        files
+                    }
+                    // No legacy/deferred role payload: actual missing/tree outputs stay unavailable.
+                    def compilationArtifact = { File file, String coordinate -> artifact(file, coordinate, id) }
+                    if (friendFiles != null && !friendFiles.isEmpty()) issue('kgp2410_produced_inputs_unsupported', id,
+                        'Actual friend files are retained but have no supported 2.4.10 produced-input role.')
+                    if (friendFiles != null) friends = friendFiles.collect { compilationArtifact(it, 'friend:' + it.absolutePath) }
+                    if (fullArguments != null && friendFiles != null && target.platformType.toString() == 'jvm') {
+                        capture('compiler_arguments_unmodeled', id, 'compiler-friend-argument-roles') {
+                            KtChecker2410PinnedModelApi.samePaths(KtChecker2410PinnedModelApi.pathArray(known(fullArguments.value, 'getFriendPaths')), friendFiles)
+                        }
+                    }
+                    def compiler = capture(target.platformType.toString().toLowerCase().contains('native') ? 'native_toolchain_unmodeled' :
+                        'compiler_arguments_unmodeled', id, 'compiler-artifact-identity') {
+                        def compilerCp = known(task, 'getDefaultCompilerClasspath$kotlin_gradle_plugin_common').files.toList()
+                        def compilerConfiguration = p.configurations.getByName('kotlinCompilerClasspath')
+                        def compilerResolved = compilerConfiguration.resolvedConfiguration.resolvedArtifacts.toList()
+                        def compilerIdentity = compilerResolved.findAll { a -> a.moduleVersion.id.group == 'org.jetbrains.kotlin' &&
+                            a.moduleVersion.id.name == 'kotlin-compiler-embeddable' && compilerCp.any { it.canonicalFile == a.file.canonicalFile } }
+                        if (compilerIdentity.size() != 1) throw new IllegalStateException('No exact resolved Kotlin compiler artifact identity')
+                        def compilerVersion = compilerIdentity[0].moduleVersion.id.version
+                        if (compilerVersion != '2.4.10') issue('kotlin_compiler_version_unsupported', id, 'Compiler artifact version is not pinned Kotlin 2.4.10.')
+                        [version: compilerVersion, artifacts: compilerCp.collect { file ->
+                            def resolved = compilerResolved.find { it.file.canonicalFile == file.canonicalFile }
+                            artifact(file, resolved != null ? resolved.moduleVersion.id.toString() : 'compiler-file:' + file.name, id)
+                        }]
+                    }
+                    def selectedJdk = capture('compiler_arguments_unmodeled', id, 'compiler-selected-jdk') {
+                        def kotlinJdk = known(task, 'getDefaultKotlinJavaToolchain$kotlin_gradle_plugin_common').get()
+                        def selectedJvm = known(kotlinJdk, 'getBuildJvm$kotlin_gradle_plugin_common').get()
+                        def selectedHome = selectedJvm.javaHome
+                        if (!(selectedHome instanceof File)) throw new IllegalStateException('Unavailable exact selected JVM home')
+                        // KGP 2.4.10 fills a null args.jdkHome later in its compiler runner.
+                        // This is the independently selected task JDK, NOT an observed argv.
+                        [home: selectedHome.absolutePath, artifacts: runtime(selectedHome, 'compilation-jdk', id)]
+                    }
+                    def pluginDataCapture = capture('compiler_arguments_unmodeled', id, 'compiler-plugin-data') {
+                        KtChecker2410PinnedModelApi.optionalPluginData(task)
+                    }
+                    def pluginData = pluginDataCapture?.value
+                    def pluginFiles = capture('compiler_arguments_unmodeled', id, 'compiler-plugin-files') {
+                        KtChecker2410PinnedModelApi.effectivePluginFiles(task, pluginData)
+                    }
+                    def plugins = []
+                    if (fullArguments != null) {
+                        def pluginPaths = capture('compiler_arguments_unmodeled', id, 'compiler-plugin-argument-paths') {
+                            KtChecker2410PinnedModelApi.pathArray(known(fullArguments.value, 'getPluginClasspaths'))
+                        }
+                        if (pluginPaths != null) {
+                            plugins = pluginPaths.collect { artifact(new File(it), 'compiler-plugin:' + new File(it).name, id) }
+                            if (pluginFiles != null) capture('compiler_arguments_unmodeled', id, 'compiler-plugin-argument-roles') {
+                                KtChecker2410PinnedModelApi.samePaths(pluginPaths, pluginFiles)
+                            }
+                        } else if (pluginFiles != null) plugins = pluginFiles.collect { artifact(it, 'compiler-plugin:' + it.name, id) }
+                    } else if (pluginFiles != null) {
+                        // Independently observed task files only; the all-type failure above
+                        // remains a gap, so this ordering is not an effective argv attestation.
+                        plugins = pluginFiles.collect { artifact(it, 'compiler-plugin:' + it.name, id) }
+                    }
+                    if (!plugins.isEmpty()) issue('compiler_arguments_unmodeled', id,
+                        'compiler-plugin-provenance: nonempty plugin operands are retained; complete plugin properties/output roles require a separately qualified typed model')
+                    if (pluginData != null) capture('compiler_arguments_unmodeled', id, 'compiler-plugin-input-state') {
+                        def state = known(pluginData, 'getInputsOutputsState')
+                        known(state, 'getInputFiles').toList().each { input ->
+                            if (input.toPath().toAbsolutePath().normalize().startsWith(rootPath)) auxiliaryFiles += capturedTree([input], id)
+                            else auxiliaryArtifacts << artifact(input, 'compiler-plugin-input:' + input.name, id)
+                        }
+                        if (!known(state, 'getInputs').isEmpty() || !known(state, 'getOutputFiles').isEmpty()) issue('compiler_arguments_unmodeled', id,
+                            'compiler-plugin-properties-and-outputs: generated/plugin scalar derivation roles are outside this model vocabulary')
+                    }
+                    if (target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compilation-java-inputs') {
+                        auxiliaryFiles += capturedTree(known(task, 'getJavaSources').files.toList(), id)
+                    }
+                    if (target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compilation-script-inputs') {
+                        auxiliaryFiles += capturedTree(known(task, 'getScriptSources$kotlin_gradle_plugin_common').files.toList(), id)
+                    }
+                    def emptyPluginDomain = null
+                    if (target.platformType.toString() == 'jvm' && fullArguments != null && pluginDataCapture != null && pluginFiles != null) {
+                        emptyPluginDomain = capture('compiler_arguments_unmodeled', id, 'compiler-jvm-empty-plugin-domain') {
+                            KtChecker2410PinnedModelApi.emptyJvmInputDomain(task, fullArguments, pluginDataCapture, pluginFiles)
+                        }
+                    }
+                    if (pluginDataCapture != null && pluginDataCapture.state != 'available' && emptyPluginDomain == null) {
+                        issue('compiler_arguments_unmodeled', id, 'compiler-plugin-data-' + pluginDataCapture.state +
+                            ': nullable pinned plugin metadata is absent without a verified empty actual plugin/input/output/script domain')
+                    }
+                    if (compiler != null || selectedJdk != null || pluginFiles != null) toolchain = [kind: target.platformType.toString(),
+                        compilerVersion: compiler?.version, compilerArtifacts: compiler?.artifacts ?: [],
+                        runtimeArtifacts: selectedJdk?.artifacts ?: [], compilerPlugins: plugins]
+                    try {
+                        def declaredCompilerFiles = task.libraries.files.toList()
+                        // Preserve ALL declared task entries, including absent/generated/tree
+                        // outputs. The pinned builder filters missing files for its argv; that
+                        // is not proof of authenticated NO-SOURCE absence or new artifact origin.
+                        cp = declaredCompilerFiles.collect { compilationArtifact(it, 'resolved:' + it.name) }
+                        if (fullArguments != null && target.platformType.toString() == 'jvm') capture('compiler_arguments_unmodeled', id, 'compiler-classpath-argument-roles') {
+                            def actual = known(fullArguments.value, 'getClasspath')
+                            def expected = declaredCompilerFiles.findAll { it.exists() }.collect { it.absolutePath }.join(File.pathSeparator)
+                            if ((actual != null && !(actual instanceof String)) || (actual == null ? !expected.isEmpty() : actual != expected)) {
+                                throw new IllegalStateException('Exact declared/effective classpath roles differ')
+                            }
+                        }
+                    }
+                    catch (Exception error) {
+                        try { cp = c.compileDependencyFiles.files.toList().collect { artifact(it, 'resolved:' + it.name, id) } }
+                        catch (Exception ignored) { issue('dependency_resolution_failed', id, 'Actual ordered compiler classpath is unavailable.') }
+                        issue('compile_classpath_membership_unmodeled', id, error.class.simpleName + ': actual compiler classpath vocabulary unavailable')
+                    }
+                    def language = null
+                    def api = null
+                    capture('compiler_options_unavailable', id, 'compiler-language-version') { language = task.compilerOptions.languageVersion.orNull?.version }
+                    capture('compiler_options_unavailable', id, 'compiler-api-version') { api = task.compilerOptions.apiVersion.orNull?.version }
+                    def associated = []
+                    try { associated = c.allAssociatedCompilations.collect { a -> "${a.project.path}|${a.target.name}|${a.name}".toString() }.sort() }
+                    catch (Exception error) { issue('associated_compilations_unavailable', id, error.class.simpleName + ': actual friend/association graph unavailable') }
+                    if (!associated.isEmpty()) issue('kgp2410_produced_inputs_unsupported', id,
+                        'Actual associations remain facts, never synthetic friend/deferred origin authority.')
+                    if (target.platformType.toString() == 'jvm' && fullArguments != null && selectedJdk != null && emptyPluginDomain != null) {
+                        capture('compiler_arguments_unmodeled', id, 'compiler-kgp2410-configured-inputs') {
+                            KtChecker2410PinnedModelApi.verifyConfiguredJvmInputs(task, fullArguments, rootPath,
+                                selectedJdk.home, actualFiles, cp, emptyPluginDomain)
+                        }
+                    }
+                    def fact = [id: id, moduleId: p.path, target: target.name, platform: target.platformType.toString(), name: c.name,
+                        defaultSourceSetId: "${p.path}|${c.defaultSourceSet.name}".toString(), sourceSetIds: members, sourceFiles: actualFiles,
+                        compileTaskPath: task != null ? task.path : "${p.path}:<unavailable-${target.name}-${c.name}>".toString(),
+                        dependencyConfiguration: c.compileDependencyConfigurationName, classpath: cp, projectDependencies: [],
+                        toolchain: toolchain, compilerArguments: args, languageVersion: language, apiVersion: api,
+                        friendArtifacts: friends, producedVariants: [], associatedCompilationIds: associated,
+                        auxiliaryInputFiles: auxiliaryFiles.unique { it.path }.sort { it.path }, auxiliaryArtifacts: auxiliaryArtifacts]
+                    compilations << fact
+                    compilationObjects << [project: p, target: target, compilation: c, task: task, fact: fact]
+                }
+            }
+            // This route does NOT port the old outgoing/deferred owner adapter. Read all
+            // resolved dependencies to detect project-produced inputs, retain direct known
+            // edges with an unknown producer, and emit a real issue rather than guessing main.
+            compilationObjects.each { entry ->
+                def p = entry.project
+                def fact = entry.fact
+                try {
+                    def conf = p.configurations.getByName(fact.dependencyConfiguration)
+                    def resolution = conf.incoming.resolutionResult
+                    def resolutionRoot = resolution.rootComponent.get()
+                    def rootBuildPath = KtChecker2410PinnedModelApi.projectBuildPath(resolutionRoot.id,
+                        org.gradle.api.artifacts.component.ProjectComponentIdentifier,
+                        org.gradle.api.artifacts.component.BuildIdentifier)
+                    def dependencies = resolution.allDependencies.toList()
+                    if (dependencies.size() > 16384) throw new IllegalStateException('Resolved dependency bound exceeded')
+                    dependencies.each { dependency ->
+                        if (dependency instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) {
+                            issue('dependency_resolution_failed', fact.id, dependency.attempted.displayName)
+                        } else if (dependency.selected.id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
+                            issue('kgp2410_produced_inputs_unsupported', fact.id,
+                                'A resolved direct/transitive project component requires independently reviewed producer semantics.')
+                        }
+                    }
+                    resolutionRoot.dependencies.each { dependency ->
+                        if (!(dependency instanceof org.gradle.api.artifacts.result.UnresolvedDependencyResult) &&
+                            dependency.selected.id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier) {
+                            def selected = dependency.selected.id
+                            def selectedBuildPath = KtChecker2410PinnedModelApi.projectBuildPath(selected,
+                                org.gradle.api.artifacts.component.ProjectComponentIdentifier,
+                                org.gradle.api.artifacts.component.BuildIdentifier)
+                            if (selectedBuildPath != rootBuildPath || !modules.any { it.id == selected.projectPath }) {
+                                issue('included_project_dependency_unmodeled', fact.id, 'Actual project dependency is outside this root model.')
+                            } else {
+                                def variant = dependency.resolvedVariant
+                                fact.projectDependencies << [moduleId: selected.projectPath, selectedVariant: variant.displayName,
+                                    variantAttributes: attributes(variant.attributes), compilationId: null]
+                            }
+                        }
+                    }
+                    fact.projectDependencies = fact.projectDependencies.unique()
+                } catch (Exception error) { issue('dependency_resolution_failed', fact.id,
+                    error.class.simpleName + ': complete resolved project-input absence could not be established') }
+            }
+            root.fileTree(root.projectDir) {
+                exclude '**/.gradle/**', '**/.git/**', '**/build/**'
+                include '**/*.gradle', '**/*.gradle.kts', '**/gradle.properties', '**/*.toml', '**/gradle-wrapper.properties', '**/dependency-locks/**', 'buildSrc/**'
+            }.files.toList().sort { it.absolutePath }.each { file ->
+                def fact = sourceFile(file, null)
+                if (fact != null) configuration[fact.path] = fact
+            }
+            root.allprojects.each { p ->
+                try { p.buildscript.configurations.findByName('classpath')?.files?.toList()?.each {
+                    buildscript << artifact(it, 'buildscript:' + it.name, p.path)
+                } } catch (Exception error) { issue('buildscript_resolution_failed', p.path, error.class.simpleName + ': buildscript identity unavailable') }
+            }
+            // External settings/init scripts are independent pinned inputs, not ignored worktree files.
+            ([new File(gradle.gradleUserHomeDir, 'gradle.properties')] + gradle.startParameter.allInitScripts).unique().each { file ->
+                if (file.isFile()) externalConfiguration << artifact(file, 'gradle-external-config:' + file.name, null)
+            }
+            if (root.file('buildSrc').exists()) issue('build_source_graph_unmodeled', null, 'buildSrc source/executable graph needs its own coherent owner import.')
+            def included = gradle.includedBuilds.collect { it.name }.sort()
+            def document = [schemaVersion: 1, exporterId: 'ktchecker-gradle-kgp-2.4.10-model/1', gradleVersion: gradle.gradleVersion,
+                modules: modules, sourceSets: sourceSets, compilations: compilations,
+                configurationInputs: configuration.values().toList().sort { it.path }, generatedInputs: generatedByTask.values().toList().sort { it.taskPath },
+                buildscriptArtifacts: buildscript.unique { it.path }, includedBuilds: included, issues: issues.unique(),
+                externalConfigurationArtifacts: externalConfiguration.unique { it.path }]
+            def selected = root.findProperty('ktcheckerModelOutput')
+            if (selected == null) throw new GradleException('Owner-selected isolated ktcheckerModelOutput is required')
+            def destination = new File(selected.toString())
+            destination.parentFile.mkdirs()
+            destination.setText(JsonOutput.toJson(document), 'UTF-8')
+        }
+    }
+}

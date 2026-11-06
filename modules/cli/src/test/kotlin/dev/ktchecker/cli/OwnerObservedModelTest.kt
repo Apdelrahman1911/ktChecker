@@ -49,7 +49,7 @@ class OwnerObservedModelTest {
         assertEquals(0, c.cold.activeCount())
     }
 
-    @Test fun unsupportedObservedPreparationRetainsTheWholeAll1663VectorButPublishesNoParentOrScalarAuthority() {
+    @Test fun unsupportedObservedPreparationRetainsTheWholeAll1665VectorButPublishesNoParentOrScalarAuthority() {
         OwnerModelFixtures().use { f ->
             val c = live(f); val value = candidate(f, c, "unsupported", authorized = true)
             val failure = assertFailsWith<ObservedModelPlanUnavailable> {
@@ -65,7 +65,8 @@ class OwnerObservedModelTest {
             val evidence = ObservedExportPlanEvidence(value.intent.binding, value.model.invocation.identity, value.model.evidenceIdentity)
             attempted.slots.forEach { slot ->
                 assertEquals("unsupported", slot.state); assertNull(slot.identity)
-                assertEquals(f.catalog.ids.sorted(), slot.input.requiredRuleIds); assertEquals(1663, slot.input.requiredRuleIds.size)
+                assertEquals(f.catalog.ids.sorted(), slot.input.requiredRuleIds); assertEquals(1665, slot.input.requiredRuleIds.size)
+                assertTrue(OwnerFullCatalog1665.accepts(slot.input.requiredRuleIds))
                 assertEquals(value.model.snapshot, slot.input.snapshot)
                 assertFalse(slot.input.context.fullProject); assertNull(slot.input.execution); assertNull(slot.input.outputRoot)
                 assertContains(slot.reasons, CONFIGURATION_INPUT_CLOSURE_UNPROVEN)

@@ -72,6 +72,10 @@ data class ProcessOutcome(
     val executed: Boolean get() = executionConfirmed
     val successfulExecution: Boolean get() = executionConfirmed && status == "executed"
 
+    /** Original stored datum for PRIVATE documentary evidence only; no I/O or identity reconstruction.
+     * This string grants no execution/report authority and is not independent proof of custody. */
+    fun outputIdentityForPrivateEvidence(): String? = outputIdentity
+
     /** Fresh isolated output only. Symlinks and path traversal are not evidence. */
     fun report(relativePath: String, maxBytes: Int = 8_388_608): ByteArray {
         val root = outputDirectory ?: throw ExecutionProblem("report_unavailable", "No executed output directory")

@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "execution_binding_id": "diagnostic-gaps-current445-v1",
+  "mapping_contract": "kotlin-compiler-2.4.21-common445-u2-v1",
+  "mapping_sha256": "f8566bded002ebeb09a047924036770dbefaa687950355cb08d7174e5f82a2de",
+  "source_plan_sha256": "ac16e9b94c9bfe50b6d1c1799c7c216ed907219d272e88383192dc3a7f0bea5a",
+  "ordered_case_ids": [
+    "error_suppression_positive_valid_body",
+    "error_suppression_negative_warning_name",
+    "error_suppression_self_suppression_resists",
+    "error_suppression_resolved_annotation_negative",
+    "error_suppression_option_off_same_positive_bytes",
+    "inapplicable_operator_positive_no_loop",
+    "inapplicable_operator_negative_boolean",
+    "inapplicable_operator_negative_no_operator",
+    "inapplicable_operator_suppression_unknown"
+  ],
+  "selected_rule_ids": [
+    "ktc.compiler.common.error_suppression",
+    "ktc.compiler.common.inapplicable_operator_modifier"
+  ],
+  "execution_policy": "current445-nine-observations-not-qualification-v1",
+  "pins": [
+    {
+      "path": "modules/provider-compiler/src/main/resources/compiler-rule-map.json",
+      "sha256": "f8566bded002ebeb09a047924036770dbefaa687950355cb08d7174e5f82a2de",
+      "bytes": 2719433
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-source-v1.json",
+      "sha256": "ac16e9b94c9bfe50b6d1c1799c7c216ed907219d272e88383192dc3a7f0bea5a",
+      "bytes": 19921
+    },
+    {
+      "path": "data/rules-core.json",
+      "sha256": "28860cb987390ff1f604488aba023fab08b614f497155b71a9760f326c009694",
+      "bytes": 4999909
+    },
+    {
+      "path": "data/rules-ecosystem.json",
+      "sha256": "261fb5c1fadbed7b9ae3b7768cba19e9716ba5067c4932e671183d13513fd2ac",
+      "bytes": 93642
+    },
+    {
+      "path": "data/rules-libraries.json",
+      "sha256": "3e671d030bb1734242c4f51c2de8723c11abb002b9c8a743176e7cc957592c9e",
+      "bytes": 327350
+    },
+    {
+      "path": "data/rules-platform.json",
+      "sha256": "0bfffdd0749353cb5b9b41485e29456037a5c669e232c6915fa5ca91aa6127af",
+      "bytes": 5367326
+    },
+    {
+      "path": "providers/compiler-fixtures/manifest.json",
+      "sha256": "4854aa356caba6e90b48e10e333bf32828460dc64b04dd0d6b86db3653d49774",
+      "bytes": 169761
+    },
+    {
+      "path": "providers/compiler-fixtures/planned-kmp-manifest.json",
+      "sha256": "804c242c62707457ff143d16fb03bcd1bddd2ca84b3f9aef2085dc5af800b128",
+      "bytes": 49543
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/positive.kt",
+      "sha256": "f780251fe2aa94d7ea419fc21c989229be2339c5900ecb8591713d32070f9906",
+      "bytes": 69
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/negative_warning_name.kt",
+      "sha256": "6f975f5abf6fe3313ccd497b2baa9e2569a78b6074be79d076d32feb91f53755",
+      "bytes": 55
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/self_suppression.kt",
+      "sha256": "3db7d0b580109ce5b11c72f1f36501833e2f23f90a86bb836ff7343dfcc0bfcf",
+      "bytes": 90
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/negative_resolved_annotation.kt",
+      "sha256": "c99c7544e3c6cfd6cb4678b4362f9220be67b59ce9c6041c80626e016a994b8d",
+      "bytes": 158
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/positive.kt",
+      "sha256": "acc2d15a2cffcd7007aef4c261387a5a7b04c6ab111f7a35abbc752483cd8ead",
+      "bytes": 53
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/negative_boolean.kt",
+      "sha256": "1e4ece9144ab8578ab1df8f8c53b04d520421701309e62613e16f7d9dcad9352",
+      "bytes": 60
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/negative_no_operator.kt",
+      "sha256": "e27051bd9af60d9ea420fee80b0a03e89314ba892c2e2178c28cd1f7501e1f7d",
+      "bytes": 44
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/suppression_observation.kt",
+      "sha256": "b0b57cd443c3eba96e13552363fb502da30ad0657c7323d5e102fcc3cb14a6b9",
+      "bytes": 101
+    },
+    {
+      "path": "modules/provider-compiler/build.gradle.kts",
+      "sha256": "b421031d6de4aeec996c43d9880cf7478152d0a96612dd617ef3942a223851dc",
+      "bytes": 23270
+    },
+    {
+      "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerCurrent445FixtureContract.kt",
+      "sha256": "5fc8b23d7aa4fe9f996a840a9f40d6b013b417a7ed9ef5cdd53122eaf159bdb5",
+      "bytes": 17304
+    },
+    {
+      "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerCurrent445FixtureOracle.kt",
+      "sha256": "68d843692d65d28dbefc0b0a5a60f2280e7eabb3406846c62a944af629489562",
+      "bytes": 10457
+    },
+    {
+      "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerCurrent445FixtureRunner.kt",
+      "sha256": "265f3b078a5c90abe0f2b10f1a368c989232ff237f9a4482923613aa0c0800e1",
+      "bytes": 40415
+    },
+    {
+      "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerCurrent445FixtureContractTest.kt",
+      "sha256": "d8fb64ee79d6e897252445549b8fdc99fc6ff77c43d0a4733cc17ea1ea1a41a7",
+      "bytes": 18366
+    },
+    {
+      "path": "modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/CompilerCurrent445FixtureIntegrationTest.kt",
+      "sha256": "ef7d0e0cf045783ec34dfbf5899a73ea782eb2034b643a9863eccf5f0ce47236",
+      "bytes": 3319
+    },
+    {
+      "path": "providers/compiler-fixtures/test_current445_route.py",
+      "sha256": "64b65e735aa8051ec6bd5f3fa02c1e0e22d3c197b8f31c43df0e25ac4bd2c7bd",
+      "bytes": 12033
+    },
+    {
+      "path": "providers/compiler-fixtures/cohort-plans/CURRENT445_EXECUTION.md",
+      "sha256": "409bf7c9325656aa28228e41207ff0f8bbdc6ac8c76e9dc5d0ece192fd0ae9d3",
+      "bytes": 7935
+    }
+  ]
+}

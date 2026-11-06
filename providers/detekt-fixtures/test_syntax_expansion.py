@@ -122,7 +122,7 @@ def expected_schedule(rules, fixtures):
                              native_launch_required=native, runtime_callback_required=callback, **extra))
 
     for rule_index, rule in enumerate(rules):
-        for index in range(9):
+        for index in range(6 + len(fixtures[rule]["controls"])):
             case_id = matrix_case(fixtures[rule], index)[0]
             append("detector_analysis", rule, case_id, True, True, matrix_index=matrix_index)
             matrix_index += 1
@@ -442,10 +442,10 @@ class SyntaxExpansionAuthoringTest(unittest.TestCase):
         self.assertIsNotNone(gate)
         selected_names = re.findall(r'"([^"]+)"', gate.group(1))
         self.assertEqual(list(OLD_IDENTITIES) + list(EXPECTED_COHORTS) + ["protocol-and-catch-boundaries-v1"], selected_names[:7])
-        self.assertEqual(list(OLD_IDENTITIES) + list(EXPECTED_COHORTS) + ["protocol-and-catch-boundaries-v1", "exception-observability-policy-v1"], selected_names)
+        self.assertEqual(list(OLD_IDENTITIES) + list(EXPECTED_COHORTS) + ["protocol-and-catch-boundaries-v1", "exception-observability-policy-v1"], selected_names[:8])
         for anchor in ("BASELINE_AUTHORED_RULES = 10", "BASELINE_AUTHORED_ANALYSES = 91", "PRE_PROTOCOL_AUTHORED_RULES = 16", "PRE_PROTOCOL_AUTHORED_ANALYSES = 145",
                        "PRE_OBSERVABILITY_AUTHORED_RULES = 19", "PRE_OBSERVABILITY_AUTHORED_ANALYSES = 172",
-                       "FULL_AUTHORED_RULES = 22", "FULL_AUTHORED_ANALYSES = 199",
+                       "PRE_LOCAL_SHAPES_AUTHORED_RULES = 22", "PRE_LOCAL_SHAPES_AUTHORED_ANALYSES = 199",
                        "all.singleOrNull { it.name == name }", "schedule.getOrNull(reserved) == CorpusInvocationSpec(kind, ruleId, caseId)"):
             self.assertIn(anchor, controls)
         self.assertIn("DetektCorpusInventory.load(repository)", driver)
@@ -476,7 +476,7 @@ class SyntaxExpansionAuthoringTest(unittest.TestCase):
                        "assertEquals(!case.disabled, selectedSarifId in parsedReport.enabledSarifIds",
                        "exact_upstream_executed_but_compatibility_and_release_qualification_missing",
                        "rule_disabled_by_owner_selected_configuration", "assertEquals(input.context.scope, coverage.context)",
-                       'assertEquals("executed", coverage.provenance)', "assertEquals(desired, actual",
+                       'assertEquals(if (case.disabled) "not_executed" else "executed", coverage.provenance)', "assertEquals(desired, actual",
                        "val replayCoverage = replay.coverage.single()", "assertEquals(fixture.ruleId, replayCoverage.ruleId)",
                        "assertEquals(input.context.scope, replayCoverage.context)", "assertNull(replayCoverage.certificateId)",
                        "assertEquals(request.context.scope, unsupportedCoverage.context)", "assertNull(unsupportedCoverage.certificateId)",

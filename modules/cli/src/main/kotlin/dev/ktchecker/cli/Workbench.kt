@@ -1,5 +1,6 @@
 package dev.ktchecker.cli
 
+import dev.ktchecker.compiler.CompilerCallObservation
 import dev.ktchecker.compiler.KotlinJvmCompilerProvider
 import dev.ktchecker.compiler.KotlinJvmInputMode
 import dev.ktchecker.compiler.KotlinJvmToolchain
@@ -102,6 +103,8 @@ internal data class WorkbenchOptions(
     val modelCompilerInstallation: KotlinJvmToolchain? = null,
     /** Explicit owner runtime, selected by the owner model command or typed owner composition, never RPC. */
     val liveModelRuntime: OwnerLiveModelRuntime? = null,
+    /** Typed owner composition only; never a CLI/RPC/serialized request option. */
+    val compilerCallObservation: CompilerCallObservation? = null,
 ) {
     init { require(modelCompilerInstallation == null || liveModelRuntime == null) { "Select one exact model execution mode; no fallback" } }
 }
@@ -175,7 +178,8 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             implementationIdentity = Digests.sha256(providerIdentity(provider) + modelCompilerInstallation!!.digest + Digests.canonical(
                 ContractJson.encodeToJsonElement(modelCompilerInstallation.compilerClasspath))),
             preparedChild = modelGrants::child, finishAttempt = modelGrants::finish)) }
-        compiler?.let { provider -> add(ProviderRoute(provider,
+        compiler?.let { provider -> add(ProviderRoute(
+            ordinaryCompilerProviderWithObservation(provider, options.compilerCallObservation, codeImage.digest),
             { !isModelAttempt(it) && it.context.scope.target.lowercase() in setOf("jvm", "desktop", "android") && it.context.compilerVersion == "2.4.21" }, { provider.executionProfile(it) },
             Digests.sha256(providerIdentity(provider) + compilerInstallation!!.digest + Digests.canonical(
                 ContractJson.encodeToJsonElement(compilerInstallation.compilerClasspath))))) }
@@ -212,6 +216,7 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         modelGrants, codeImage::verify, liveRuntime = liveModelRuntime, parentProvider = coordinator)
     private val loadedPolicies = ConcurrentHashMap<String, ConfigSnapshot>()
     private val records = ConcurrentHashMap<String, PreparedReview>()
+    private val policyAdmissions = WorkbenchPolicyAdmissions(state)
     /** The exact trusted policy object used by this composition, including lazy restart recovery. */
     internal val capturedResultPolicy: ResultPolicy = ResultPolicy.versioned("ktchecker/workbench-policy/1:${codeImage.digest}", object : ResultPolicy {
         override fun isReady(binding: ClientBinding, input: AnalysisInput): Boolean =
@@ -234,6 +239,9 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             return configs.apply(policy, input, raw)
         }
     })
+    internal val policyReassessmentAuthority: PolicyReassessmentAuthority = WorkbenchPolicyReassessments(
+        state, configs, snapshots, codeImage.digest, codeImage::verify, ::prepared, ::retainedPolicyAdmission,
+        coordinator.id, coordinator.version)
     val kernel: KernelService = KernelService.open(state.namespace("broker"), coordinator,
         config = KernelConfig(workerCount = options.workerCount, globalParallelism = 2, perWorktreeParallelism = 1),
         snapshotGate = sourceGate(),
@@ -265,7 +273,8 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         },
         planAuthority = modelPlans,
         findingProviders = coordinator.findingProviders,
-        resultPolicy = capturedResultPolicy)
+        resultPolicy = capturedResultPolicy,
+        policyReassessmentAuthority = policyReassessmentAuthority)
 
     override fun close() = kernel.close()
 
@@ -278,20 +287,35 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
     fun register(workspaceId: String, worktreeId: String, clientId: String, sessionId: String, lineageId: String): ClientRegistration =
         register(ClientBinding(state.ownerId, workspaceId, worktreeId, clientId, lineageId, sessionId = sessionId))
 
-    private fun register(binding: ClientBinding): ClientRegistration = state.locked("client:${binding.clientId}") {
+    private fun register(binding: ClientBinding): ClientRegistration {
         if (binding.ownerId != state.ownerId) throw CliProblem("permission_denied", "Client belongs to another user namespace.")
-        val file = state.keyFile("clients", binding.clientId)
-        if (Files.exists(file, NOFOLLOW_LINKS)) {
-            val current = state.read<ClientRegistration>(file)
-            if (current.binding != binding) throw CliProblem("client_binding_conflict", "Client is already registered to a different session or lineage.")
-            kernel.registerClient(current)
-        } else {
-            fun token() = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })
-            val registration = ClientRegistration(binding, ClientCredential(binding.clientId, token()), AdapterCredential(binding.clientId, token()))
-            // Durable private enrollment intent precedes broker admission. A crash at either side
-            // can replay the same exact binding and token hashes, never replace another client.
-            state.write(file, registration)
-            kernel.registerClient(registration)
+        // Match the kernel's binding preflight BEFORE even creating a client lock or intent.
+        // Otherwise a rejected workspace/session typo durably occupies this state-global client
+        // ID, and a corrected retry conflicts with an enrollment the broker never accepted.
+        listOf(binding.ownerId, binding.workspaceId, binding.worktreeId, binding.clientId, binding.lineageId, binding.sessionId)
+            .forEach { value ->
+                if (value.isBlank() || value.length > 512 || value.any { it == '\u0000' || it.isISOControl() }) {
+                    throw CliProblem("invalid_identifier", "binding identity is empty or invalid")
+                }
+            }
+        if (binding.generation !in 1..9_007_199_254_740_991L) {
+            throw CliProblem("invalid_binding", "Generation must be a positive interoperable integer")
+        }
+        return state.locked("client:${binding.clientId}") {
+            val file = state.keyFile("clients", binding.clientId)
+            if (Files.exists(file, NOFOLLOW_LINKS)) {
+                val current = state.read<ClientRegistration>(file)
+                if (current.binding != binding) throw CliProblem("client_binding_conflict",
+                    "Client ID is already bound to a different workspace, worktree, session or lineage; use a distinct client ID or replay its exact binding.")
+                kernel.registerClient(current)
+            } else {
+                fun token() = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) })
+                val registration = ClientRegistration(binding, ClientCredential(binding.clientId, token()), AdapterCredential(binding.clientId, token()))
+                // Durable private enrollment intent precedes broker admission. A crash at either side
+                // can replay the same exact binding and token hashes, never replace another client.
+                state.write(file, registration)
+                kernel.registerClient(registration)
+            }
         }
     }
 
@@ -408,17 +432,10 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
             ("ktchecker.execution-plan" to Digests.sha256(Digests.canonical(ContractJson.encodeToJsonElement(profiles))))))
         val prepared = PreparedReview(binding, spec.patchId, spec.idempotencyKey, input, configs.exportSnapshot(policy), profiles,
             authorizeExecution, if (spec.requiredRuleIds == null) "all-catalog-candidates-for-declared-target" else "explicit-rule-subset-not-full-release")
+        val admission = describePolicyAdmission(prepared, policy, spec.requiredRuleIds != null,
+            codeImage.digest, catalog, coordinator.routes)
         codeImage.verify()
-        state.locked("prepared:${input.analysisKey()}") {
-            val file = state.keyFile("prepared", input.analysisKey())
-            // Work sharing must never overwrite a different consumer's owner policy, patch or
-            // execution consent. A general shared-work authorization registry is still separate
-            // release work; this single-compilation controller rejects collisions instead.
-            if (Files.exists(file, NOFOLLOW_LINKS) && state.read<PreparedReview>(file) != prepared) {
-                throw CliProblem("prepared_binding_conflict", "Input already has a different immutable consumer/authorization binding.")
-            }
-            state.write(file, prepared)
-        }
+        policyAdmissions.publishNew(prepared, admission)
         records[input.analysisKey()] = prepared
         loadedPolicies[policyKey(binding, input)] = policy
         return prepared
@@ -444,6 +461,20 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         state.read<PreparedReview>(file).also {
             if (it.input != input || it.binding.ownerId != state.ownerId) throw CliProblem("prepared_identity_mismatch", "Prepared input identity differs.")
         }
+    }
+
+    /** Original owner preparation only; this does not certify a raw execution or current policy. */
+    internal fun retainedPolicyAdmission(record: PreparedReview): WorkbenchPolicyAdmission {
+        codeImage.verify()
+        val retained = policyAdmissions.requireRetained(record)
+        val original = configs.restoreSnapshot(record.configuration, record.configuration.revisionToken)
+        val expected = describePolicyAdmission(record, original, retained.activation.explicitOwnerSubset,
+            codeImage.digest, catalog, coordinator.routes)
+        if (retained != expected) {
+            throw CliProblem("policy_admission_authority_changed", "Current code, routes or typed activation differ from the retained owner preparation.")
+        }
+        codeImage.verify()
+        return retained
     }
 
     private fun validateSnapshot(record: PreparedReview) {
@@ -514,6 +545,14 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
                 result(submit(params.decode("credential"), params.decode("patchId"), params.decode("idempotencyKey"), params.decode("input")))
             }
             "review.status" -> { requireKeys(params, setOf("credential", "reviewId")); result(kernel.status(params.decode("credential"), params.decode("reviewId"))) }
+            "review.policy.reassess" -> {
+                requireKeys(params, setOf("credential", "request"))
+                result(kernel.reassessPolicy(params.decode("credential"), params.decode("request")))
+            }
+            "review.policy.status" -> {
+                requireKeys(params, setOf("credential", "idempotencyKey"))
+                result(kernel.policyReassessmentStatus(params.decode("credential"), params.decode("idempotencyKey")))
+            }
             "review.cancel" -> { requireKeys(params, setOf("credential", "reviewId")); result(kernel.cancel(params.decode("credential"), params.decode("reviewId"))) }
             "review.events" -> {
                 requireKeys(params, setOf("credential", "cursor", "limit"))
@@ -595,6 +634,11 @@ internal class Workbench(private val options: WorkbenchOptions) : AutoCloseable,
         }
     }
 }
+
+/** Null is an exact reference-preserving bypass: no wrapper, recorder or observation clock. */
+internal fun ordinaryCompilerProviderWithObservation(provider: KotlinJvmCompilerProvider,
+    observation: CompilerCallObservation?, ownerCodeDigest: String): AnalysisProvider =
+    if (observation == null) provider else observation.observedProvider(provider, ownerCodeDigest)
 
 /** Preference only. The provider independently verifies all execution/config/artifact prerequisites. */
 internal fun ktlintPreferred(input: AnalysisInput, installed: Boolean): Boolean = installed &&

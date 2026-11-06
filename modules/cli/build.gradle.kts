@@ -27,6 +27,10 @@ dependencies {
     implementation(project(":provider-lint"))
     implementation(project(":provider-native"))
     bundledCompiler("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21")
+    // Packaging-only roots complete the preselected owner-model compiler toolchain.
+    // Keep these out of the host/worker runtimeClasspath; installed bytes are admitted separately.
+    bundledCompiler("org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.21")
+    bundledCompiler("org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.21")
 }
 
 distributions {

@@ -1,0 +1,332 @@
+#!/usr/bin/env python3
+"""Affirmative445 SOURCE contracts plus immutable legacy DATA; never a compiler/provider execution test."""
+from collections import Counter
+from pathlib import Path
+import ast
+import copy
+import json
+import re
+import tempfile
+import unittest
+
+import compiler_mapping_contracts as contracts
+
+ROOT = Path(__file__).resolve().parents[2]
+FIXTURE_REL = 'providers/compiler-fixtures/'
+KOTLIN_REL = 'modules/provider-compiler/src/test/kotlin/dev/ktchecker/compiler/'
+MAIN_REL = 'modules/provider-compiler/src/main/kotlin/dev/ktchecker/compiler/'
+# Whole current files are separately pinned. These closed sections alone may differ from immutable old tests.
+CHANGED_PYTHON_METHODS = {'test_checker_activation.py': ['test_all443_catalog_links_policy_kinds_severities_and_backend_counts_are_preserved', 'test_all443_current_implementation_pins_and_only_four_semantic_deltas_invert_to_previous_map', 'test_current_coverage_changes_only_two_current_input_identities_and_keeps1663_by8', 'test_breadth_cohorts_oracles_fixtures_and35_test_bodies_are_unchanged', 'test_provider_and_protected_flag_validation_suppression_and_return_mode_bytes_are_unchanged'], 'test_diagnostic_breadth.py': ['test_fifteen_selected_ids_are_disjoint_existing_exact_mappings_with_preserved_activation_groups', 'test_exact_named_unmapped_operator_companion_is_required_raw_only_not_a_sixteenth_rule', 'test_1663_by_eight_global_cells_legacy_inventories_and_all_unqualified_gaps_are_not_narrowed'], 'test_diagnostic_breadth_hookup.py': ['test_all_seven_whole_file_successor_pins_and_four_data_doc_pins_bind_the_reviewed_dependency_graph', 'test_all_325_old_source_pins_keep_278_ordinary_graph_sources_30_nullability_and_existing_metadata', 'test_exact_compatibility_reconstruction_preserves_historical_identities_and_rejects_unrelated_mutations', 'test_six_exact_metadata_pins_capture_all_ninety_sources_plus_data_docs_and_both_python_controls'], 'test_nullability_protocols.py': ['test_exact_six_common_direct_error_ids_have_existing_maps_not_new_catalog_rows', 'test_bookkeeping_keeps_existing98_graph16_map443_supplemental18_and_all278_bytes_unchanged', 'test_pure_source_description_cannot_launder_thirty_counts_into_execution_or_promote_tampered_id_bytes_order', 'test_source_cli_is_read_only_and_never_prints_bodies_or_schedules_processes'], 'test_nullability_protocols_hookup.py': ['test_six_source_metadata_pins_are_exact_and_the_thirty_six_capture_paths_are_dedicated', 'test_all_historical_278_sources_main_98_graph_16_map_443_and_supplemental_18_stay_exact', 'test_exact_existing_common_error_mappings_are_used_without_an_ordinary_fixture_append'], 'test_original42_selectors.py': ['test_ten_literal_selectors_match_reviewed_ids_and_partition_exactly_original42'], 'test_type_boundaries_supplemental.py': ['test_all_98_ordinary_16_planned_443_mappings_remain_visible_without_six_kind_promotion']}
+CHANGED_KOTLIN_METHODS = {'CompilerProviderTest.kt': ['exactManifestIsNotTargetCoverage'], 'CompilerCheckerActivationTest.kt': ['allCompilerMappingsAndPolicyCountsRemainVisibleWithoutPromotion'], 'CompilerFixtureDiagnosticBreadthTest.kt': ['reviewedActivationGroupsSeveritiesAndUnmappedCompanionDoNotCreateAnyNewMapping', 'ninetySourcePathsAndSixExactMetadataPinsAreAllVisibleAtStartIncludingUnselectedFiles'], 'CompilerFixtureNullabilityTest.kt': ['exactThirtySixAdditionalCapturePathsAndSixMetadataPinsRemainReadOnlySourceV1']}
+
+
+def python_methods(source):
+    tree = ast.parse(source)
+    methods = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name.startswith('test_')]
+    if not methods or len({node.name for node in methods}) != len(methods):
+        raise ValueError('Missing or duplicate active test names')
+    forbidden = {'skip', 'skipIf', 'skipUnless', 'skipTest', 'expectedFailure'}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            name = node.func.attr if isinstance(node.func, ast.Attribute) else node.func.id if isinstance(node.func, ast.Name) else ''
+            if name in forbidden:
+                raise ValueError('Active tests must not be skipped or disabled')
+        if isinstance(node, (ast.Attribute, ast.Name)) and getattr(node, 'attr', getattr(node, 'id', '')) in forbidden:
+            raise ValueError('Active tests must not be skipped or disabled')
+    return {node.name: ast.get_source_segment(source, node) for node in methods}
+
+
+def kotlin_test_sections(source):
+    """Pinned class-level @Test sections, including adjacent unchanged helper text; not a Kotlin compiler."""
+    if re.search(r'@(Ignore|Disabled)\b', source):
+        raise ValueError('Active Kotlin tests must not be disabled')
+    markers = list(re.finditer(r'(?m)^    @Test\s+fun\s+(\w+)\(', source))
+    if not markers or len({match.group(1) for match in markers}) != len(markers):
+        raise ValueError('Missing or duplicate active Kotlin test names')
+    return {match.group(1): source[match.start():markers[index + 1].start() if index + 1 < len(markers) else len(source)]
+            for index, match in enumerate(markers)}
+
+
+def require_method_parity(before, current, changed, kotlin=False):
+    reader = kotlin_test_sections if kotlin else python_methods
+    old = reader(before); new = reader(current)
+    if list(old) != list(new):
+        raise ValueError('An existing active test was deleted, added, renamed or reordered')
+    differences = {name for name in old if old[name] != new[name]}
+    if differences != set(changed):
+        raise ValueError('Changes outside the exact version-contract test sections')
+    return len(old) - len(differences)
+
+
+class CompilerMappingContractSourceTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.current = contracts.current445(ROOT)
+        cls.legacy = contracts.legacy_mapping(ROOT)
+        contracts.require_current_source_pins(ROOT)
+        contracts.require_legacy_runner_refusal_source(ROOT)
+
+    def test_affirmative445_counts_exact_two_planned_catalog_additions_and_all443_semantic_rows(self):
+        rows = self.current['mappings']
+        self.assertEqual(contracts.CURRENT_CONTRACT, self.current['mapping_contract'])
+        self.assertEqual((445, 443, 402), (len(rows), len(self.legacy['mappings']), sum(row['backend'] != 'native' for row in rows)))
+        self.assertEqual({'common': 294, 'jvm': 99, 'native': 43, 'ir': 9}, dict(Counter(row['backend'] for row in rows)))
+        self.assertEqual({'enabled_when_validated': 330, 'advisory': 63, 'opt_in': 52}, dict(Counter(row['default_activation'] for row in rows)))
+        core_data = contracts.read_source(ROOT, contracts.CORE_REL)
+        old_data = contracts.legacy_source_bytes(ROOT, contracts.CORE_REL)
+        core = json.loads(core_data); old = json.loads(old_data)
+        self.assertEqual((799, 797), (len(core), len(old)))
+        self.assertEqual(old, core[:-2])
+        self.assertEqual(contracts.NEW_IDS, tuple(row['id'] for row in core[-2:]))
+        self.assertTrue(all(row['status'] == 'planned' for row in core[-2:]))
+        self.assertTrue(old_data.endswith(b'\n]\n'))
+        self.assertTrue(core_data.startswith(old_data[:-3] + b',\n'))
+        contracts.require_mapping_parity(self.current, self.legacy)
+        expected_refs = self.current['mappings'][0]['implementation_evidence']
+        self.assertEqual(22, len(expected_refs))
+        self.assertEqual(2, sum(a != b for a, b in zip(self.legacy['mappings'][0]['implementation_evidence'], expected_refs)))
+        for reference in expected_refs:
+            self.assertEqual(reference['sha256'], contracts.digest(contracts.read_source(ROOT, reference['path'])))
+
+    def test_header_old_semantic_reference_and_new_contract_mutations_cannot_hide_in_the445_append(self):
+        mutations = []
+        for field, value in (('mapping_contract', contracts.LEGACY_CONTRACT), ('schema_version', 2), ('provider_version', '2.4.20')):
+            altered = copy.deepcopy(self.current); altered[field] = value; mutations.append(altered)
+        for field, value in (('relation', 'broad'), ('default_activation', 'reviewed_mutation'), ('declared_severity', 'FATAL'),
+                             ('source', 'not-the-authoritative-source'), ('known_checker_activation_flags', ['-Wextra']),
+                             ('catalog_record_sha256', '0' * 64), ('gaps', [])):
+            altered = copy.deepcopy(self.current); altered['mappings'][0][field] = value; mutations.append(altered)
+        for bad_refs in (self.current['mappings'][0]['implementation_evidence'][:-1],
+                         list(reversed(self.current['mappings'][0]['implementation_evidence']))):
+            altered = copy.deepcopy(self.current); altered['mappings'][0]['implementation_evidence'] = bad_refs; mutations.append(altered)
+        for index, field, value in ((0, 'sha256', '0' * 64), (0, 'path', 'unreviewed.kt')):
+            altered = copy.deepcopy(self.current); altered['mappings'][0]['implementation_evidence'][index][field] = value; mutations.append(altered)
+        for field, value in (('known_checker_activation_flags', ['-Wextra']), ('default_activation', 'opt_in'),
+                             ('catalog_record_sha256', '0' * 64), ('source', 'not-the-declaration'), ('gaps', []),
+                             ('upstream_id', 'INAPPLICABLE_OPERATOR_MODIFIER_WARNING'), ('backend', 'jvm'), ('relation', 'alias')):
+            altered = copy.deepcopy(self.current); altered['mappings'][-1][field] = value; mutations.append(altered)
+        altered = copy.deepcopy(self.current); altered['mappings'][-1]['rule_id'] = altered['mappings'][0]['rule_id']; mutations.append(altered)
+        altered = copy.deepcopy(self.current); altered['mappings'][-1]['upstream_id'] = altered['mappings'][0]['upstream_id']; mutations.append(altered)
+        altered = copy.deepcopy(self.current); altered['mappings'][0], altered['mappings'][1] = altered['mappings'][1], altered['mappings'][0]; mutations.append(altered)
+        altered = copy.deepcopy(self.current); altered['mappings'][-2:] = reversed(altered['mappings'][-2:]); mutations.append(altered)
+        altered = copy.deepcopy(self.current); altered['mappings'] = altered['mappings'][:-1]; mutations.append(altered)
+        altered = copy.deepcopy(self.current); altered['extra_admission'] = True; mutations.append(altered)
+        for index, mutation in enumerate(mutations):
+            with self.subTest(index=index), self.assertRaises(ValueError):
+                contracts.require_mapping_parity(mutation, self.legacy)
+
+    def test_four_preexisting_nullability_activation_disagreements_are_explicit_not_rewritten_or_called_current(self):
+        gap_path = FIXTURE_REL + 'cohort-plans/nullability-protocols-gap-inventory.json'
+        gaps = json.loads(contracts.read_source(ROOT, gap_path))['remaining_mapped_gaps']
+        legacy = {row['rule_id']: row for row in self.legacy['mappings']}
+        current = {row['rule_id']: row for row in self.current['mappings']}
+        pre_activation = {row['rule_id']: row for row in json.loads(contracts.pre_activation_mapping_bytes(ROOT))['mappings']}
+        fields = ('rule_id', 'upstream_id', 'backend', 'declared_severity', 'source_section', 'source', 'known_checker_activation_flags')
+        differences = {(row['upstream_id'], field) for row in gaps for field in fields if row[field] != legacy[row['rule_id']][field]}
+        names = {'ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS', 'REDUNDANT_CALL_OF_CONVERSION_METHOD',
+                 'UNUSED_EXPRESSION', 'UNUSED_LAMBDA_EXPRESSION'}
+        self.assertEqual({(name, 'known_checker_activation_flags') for name in names}, differences)
+        self.assertEqual(329, len(gaps))
+        for row in gaps:
+            self.assertEqual({field: row[field] for field in fields}, {field: pre_activation[row['rule_id']][field] for field in fields})
+            self.assertEqual({field: legacy[row['rule_id']][field] for field in fields}, {field: current[row['rule_id']][field] for field in fields})
+            if row['upstream_id'] in names:
+                self.assertEqual(['-Wextra'], row['known_checker_activation_flags'])
+                self.assertEqual([], current[row['rule_id']]['known_checker_activation_flags'])
+        source = contracts.read_source(ROOT, FIXTURE_REL + 'test_nullability_protocols.py').decode()
+        self.assertIn('Actual445 must refuse the unchanged443 inventory', source)
+        self.assertIn("self.assertEqual('', refused_output.getvalue())", source)
+        self.assertIn("if Path(directory).resolve() == ROOT and relative == contracts.MAP_REL:", source)
+        self.assertIn('return original_reader(directory, relative)', source)
+        self.assertIn('mapping_data = contracts.pre_activation_mapping_bytes(ROOT)', source)
+        # No caller can choose replacement bytes or a legacy executable repository through this test seam.
+        function = next(node for node in ast.parse(source).body if isinstance(node, ast.FunctionDef) and node.name == 'legacy_pre_activation_mapping_data')
+        self.assertEqual([], function.args.args)
+        self.assertIn("with patch.object(plan, 'read_existing_source', side_effect=read_with_legacy_mapping):", ast.get_source_segment(source, function))
+
+    def test_frozen_source_data_inputs_are_closed_raw_exact_and_never_historical_receipt_replays(self):
+        manifest = json.loads(contracts.read_source(ROOT, contracts.DATA_REL + '/manifest.json'))
+        self.assertEqual(contracts.LEGACY_DATA_PINS, manifest['files'])
+        self.assertEqual(18, len(manifest['files']))
+        self.assertTrue(contracts.UNCHANGED_SOURCE_PINS)
+        self.assertTrue(set(contracts.UNCHANGED_SOURCE_PINS) <= set(contracts.CURRENT_SOURCE_PINS))
+        for relative, expected in contracts.UNCHANGED_SOURCE_PINS.items():
+            self.assertEqual(expected, contracts.CURRENT_SOURCE_PINS[relative])
+            self.assertEqual(expected, contracts.digest(contracts.historical_source_bytes(ROOT, relative)))
+        self.assertIs(True, manifest['never_execute_or_import_txt_payloads'])
+        self.assertIs(True, manifest['no_runtime_loader_or_selector_uses_this_directory'])
+        for relative, pin in manifest['files'].items():
+            self.assertTrue(pin['file'].endswith('.txt'))
+            data = contracts.legacy_source_bytes(ROOT, relative)
+            self.assertEqual((pin['bytes'], pin['sha256']), (len(data), contracts.digest(data)))
+        selection = json.loads(contracts.legacy_source_bytes(ROOT, contracts.SELECTION_REL))
+        self.assertEqual((1663, 8, 13304), tuple(selection['scope'][key] for key in ('catalog_records', 'contexts', 'rows')))
+        self.assertNotIn(contracts.SELECTION_REL, contracts.CURRENT_SOURCE_PINS)
+        self.assertNotEqual(contracts.LEGACY_MAP_SHA256, contracts.CURRENT_MAP_SHA256)
+        with self.assertRaisesRegex(ValueError, 'closed legacy SOURCE'):
+            contracts.legacy_source_bytes(ROOT, 'build/historical-output/receipt.json')
+        with self.assertRaisesRegex(ValueError, 'closed unchanged SOURCE join'):
+            contracts.historical_source_bytes(ROOT, 'build/historical-output/receipt.json')
+        data_root = ROOT / contracts.DATA_REL
+        expected = {pin['file'] for pin in manifest['files'].values()} | {manifest['pre_common_activation_map']['file'], 'manifest.json', 'README.md'}
+        self.assertEqual(expected, {path.name for path in data_root.iterdir()})
+
+    def test_data_digest_canonical_path_and_symlink_mutations_are_rejected_without_a_runtime_loader(self):
+        relative = MAIN_REL + 'CompilerRuleRegistry.kt'
+        pin = contracts.LEGACY_DATA_PINS[relative]
+        with tempfile.TemporaryDirectory(prefix='compiler-source-data-unit-') as directory:
+            base = Path(directory)
+            target = base / contracts.DATA_REL / pin['file']
+            target.parent.mkdir(parents=True)
+            target.write_bytes(contracts.legacy_source_bytes(ROOT, relative))
+            self.assertEqual(target.read_bytes(), contracts.legacy_source_bytes(base, relative))
+            target.write_bytes(target.read_bytes() + b'\n')
+            with self.assertRaisesRegex(ValueError, 'Legacy SOURCE data drift'):
+                contracts.legacy_source_bytes(base, relative)
+            actual = base / 'source.kt'; actual.write_bytes(b'fun unit() = 1\n')
+            (base / 'alias.kt').symlink_to(actual)
+            for invalid in ('../source.kt', '/source.kt', './source.kt', 'a//b', 'C:/source.kt', 'a\\b', 'a/\x00', '', 'alias.kt'):
+                with self.subTest(path=invalid), self.assertRaises(ValueError):
+                    contracts.read_source(base, invalid)
+            self.assertEqual(actual.read_bytes(), contracts.read_source(base, 'source.kt'))
+            unchanged_relative = KOTLIN_REL + 'CompilerFixtureProvenance.kt'
+            joined = base / unchanged_relative
+            joined.parent.mkdir(parents=True, exist_ok=True)
+            joined.write_bytes(contracts.read_source(ROOT, unchanged_relative))
+            self.assertEqual(joined.read_bytes(), contracts.historical_source_bytes(base, unchanged_relative))
+            joined.write_bytes(joined.read_bytes() + b'\n')
+            with self.assertRaisesRegex(ValueError, 'Unchanged SOURCE join drift'):
+                contracts.historical_source_bytes(base, unchanged_relative)
+
+    def test_helper_is_read_only_stdlib_and_runtime_sources_have_no_legacy_data_loader_or_selector(self):
+        helper = contracts.read_source(ROOT, FIXTURE_REL + 'compiler_mapping_contracts.py').decode()
+        tree = ast.parse(helper)
+        imported = {alias.name for node in ast.walk(tree) if isinstance(node, ast.Import) for alias in node.names}
+        imported |= {node.module for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
+        self.assertEqual({'pathlib', 'hashlib', 'json'}, imported)
+        self.assertFalse(any(isinstance(node, ast.Assert) for node in ast.walk(tree)))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    self.assertNotIn(node.func.id, {'eval', 'exec', 'compile', '__import__', 'open'})
+                if isinstance(node.func, ast.Attribute):
+                    self.assertNotIn(node.func.attr, {'write_bytes', 'write_text', 'mkdir', 'unlink', 'Popen', 'run', 'execute', 'analyze', 'analyzeObserved'})
+        for relative in [ref['path'] for ref in self.current['mappings'][0]['implementation_evidence']] + [KOTLIN_REL + 'CompilerFixtureRunner.kt']:
+            text = contracts.read_source(ROOT, relative).decode()
+            self.assertNotIn('CompilerLegacy443SourceData', text)
+            self.assertNotIn('mapping-contracts/legacy443-data', text)
+        test_helper = contracts.read_source(ROOT, KOTLIN_REL + 'CompilerLegacy443SourceData.kt').decode()
+        self.assertIn('Not a closed legacy SOURCE metadata input', test_helper)
+        for forbidden in ('CompilerRuleRegistry.parse(', 'KotlinJvmCompilerProvider(', 'ProcessBuilder(', 'ExecutionPermit(', 'Files.write', 'Files.create'):
+            self.assertNotIn(forbidden, test_helper)
+
+    def test_registry_strict_byte_identity_and_profile_property_precede_preparation_and_legacy_runner_work(self):
+        registry = contracts.read_source(ROOT, MAIN_REL + 'CompilerRuleRegistry.kt').decode()
+        for expression in ('val frozen = bytes.copyOf()', 'onMalformedInput(CodingErrorAction.REPORT)',
+                           'onUnmappableCharacter(CodingErrorAction.REPORT)', 'decode(ByteBuffer.wrap(frozen))',
+                           'CompilerMappingIdentity(MAPPING_CONTRACT, Digests.sha256(frozen))',
+                           'require(root.string("mapping_contract") == MAPPING_CONTRACT)', 'require(mappings.size == 445)'):
+            self.assertIn(expression, registry)
+        self.assertNotIn(contracts.CURRENT_MAP_SHA256, registry)  # No resource/main-source provenance hash cycle.
+        provider = contracts.read_source(ROOT, MAIN_REL + 'KotlinJvmCompilerProvider.kt').decode()
+        property_ = '"-Dktchecker.compiler.mapping=${registry.mappingIdentity.contractId}:${registry.mappingIdentity.resourceDigest}",'
+        self.assertEqual(1, provider.count(property_))
+        self.assertIn('if (execution != expectedProfile || permit.execution != execution) return unavailable("execution_profile_mismatch")', provider)
+        self.assertLess(provider.index('return unavailable("execution_profile_mismatch")'), provider.index('val sources: List<SealedCompilerSource>'))
+        runner = contracts.read_source(ROOT, KOTLIN_REL + 'CompilerFixtureRunner.kt').decode()
+        gate = 'CompilerFixtureMappingContract.requireLegacy(CompilerRuleRegistry.load().mappingIdentity)'
+        self.assertEqual(1, runner.count(gate))
+        for after in ('val suppliedFixtureRoot = Path.of(', 'runRoot = compilerFixtureCreateRunDirectory',
+                      'budget = CompilerFixtureBudget(', 'toolchain = KotlinJvmToolchain(', 'budget.reserveAttempt('):
+            self.assertLess(runner.index(gate), runner.index(after))
+        self.assertIn('run(args, probeMode = true)', runner)
+        self.assertIn('require(registry.mappings.none { it.upstreamId == "INAPPLICABLE_OPERATOR_MODIFIER" })', runner)
+        controls = contracts.read_source(ROOT, KOTLIN_REL + 'CompilerFixtureControls.kt').decode()
+        self.assertNotIn('diagnostic-gaps-445', controls)
+        self.assertNotIn('diagnostic_gaps_445', controls)
+        unit = contracts.read_source(ROOT, KOTLIN_REL + 'CompilerMappingContractTest.kt').decode()
+        for named in ('identityBindsExactLoadedBytesNotOnlyCountsOrSemanticRows', 'missingForeignContractWrongScopeAndMalformedUtf8CannotLoadAs445',
+                      'legacyAndSuccessorIdentityCannotBeRelabeledInEitherDirection', 'everyExistingRunnerSelectorRefuses445BeforeEvenResolvingOrAllocatingPaths',
+                      'mappingByteIdentityBindsProfileAnalysisKeyAndDeniesAnOlderExactPermitBeforeSnapshotOrRunner'):
+            self.assertIn('@Test fun ' + named + '(', unit)
+        self.assertIn('assertFalse(snapshotChecked)', unit)
+        self.assertIn('assertNotEquals(prepared.analysisKey(), input.copy(execution = after).analysisKey())', unit)
+
+    def test_all93_old_python_methods_and_kotlin_rosters_remain_active_with_only_closed_version_contract_changes(self):
+        unchanged_python = 0
+        for basename, changed in CHANGED_PYTHON_METHODS.items():
+            relative = FIXTURE_REL + basename
+            old = contracts.legacy_source_bytes(ROOT, relative).decode()
+            current = contracts.read_source(ROOT, relative).decode()
+            unchanged_python += require_method_parity(old, current, changed)
+            self.assertIn('contracts.current445(ROOT)', current)
+            self.assertIn('contracts.require_legacy_runner_refusal_source(ROOT)', current)
+        self.assertEqual(72, unchanged_python)
+        for basename, changed in CHANGED_KOTLIN_METHODS.items():
+            relative = KOTLIN_REL + basename
+            old = contracts.legacy_source_bytes(ROOT, relative).decode()
+            current = contracts.read_source(ROOT, relative).decode()
+            unchanged = require_method_parity(old, current, changed, kotlin=True)
+            if basename == 'CompilerFixtureDiagnosticBreadthTest.kt':
+                self.assertEqual(33, unchanged)
+            if basename == 'CompilerFixtureNullabilityTest.kt':
+                self.assertEqual(19, unchanged)
+        # Frozen old metadata pins still reject the actual successors, not quietly repin those old oracles.
+        for basename in ('CompilerFixtureDiagnosticBreadthTest.kt', 'CompilerFixtureNullabilityTest.kt'):
+            current = contracts.read_source(ROOT, KOTLIN_REL + basename).decode()
+            self.assertIn('assertFails { plan.verifyCapturedMetadata(::fixtureText) }', current)
+            self.assertIn('CompilerLegacy443SourceData.metadataText', current)
+
+    def test_section_parity_controls_reject_deletions_renames_disabling_and_unrelated_body_mutations(self):
+        old = 'class Unit:\n    def test_kept(self):\n        self.assertEqual(1, 1)\n    def test_versioned(self):\n        self.assertEqual(1, 1)\n'
+        current = old.rsplit('self.assertEqual(1, 1)', 1)[0] + 'self.assertEqual(2, 2)\n'
+        self.assertEqual(1, require_method_parity(old, current, {'test_versioned'}))
+        for wrong in (current.replace('test_kept', 'removed'), current.replace('self.assertEqual(1, 1)', 'self.assertEqual(0, 0)'),
+                      current.replace('    def test_kept', '    @unittest.skip("not allowed")\n    def test_kept'),
+                      current.replace('self.assertEqual(1, 1)', 'self.skipTest("not allowed")'), old):
+            with self.assertRaises(ValueError):
+                require_method_parity(old, wrong, {'test_versioned'})
+        old_kotlin = 'class Unit {\n    @Test fun kept() { assertEquals(1, 1) }\n    @Test fun versioned() { assertEquals(1, 1) }\n}\n'
+        new_kotlin = old_kotlin.replace('versioned() { assertEquals(1, 1)', 'versioned() { assertEquals(2, 2)')
+        self.assertEqual(1, require_method_parity(old_kotlin, new_kotlin, {'versioned'}, kotlin=True))
+        for wrong in (new_kotlin.replace('kept()', 'renamed()'), new_kotlin.replace('kept() { assertEquals(1, 1)', 'kept() { assertEquals(0, 0)'),
+                      new_kotlin.replace('@Test fun kept', '@Ignore @Test fun kept'), old_kotlin):
+            with self.assertRaises(ValueError):
+                require_method_parity(old_kotlin, wrong, {'versioned'}, kotlin=True)
+
+    def test_new445_source_plan_is_unbound_unadmitted_and_cannot_join_any_legacy_execution_schedule(self):
+        relative = FIXTURE_REL + 'cohort-plans/diagnostic-gaps-445-source-v1.json'
+        plan = json.loads(contracts.read_source(ROOT, relative))
+        self.assertEqual('private_candidate_unadmitted_unrun', plan['status'])
+        binding = plan['mapping_contract_requirement']
+        self.assertEqual(contracts.CURRENT_CONTRACT, binding['proposed_contract_id'])
+        self.assertEqual((445, 402), (binding['expected_mapping_count'], binding['expected_jvm_applicable_mapping_count']))
+        self.assertIsNone(binding['expected_resource_sha256'])
+        self.assertIsNone(binding['expected_adopted_catalog_sha256'])
+        self.assertIs(False, binding['current443_resource_is_compatible'])
+        self.assertIs(True, binding['missing_binding_must_deny_before_any_provider_or_child_call'])
+        self.assertIs(False, plan['ordered_cases_are_execution_authority'])
+        self.assertIs(False, plan['ordinary_six_kind_assessment'])
+        self.assertIsNone(plan['current_report_scope_change'])
+        self.assertEqual('not_authored_or_admitted_by_this_source_plan', plan['budgets_permits_control_jobs_and_runtime_hookup'])
+        self.assertEqual((9, 8), (len(plan['cases']), len({case['path'] for case in plan['cases']})))
+        for case in plan['cases']:
+            data = contracts.read_source(ROOT, case['path'])
+            self.assertEqual((case['source_bytes'], case['source_sha256']), (len(data), contracts.digest(data)))
+            self.assertEqual(list(contracts.NEW_IDS), case['selected_rule_ids'])
+            self.assertEqual('not_run', case['execution_state'])
+            self.assertIsNone(case['expected_outcome_matched'])
+            self.assertIs(False, case['counts_as_current_test_or_implementation_evidence'])
+            if case['hard_error_suppression_observation_only']:
+                self.assertEqual(('unknown', 'unknown'), (case['compiler_exit_expectation'], case['provider_status_expectation']))
+                operator = next(row for row in case['source_derived_expectations'] if row['upstream_id'] == 'INAPPLICABLE_OPERATOR_MODIFIER')
+                self.assertIsNone(operator['expected_full_parser_count'])
+                self.assertIsNone(operator['expected_selected_finding_count'])
+        for path in ('CompilerFixtureRunner.kt', 'CompilerFixtureControls.kt', 'CompilerFixtureDiagnosticBreadth.kt', 'CompilerFixtureNullability.kt'):
+            text = contracts.read_source(ROOT, KOTLIN_REL + path).decode()
+            self.assertNotIn(plan['source_plan_id'], text)
+            self.assertNotIn('diagnostic-gaps-445-cases', text)
+
+
+if __name__ == '__main__':
+    unittest.main()

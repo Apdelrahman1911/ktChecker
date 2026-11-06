@@ -20,6 +20,7 @@ import kotlinx.serialization.json.*
 
 private const val OWNER_ORIGIN_SCRIPT = "ktchecker-owner-model-origin.init.gradle"
 private const val OWNER_ORIGIN_REPORT = "owner-origin.json"
+private const val OWNER_INVENTORY_REPORT = "owner-inventory.json"
 private const val OWNER_ORIGIN_MAX_BYTES = 4_194_304
 private const val OWNER_MODEL_EXPORT_MAX_BYTES = 16_777_216
 private const val OWNER_GRADLE_VERSION = "9.6.1"
@@ -66,16 +67,17 @@ internal class OwnerObservedExport(
     private val intent: OwnerModelIntent,
     private val materialized: MaterializedSnapshot,
     private val runRoot: Path,
-    gradleHome: Path,
+    private val selectedGradle: OwnerModelTreePin,
     private val cache: OwnerModelCacheSeed,
-    private val originalDeadline: OwnedApplicationDeadline,
-    val invocation: ObservedExportInvocation,
+    private val clock: OwnerModelCommandClock,
 ) {
+    private val originalDeadline: OwnedApplicationDeadline get() = clock.originalDeadline
+    val invocation: ObservedExportInvocation get() = clock.invocation
     private val used = AtomicBoolean()
-    private val runnerEntered = AtomicBoolean()
-    private val returnedQuiescent = AtomicBoolean()
+    private val returns = OwnerModelExportReturnCustody()
+    // Allocate the lazy tuple resolver before runner entry, not between actual return and custody.
+    private val resolveExpectedCommand: () -> List<String> = ::expectedCommand
     private val quarantined = AtomicBoolean()
-    private val completed = AtomicReference<ProcessOutcome?>()
     private val output = AtomicReference<OwnerModelRootPin?>()
     private val snapshot: OwnerModelTreePin
     private val gradle: OwnerModelTreePin
@@ -84,6 +86,9 @@ internal class OwnerObservedExport(
     private val userHome: Path
     private val input: AnalysisInput
     private val expectedSupervisor: OwnedSupervisorIdentity
+    private var diagnosticInventory: JsonObject? = null
+    private var diagnosticInventoryDigest: String? = null
+    private var diagnosticInventoryState = "not_observed"
     private var originPin: OwnerModelFilePin? = null
     private var reportPin: OwnerModelFilePin? = null
     private var rawReport: ByteArray? = null
@@ -109,8 +114,8 @@ internal class OwnerObservedExport(
         snapshot = OwnerModelTreePin.capture(materialized.root, OWNER_SEED_ENTRIES, ModelWire.MAX_SNAPSHOT_BYTES,
             ModelWire.MAX_SOURCE_BYTES.toLong(), ::checkpoint)
         verifySnapshot()
-        gradle = OwnerModelTreePin.capture(ownerModelPath(gradleHome), OWNER_SEED_ENTRIES,
-            CompilerSnapshot.MAX_TOTAL_ARTIFACT_BYTES, checkpoint = ::checkpoint)
+        selectedGradle.verify(::checkpoint)
+        gradle = selectedGradle // SAME preselected whole distribution bytes, reverified with THIS patch clock.
         val bootstrap = gradle.files["lib/gradle-gradle-cli-main-$OWNER_GRADLE_VERSION.jar"]
             ?: throw CliProblem("owner_model_gradle_bootstrap_unsupported", "Select the bounded supported Gradle 9.6.1 distribution, not a shell launcher.")
         // Static class membership plus whole selected distribution custody, never a PATH shell.
@@ -183,18 +188,15 @@ internal class OwnerObservedExport(
                 scriptPins[observer.path.toString()] = observer
                 root.verify(); verifyPrelaunch(); checkpoint()
             })
-        val runner = IsolatedProcessRunner { actual ->
-            ownerModelRequire(completed.compareAndSet(null, actual), "owner_model_export_completion_replayed")
-        }
+        val runner = IsolatedProcessRunner(returns::retainCallback)
         // A thrown, failed, unavailable or ambiguous return after this point retains the entire
         // command even if no child actually started. No failure-string inference or later retry
         // can promote it into cleanup evidence. The runtime keeps its own real channel/image.
-        ownerModelRequire(runnerEntered.compareAndSet(false, true), "owner_model_export_runner_replayed")
+        returns.enterRunner()
         val actual = runner.run(input, ExactExecutionAuthority(execution),
-            CancellationToken { quarantined.get() || originalDeadline.isExpired() || Thread.currentThread().isInterrupted })
-        ownerModelRequire(completed.get() === actual, "owner_model_export_outcome_substituted")
-        verifyRawSuccessfulInvocation(actual)
-        returnedQuiescent.set(true)
+            CancellationToken { quarantined.get() || clock.cancelled() })
+        returns.originalReturn(actual, output.get(), expectedSupervisor, resolveExpectedCommand)
+        retainDiagnosticInventory(actual) // DATA only; never an argument to an importer/permit.
         verifyExecutedExport()
         // Bind BOTH byte reports before either decode. Only the private, pinned observer's data
         // selects origin facts; model-export.json cannot enroll a task/artifact/origin allowlist.
@@ -253,35 +255,49 @@ internal class OwnerObservedExport(
         }
     }
 
+    /** Only read after THIS actual exact successful/quiescent return. Failure cannot renew a clock. */
+    private fun retainDiagnosticInventory(actual: ProcessOutcome) {
+        diagnosticInventoryState = "unavailable"
+        try {
+            checkpoint()
+            val bytes = actual.report(OWNER_INVENTORY_REPORT, OWNER_ORIGIN_MAX_BYTES)
+            val root = requireNotNull(output.get())
+            val pin = OwnerModelFilePin.capture(root.path.resolve(OWNER_INVENTORY_REPORT), OWNER_ORIGIN_MAX_BYTES.toLong(), ::checkpoint)
+            ownerModelRequire(pin.digest == Digests.sha256(bytes), "owner_model_inventory_changed")
+            val value = ContractJson.parseToJsonElement(strictJsonDocument(bytes, "owner_model_inventory_invalid")).jsonObject
+            ownerModelRequire(value["schemaVersion"] == JsonPrimitive(1) &&
+                value["adapter"] == JsonPrimitive("ktchecker/owner-model-data-only-inventory/1") &&
+                value["invocationId"] == JsonPrimitive(invocation.identity) &&
+                value["sourceRoot"] == JsonPrimitive(materialized.root.toString()) &&
+                value["ownerOutput"] == JsonPrimitive(root.path.toString()) &&
+                value["dataOnly"] == JsonPrimitive(true) && value["complete"] == JsonPrimitive(false) &&
+                value["newApplicability"] == JsonPrimitive("unknown"), "owner_model_inventory_binding_mismatch")
+            pin.verify(::checkpoint)
+            diagnosticInventory = value; diagnosticInventoryDigest = pin.digest
+            diagnosticInventoryState = "retained_data_only_not_model_authority"
+        } catch (failure: Exception) {
+            if (failure is InterruptedException) Thread.currentThread().interrupt()
+            // Optional failure DATA cannot turn failure into success or create a partial model.
+            diagnosticInventoryState = "unavailable_or_invalid_data_only"
+        }
+    }
+
     /** Reverify actual invocation identity and immutable selected inputs, not mutable private metadata. */
     private fun verifyExecutedExport() {
         verifyInvocationIdentity()
         verifyPrelaunch()
     }
 
-    /**
-     * Actual returned outcome only. Runtime status=executed requires native FINAL+EOF+helper0+
-     * QUIESCENT and the pinned helper image; it is NOT full image/pipe/worker resource CLOSED.
-     * This audit does not require a fresh clock, nor authorize any work after the original expires.
-     */
-    private fun verifyRawSuccessfulInvocation(actual: ProcessOutcome) {
-        ownerModelRequire(runnerEntered.get() && completed.get() === actual, "owner_model_export_outcome_substituted")
+    private fun expectedCommand(): List<String> {
         val root = output.get() ?: throw CliProblem("owner_model_export_output_unavailable", "No pre-registered export output exists.")
-        root.verify()
-        val expected = listOf(requireNotNull(input.execution).executable) + input.execution!!.arguments.map { value ->
+        return listOf(requireNotNull(input.execution).executable) + input.execution!!.arguments.map { value ->
             value.replace("{snapshot}", materialized.root.toString()).replace("{output}", root.path.toString())
         }
-        ownerModelRequire(actual.successfulExecution && actual.executed && actual.exitCode == 0 && actual.reasons.isEmpty() &&
-            !actual.cancelled && !actual.timedOut && !actual.truncated && actual.command == expected &&
-            actual.outputDirectory == root.path && actual.supervisorIdentity == expectedSupervisor,
-            "owner_model_export_failed_or_nonquiescent")
     }
 
     private fun verifyInvocationIdentity() {
         checkpoint()
-        val actual = completed.get() ?: throw CliProblem("owner_model_export_not_executed", "No actual owned export outcome exists.")
-        ownerModelRequire(returnedQuiescent.get(), "owner_model_export_return_unverified")
-        verifyRawSuccessfulInvocation(actual)
+        returns.verifyOriginalReturn(output.get(), expectedCommand(), expectedSupervisor)
         originPin?.verify(::checkpoint); reportPin?.verify(::checkpoint)
         requireNotNull(output.get()).verify(); checkpoint()
     }
@@ -445,7 +461,8 @@ internal class OwnerObservedExport(
     }
 
     /** Unknown runner entry is deliberately over-retained; never infer prelaunch cleanup. */
-    val safeToClose: Boolean get() = !runnerEntered.get() || returnedQuiescent.get()
+    val safeToClose: Boolean get() = returns.safeToClose
+    val childGroupQuiescent: Boolean get() = returns.childGroupQuiescent
 
     /** State-only denial; no second runner call, cleanup request, process inspection or signal. */
     fun quarantine() { quarantined.set(true) }
@@ -453,24 +470,30 @@ internal class OwnerObservedExport(
     fun evidence(): JsonObject = buildJsonObject {
         put("profile", "ktchecker/owner-observed-export-custody/1"); put("invocationId", invocation.identity)
         put("originalDeadlineIdentity", originalDeadline.identity); put("originalDeadlineMillis", originalDeadline.durationMillis)
-        put("exportAttempted", used.get()); put("runnerEntered", runnerEntered.get())
-        put("actualOutcomeRetained", completed.get() != null)
-        put("quarantined", quarantined.get()); put("returnedChildGroupQuiescent", returnedQuiescent.get())
+        put("exportAttempted", used.get()); put("runnerEntered", returns.runnerEntered)
+        put("actualOutcomeRetained", returns.completed != null)
+        put("actualOriginalReturnRetained", returns.originalReturned != null)
+        put("quarantined", quarantined.get()); put("returnedChildGroupQuiescent", returns.childGroupQuiescent)
         put("cleanupEvidenceBasis", when {
-            returnedQuiescent.get() -> "actual_exact_successful_runner_return"
-            runnerEntered.get() -> "unknown_runner_entry_retained"
+            returns.childGroupQuiescent -> "actual_exact_successful_runner_return"
+            returns.runnerEntered -> "unknown_runner_entry_retained"
             else -> "runner_not_entered"
         })
         put("fullResourceCleanupReceiptAvailable", false)
-        put("actualStatus", completed.get()?.status?.let(::JsonPrimitive) ?: JsonNull)
-        put("actualReasons", completed.get()?.reasons?.let { ContractJson.encodeToJsonElement(it) } ?: JsonNull)
+        put("actualStatus", returns.completed?.status?.let(::JsonPrimitive) ?: JsonNull)
+        put("actualReasons", returns.completed?.reasons?.let { ContractJson.encodeToJsonElement(it) } ?: JsonNull)
         put("gradleRuntimeDigest", gradle.digest); put("cacheSelection", cache.evidence())
         put("observedEvidenceDigest", evidenceDigest?.let(::JsonPrimitive) ?: JsonNull)
+        put("diagnosticInventoryState", if (returns.runnerEntered && !returns.childGroupQuiescent)
+            "not_read_unverified_child_group_quiescence" else diagnosticInventoryState)
+        put("diagnosticInventoryDigest", diagnosticInventoryDigest?.let(::JsonPrimitive) ?: JsonNull)
+        put("diagnosticInventory", diagnosticInventory ?: JsonNull)
+        put("diagnosticInventoryIsModelAuthority", false)
         put("configurationInputClosureProven", false); put("qualified", false); put("usefulComplete", false)
     }
 
     private fun checkpoint() {
         ownerModelRequire(!quarantined.get(), "owner_model_export_quarantined")
-        ownerModelCheckpoint(originalDeadline); invocation.verifyLive()
+        clock.checkpoint()
     }
 }

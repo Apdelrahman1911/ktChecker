@@ -10,6 +10,7 @@ import dev.ktchecker.compiler.live.model.ModelCompilerGenerationRequest
 import dev.ktchecker.compiler.live.model.ModelCompilerJobMaterialization
 import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.KernelException
+import dev.ktchecker.kernel.OwnerFullCatalog1665
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.providers.runtime.OwnedApplicationOwner
 import dev.ktchecker.workerprotocol.ApplicationWire as Wire
@@ -277,7 +278,7 @@ class OwnerLiveModelRuntimeTest {
         }
     }
 
-    @Test fun full1663CatalogLivePreparationKeepsAllContextsAndTruthfulEmptyColdProfiles() {
+    @Test fun full1665CatalogLivePreparationKeepsAllContextsAndTruthfulEmptyColdProfiles() {
         OwnerModelFixtures().use { f ->
             f.setEnabled()
             val c = live(f)
@@ -289,8 +290,9 @@ class OwnerLiveModelRuntimeTest {
             val capture = f.capture(f.files() + (changed to "fun apiValue() = 42\n"))
             val after = f.import(capture, intent)
             val prepared = c.plans.prepare(intent, before, after, capture)
-            assertEquals(1663, f.catalog.ids.size, "Catalog visibility is a required vector, not coverage credit")
-            assertEquals(1663, f.catalog.records.size)
+            assertEquals(1665, f.catalog.ids.size, "Catalog visibility is a required vector, not coverage credit")
+            assertEquals(1665, f.catalog.records.size)
+            assertTrue(OwnerFullCatalog1665.accepts(f.catalog.ids.sorted()))
             assertEquals(after.compilationIds.size, prepared.assembly.plan.slots.size)
             assertEquals(after.compilationIds.toSet(), prepared.assembly.provenance.slots.map { it.compilationId }.toSet())
             assertEquals(setOf(":lib", ":app"), prepared.assembly.plan.slots.map { it.input.context.scope.module }.toSet())

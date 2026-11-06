@@ -1,6 +1,7 @@
 """Authored workflow wiring and synthetic collector/license-gate tests, not hosted execution."""
 
 import argparse
+import ast
 import hashlib
 import io
 import json
@@ -10,6 +11,7 @@ import re
 import shlex
 import stat
 import tempfile
+from textwrap import dedent
 import unittest
 from unittest.mock import patch
 
@@ -147,6 +149,196 @@ class ImplementationWorkflowTests(unittest.TestCase):
         self.assertIn(STRESS, values(command, "--require-artifact"))
         self.assertIn("--require-tests", command)
         self.assertIn("modules/kernel/build/reports/stress/*.json", document)
+
+
+class RealBrokerWireWorkflowTests(unittest.TestCase):
+    """Authored Linux wiring/mutation controls, not hosted or broker execution."""
+
+    build_name = "Build and test actual modules; assemble preview distributions"
+    node_name = "Select exact audited Node runtime for real broker interoperability"
+    mcp_name = "Build locked MCP bridge for real broker interoperability"
+    wire_name = "Require real broker wire interoperability from the fresh installation"
+    unavailable_name = "Declare real broker interoperability unavailable on non-Linux hosts"
+    fresh_distribution = "${{ github.workspace }}/modules/cli/build/install/ktchecker"
+    node_pin = "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6"
+    expected_steps = {
+        'Select exact audited Node runtime for real broker interoperability': dedent("""\
+            if: success() && runner.os == 'Linux'
+            uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+            with:
+              node-version: '24.20.0'
+              check-latest: false
+        """),
+        'Build locked MCP bridge for real broker interoperability': dedent("""\
+            if: success() && runner.os == 'Linux'
+            working-directory: bridges/mcp
+            shell: bash
+            env:
+              NODE_OPTIONS: ''
+            run: |
+              set -euo pipefail
+              test "$(node --version)" = v24.20.0
+              npm ci --include=dev --ignore-scripts --no-audit --no-fund
+              npm run build --ignore-scripts
+        """),
+        'Require real broker wire interoperability from the fresh installation': dedent("""\
+            if: success() && runner.os == 'Linux'
+            working-directory: bridges/mcp
+            shell: bash
+            timeout-minutes: 8
+            env:
+              KTC_TEST_CLI_DISTRIBUTION: ${{ github.workspace }}/modules/cli/build/install/ktchecker
+              NODE_OPTIONS: ''
+            # Local Linux broker wire only; no provider/model or publication claim.
+            # The same-job installDist above is required and forced, not an old image.
+            # Raw reporter bytes stay in owned runner temp files, never artifact globs.
+            run: |
+              set -euo pipefail
+              test "$(node --version)" = v24.20.0
+              test -d "$KTC_TEST_CLI_DISTRIBUTION"
+              test -x "$KTC_TEST_CLI_DISTRIBUTION/bin/ktchecker"
+              test -f dist/test/real-broker-wire.test.js
+              umask 077
+              report_dir="$(mktemp -d "${RUNNER_TEMP:?}/ktc-real-broker-wire.XXXXXX")"
+              trap 'rm -rf -- "$report_dir"' EXIT
+              if node --test --test-concurrency=1 --test-reporter=tap dist/test/real-broker-wire.test.js >"$report_dir/results.tap" 2>"$report_dir/stderr.txt"; then
+                :
+              else
+                status=$?
+                echo "::error::Real broker interoperability tests failed (Node exit $status); no qualification."
+                exit "$status"
+              fi
+              python - "$report_dir/results.tap" <<'PYTHON'
+              import re
+              import sys
+              with open(sys.argv[1], encoding="utf-8") as report:
+                  body = report.read(1_048_577)
+              if len(body) > 1_048_576:
+                  raise SystemExit("Real broker TAP report exceeds its bound; no qualification")
+              observed = re.findall(r"^# (tests|suites|pass|fail|cancelled|skipped|todo) ([0-9]+)$", body, re.MULTILINE)
+              expected = {"tests": "3", "suites": "0", "pass": "3", "fail": "0", "cancelled": "0", "skipped": "0", "todo": "0"}
+              if len(observed) != len(expected) or dict(observed) != expected:
+                  raise SystemExit("Real broker gate requires exactly three passes and zero skips/failures/cancellations/todos")
+              print("Real Linux broker wire interoperability: 3 passed, 0 skipped; not provider/model or publication qualification.")
+              PYTHON
+        """),
+        'Declare real broker interoperability unavailable on non-Linux hosts': dedent("""\
+            if: always() && runner.os != 'Linux'
+            # Informational only: these rows do not pass or qualify the Linux gate.
+            run: >-
+              echo "Real broker interoperability is unavailable on non-Linux hosts; these rows do not qualify the broker wire."
+        """),
+    }
+
+    def document(self):
+        return (ci_common.REPO_ROOT / ".github/workflows/implementation.yml").read_text(encoding="utf-8")
+
+    def step(self, document, name):
+        rows = re.findall(r"^      - name: " + re.escape(name) + r"\n([\s\S]*?)(?=^      - name: |\Z)",
+                          document, re.MULTILINE)
+        self.assertEqual(1, len(rows), name)
+        return rows[0]
+
+    def assert_fresh_install(self, document):
+        step = self.step(document, self.build_name)
+        self.assertNotRegex(step, r"(?m)^        (?:if|continue-on-error):")
+        self.assertNotRegex(document, r"(?m)^    (?:if|continue-on-error):")
+        command = authored_command(document, self.build_name)
+        self.assertEqual(["python", "scripts/ci/run_gradle.py"], command[:2])
+        self.assertEqual(1, command.count("--"))
+        boundary = command.index("--")
+        wrapper, arguments = command[:boundary], command[boundary + 1:]
+        self.assertEqual(1, values(wrapper, "--require-task").count(":cli:installDist"))
+        for value in (":cli:installDist", "--rerun-tasks", "--no-build-cache"):
+            self.assertEqual(1, arguments.count(value), value)
+        self.assertFalse(any(value == "clean" or value.endswith(":clean") or
+                             value in ("--tests", "--exclude-task", "-x") or
+                             value.startswith(("--tests=", "--exclude-task=", "-x"))
+                             for value in arguments))
+
+    def assert_gate(self, document):
+        self.assert_fresh_install(document)
+        for name, expected in self.expected_steps.items():
+            self.assertEqual(expected, dedent(self.step(document, name)), name)
+        names = re.findall(r"^      - name: ([^\n]+)$", document, re.MULTILINE)
+        start = names.index(self.build_name) + 1
+        self.assertEqual(list(self.expected_steps), names[start:start + len(self.expected_steps)])
+
+    def assert_mutation_rejected(self, document, name, old, new):
+        step = self.step(document, name)
+        self.assertEqual(1, step.count(old), old)
+        changed = step.replace(old, new, 1)
+        self.assertNotEqual(step, changed)
+        with self.assertRaises(AssertionError):
+            self.assert_gate(document.replace(step, changed, 1))
+
+    def test_locked_linux_gate_uses_exact_fresh_install_and_truthful_non_linux_scope(self):
+        self.assert_gate(self.document())
+        bridge = (ci_common.REPO_ROOT / ".github/workflows/bridges-validation.yml").read_text(encoding="utf-8")
+        audited = self.step(bridge, "Select exact audited bridge Node runtime")
+        self.assertEqual([self.node_pin], re.findall(r"^        uses: ([^\n]+)$", audited, re.MULTILINE))
+        self.assertIn("          node-version: '24.20.0'\n", audited)
+        self.assertIn("          check-latest: false\n", audited)
+
+    def test_opt_in_wrong_node_unlocked_build_stale_image_and_whole_suite_bypasses_are_rejected(self):
+        document = self.document()
+        changes = (
+            (self.node_name, "if: success() && runner.os == 'Linux'", "if: vars.RUN_REAL_BROKER == 'true'"),
+            (self.node_name, self.node_pin, "actions/setup-node@v6"),
+            (self.node_name, "node-version: '24.20.0'", "node-version: '24'"),
+            (self.node_name, "check-latest: false", "check-latest: true"),
+            (self.mcp_name, "working-directory: bridges/mcp", "working-directory: bridges/reference-host"),
+            (self.mcp_name, "npm ci --include=dev --ignore-scripts --no-audit --no-fund", "npm install"),
+            (self.mcp_name, "npm run build --ignore-scripts", "true"),
+            (self.wire_name, self.fresh_distribution, "/opt/ktchecker"),
+            (self.wire_name, self.fresh_distribution, "''"),
+            (self.wire_name, "NODE_OPTIONS: ''", "NODE_OPTIONS: '--test-name-pattern=nonexistent'"),
+            (self.wire_name, "--test-reporter=tap dist/test/real-broker-wire.test.js",
+             "--test-reporter=tap dist/test/*.test.js"),
+            (self.wire_name, "node --test --test-concurrency=1 --test-reporter=tap dist/test/real-broker-wire.test.js",
+             "npm test"),
+            (self.wire_name, "--test-concurrency=1", "--test-concurrency=1 --test-name-pattern=nonexistent"),
+            (self.wire_name, "        shell: bash\n", "        continue-on-error: true\n        shell: bash\n"),
+            (self.unavailable_name, "runner.os != 'Linux'", "runner.os == 'Windows'"),
+        )
+        for name, old, new in changes:
+            with self.subTest(step=name, old=old):
+                self.assert_mutation_rejected(document, name, old, new)
+
+    def test_zero_skip_guard_masked_exits_and_published_raw_report_paths_cannot_be_weakened(self):
+        document = self.document()
+        changes = (
+            ('"tests": "3"', '"tests": "0"'),
+            ('"pass": "3"', '"pass": "0"'),
+            ('"skipped": "0"', '"skipped": "3"'),
+            ('"cancelled": "0"', '"cancelled": "1"'),
+            ('"todo": "0"', '"todo": "1"'),
+            ("len(observed) != len(expected) or ", ""),
+            ("dict(observed) != expected", "False"),
+            ('exit "$status"', 'exit 0'),
+            ('2>"$report_dir/stderr.txt"; then', '2>"$report_dir/stderr.txt" || true; then'),
+            ('${RUNNER_TEMP:?}/ktc-real-broker-wire.XXXXXX',
+             '${GITHUB_WORKSPACE}/build/ci-evidence/ktc-real-broker-wire.XXXXXX'),
+            ('python - "$report_dir/results.tap"', 'true # python - "$report_dir/results.tap"'),
+        )
+        for old, new in changes:
+            with self.subTest(old=old):
+                self.assert_mutation_rejected(document, self.wire_name, old, new)
+
+    def test_fresh_required_install_task_and_forced_uncached_build_cannot_be_removed(self):
+        document = self.document()
+        changes = (
+            ("--require-task :cli:installDist", ""),
+            (":cli:installDist :cli:distZip :cli:distTar", ":cli:distZip :cli:distTar"),
+            ("--rerun-tasks", ""),
+            ("--no-build-cache", ""),
+            ("-- --rerun-tasks", "-- clean --rerun-tasks"),
+            ("        run: >-\n", "        continue-on-error: true\n        run: >-\n"),
+            ("        run: >-\n", "        if: vars.USE_OLD_INSTALL != 'true'\n        run: >-\n"),
+        )
+        for old, new in changes:
+            with self.subTest(old=old):
+                self.assert_mutation_rejected(document, self.build_name, old, new)
 
 
 class ImplementationApplicationWorkflowTests(unittest.TestCase):
@@ -577,9 +769,15 @@ class DistributionUploadWorkflowTests(unittest.TestCase):
             self.assertEqual([missing], re.findall(r"^          if-no-files-found: ([^\n]+)$", step, re.MULTILINE))
             self.assertEqual(["14"], re.findall(r"^          retention-days: ([^\n]+)$", step, re.MULTILINE))
         upload_action = "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+        # Original breadth/activation uploads, four intentional CI2 SOURCE-control
+        # uploads, the pinned real-broker Node setup, then the three original
+        # evidence/report/distribution uploads.
         self.assertEqual(["actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
                           "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
                           "actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961",
+                          upload_action, upload_action,
+                          upload_action, upload_action, upload_action, upload_action,
+                          "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38",
                           upload_action, upload_action, upload_action],
                          re.findall(r"^        uses: ([^\s]+)", document, re.MULTILINE))
         self.assertLess(document.index("- name: " + self.gate_name),
@@ -1146,6 +1344,721 @@ class PythonEvidenceWorkflowTests(unittest.TestCase):
                 self.assert_retention(changed, upload)
 
 
+class CompilerBreadthWorkflowTests(unittest.TestCase):
+    """Additive authored Python wiring, not provider or hosted execution evidence."""
+
+    run_name = "Verify compiler diagnostic breadth source controls"
+    upload_name = "Retain compiler breadth source-control diagnostics even on failure"
+    reports = ("build/ci-evidence/compiler-breadth/python-checks.json",
+               "build/ci-evidence/compiler-breadth/python-checks.xml")
+    pattern = "test_diagnostic_breadth*.py"
+
+    def document(self):
+        return (ci_common.REPO_ROOT / ".github/workflows/implementation.yml").read_text(encoding="utf-8")
+
+    def step(self, document, name):
+        rows = re.findall(r"^      - name: " + re.escape(name) + r"\n([\s\S]*?)(?=^      - name: |\Z)",
+                          document, re.MULTILINE)
+        self.assertEqual(1, len(rows), name)
+        return rows[0]
+
+    def assert_execution(self, document):
+        step = self.step(document, self.run_name)
+        self.assertEqual(["if", "run"], re.findall(r"^        ([a-z-]+):", step, re.MULTILINE))
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual([">-"], re.findall(r"^        run: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual([
+            "python", "scripts/ci/run_python_checks.py", "--start-directory", "providers/compiler-fixtures",
+            "--pattern", self.pattern, "--output", self.reports[0], "--junit", self.reports[1],
+            "--host", "${{ matrix.os }}", "--require-ci-context", "--timeout", "${{ matrix.python_timeout_seconds }}",
+        ], authored_command(document, self.run_name))
+        self.assertLess(document.index("      - name: Verify the evidence harness failure paths\n"),
+                        document.index("      - name: " + self.run_name + "\n"))
+
+    def assert_retention(self, document):
+        step = self.step(document, self.upload_name)
+        self.assertEqual(["if", "uses", "with"], re.findall(r"^        ([a-z-]+):", step, re.MULTILINE))
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual(["actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"],
+                         re.findall(r"^        uses: ([^\s]+)", step, re.MULTILINE))
+        self.assertEqual(["name", "path", "if-no-files-found", "retention-days"],
+                         re.findall(r"^          ([a-z-]+):", step, re.MULTILINE))
+        self.assertEqual(["compiler-breadth-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}"],
+                         re.findall(r"^          name: ([^\n]+)$", step, re.MULTILINE))
+        paths = re.findall(r"^          path: \|\n((?:            [^\n]*\n)+)", step, re.MULTILINE)
+        self.assertEqual(1, len(paths))
+        self.assertEqual(list(self.reports), [line.strip() for line in paths[0].splitlines()])
+        self.assertEqual(["error"], re.findall(r"^          if-no-files-found: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual(["14"], re.findall(r"^          retention-days: ([^\n]+)$", step, re.MULTILINE))
+        self.assertLess(document.index("      - name: " + self.run_name + "\n"),
+                        document.index("      - name: " + self.upload_name + "\n"))
+
+    def assert_mutation_rejected(self, name, old, new, assertion):
+        document = self.document()
+        step = self.step(document, name)
+        self.assertEqual(1, step.count(old), old)
+        changed = document.replace(step, step.replace(old, new, 1), 1)
+        self.assertNotEqual(document, changed)
+        with self.assertRaises(AssertionError):
+            assertion(changed)
+
+    def test_breadth_controls_are_additive_bounded_and_fail_the_job_on_every_host(self):
+        self.assert_execution(self.document())
+
+    def test_exact_sanitized_breadth_pair_is_retained_even_after_control_failure(self):
+        self.assert_retention(self.document())
+
+    def test_breadth_pattern_selects_both_authored_modules_outside_scripts_discovery(self):
+        root = ci_common.REPO_ROOT / "providers/compiler-fixtures"
+        self.assertEqual(["test_diagnostic_breadth.py", "test_diagnostic_breadth_hookup.py"],
+                         sorted(path.name for path in root.glob(self.pattern)))
+        self.assertFalse(any(path in PYTHON_REPORTS for path in self.reports))
+
+    def test_breadth_reports_never_replace_ordinary_junit_or_command_denominators(self):
+        command = authored_command(self.document(), "Collect actual suites and artifact identities, including failures")
+        for option in ("--reports", "--require-report"):
+            self.assertTrue(all(path.startswith(("modules/", "tests/audit/")) for path in values(command, option)))
+        for path in self.reports:
+            self.assertNotIn(path, command)
+
+    def test_breadth_execution_rejects_scope_changes_collisions_and_masked_failures(self):
+        mutations = (
+            ("--start-directory providers/compiler-fixtures", "--start-directory scripts/ci"),
+            ('--pattern "test_diagnostic_breadth*.py"', '--pattern "test_*.py"'),
+            ('--pattern "test_diagnostic_breadth*.py"', '--pattern "test_diagnostic_breadth.py"'),
+            ("--require-ci-context ", ""),
+            ('--host "${{ matrix.os }}"', '--host ubuntu-24.04'),
+            ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout 0'),
+            ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout "${{ matrix.python_timeout_seconds }}" || true'),
+            (self.reports[0], PYTHON_REPORTS[0]),
+            (self.reports[1], PYTHON_REPORTS[1]),
+            ("if: always()", "if: success()"),
+            ("if: always()", "if: runner.os == 'Linux'"),
+            ("        if: always()\n", ""),
+            ("        run: >-\n", "        continue-on-error: true\n        run: >-\n"),
+            ("        run: >-\n", "        shell: python\n        run: >-\n"),
+            ("        run: >-\n", "        env:\n          GITHUB_SHA: synthetic\n        run: >-\n"),
+        )
+        for old, new in mutations:
+            with self.subTest(original=old, replacement=new):
+                self.assert_mutation_rejected(self.run_name, old, new, self.assert_execution)
+
+    def test_breadth_retention_rejects_raw_wildcards_missing_pairs_and_success_only_upload(self):
+        mutations = (
+            ("if: always()", "if: success()"),
+            ("        if: always()\n", ""),
+            ("        with:\n", "        continue-on-error: true\n        with:\n"),
+            ("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", "actions/upload-artifact@v4"),
+            ("compiler-breadth-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}",
+             "compiler-breadth-source-controls"),
+            ("if-no-files-found: error", "if-no-files-found: warn"),
+            ("retention-days: 14", "retention-days: 90"),
+            (self.reports[0], "build/ci-evidence/compiler-breadth/**"),
+            (self.reports[1], "build/ci-evidence/compiler-breadth/*.xml"),
+            (self.reports[1], "build/ci-evidence/compiler-breadth/worker.stderr"),
+            (self.reports[1], self.reports[0]),
+            ("            " + self.reports[0] + "\n", ""),
+            ("            " + self.reports[1] + "\n", ""),
+        )
+        for old, new in mutations:
+            with self.subTest(original=old, replacement=new):
+                self.assert_mutation_rejected(self.upload_name, old, new, self.assert_retention)
+
+    def test_missing_or_duplicate_breadth_steps_cannot_look_like_required_wiring(self):
+        document = self.document()
+        for name, assertion in ((self.run_name, self.assert_execution), (self.upload_name, self.assert_retention)):
+            whole = "      - name: " + name + "\n" + self.step(document, name)
+            for replacement in ("", whole + whole):
+                with self.subTest(step=name, replacement=replacement):
+                    with self.assertRaises(AssertionError):
+                        assertion(document.replace(whole, replacement, 1))
+
+
+class CompilerCheckerActivationWorkflowTests(unittest.TestCase):
+    """Authored source-control wiring, not checker/provider execution evidence."""
+
+    run_name = "Verify compiler checker activation source controls"
+    upload_name = "Retain checker activation source-control diagnostics even on failure"
+    reports = ("build/ci-evidence/checker-activation/python-checks.json",
+               "build/ci-evidence/checker-activation/python-checks.xml")
+    pattern = "test_checker_activation*.py"
+    artifact_name = "compiler-checker-activation-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}"
+    test_names = (
+        "test_authoritative_tagged_source_proves_registration_not_runtime_or_policy_enablement",
+        "test_four_common_flags_are_corrected_but_all_real_extra_and_experimental_prerequisites_remain",
+        "test_all443_catalog_links_policy_kinds_severities_and_backend_counts_are_preserved",
+        "test_generator_and_runtime_have_the_same_four_exact_version_and_backend_bound_exceptions",
+        "test_all443_current_implementation_pins_and_only_four_semantic_deltas_invert_to_previous_map",
+        "test_current_coverage_changes_only_two_current_input_identities_and_keeps1663_by8",
+        "test_breadth_cohorts_oracles_fixtures_and35_test_bodies_are_unchanged",
+        "test_original325_historical_pins_and18_breadth_hookup_test_identities_remain_literal",
+        "test_provider_and_protected_flag_validation_suppression_and_return_mode_bytes_are_unchanged",
+        "test_ten_new_kotlin_readiness_controls_are_named_and_unconnected_to_execution_authority",
+    )
+
+    def document(self):
+        return (ci_common.REPO_ROOT / ".github/workflows/implementation.yml").read_text(encoding="utf-8")
+
+    def step(self, document, name):
+        rows = re.findall(r"^      - name: " + re.escape(name) + r"\n([\s\S]*?)(?=^      - name: |\Z)",
+                          document, re.MULTILINE)
+        self.assertEqual(1, len(rows), name)
+        return rows[0]
+
+    def assert_execution(self, document):
+        step = self.step(document, self.run_name)
+        self.assertEqual(["if", "run"], re.findall(r"^        ([a-z-]+):", step, re.MULTILINE))
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual([">-"], re.findall(r"^        run: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual([
+            "python", "scripts/ci/run_python_checks.py", "--start-directory", "providers/compiler-fixtures",
+            "--pattern", self.pattern, "--output", self.reports[0], "--junit", self.reports[1],
+            "--host", "${{ matrix.os }}", "--require-ci-context", "--timeout", "${{ matrix.python_timeout_seconds }}",
+        ], authored_command(document, self.run_name))
+        self.assertLess(document.index("      - name: " + CompilerBreadthWorkflowTests.upload_name + "\n"),
+                        document.index("      - name: " + self.run_name + "\n"))
+
+    def assert_retention(self, document):
+        step = self.step(document, self.upload_name)
+        self.assertEqual(["if", "uses", "with"], re.findall(r"^        ([a-z-]+):", step, re.MULTILINE))
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual(["actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"],
+                         re.findall(r"^        uses: ([^\s]+)", step, re.MULTILINE))
+        self.assertEqual(["name", "path", "if-no-files-found", "retention-days"],
+                         re.findall(r"^          ([a-z-]+):", step, re.MULTILINE))
+        self.assertEqual([self.artifact_name], re.findall(r"^          name: ([^\n]+)$", step, re.MULTILINE))
+        paths = re.findall(r"^          path: \|\n((?:            [^\n]*\n)+)", step, re.MULTILINE)
+        self.assertEqual(1, len(paths))
+        self.assertEqual(list(self.reports), [line.strip() for line in paths[0].splitlines()])
+        self.assertEqual(["error"], re.findall(r"^          if-no-files-found: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual(["14"], re.findall(r"^          retention-days: ([^\n]+)$", step, re.MULTILINE))
+        self.assertLess(document.index("      - name: " + self.run_name + "\n"),
+                        document.index("      - name: " + self.upload_name + "\n"))
+
+    def assert_separate_scopes(self, document):
+        blocks = re.findall(r"^        run: >-\n((?:          [^\n]*\n)+)", document, re.MULTILINE)
+        commands = [shlex.split(" ".join(line.strip() for line in block.splitlines())) for block in blocks]
+        reporters = [command for command in commands if command[:2] == ["python", "scripts/ci/run_python_checks.py"]]
+        fixture_commands = [command for command in reporters
+                            if values(command, "--start-directory") == ["providers/compiler-fixtures"]]
+        # Original scripts/ci plus six disjoint compiler selections: 34+10+10+35+6+8.
+        self.assertEqual(7, len(reporters))
+        self.assertEqual(7, document.count("scripts/ci/run_python_checks.py"))
+        self.assertEqual([[CompilerBreadthWorkflowTests.pattern], [self.pattern],
+                          *[[profile["pattern"]] for profile in CompilerSourceClosureWorkflowTests.profiles]],
+                         [values(command, "--pattern") for command in fixture_commands])
+        ordinary = authored_command(document, "Verify the evidence harness failure paths")
+        self.assertEqual(["scripts/ci"], values(ordinary, "--start-directory"))
+        self.assertEqual([], values(ordinary, "--pattern"))
+        collector = authored_command(document, "Collect actual suites and artifact identities, including failures")
+        for option in ("--reports", "--require-report"):
+            self.assertTrue(all(path.startswith(("modules/", "tests/audit/")) for path in values(collector, option)))
+        for path in self.reports:
+            self.assertNotIn(path, (*PYTHON_REPORTS, *CompilerBreadthWorkflowTests.reports, *LIVE_REPORTS))
+            self.assertNotIn(path, collector)
+
+    def assert_mutation_rejected(self, name, old, new, assertion):
+        document = self.document()
+        step = self.step(document, name)
+        self.assertEqual(1, step.count(old), old)
+        changed = document.replace(step, step.replace(old, new, 1), 1)
+        self.assertNotEqual(document, changed)
+        with self.assertRaises(AssertionError):
+            assertion(changed)
+
+    def test_activation_controls_are_additive_bounded_and_required_on_every_host(self):
+        self.assert_execution(self.document())
+        self.assertEqual(["ubuntu-24.04", "windows-2025", "macos-26"],
+                         [row["os"] for row in authored_matrix_rows(self.document())])
+
+    def test_exact_sanitized_activation_pair_is_retained_even_after_failure(self):
+        self.assert_retention(self.document())
+
+    def test_activation_pattern_selects_only_the_ten_named_source_controls(self):
+        root = ci_common.REPO_ROOT / "providers/compiler-fixtures"
+        selected = sorted(root.glob(self.pattern))
+        self.assertEqual(["test_checker_activation.py"], [path.name for path in selected])
+        self.assertTrue(set(selected).isdisjoint(root.glob(CompilerBreadthWorkflowTests.pattern)))
+        # AST inspection checks the authored roster; it does not run these ten controls.
+        tree = ast.parse(selected[0].read_text(encoding="utf-8"))
+        self.assertFalse(any(isinstance(node, ast.FunctionDef) and node.name == "load_tests" for node in tree.body))
+        classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+        self.assertEqual(["CompilerCheckerActivationSourceTest"], [node.name for node in classes])
+        self.assertEqual(["unittest.TestCase"], [ast.unparse(base) for base in classes[0].bases])
+        self.assertFalse(classes[0].decorator_list)
+        methods = [node for node in classes[0].body if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")]
+        self.assertEqual(sorted(self.test_names), sorted(node.name for node in methods))
+        self.assertEqual(10, len({node.name for node in methods}))
+        self.assertTrue(all(not node.decorator_list for node in methods))
+
+    def test_activation_breadth_and_ordinary_selection_and_report_denominators_remain_disjoint(self):
+        self.assert_separate_scopes(self.document())
+
+    def test_activation_execution_rejects_scope_context_timeout_and_failure_masking(self):
+        mutations = (
+            ("--start-directory providers/compiler-fixtures", "--start-directory scripts/ci"),
+            ('--pattern "test_checker_activation*.py"', '--pattern "test_*.py"'),
+            ('--pattern "test_checker_activation*.py"', '--pattern "test_diagnostic_breadth*.py"'),
+            ('--pattern "test_checker_activation*.py"', '--pattern "test_checker_activation.py"'),
+            ("--require-ci-context ", ""),
+            ('--host "${{ matrix.os }}"', '--host ubuntu-24.04'),
+            ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout 0'),
+            ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout "${{ matrix.python_timeout_seconds }}" || true'),
+            (self.reports[0], PYTHON_REPORTS[0]),
+            (self.reports[1], CompilerBreadthWorkflowTests.reports[1]),
+            ("if: always()", "if: success()"),
+            ("if: always()", "if: runner.os == 'Linux'"),
+            ("        if: always()\n", ""),
+            ("        run: >-\n", "        continue-on-error: true\n        run: >-\n"),
+            ("        run: >-\n", "        shell: python\n        run: >-\n"),
+            ("        run: >-\n", "        env:\n          GITHUB_SHA: synthetic\n        run: >-\n"),
+        )
+        for old, new in mutations:
+            with self.subTest(original=old, replacement=new):
+                self.assert_mutation_rejected(self.run_name, old, new, self.assert_execution)
+
+    def test_activation_retention_rejects_raw_wildcard_collision_and_success_only_upload(self):
+        mutations = (
+            ("if: always()", "if: success()"),
+            ("        if: always()\n", ""),
+            ("        with:\n", "        continue-on-error: true\n        with:\n"),
+            ("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", "actions/upload-artifact@v4"),
+            (self.artifact_name, "compiler-breadth-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}"),
+            ("if-no-files-found: error", "if-no-files-found: warn"),
+            ("retention-days: 14", "retention-days: 90"),
+            (self.reports[0], "build/ci-evidence/checker-activation/**"),
+            (self.reports[1], "build/ci-evidence/checker-activation/*.xml"),
+            (self.reports[1], "build/ci-evidence/checker-activation/worker.stderr"),
+            (self.reports[1], self.reports[0]),
+            (self.reports[0], CompilerBreadthWorkflowTests.reports[0]),
+            ("            " + self.reports[0] + "\n", ""),
+            ("            " + self.reports[1] + "\n", ""),
+        )
+        for old, new in mutations:
+            with self.subTest(original=old, replacement=new):
+                self.assert_mutation_rejected(self.upload_name, old, new, self.assert_retention)
+
+    def test_missing_duplicate_or_extra_activation_invocations_are_rejected(self):
+        document = self.document()
+        for name, assertion in ((self.run_name, self.assert_execution), (self.upload_name, self.assert_retention)):
+            whole = "      - name: " + name + "\n" + self.step(document, name)
+            for replacement in ("", whole + whole):
+                with self.subTest(step=name, replacement=replacement):
+                    with self.assertRaises(AssertionError):
+                        assertion(document.replace(whole, replacement, 1))
+        whole = "      - name: " + self.run_name + "\n" + self.step(document, self.run_name)
+        extra = whole.replace(self.run_name, "Unexpected duplicate activation execution", 1)
+        for duplicate in (extra, extra.replace("run: >-", "run: |", 1)):
+            with self.subTest(duplicate=duplicate), self.assertRaises(AssertionError):
+                self.assert_separate_scopes(document + duplicate)
+
+
+class CompilerSourceClosureWorkflowTests(unittest.TestCase):
+    """Authored selections/AST rosters only, never compiler or hosted execution proof."""
+
+    profiles = (
+        {
+            "run": "Verify compiler mapping contract source controls",
+            "upload": "Retain compiler mapping contract source-control diagnostics even on failure",
+            "pattern": "test_compiler_mapping_contracts.py",
+            "files": ("test_compiler_mapping_contracts.py",),
+            "stem": "compiler-mapping-contracts",
+        },
+        {
+            "run": "Verify compiler nullability protocol source controls",
+            "upload": "Retain compiler nullability protocol source-control diagnostics even on failure",
+            "pattern": "test_nullability_protocols*.py",
+            "files": ("test_nullability_protocols.py", "test_nullability_protocols_hookup.py"),
+            "stem": "compiler-nullability-protocols",
+        },
+        {
+            "run": "Verify compiler original42 selector source controls",
+            "upload": "Retain compiler original42 selector source-control diagnostics even on failure",
+            "pattern": "test_original42_selectors.py",
+            "files": ("test_original42_selectors.py",),
+            "stem": "compiler-original42-selectors",
+        },
+        {
+            "run": "Verify compiler type-boundary supplemental source controls",
+            "upload": "Retain compiler type-boundary supplemental source-control diagnostics even on failure",
+            "pattern": "test_type_boundaries_supplemental.py",
+            "files": ("test_type_boundaries_supplemental.py",),
+            "stem": "compiler-type-boundaries-supplemental",
+        },
+    )
+    reports = tuple(f"build/ci-evidence/{profile['stem']}/python-checks.{suffix}"
+                    for profile in profiles for suffix in ("json", "xml"))
+    all_file_counts = {
+        "test_checker_activation.py": 10,
+        "test_compiler_mapping_contracts.py": 15,
+        "test_diagnostic_breadth.py": 16,
+        "test_diagnostic_breadth_hookup.py": 18,
+        "test_nullability_protocols.py": 16,
+        "test_nullability_protocols_hookup.py": 19,
+        "test_original42_selectors.py": 6,
+        "test_type_boundaries_supplemental.py": 8,
+    }
+    # Literal reviewed method identities, not live discovery or test-result counts.
+    source_rosters = {
+        "test_compiler_mapping_contracts.py": (
+            "CompilerMappingContractSourceTest.test_affirmative445_counts_exact_two_planned_catalog_additions_and_all443_semantic_rows",
+            "CompilerMappingContractSourceTest.test_header_old_semantic_reference_and_new_contract_mutations_cannot_hide_in_the445_append",
+            "CompilerMappingContractSourceTest.test_four_preexisting_nullability_activation_disagreements_are_explicit_not_rewritten_or_called_current",
+            "CompilerMappingContractSourceTest.test_frozen_source_data_inputs_are_closed_raw_exact_and_never_historical_receipt_replays",
+            "CompilerMappingContractSourceTest.test_data_digest_canonical_path_and_symlink_mutations_are_rejected_without_a_runtime_loader",
+            "CompilerMappingContractSourceTest.test_helper_is_read_only_stdlib_and_runtime_sources_have_no_legacy_data_loader_or_selector",
+            "CompilerMappingContractSourceTest.test_registry_strict_byte_identity_and_profile_property_precede_preparation_and_legacy_runner_work",
+            "CompilerMappingContractSourceTest.test_all93_old_python_methods_and_kotlin_rosters_remain_active_with_only_closed_version_contract_changes",
+            "CompilerMappingContractSourceTest.test_section_parity_controls_reject_deletions_renames_disabling_and_unrelated_body_mutations",
+            "CompilerMappingContractSourceTest.test_new445_source_plan_is_unbound_unadmitted_and_cannot_join_any_legacy_execution_schedule",
+            "CompilerMappingContractSourceTest.test_observation_inventory_and_payload_mutations_cannot_be_repinned_as_current",
+            "CompilerMappingContractSourceTest.test_observation_inverses_restore_exact_core_and_workbench_without_broadening_history",
+            "CompilerMappingContractSourceTest.test_observation_successor23_and_five_source_inputs_stay_separate_from_historical389",
+            "CompilerMappingContractSourceTest.test_parser_ambiguity_inventory_inverse_and_blind_repin_mutations_fail_closed",
+            "CompilerMappingContractSourceTest.test_parser_ambiguity_two_source_inputs_and_exact_predecessor_keep_historical_rosters",
+        ),
+        "test_nullability_protocols.py": (
+            "NullabilityProtocolsSourceContractTest.test_exact_six_common_direct_error_ids_have_existing_maps_not_new_catalog_rows",
+            "NullabilityProtocolsSourceContractTest.test_all_thirty_literal_paths_digests_are_kind_major_distinct_read_once_and_not_attempts",
+            "NullabilityProtocolsSourceContractTest.test_full_five_variant_expectations_are_proposals_and_preserve_initial_unrun_fields",
+            "NullabilityProtocolsSourceContractTest.test_pinned_target_language_api_and_applicability_are_explicit_without_feature_plugin_java_graph_traps",
+            "NullabilityProtocolsSourceContractTest.test_tagged_factories_renderer_predicates_and_active_seed_markers_are_source_only",
+            "NullabilityProtocolsSourceContractTest.test_authored_boundary_and_applicability_sources_cover_real_neighboring_receiver_forms",
+            "NullabilityProtocolsSourceContractTest.test_suppression_is_independently_authored_exact_file_annotation_with_unknown_hard_error_outcomes",
+            "NullabilityProtocolsSourceContractTest.test_explicit_source_selector_has_no_default_all_and_rejects_foreign_duplicate_or_missing_ids_kinds",
+            "NullabilityProtocolsSourceContractTest.test_manifest_reordering_is_normalized_without_retries_or_source_batching",
+            "NullabilityProtocolsSourceContractTest.test_source_hash_path_flags_severity_initial_status_unknown_expectation_and_anchor_tampering_fail_closed_under_O",
+            "NullabilityProtocolsSourceContractTest.test_bookkeeping_keeps_existing98_graph16_map443_supplemental18_and_all278_bytes_unchanged",
+            "NullabilityProtocolsSourceContractTest.test_remaining_gap_inventory_enumerates_every329_mapped_and609_unmapped_JVM_relevant_factories_without_support_claims",
+            "NullabilityProtocolsSourceContractTest.test_pure_source_description_cannot_launder_thirty_counts_into_execution_or_promote_tampered_id_bytes_order",
+            "NullabilityProtocolsSourceContractTest.test_source_cli_is_read_only_and_never_prints_bodies_or_schedules_processes",
+            "NullabilityProtocolsSourceContractTest.test_source_helper_has_no_process_provider_generator_evidence_writer_or_safety_asserts",
+            "NullabilityProtocolsSourceContractTest.test_portable_paths_are_exact_POSIX_and_no_symlink_traversal_drive_absolute_or_NUL_sources",
+        ),
+        "test_nullability_protocols_hookup.py": (
+            "NullabilityProtocolsHookupSourceContractTest.test_literal_six_ids_thirty_paths_and_source_hashes_match_reviewed_source_v1",
+            "NullabilityProtocolsHookupSourceContractTest.test_six_source_metadata_pins_are_exact_and_the_thirty_six_capture_paths_are_dedicated",
+            "NullabilityProtocolsHookupSourceContractTest.test_all_historical_278_sources_main_98_graph_16_map_443_and_supplemental_18_stay_exact",
+            "NullabilityProtocolsHookupSourceContractTest.test_exact_existing_common_error_mappings_are_used_without_an_ordinary_fixture_append",
+            "NullabilityProtocolsHookupSourceContractTest.test_conditional_start_capture_preserves_original_four_argument_signature_and_drift_scope",
+            "NullabilityProtocolsHookupSourceContractTest.test_only_new_selector_has_thirty_five_cap_with_all_old_bounds_and_selects_calls_preserved",
+            "NullabilityProtocolsHookupSourceContractTest.test_schedule_is_fixed_thirty_single_sources_one_denial_four_unchanged_controls_no_fallback",
+            "NullabilityProtocolsHookupSourceContractTest.test_all_nineteen_execution_ordinary_probe_supplemental_control_terminal_source_bodies_are_unchanged",
+            "NullabilityProtocolsHookupSourceContractTest.test_predeclared_positive_oracle_requires_failed_nonzero_exact_selected_error_and_full_error_gates",
+            "NullabilityProtocolsHookupSourceContractTest.test_actual_raw_oracle_reparses_retained_streams_and_never_uses_residual_only_or_filtered_error_totals",
+            "NullabilityProtocolsHookupSourceContractTest.test_exact_actual_points_messages_and_multiplicity_bind_both_diagnostic_channels",
+            "NullabilityProtocolsHookupSourceContractTest.test_alternative_oracles_need_genuine_exit0_both_channel_absence_no_errors_and_retain_warnings",
+            "NullabilityProtocolsHookupSourceContractTest.test_all_six_unknown_suppressions_remain_null_for_failure_or_exit0_and_prevent_terminal_success",
+            "NullabilityProtocolsHookupSourceContractTest.test_actual_failed_compiler_tasks_are_not_unmatched_counts_or_success_and_survive_withheld_attribution",
+            "NullabilityProtocolsHookupSourceContractTest.test_returned_actual_input_receipts_are_persisted_even_after_execute_rejection_without_retry",
+            "NullabilityProtocolsHookupSourceContractTest.test_receipt_and_reservation_count_gates_bind_exact_thirty_ordinals_and_subjects_but_are_informational",
+            "NullabilityProtocolsHookupSourceContractTest.test_version_denial_is_exact_thirty_first_wrong_request_no_actual_process_with_intact_receipt",
+            "NullabilityProtocolsHookupSourceContractTest.test_private_sidecar_and_completion_fields_cannot_rewrite_latest_or_promote_ordinary_credit",
+            "NullabilityProtocolsHookupSourceContractTest.test_twenty_kotlin_value_controls_and_new_helper_are_source_only_without_process_writer_or_authority_apis",
+        ),
+        "test_original42_selectors.py": (
+            "Original42SelectorSourceContractTest.test_ten_literal_selectors_match_reviewed_ids_and_partition_exactly_original42",
+            "Original42SelectorSourceContractTest.test_source_status_preserves_bytes_flags_and_historical_failed_controls",
+            "Original42SelectorSourceContractTest.test_exactly_eleven_runner_selection_calls_bind_the_same_fixture_stable_id",
+            "Original42SelectorSourceContractTest.test_legacy_predicates_and_no_default_all_remain_while_new_id_subsets_fail_closed",
+            "Original42SelectorSourceContractTest.test_each_full_conditional_source_schedule_recomputes_within_48_admissions",
+            "Original42SelectorSourceContractTest.test_authoring_inventory_is_separate_from_mutable_execution_aggregates",
+        ),
+        "test_type_boundaries_supplemental.py": (
+            "TypeBoundarySupplementalSourceContractTest.test_all_existing_fixture_and_initial_authoring_bytes_are_preserved",
+            "TypeBoundarySupplementalSourceContractTest.test_literal_six_id_eighteen_path_digest_plan_is_exact_and_kind_major",
+            "TypeBoundarySupplementalSourceContractTest.test_actual_scheduling_uses_one_existing_captured_file_per_input_and_no_transforms_or_reruns",
+            "TypeBoundarySupplementalSourceContractTest.test_a1_execution_ordinary_and_c_probe_control_source_segments_are_identical",
+            "TypeBoundarySupplementalSourceContractTest.test_supplemental_selection_is_separate_and_all_eleven_original_id_adapters_are_preserved",
+            "TypeBoundarySupplementalSourceContractTest.test_completion_is_conservative_private_and_not_laundered_from_failure_or_unknown_expectations",
+            "TypeBoundarySupplementalSourceContractTest.test_all_98_ordinary_16_planned_443_mappings_remain_visible_without_six_kind_promotion",
+            "TypeBoundarySupplementalSourceContractTest.test_twelve_kotlin_value_tests_are_authored_without_any_provider_or_process_invocation",
+        ),
+    }
+
+    def document(self):
+        return (ci_common.REPO_ROOT / ".github/workflows/implementation.yml").read_text(encoding="utf-8")
+
+    def step(self, document, name):
+        rows = re.findall(r"^      - name: " + re.escape(name) + r"\n([\s\S]*?)(?=^      - name: |\Z)",
+                          document, re.MULTILINE)
+        self.assertEqual(1, len(rows), name)
+        return rows[0]
+
+    def pair(self, profile):
+        return tuple(f"build/ci-evidence/{profile['stem']}/python-checks.{suffix}" for suffix in ("json", "xml"))
+
+    def assert_execution(self, document, profile):
+        step = self.step(document, profile["run"])
+        reports = self.pair(profile)
+        self.assertEqual(["if", "run"], re.findall(r"^        ([a-z-]+):", step, re.MULTILINE))
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual([">-"], re.findall(r"^        run: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual([
+            "python", "scripts/ci/run_python_checks.py", "--start-directory", "providers/compiler-fixtures",
+            "--pattern", profile["pattern"], "--output", reports[0], "--junit", reports[1],
+            "--host", "${{ matrix.os }}", "--require-ci-context", "--timeout", "${{ matrix.python_timeout_seconds }}",
+        ], authored_command(document, profile["run"]))
+
+    def assert_retention(self, document, profile):
+        step = self.step(document, profile["upload"])
+        self.assertEqual(["if", "uses", "with"], re.findall(r"^        ([a-z-]+):", step, re.MULTILINE))
+        self.assertEqual(["always()"], re.findall(r"^        if: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual(["actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"],
+                         re.findall(r"^        uses: ([^\s]+)", step, re.MULTILINE))
+        self.assertEqual(["name", "path", "if-no-files-found", "retention-days"],
+                         re.findall(r"^          ([a-z-]+):", step, re.MULTILINE))
+        artifact = profile["stem"] + "-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}"
+        self.assertEqual([artifact], re.findall(r"^          name: ([^\n]+)$", step, re.MULTILINE))
+        paths = re.findall(r"^          path: \|\n((?:            [^\n]*\n)+)", step, re.MULTILINE)
+        self.assertEqual(1, len(paths))
+        self.assertEqual(list(self.pair(profile)), [line.strip() for line in paths[0].splitlines()])
+        self.assertEqual(["error"], re.findall(r"^          if-no-files-found: ([^\n]+)$", step, re.MULTILINE))
+        self.assertEqual(["14"], re.findall(r"^          retention-days: ([^\n]+)$", step, re.MULTILINE))
+
+    def assert_wiring(self, document):
+        names = [CompilerCheckerActivationWorkflowTests.upload_name]
+        for profile in self.profiles:
+            self.assert_execution(document, profile)
+            self.assert_retention(document, profile)
+            names.extend((profile["run"], profile["upload"]))
+        names.append("Verify synthetic Lint receipt privacy without relying on Python assertions")
+        positions = [document.index("      - name: " + name + "\n") for name in names]
+        self.assertEqual(sorted(positions), positions)
+        CompilerCheckerActivationWorkflowTests().assert_separate_scopes(document)
+
+    def assert_separate_reports(self, document):
+        names = ["Verify the evidence harness failure paths", CompilerBreadthWorkflowTests.run_name,
+                 CompilerCheckerActivationWorkflowTests.run_name, *[profile["run"] for profile in self.profiles]]
+        selected = []
+        for name in names:
+            command = authored_command(document, name)
+            selected.extend(values(command, "--output") + values(command, "--junit"))
+        expected = (*PYTHON_REPORTS, *CompilerBreadthWorkflowTests.reports,
+                    *CompilerCheckerActivationWorkflowTests.reports, *self.reports)
+        self.assertEqual(14, len(selected))
+        self.assertEqual(14, len(set(selected)))
+        self.assertEqual(sorted(expected), sorted(selected))
+        self.assertTrue(set(selected).isdisjoint(LIVE_REPORTS))
+        collector = authored_command(document, "Collect actual suites and artifact identities, including failures")
+        for option in ("--reports", "--require-report"):
+            self.assertTrue(all(path.startswith(("modules/", "tests/audit/")) for path in values(collector, option)))
+        for path in self.reports:
+            self.assertNotIn(path, collector)
+        # Reuse the maintained global upload allowlist; no new raw subtree can
+        # enter via an unrelated artifact or the ordinary observed-evidence list.
+        LiveSupervisorWorkflowTests().assert_retention(document)
+        blocks = re.findall(r"^          path: \|\n((?:            [^\n]*\n)+)", document, re.MULTILINE)
+        published = [line.strip() for block in blocks for line in block.splitlines()]
+        for path in self.reports:
+            self.assertEqual(1, published.count(path))
+
+    def assert_source_roster(self, filename, source):
+        tree = ast.parse(source)
+        forbidden = {"load_tests", "__unittest_skip__", "__unittest_skip_why__"}
+        self.assertFalse(any(
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == "load_tests"
+            or isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store) and node.id in forbidden
+            for node in ast.walk(tree)))
+        expected = self.source_rosters[filename]
+        classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+        self.assertEqual(sorted({name.split(".", 1)[0] for name in expected}), sorted(node.name for node in classes))
+        actual = []
+        for cls in classes:
+            self.assertEqual(["unittest.TestCase"], [ast.unparse(base) for base in cls.bases])
+            self.assertFalse(cls.decorator_list)
+            methods = [node for node in cls.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                       and node.name.startswith("test_")]
+            for method in methods:
+                self.assertIs(type(method), ast.FunctionDef)
+                self.assertFalse(method.decorator_list)
+                actual.append(cls.name + "." + method.name)
+        self.assertEqual(sorted(expected), sorted(actual))
+        self.assertEqual(len(expected), len(set(actual)))
+
+    def assert_mutation_rejected(self, name, old, new, assertion):
+        document = self.document()
+        step = self.step(document, name)
+        self.assertEqual(1, step.count(old), old)
+        changed = document.replace(step, step.replace(old, new, 1), 1)
+        self.assertNotEqual(document, changed)
+        with self.assertRaises(AssertionError):
+            assertion(changed)
+
+    def test_four_additive_selections_keep_existing_hosts_python_version_and_budgets(self):
+        document = self.document()
+        self.assert_wiring(document)
+        PythonEvidenceWorkflowTests().assert_budgets(document, "implementation.yml")
+        setup = self.step(document, "Set up CI evidence runtime")
+        self.assertEqual(["actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"],
+                         re.findall(r"^        uses: ([^\s]+)", setup, re.MULTILINE))
+        self.assertEqual(["'3.12'"], re.findall(r"^          python-version: ([^\n]+)$", setup, re.MULTILINE))
+
+    def test_exact_five_files_retain_all_64_named_source_controls_without_importing_them(self):
+        root = ci_common.REPO_ROOT / "providers/compiler-fixtures"
+        selected = []
+        for profile in self.profiles:
+            paths = sorted(root.glob(profile["pattern"]))
+            self.assertEqual(list(profile["files"]), [path.name for path in paths])
+            for path in paths:
+                self.assertFalse(path.is_symlink())
+                self.assertTrue(path.is_file())
+                self.assert_source_roster(path.name, path.read_text(encoding="utf-8"))
+                selected.append(path.name)
+        self.assertEqual(5, len(selected))
+        self.assertEqual(sorted(self.source_rosters), sorted(selected))
+        self.assertEqual(64, sum(len(names) for names in self.source_rosters.values()))
+
+    def test_all_eight_compiler_files_and_108_ast_methods_are_selected_once(self):
+        root = ci_common.REPO_ROOT / "providers/compiler-fixtures"
+        patterns = (CompilerBreadthWorkflowTests.pattern, CompilerCheckerActivationWorkflowTests.pattern,
+                    *[profile["pattern"] for profile in self.profiles])
+        paths = [path for pattern in patterns for path in sorted(root.glob(pattern))]
+        self.assertEqual(8, len(paths))
+        self.assertEqual(8, len(set(paths)))
+        self.assertEqual(sorted(self.all_file_counts), sorted(path.name for path in paths))
+        observed = {}
+        for path in paths:
+            self.assertFalse(path.is_symlink())
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            observed[path.name] = sum(isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef))
+                                      and method.name.startswith("test_")
+                                      for cls in tree.body if isinstance(cls, ast.ClassDef) for method in cls.body)
+        self.assertEqual(self.all_file_counts, observed)
+        self.assertEqual(108, sum(observed.values()))
+
+    def test_each_exact_sanitized_pair_is_distinct_and_retained_even_after_failure(self):
+        document = self.document()
+        for profile in self.profiles:
+            self.assert_retention(document, profile)
+        self.assert_separate_reports(document)
+
+    def test_new_reports_never_replace_junit_or_command_result_denominators(self):
+        self.assert_separate_reports(self.document())
+
+    def test_execution_rejects_scope_identity_budget_collisions_and_failure_masking(self):
+        for profile in self.profiles:
+            reports = self.pair(profile)
+            pattern = '--pattern "' + profile["pattern"] + '"'
+            mutations = (
+                ("--start-directory providers/compiler-fixtures", "--start-directory scripts/ci"),
+                (pattern, '--pattern "test_*.py"'),
+                (pattern, '--pattern "test_diagnostic_breadth*.py"'),
+                (pattern, pattern + ' --pattern "test_checker_activation*.py"'),
+                ("--require-ci-context ", ""),
+                ('--host "${{ matrix.os }}"', '--host ubuntu-24.04'),
+                ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout 480'),
+                ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout "${{ matrix.job_timeout_minutes }}"'),
+                ('--timeout "${{ matrix.python_timeout_seconds }}"', '--timeout "${{ matrix.python_timeout_seconds }}" || true'),
+                (reports[0], PYTHON_REPORTS[0]),
+                (reports[1], CompilerCheckerActivationWorkflowTests.reports[1]),
+                ("if: always()", "if: success()"),
+                ("if: always()", "if: runner.os == 'Linux'"),
+                ("        if: always()\n", ""),
+                ("        run: >-\n", "        continue-on-error: true\n        run: >-\n"),
+                ("        run: >-\n", "        timeout-minutes: 8\n        run: >-\n"),
+                ("        run: >-\n", "        shell: python\n        run: >-\n"),
+                ("        run: >-\n", "        env:\n          GITHUB_SHA: synthetic\n        run: >-\n"),
+            )
+            if len(profile["files"]) == 2:
+                mutations += ((pattern, '--pattern "' + profile["files"][0] + '"'),)
+            for old, new in mutations:
+                with self.subTest(profile=profile["stem"], original=old, replacement=new):
+                    self.assert_mutation_rejected(profile["run"], old, new,
+                                                  lambda document: self.assert_execution(document, profile))
+
+    def test_retention_rejects_raw_globs_collisions_missing_pairs_and_success_only_upload(self):
+        for profile in self.profiles:
+            reports = self.pair(profile)
+            artifact = profile["stem"] + "-source-controls-${{ matrix.os }}-${{ github.run_id }}-${{ github.run_attempt }}"
+            mutations = (
+                ("if: always()", "if: success()"),
+                ("        if: always()\n", ""),
+                ("        with:\n", "        continue-on-error: true\n        with:\n"),
+                ("actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02", "actions/upload-artifact@v4"),
+                (artifact, "compiler-source-controls"),
+                (artifact, CompilerCheckerActivationWorkflowTests.artifact_name),
+                ("if-no-files-found: error", "if-no-files-found: warn"),
+                ("retention-days: 14", "retention-days: 90"),
+                (reports[0], "build/ci-evidence/" + profile["stem"] + "/**"),
+                (reports[1], "build/ci-evidence/" + profile["stem"] + "/raw/worker.stderr"),
+                (reports[1], reports[0]),
+                (reports[0], CompilerBreadthWorkflowTests.reports[0]),
+                ("            " + reports[0] + "\n", ""),
+                ("            " + reports[1] + "\n", ""),
+            )
+            for old, new in mutations:
+                with self.subTest(profile=profile["stem"], original=old, replacement=new):
+                    self.assert_mutation_rejected(profile["upload"], old, new,
+                                                  lambda document: self.assert_retention(document, profile))
+
+    def test_missing_duplicate_extra_or_reordered_source_steps_are_rejected(self):
+        document = self.document()
+        for profile in self.profiles:
+            whole = {}
+            for kind in ("run", "upload"):
+                name = profile[kind]
+                whole[kind] = "      - name: " + name + "\n" + self.step(document, name)
+                for replacement in ("", whole[kind] + whole[kind]):
+                    with self.subTest(profile=profile["stem"], step=kind, replacement=replacement):
+                        with self.assertRaises(AssertionError):
+                            self.assert_wiring(document.replace(whole[kind], replacement, 1))
+            extra = whole["run"].replace(profile["run"], "Unexpected extra compiler source invocation", 1)
+            for duplicate in (extra, extra.replace("run: >-", "run: |", 1)):
+                with self.subTest(profile=profile["stem"], duplicate=duplicate), self.assertRaises(AssertionError):
+                    self.assert_wiring(document + duplicate)
+            pair = whole["run"] + whole["upload"]
+            self.assertEqual(1, document.count(pair))
+            with self.subTest(profile=profile["stem"], reordered=True), self.assertRaises(AssertionError):
+                self.assert_wiring(document.replace(pair, whole["upload"] + whole["run"], 1))
+
+    def test_source_roster_rejects_removed_renamed_duplicate_disabled_and_hooked_methods(self):
+        root = ci_common.REPO_ROOT / "providers/compiler-fixtures"
+        for filename in self.source_rosters:
+            source = (root / filename).read_text(encoding="utf-8")
+            tree = ast.parse(source)
+            cls = next(node for node in tree.body if isinstance(node, ast.ClassDef))
+            method = next(node for node in cls.body if isinstance(node, ast.FunctionDef) and node.name.startswith("test_"))
+            lines = source.splitlines(keepends=True)
+            body = "".join(lines[method.lineno - 1:method.end_lineno])
+            declaration = "    def " + method.name + "("
+            class_declaration = "class " + cls.name + "(unittest.TestCase):\n"
+            mutations = (
+                "".join(lines[:method.lineno - 1] + lines[method.end_lineno:]),
+                "".join(lines[:method.end_lineno]) + body + "".join(lines[method.end_lineno:]),
+                source.replace(declaration, "    def test_unreviewed_name(", 1),
+                source.replace(declaration, '    @unittest.skip("synthetic")\n' + declaration, 1),
+                source.replace(declaration, "    async def " + method.name + "(", 1),
+                source.replace(class_declaration, '@unittest.skip("synthetic")\n' + class_declaration, 1),
+                source.replace(class_declaration, class_declaration + "    __unittest_skip__ = True\n", 1),
+                source.replace(class_declaration, "class " + cls.name + "(unittest.IsolatedAsyncioTestCase):\n", 1),
+                source + "\ndef load_tests(loader, tests, pattern):\n    return tests\n",
+                source + "\nload_tests = lambda loader, tests, pattern: tests\n",
+            )
+            for ordinal, changed in enumerate(mutations):
+                with self.subTest(filename=filename, mutation=ordinal):
+                    self.assertNotEqual(source, changed)
+                    with self.assertRaises(AssertionError):
+                        self.assert_source_roster(filename, changed)
+
+    def test_report_collisions_collector_reclassification_and_extra_raw_uploads_are_rejected(self):
+        for profile in self.profiles:
+            reports = self.pair(profile)
+            for original, replacement in ((reports[0], PYTHON_REPORTS[0]), (reports[1], LIVE_REPORTS[1])):
+                with self.subTest(profile=profile["stem"], collision=replacement):
+                    self.assert_mutation_rejected(profile["run"], original, replacement, self.assert_separate_reports)
+            collector = "Collect actual suites and artifact identities, including failures"
+            for replacement in ("--command-result " + reports[0], '--reports "' + reports[1] + '"'):
+                with self.subTest(profile=profile["stem"], reclassification=replacement):
+                    self.assert_mutation_rejected(collector, "--command-result build/ci-evidence/package-report.json",
+                                                  replacement, self.assert_separate_reports)
+            original = "            " + reports[1] + "\n"
+            for extra in ("build/ci-evidence/" + profile["stem"] + "/raw/**", "build/ci-evidence/raw/**", reports[0]):
+                with self.subTest(profile=profile["stem"], extra=extra):
+                    self.assert_mutation_rejected(profile["upload"], original, original + "            " + extra + "\n",
+                                                  self.assert_separate_reports)
+
+
 class LiveSupervisorWorkflowTests(unittest.TestCase):
     """Authored routing/mutation controls only; no native run or qualification."""
 
@@ -1219,13 +2132,17 @@ class LiveSupervisorWorkflowTests(unittest.TestCase):
         # the probe, its directory/glob, local phase/failure files or raw traces.
         allowed = set(expected) | set(DistributionUploadWorkflowTests.inventory_outputs) \
             | set(DistributionUploadWorkflowTests.review_outputs) \
-            | set(DistributionUploadWorkflowTests.archive_paths) | {
+            | set(DistributionUploadWorkflowTests.archive_paths) | set(CompilerSourceClosureWorkflowTests.reports) | {
                 "modules/*/build/test-results/**/*.xml", "tests/audit/build/test-results/**/*.xml",
                 "modules/kernel/build/reports/stress/*.json",
                 DistributionUploadWorkflowTests.archive_output,
+                "build/ci-evidence/compiler-breadth/python-checks.json",
+                "build/ci-evidence/compiler-breadth/python-checks.xml",
+                "build/ci-evidence/checker-activation/python-checks.json",
+                "build/ci-evidence/checker-activation/python-checks.xml",
             }
         blocks = re.findall(pattern, document, re.MULTILINE)
-        self.assertEqual(3, len(blocks))
+        self.assertEqual(9, len(blocks))
         published = [line.strip() for block in blocks for line in block.splitlines()]
         for path in published:
             self.assertIn(path, allowed)

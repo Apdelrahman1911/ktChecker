@@ -10,17 +10,22 @@ import kotlin.test.*
 
 /** Actual distributed catalog rows, synthetic model/activation authority; no execution evidence. */
 class ModelLiveFullCatalogTest {
-    @Test fun all1663OwnerRowsAndTheirActivationVectorSurvivePkcEWithoutParentNarrowing(): Unit = ModelLiveHostFixture().use { f ->
+    @Test fun all1665OwnerRowsAndTheirActivationVectorSurvivePkcEWithoutParentNarrowing(): Unit = ModelLiveHostFixture().use { f ->
         val records = listOf("core", "libraries", "platform", "ecosystem").flatMap { name ->
             val resource = requireNotNull(javaClass.getResourceAsStream("/model-live-control-catalog/rules-$name.json")) {
                 "Full-catalog control requires the exact current distribution inventory, never synthetic replacement IDs"
             }
             resource.use { ContractJson.parseToJsonElement(it.readBytes().toString(Charsets.UTF_8)).jsonArray.map { element -> element.jsonObject } }
         }
-        assertEquals(1663, records.size, "A changed full catalog requires deliberate review of this boundary control")
+        assertEquals(1665, records.size, "A changed full catalog requires deliberate review of this boundary control")
         val inventory = OwnerCatalogInventory(Digests.sha256(Digests.canonical(JsonArray(records))),
             records.map { it.getValue("id").jsonPrimitive.content })
-        assertEquals(1663, inventory.ruleIds.size)
+        assertEquals(1665, inventory.ruleIds.size)
+        assertEquals(inventory.ruleIds.distinct().sorted(), inventory.ruleIds)
+        assertEquals("sha256:121660fc2a5aed084688d0c549f9e1bece2ec514e9ace4748211b55fa87cc1c5",
+            Digests.sha256(Digests.canonical(JsonArray(inventory.ruleIds.map(::JsonPrimitive)))))
+        assertContains(inventory.ruleIds, "ktc.compiler.common.error_suppression")
+        assertContains(inventory.ruleIds, "ktc.compiler.common.inapplicable_operator_modifier")
         val activation = PlanActivation(f.modelFixture.configuration, inventory.ruleIds.map {
             PlanRuleActivation(it, true, "synthetic-captured-owner-policy", "Full parent-vector preservation control only")
         })
@@ -40,7 +45,7 @@ class ModelLiveFullCatalogTest {
         val materialized = ModelCompilerJobMaterialization.create(f.request, permit, 1) {}
         for (input in listOf(materialized.original, materialized.archived, materialized.input, materialized.effective)) {
             assertEquals(activationText, input.context.policies["ktchecker.activation-plan"])
-            assertEquals(1663, ContractJson.parseToJsonElement(input.context.policies.getValue("ktchecker.activation-plan"))
+            assertEquals(1665, ContractJson.parseToJsonElement(input.context.policies.getValue("ktchecker.activation-plan"))
                 .jsonObject.getValue("decisions").jsonArray.size)
             assertEquals(inventory.catalogDigest, input.context.policies["ktchecker.catalog-inventory"])
             assertEquals(original.snapshot, input.snapshot)
@@ -58,7 +63,7 @@ class ModelLiveFullCatalogTest {
     @Test fun parentAndCompilerProjectionHaveDistinctFiniteBounds(): Unit = ModelLiveHostFixture().use { f ->
         assertEquals(4096, ModelLiveLimits.PARENT_RULES)
         assertEquals(1024, ModelLiveLimits.COMPILER_RULES)
-        val wide = f.original.copy(requiredRuleIds = List(1663) { "synthetic.parent.$it" })
+        val wide = f.original.copy(requiredRuleIds = List(1665) { "synthetic.parent.$it" })
         assertEquals(wide, freezeModelLiveInput(wide))
         expectModelLiveFailure("compiler_model_live_input_limit") { ModelCompilerAttemptRequest(wide) }
         val tooMany = object : AbstractList<String>() {

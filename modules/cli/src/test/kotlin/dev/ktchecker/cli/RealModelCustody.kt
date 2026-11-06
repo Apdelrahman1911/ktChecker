@@ -3,6 +3,7 @@ package dev.ktchecker.cli
 import dev.ktchecker.compiler.KotlinJvmModelBinding
 import dev.ktchecker.compiler.live.model.ModelCompilerJobMaterialization
 import dev.ktchecker.contracts.*
+import dev.ktchecker.kernel.OwnerFullCatalog1665
 import dev.ktchecker.projectmodel.VerifiedProjectModel
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.workerprotocol.ApplicationWire as Wire
@@ -40,7 +41,7 @@ internal class RealModelCustody(private val generation: () -> RealModelGeneratio
         realExpect(phase in 1..2 && plan.slots.size == 1 && prepared.preparationReasons.isEmpty(), "real_model_custody_plan_not_executable")
         val original = plan.slots.single().input
         val catalog = Catalog()
-        realExpect(original.requiredRuleIds == catalog.ids.sorted() && original.requiredRuleIds.size == 1663,
+        realExpect(original.requiredRuleIds == catalog.ids.sorted() && OwnerFullCatalog1665.accepts(original.requiredRuleIds),
             "real_model_full_catalog_not_preserved")
         val active = validatedActivation(original, catalog)
         val rules = original.requiredRuleIds.filter { active[it]?.active == true && it in app.runtime.provider.supportedRuleIds }
@@ -107,7 +108,7 @@ internal class RealModelCustody(private val generation: () -> RealModelGeneratio
     }
     private fun validateRelation(entry: Expected, value: ModelCompilerJobMaterialization) {
         val p = entry.original; val k = value.archived; val c = value.input; val e = value.effective
-        realExpect(value.original == p && p.requiredRuleIds.size == 1663 && p.execution == null && p.outputRoot == null,
+        realExpect(value.original == p && OwnerFullCatalog1665.accepts(p.requiredRuleIds) && p.execution == null && p.outputRoot == null,
             "real_model_custody_parent_changed")
         val archiveSource = realPath(k.materializedRoot)
         realExpect(archiveSource.fileName.toString() == "sources" && archiveSource.parent.parent == brokerRoot.resolve("inputs") &&

@@ -170,6 +170,59 @@ class KtCheckerOwnerModelObservation {
             get(capture.value, 'getUseFirLT') == true)
         provider == null ? 'provider_absent' : data == null ? 'value_absent' : 'available_empty'
     }
+    /**
+     * Bounded DATA-ONLY failure inventory, emitted BEFORE the strict observer. Even successful
+     * enumeration is NOT a model, argument/output origin or complete applicability statement.
+     * Unsupported shapes still fail observe(); no prefix is imported or admitted.
+     */
+    static Map diagnosticInventory(Object gradle) {
+        def root = gradle.rootProject
+        def source = path(root.projectDir)
+        def output = path(new File(root.findProperty('ktcheckerOwnerOriginOutput').toString())).parent
+        def nonce = root.findProperty('ktcheckerOwnerOriginInvocation')
+        requireFact(nonce instanceof String && (nonce ==~ /[0-9a-f]{32}/))
+        def modules = []; def sourceSets = []; def compilations = []
+        def reasons = ['configuration_input_closure_unproven', 'new_context_applicability_unknown']
+        boolean enumerationReturned = false
+        try {
+            bounded(root.allprojects, 16).each { project ->
+                requireFact(modules.size() < 16)
+                modules << [id: project.path.toString(), directory: logical(source, project.projectDir)]
+                def kotlin = project.extensions.findByName('kotlin')
+                if (kotlin != null) {
+                    bounded(kotlin.sourceSets, 64).each { set ->
+                        requireFact(sourceSets.size() < 256)
+                        sourceSets << [id: "${project.path}|${set.name}".toString(), moduleId: project.path.toString(),
+                            name: set.name.toString(), dependsOn: bounded(set.dependsOn, 64).collect {
+                                "${project.path}|${it.name}".toString() }.sort(),
+                            sourcePaths: files(set.kotlin, 4096).collect { logical(source, it) }.sort(),
+                            resourcePaths: files(set.resources, 4096).collect { logical(source, it) }.sort()]
+                    }
+                    def targets = kotlin.hasProperty('targets') ? bounded(kotlin.targets, 16) : [kotlin.target]
+                    targets.each { target ->
+                        bounded(target.compilations, 64).each { compilation ->
+                            requireFact(compilations.size() < 256)
+                            def task = compilation.compileTaskProvider.get()
+                            compilations << [id: "${project.path}|${target.name}|${compilation.name}".toString(),
+                                moduleId: project.path.toString(), target: target.name.toString(),
+                                platform: target.platformType.toString(), name: compilation.name.toString(),
+                                compileTaskPath: get(task, 'getPath').toString(),
+                                sourceSetIds: bounded(compilation.allKotlinSourceSets, 64).collect {
+                                    "${project.path}|${it.name}".toString() }.sort()]
+                        }
+                    }
+                }
+            }
+            enumerationReturned = true
+        } catch (Exception ignored) {
+            // Retain what was observed as PARTIAL DATA. No exception text, invented row or model.
+            reasons << 'observed_inventory_enumeration_incomplete'
+        }
+        [schemaVersion: 1, adapter: 'ktchecker/owner-model-data-only-inventory/1', invocationId: nonce,
+            sourceRoot: source.toString(), ownerOutput: output.toString(), dataOnly: true,
+            complete: false, newApplicability: 'unknown', enumerationReturned: enumerationReturned,
+            reasons: reasons, modules: modules, sourceSets: sourceSets, compilations: compilations]
+    }
     static Map observe(Object gradle, Object settings, Object selectedTask, Object taskGraph) {
         def root = gradle.rootProject
         def source = path(root.projectDir)
@@ -298,6 +351,12 @@ gradle.settingsEvaluated { settings -> ownerSettings = settings }
 gradle.taskGraph.whenReady { graph ->
     def exporter = gradle.rootProject.tasks.named('ktCheckerModelExport').get()
     exporter.doFirst {
+        def data = KtCheckerOwnerModelObservation.diagnosticInventory(gradle)
+        byte[] inventory = JsonOutput.toJson(data).getBytes('UTF-8')
+        KtCheckerOwnerModelObservation.requireFact(inventory.length > 0 && inventory.length <= 4194304)
+        def ownerOutput = new File(gradle.rootProject.findProperty('ktcheckerOwnerOriginOutput').toString()).toPath().parent
+        Files.write(ownerOutput.resolve('owner-inventory.json'), inventory, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+        // Failure remains failure. The presence of inventory never authorizes the strict path.
         def observed = KtCheckerOwnerModelObservation.observe(gradle, ownerSettings, exporter, graph)
         byte[] bytes = JsonOutput.toJson(observed).getBytes('UTF-8')
         KtCheckerOwnerModelObservation.requireFact(bytes.length > 0 && bytes.length <= 4194304)

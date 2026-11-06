@@ -1,0 +1,487 @@
+{
+  "schema_version": 1,
+  "source_plan_id": "diagnostic-gaps-445-source-v1",
+  "status": "private_candidate_unadmitted_unrun",
+  "created_at_utc": "2026-11-05T23:01:57.111776+00:00",
+  "mapping_contract_requirement": {
+    "proposed_contract_id": "kotlin-compiler-2.4.21-common445-u2-v1",
+    "expected_mapping_count": 445,
+    "expected_jvm_applicable_mapping_count": 402,
+    "expected_resource_sha256": null,
+    "expected_adopted_catalog_sha256": null,
+    "binding_state": "unbound_candidate_requires_root_review_and_fresh_successor_pins",
+    "current443_resource_is_compatible": false,
+    "missing_binding_must_deny_before_any_provider_or_child_call": true
+  },
+  "kotlin_version": "2.4.21",
+  "target": "jvm",
+  "expected_source_file_count": 8,
+  "proposed_input_case_count": 9,
+  "ordered_cases_are_execution_authority": false,
+  "budgets_permits_control_jobs_and_runtime_hookup": "not_authored_or_admitted_by_this_source_plan",
+  "ordinary_six_kind_assessment": false,
+  "qualification": "none",
+  "current_report_scope_change": null,
+  "point_policy": "one_based_line_zero_based_UTF16_reported_point_within_source_token_region_no_invented_end_span",
+  "receipt_requirements": [
+    "Root must bind exact445 resource/catalog/source/bytecode/plan identity and closed authorized scheduling before launch. This manifest grants no execution authority.",
+    "Retain every actual stdout/stderr byte and full parser inventory separately from provider residual-only rawDiagnostics, including malformed/truncated output and all unexpected IDs/errors/failures.",
+    "Known selected counts require exact upstream/stable-ID pairing and equal full-parser/normalized actual point-message multisets; regions never replace actual points.",
+    "Expected operator ERROR retains nonzero exit and failed provider. No warning absence, source suppression or successful compilation establishes clean/qualified coverage.",
+    "Hard-error suppression stays unknown even on exit0; null error/exit expectations cannot become successful matches.",
+    "Warning sibling is not an alias. Mapped-but-unselected IDs remain residual raw with mapped-outside-selection reasons. Unexpected errors invalidate known-case expectations without disappearing.",
+    "Current source-suppression scan may mark even the lookalike annotation unknown. Its negative concerns compiler ID absence, not provider clean coverage."
+  ],
+  "cases": [
+    {
+      "case_id": "error_suppression_positive_valid_body",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/positive.kt",
+      "source_sha256": "f780251fe2aa94d7ea419fc21c989229be2339c5900ecb8591713d32070f9906",
+      "source_bytes": 69,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "Error-name annotation on a valid body; no invalid operator.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 1,
+          "expected_selected_finding_count": 1,
+          "point_regions": [
+            {
+              "line": 1,
+              "start_column": 10,
+              "end_column_exclusive": 42,
+              "source_token": "\"INAPPLICABLE_OPERATOR_MODIFIER\""
+            }
+          ],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "exit0",
+      "provider_status_expectation": "partial",
+      "hard_error_suppression_observation_only": false,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    },
+    {
+      "case_id": "error_suppression_negative_warning_name",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/negative_warning_name.kt",
+      "source_sha256": "6f975f5abf6fe3313ccd497b2baa9e2569a78b6074be79d076d32feb91f53755",
+      "source_bytes": 55,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "Same valid body; the annotation names a warning, not a hard error.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "exit0",
+      "provider_status_expectation": "partial",
+      "hard_error_suppression_observation_only": false,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    },
+    {
+      "case_id": "error_suppression_self_suppression_resists",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/self_suppression.kt",
+      "source_sha256": "3db7d0b580109ce5b11c72f1f36501833e2f23f90a86bb836ff7343dfcc0bfcf",
+      "source_bytes": 90,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "ERROR_SUPPRESSION itself cannot be annotation-suppressed; the second literal warns.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 1,
+          "expected_selected_finding_count": 1,
+          "point_regions": [
+            {
+              "line": 1,
+              "start_column": 31,
+              "end_column_exclusive": 63,
+              "source_token": "\"INAPPLICABLE_OPERATOR_MODIFIER\""
+            }
+          ],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "exit0",
+      "provider_status_expectation": "partial",
+      "hard_error_suppression_observation_only": false,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    },
+    {
+      "case_id": "error_suppression_resolved_annotation_negative",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/negative_resolved_annotation.kt",
+      "source_sha256": "c99c7544e3c6cfd6cb4678b4362f9220be67b59ce9c6041c80626e016a994b8d",
+      "source_bytes": 158,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "Same spelling resolves to user-defined Suppress, not kotlin.Suppress.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "exit0",
+      "provider_status_expectation": "partial",
+      "hard_error_suppression_observation_only": false,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    },
+    {
+      "case_id": "error_suppression_option_off_same_positive_bytes",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/error_suppression/positive.kt",
+      "source_sha256": "f780251fe2aa94d7ea419fc21c989229be2339c5900ecb8591713d32070f9906",
+      "source_bytes": 69,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4",
+        "-Xwarning-level=ERROR_SUPPRESSION:disabled"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "Reuse exact positive source with already allowed warning-level disable. Absence is unknown/disabled coverage.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "exit0",
+      "provider_status_expectation": "partial",
+      "hard_error_suppression_observation_only": false,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    },
+    {
+      "case_id": "inapplicable_operator_positive_no_loop",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/positive.kt",
+      "source_sha256": "acc2d15a2cffcd7007aef4c261387a5a7b04c6ab111f7a35abbc752483cd8ead",
+      "source_bytes": 53,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "Explicit member hasNext must return Boolean. No for-loop or use-site HAS_NEXT error.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": 1,
+          "expected_selected_finding_count": 1,
+          "point_regions": [
+            {
+              "line": 2,
+              "start_column": 4,
+              "end_column_exclusive": 12,
+              "source_token": "operator"
+            }
+          ],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "nonzero",
+      "provider_status_expectation": "failed",
+      "hard_error_suppression_observation_only": false,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    },
+    {
+      "case_id": "inapplicable_operator_negative_boolean",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/negative_boolean.kt",
+      "source_sha256": "1e4ece9144ab8578ab1df8f8c53b04d520421701309e62613e16f7d9dcad9352",
+      "source_bytes": 60,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "Fix the signature/body while retaining operator and member context.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "exit0",
+      "provider_status_expectation": "partial",
+      "hard_error_suppression_observation_only": false,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    },
+    {
+      "case_id": "inapplicable_operator_negative_no_operator",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/negative_no_operator.kt",
+      "source_sha256": "e27051bd9af60d9ea420fee80b0a03e89314ba892c2e2178c28cd1f7501e1f7d",
+      "source_bytes": 44,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "Keep Int-returning member; remove explicit operator applicability.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": 0,
+          "expected_selected_finding_count": 0,
+          "point_regions": [],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "exit0",
+      "provider_status_expectation": "partial",
+      "hard_error_suppression_observation_only": false,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    },
+    {
+      "case_id": "inapplicable_operator_suppression_unknown",
+      "path": "providers/compiler-fixtures/cohort-plans/diagnostic-gaps-445-cases/inapplicable_operator_modifier/suppression_observation.kt",
+      "source_sha256": "b0b57cd443c3eba96e13552363fb502da30ad0657c7323d5e102fcc3cb14a6b9",
+      "source_bytes": 101,
+      "compiler_flags": [
+        "-jvm-target",
+        "17",
+        "-language-version",
+        "2.4",
+        "-api-version",
+        "2.4"
+      ],
+      "selected_rule_ids": [
+        "ktc.compiler.common.error_suppression",
+        "ktc.compiler.common.inapplicable_operator_modifier"
+      ],
+      "purpose": "Unsupported hard-error suppression observation. Policy-warning expectation does not define operator error count or exit.",
+      "source_derived_expectations": [
+        {
+          "upstream_id": "ERROR_SUPPRESSION",
+          "stable_id": "ktc.compiler.common.error_suppression",
+          "severity": "warning",
+          "expected_full_parser_count": 1,
+          "expected_selected_finding_count": 1,
+          "point_regions": [
+            {
+              "line": 2,
+              "start_column": 14,
+              "end_column_exclusive": 46,
+              "source_token": "\"INAPPLICABLE_OPERATOR_MODIFIER\""
+            }
+          ],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        },
+        {
+          "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+          "stable_id": "ktc.compiler.common.inapplicable_operator_modifier",
+          "severity": "error",
+          "expected_full_parser_count": null,
+          "expected_selected_finding_count": null,
+          "point_regions": [
+            {
+              "line": 3,
+              "start_column": 4,
+              "end_column_exclusive": 12,
+              "source_token": "operator"
+            }
+          ],
+          "expectation_basis": "upstream_SOURCE_not_observed_emission"
+        }
+      ],
+      "compiler_exit_expectation": "unknown",
+      "provider_status_expectation": "unknown",
+      "hard_error_suppression_observation_only": true,
+      "expected_outcome_matched": null,
+      "execution_state": "not_run",
+      "qualification": "none",
+      "counts_as_current_test_or_implementation_evidence": false
+    }
+  ]
+}

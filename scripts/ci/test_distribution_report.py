@@ -1,9 +1,10 @@
-"""Adversarial inventory infrastructure tests using synthetic JARs/POMs only."""
+"""Synthetic inventory controls and read-only distribution build-configuration contracts."""
 
 import argparse
 import copy
 import io
 import json
+import re
 from pathlib import Path
 import shutil
 import tempfile
@@ -328,6 +329,52 @@ class DistributionInventoryTests(unittest.TestCase):
         self.assertEqual(["Actual dependency inventory failed: ValueError"], result["errors"])
         self.assertNotIn(str(self.root), json.dumps(result))
         self.assertFalse(result["release_qualified"])
+
+
+class DistributionBuildConfigurationTests(unittest.TestCase):
+    """Read-only source contracts, not Gradle resolution or installed/runtime evidence."""
+
+    COMPILER_ROOTS = (
+        "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21",
+        "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.21",
+        "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.21",
+    )
+
+    def test_preselected_model_compiler_roots_are_fixed_packaging_dependencies(self):
+        root = Path(__file__).resolve().parents[2]
+        source = (root / "modules/cli/build.gradle.kts").read_text(encoding="utf-8")
+        # Match all direct declarations for the selected compiler/BTA families,
+        # including a forbidden implementation/api/runtimeOnly duplicate.
+        declarations = re.findall(
+            r'^\s*(\w+)\("(org\.jetbrains\.kotlin:kotlin-'
+            r'(?:compiler-(?:embeddable|runner)|build-tools-[\w-]+|tooling-core|daemon-client):[^"\n]+)"\)\s*$',
+            source, re.MULTILINE,
+        )
+        self.assertEqual([("bundledCompiler", coordinate) for coordinate in self.COMPILER_ROOTS], declarations)
+
+    def test_compiler_configuration_has_only_isolated_copy_and_manifest_uses(self):
+        root = Path(__file__).resolve().parents[2]
+        source = (root / "modules/cli/build.gradle.kts").read_text(encoding="utf-8")
+        # This intentionally covers only the reviewed literal DSL surface, not
+        # arbitrary executable Gradle syntax. New wiring requires renewed review.
+        uses = [line.strip() for line in source.splitlines()
+                if re.search(r'\bbundledCompiler\b', line) and not line.lstrip().startswith("//")]
+        self.assertEqual([
+            'val bundledCompiler = configurations.create("bundledCompiler") {',
+            *(f'bundledCompiler("{coordinate}")' for coordinate in self.COMPILER_ROOTS),
+            'from(bundledCompiler) { into("providers/compiler") }',
+        ], uses)
+        configuration = re.search(
+            r'^val bundledCompiler = configurations\.create\("bundledCompiler"\) \{\n(.*?)^\}',
+            source, re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(configuration)
+        self.assertEqual(["isCanBeConsumed = false", "isCanBeResolved = true"],
+                         [line.strip() for line in configuration.group(1).splitlines() if line.strip()])
+        self.assertIn('from(bundledCompilerModel) { into("providers/compiler-model") }', source)
+        manifest = (root / "scripts/ci/distribution-dependencies.init.gradle").read_text(encoding="utf-8")
+        self.assertIn("['runtimeClasspath', 'bundledCompiler'].each { name ->", manifest)
+        self.assertIn("configuration: 'bundledCompilerModel', artifactIdentity: modelWorker.get().path,", manifest)
 
 
 if __name__ == "__main__":

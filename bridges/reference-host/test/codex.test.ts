@@ -34,6 +34,7 @@ createInterface({input:process.stdin}).on('line',line=>{
  else if(r.method==='thread/turns/list')result={data:state.turns.map(x=>({id:x.id,status:'completed'})),nextCursor:null};
  else if(r.method==='thread/items/list')result={data:r.params.turnId?state.turns.filter(x=>x.id===r.params.turnId).map(x=>({turnId:x.id,item:{type:'agentMessage',id:x.itemId,text:x.text}})):state.items.map(x=>({item:{...x,type:'functionCallOutput'}})),nextCursor:null};
  else if(r.method==='turn/start'){
+  if(state.crashWithoutPublicTurn){state.crashWithoutPublicTurn=false;save();return process.exit(0);}
   const input=JSON.parse(r.params.toolOutput.output);
   const contexts=input.contexts.map(c=>({...c,digest:c.contextDigest,marker:JSON.parse(c.text.slice(c.text.indexOf('\\n')+1)).marker}));
   const text=state.markerOnly?'marker only':JSON.stringify(expectedPublicResponse({...input,contexts}));
@@ -138,6 +139,162 @@ test('synthetic lost turn response reconciles same saved invocation after contro
   assert.equal((await f.read()).turns.length, 1); assert.equal((await f.read()).items.length, 1);
 });
 
+
+test('synthetic bounded backlog reconciles the exact lost-response batch before any resumed follow-up', {timeout:20_000}, async t=>{
+  const f=await fixture(t,{crashAfterTurn:true}),options={...f.options,effort:'max'};
+  let port=await CodexHostPort.open(options);t.after(()=>port.close());
+  let journal=new InboxJournal(join(f.dir,'bounded-inbox'),port.binding);t.after(()=>journal.close());
+  const broker=new KernelBroker(f.kernel,f.r);
+  let adapter=new ReferenceHost(journal,broker,port);
+  const events=['event-z','event-y','event-x'].map((id,index)=>event(f.r,id,undefined,index+1));
+  f.kernel.eventsByClient.set(f.r.binding.clientId,events);await adapter.pollOnce();await adapter.drainContext();
+  const items=events.map(value=>journal.read().inbox[value.eventId]!.item!);
+  const sizes=items.map(item=>Buffer.byteLength(item.text)),maxContextBytes=sizes[0]!+sizes[1]!;
+  assert(sizes.every(size=>size<=maxContextBytes));assert(sizes.reduce((a,b)=>a+b,0)>maxContextBytes);
+  adapter=new ReferenceHost(journal,broker,port,{maxContextBytes});
+  await assert.rejects(adapter.requestModelObservation(),/codex_disconnected/);
+  const saved=structuredClone(journal.read().pendingModelRequest!);
+  assert.deepEqual(saved.contexts,items.slice(0,2).sort((a,b)=>a.marker.localeCompare(b.marker)));
+  const applicationRequest=structuredClone(port.evidence()[0]!.applicationRequest);
+  const originalTurn=(await f.read()).requests.find(request=>request.method==='turn/start')!;
+  assert.equal(originalTurn.params.effort,'max');assert.equal((await f.read()).turns.length,1);
+  assert.equal(f.kernel.acked.size,3);assert.equal(f.kernel.observed.size,0);
+  await port.close();journal.close();
+  // This new lower-marker event arrives while the controller is offline, not in the saved request.
+  events.push(event(f.r,'event-a',undefined,4));
+  port=await CodexHostPort.open(options);journal=new InboxJournal(join(f.dir,'bounded-inbox'),port.binding);
+  adapter=new ReferenceHost(journal,broker,port,{maxContextBytes});
+  assert.equal(port.resumed,true);assert.deepEqual(journal.read().pendingModelRequest,saved);
+  await adapter.pollOnce();await adapter.drainContext();
+  assert.deepEqual(journal.read().pendingModelRequest,saved);assert.equal(f.kernel.acked.size,4);
+  assert.equal(f.kernel.observed.size,0);assert.equal((await f.read()).turns.length,1);
+  const calls:ModelRequest[]=[];const invoke=port.invokeModel.bind(port);
+  port.invokeModel=async request=>{calls.push(structuredClone(request));return invoke(request);};
+  // A lower restart budget must not trim/re-batch an already-sent uncertain request.
+  const narrower=new ReferenceHost(journal,broker,port,{maxContextBytes:Math.max(...sizes)});
+  await assert.rejects(narrower.requestModelObservation(),/required_context_exceeds_budget/);
+  assert.deepEqual(journal.read().pendingModelRequest,saved);assert.equal(calls.length,0);
+  assert.equal((await adapter.requestModelObservation()).observed,true);
+  assert.deepEqual(calls,[saved]);assert.equal(journal.read().pendingModelRequest,null);
+  const proof=await captureApplicationEvidence(port,journal);
+  assert.equal(proof.invocationId,saved.invocationId);assert.deepEqual(proof.applicationRequest,applicationRequest);
+  assert.equal(proof.model,'gpt-6-astra');assert.equal(proof.effort,'max');
+  const recovered=await f.read();
+  assert.deepEqual(recovered.requests.filter(request=>request.method==='turn/start'),[originalTurn]);
+  assert.equal(recovered.turns.length,1);assert.equal(recovered.items.length,4);assert(!recovered.methods.includes('thread/list'));
+  assert.deepEqual([...f.kernel.observed].sort(),['event-y','event-z']);
+  for(const id of ['event-x','event-a']){
+    assert.equal(journal.read().inbox[id]!.acknowledged,true);assert.equal(journal.read().inbox[id]!.observed,false);
+  }
+  const cut=await adapter.prepareFinal();
+  assert.equal((await adapter.completeFinal(cut.cutId)).allowed,false);assert.equal(adapter.mutationFence().allowed,false);
+  // A separately authorized call may now create a NEW request for just the remaining contexts.
+  assert.equal((await adapter.requestModelObservation()).observed,true);
+  assert.equal(calls.length,2);assert.notEqual(calls[1]!.invocationId,saved.invocationId);
+  assert.deepEqual(calls[1]!.contexts,events.slice(2).map(value=>journal.read().inbox[value.eventId]!.item!).sort((a,b)=>a.marker.localeCompare(b.marker)));
+  assert.equal(f.kernel.observed.size,4);assert.equal((await f.read()).turns.length,2);assert.equal((await f.read()).items.length,4);
+  assert.equal((await f.read()).requests.filter(request=>request.method==='turn/start').length,2);
+  assert(port.evidence().every(value=>value.model==='gpt-6-astra'&&value.effort==='max'));
+  const complete=await adapter.completeFinal(cut.cutId);
+  assert.equal(complete.allowed,true);assert.equal(complete.actionPerformed,false);assert.equal(adapter.mutationFence().allowed,true);
+});
+
+test('synthetic bounded backlog never skips an unresolved disconnected batch to invoke newer work', {timeout:20_000}, async t=>{
+  const f=await fixture(t,{crashWithoutPublicTurn:true}),options={...f.options,effort:'max'};
+  let port=await CodexHostPort.open(options);t.after(()=>port.close());
+  let journal=new InboxJournal(join(f.dir,'unknown-inbox'),port.binding);t.after(()=>journal.close());
+  const broker=new KernelBroker(f.kernel,f.r);let adapter=new ReferenceHost(journal,broker,port);
+  const events=['event-z','event-y'].map((id,index)=>event(f.r,id,undefined,index+1));
+  f.kernel.eventsByClient.set(f.r.binding.clientId,events);await adapter.pollOnce();await adapter.drainContext();
+  const items=events.map(value=>journal.read().inbox[value.eventId]!.item!);
+  const maxContextBytes=Math.max(...items.map(item=>Buffer.byteLength(item.text)));
+  adapter=new ReferenceHost(journal,broker,port,{maxContextBytes});
+  await assert.rejects(adapter.requestModelObservation(),/codex_disconnected/);
+  const saved=structuredClone(journal.read().pendingModelRequest!);assert.deepEqual(saved.contexts,[items[0]]);
+  await port.close();journal.close();events.push(event(f.r,'event-a',undefined,3));
+  port=await CodexHostPort.open(options);journal=new InboxJournal(join(f.dir,'unknown-inbox'),port.binding);
+  adapter=new ReferenceHost(journal,broker,port,{maxContextBytes});await adapter.pollOnce();await adapter.drainContext();
+  // No recoverable completed public turn is NOT evidence that no inference happened.
+  // Even repeated explicit recovery calls may only reconcile this exact saved request.
+  for(let attempt=0;attempt<2;attempt++){
+    await assert.rejects(adapter.requestModelObservation(),/codex_model_request_outcome_unknown/);
+    assert.deepEqual(journal.read().pendingModelRequest,saved);assert.equal(f.kernel.observed.size,0);
+  }
+  const state=await f.read();
+  assert.equal(state.requests.filter(request=>request.method==='turn/start').length,1);
+  assert.equal(state.turns.length,0);assert.equal(state.items.length,3);assert.equal(f.kernel.acked.size,3);
+  assert.equal(port.evidence().length,1);assert.equal(port.evidence()[0]!.status,'uncertain');
+  const cut=await adapter.prepareFinal();
+  assert.equal((await adapter.completeFinal(cut.cutId)).allowed,false);assert.equal(adapter.mutationFence().allowed,false);
+});
+
+for(const obstruction of ['oversized','insertion-failed'] as const){
+  test(`synthetic saved reconciliation precedes ${obstruction} new context without dropping its obligation`, {timeout:20_000}, async t=>{
+    const f=await fixture(t,{crashAfterTurn:true}),options={...f.options,effort:'max'};
+    let port=await CodexHostPort.open(options);t.after(()=>port.close());
+    let journal=new InboxJournal(join(f.dir,'pending-priority-inbox'),port.binding);t.after(()=>journal.close());
+    const broker=new KernelBroker(f.kernel,f.r);let adapter=new ReferenceHost(journal,broker,port);
+    const original=event(f.r,'event-z',undefined,1),events=[original];
+    f.kernel.eventsByClient.set(f.r.binding.clientId,events);await adapter.pollOnce();await adapter.drainContext();
+    const originalItem=structuredClone(journal.read().inbox[original.eventId]!.item!);
+    const maxContextBytes=Buffer.byteLength(originalItem.text);
+    adapter=new ReferenceHost(journal,broker,port,{maxContextBytes});
+    await assert.rejects(adapter.requestModelObservation(),/codex_disconnected/);
+    const saved=structuredClone(journal.read().pendingModelRequest!);
+    assert.deepEqual(saved.contexts,[originalItem]);
+    const before=await f.read(),originalStarts=before.requests.filter(request=>request.method==='turn/start');
+    assert.equal(originalStarts.length,1);assert.equal(before.turns.length,1);assert.equal(before.items.length,1);
+    assert.equal(f.kernel.acked.size,1);assert.equal(f.kernel.observed.size,0);
+    await port.close();journal.close();
+
+    port=await CodexHostPort.open(options);journal=new InboxJournal(join(f.dir,'pending-priority-inbox'),port.binding);
+    adapter=new ReferenceHost(journal,broker,port,{maxContextBytes});
+    assert.equal(port.resumed,true);assert.deepEqual(journal.read().pendingModelRequest,saved);
+    const late=event(f.r,'event-y',undefined,2);
+    if(obstruction==='oversized'){
+      const payload=JSON.parse(late.payload) as {result:{findings:{diagnosis:string}[]}};
+      payload.result.findings[0]!.diagnosis+='x'.repeat(maxContextBytes);
+      late.payload=canonical(payload);late.payloadDigest=digest(late.payload);
+    }
+    events.push(late);
+    let insertionAttempts=0;
+    if(obstruction==='insertion-failed')port.insertContext=async()=>{insertionAttempts++;throw new Error('synthetic_required_insertion_failure');};
+    const resumedCalls:ModelRequest[]=[];const invoke=port.invokeModel.bind(port);
+    port.invokeModel=async request=>{resumedCalls.push(structuredClone(request));return invoke(request);};
+    // Commit the new obligation, but do not let an explicit preparatory drain hide the ordering under test.
+    await adapter.pollOnce();
+    assert.deepEqual(journal.read().pendingModelRequest,saved);
+    assert.equal(journal.read().inbox[late.eventId]!.item,null);
+    assert.equal((await adapter.requestModelObservation()).observed,true);
+    assert.deepEqual(resumedCalls,[saved]);assert.equal(journal.read().pendingModelRequest,null);
+    assert.deepEqual([...f.kernel.observed],[original.eventId]);assert.equal(f.kernel.acked.size,1);
+    assert.equal(insertionAttempts,0);
+    const recovered=await f.read();
+    assert.deepEqual(recovered.requests.filter(request=>request.method==='turn/start'),originalStarts);
+    assert.equal(recovered.turns.length,1);assert.equal(recovered.items.length,1);
+    const blocked=journal.read().inbox[late.eventId]!;
+    assert.equal(blocked.event.payload,late.payload);assert.equal(blocked.event.payloadDigest,late.payloadDigest);
+    assert.equal(blocked.item,null);assert.equal(blocked.inserted,null);assert.equal(blocked.acknowledged,false);
+    assert.equal(blocked.observation,null);assert.equal(blocked.observed,false);
+    assert.equal(adapter.mutationFence().allowed,false);
+
+    // Once pending is gone, ordinary draining must STILL expose the obstruction before any new invocation.
+    const failure=obstruction==='oversized'?/required_context_exceeds_budget/:/synthetic_required_insertion_failure/;
+    await assert.rejects(adapter.requestModelObservation(),failure);
+    assert.deepEqual(resumedCalls,[saved]);assert.equal(journal.read().pendingModelRequest,null);
+    assert.equal(insertionAttempts,obstruction==='insertion-failed'?1:0);
+    const retained=journal.read().inbox[late.eventId]!;
+    assert.deepEqual(retained.event,late);assert.equal(retained.inserted,null);assert.equal(retained.acknowledged,false);
+    assert.equal(retained.observation,null);assert.equal(retained.observed,false);
+    assert.deepEqual(journal.read().inbox[original.eventId]!.item,originalItem);
+    assert.deepEqual([...f.kernel.observed],[original.eventId]);assert.equal(f.kernel.acked.size,1);
+    assert.equal(adapter.mutationFence().allowed,false);
+    const finalState=await f.read();
+    assert.deepEqual(finalState.requests.filter(request=>request.method==='turn/start'),originalStarts);
+    assert.equal(finalState.turns.length,1);assert.equal(finalState.items.length,1);
+  });
+}
+
 test('changed Codex model is rejected before any turn, and live controller lease is exclusive', async t => {
   const f = await fixture(t, { wrongModel: true }); await assert.rejects(CodexHostPort.open(f.options), /codex_requested_model_not_confirmed/);
   assert.equal((await f.read()).turns.length, 0);
@@ -219,4 +376,60 @@ test('mismatched persisted invocation effort rejects owner selection even when s
   store.edit(state => { Object.values(state.invocations)[0]!.effort = 'low'; }); store.close();
   await assert.rejects(CodexHostPort.open(options), /codex_session_binding_mismatch/);
   assert.equal((await f.read()).turns.length, 1);
+});
+
+
+test('synthetic saved reconciliation publishes its proof despite unrelated ACK backpressure without resending', {timeout:20_000}, async t=>{
+  const f=await fixture(t,{crashAfterTurn:true}),options={...f.options,effort:'max'};
+  let port=await CodexHostPort.open(options);t.after(()=>port.close());
+  let journal=new InboxJournal(join(f.dir,'receipt-priority-inbox'),port.binding);t.after(()=>journal.close());
+  const broker=new KernelBroker(f.kernel,f.r);let adapter=new ReferenceHost(journal,broker,port);
+  const original=event(f.r,'event-z',undefined,1),late=event(f.r,'event-y',undefined,2),events=[original];
+  f.kernel.eventsByClient.set(f.r.binding.clientId,events);await adapter.pollOnce();await adapter.drainContext();
+  await assert.rejects(adapter.requestModelObservation(),/codex_disconnected/);
+  const saved=structuredClone(journal.read().pendingModelRequest!);
+  const applicationRequest=structuredClone(port.evidence()[0]!.applicationRequest);
+  const originalStarts=(await f.read()).requests.filter(request=>request.method==='turn/start');
+  assert.equal(originalStarts.length,1);assert.equal(originalStarts[0]!.params.effort,'max');
+  await port.close();journal.close();events.push(late);
+  port=await CodexHostPort.open(options);journal=new InboxJournal(join(f.dir,'receipt-priority-inbox'),port.binding);
+  adapter=new ReferenceHost(journal,broker,port);assert.equal(port.resumed,true);
+  const ack=broker.ack.bind(broker),ackFailure=new Error('synthetic_unrelated_ack_backpressure');
+  let rejectLateAck=true,lateAckAttempts=0;
+  broker.ack=async(eventIds,receipt)=>{
+    if(eventIds.includes(late.eventId)){
+      lateAckAttempts++;if(rejectLateAck)throw ackFailure;
+    }
+    return ack(eventIds,receipt);
+  };
+  await adapter.pollOnce();await assert.rejects(adapter.drainContext(),error=>error===ackFailure);
+  const retained=structuredClone(journal.read().inbox[late.eventId]!);
+  assert(retained.inserted);assert.equal(retained.acknowledged,false);assert.equal(retained.observation,null);
+  assert.deepEqual(journal.read().pendingModelRequest,saved);
+  const resumedCalls:ModelRequest[]=[];const invoke=port.invokeModel.bind(port);
+  port.invokeModel=async request=>{resumedCalls.push(structuredClone(request));return invoke(request);};
+  // The failed unrelated receipt still rejects this call, but cannot withhold a ready recovered proof.
+  await assert.rejects(adapter.requestModelObservation(),error=>error===ackFailure);
+  assert.deepEqual(resumedCalls,[saved]);assert.equal(journal.read().pendingModelRequest,null);
+  assert.equal(journal.read().inbox[original.eventId]!.observed,true);
+  assert.deepEqual([...f.kernel.observed],[original.eventId]);assert.equal(f.kernel.acked.size,1);
+  assert.deepEqual(journal.read().inbox[late.eventId],retained);assert.equal(adapter.mutationFence().allowed,false);
+  const observation=structuredClone(journal.read().inbox[original.eventId]!.observation!);
+  const proof=await captureApplicationEvidence(port,journal);
+  assert.equal(proof.invocationId,saved.invocationId);assert.deepEqual(proof.applicationRequest,applicationRequest);
+  assert.equal(proof.model,'gpt-6-astra');assert.equal(proof.effort,'max');
+  // The retained ACK error also blocks a NEW invocation; recovery must not resend the old one.
+  await assert.rejects(adapter.requestModelObservation(),error=>error===ackFailure);
+  assert.deepEqual(resumedCalls,[saved]);assert.equal(journal.read().pendingModelRequest,null);
+  assert.deepEqual(journal.read().inbox[original.eventId]!.observation,observation);
+  rejectLateAck=false;await adapter.syncReceipts();assert.equal(lateAckAttempts,4);
+  const after=journal.read().inbox[late.eventId]!;
+  assert.deepEqual(after.event,late);assert.deepEqual(after.item,retained.item);assert.deepEqual(after.inserted,retained.inserted);
+  assert.equal(after.acknowledged,true);assert.equal(after.observation,null);assert.equal(after.observed,false);
+  const cut=await adapter.prepareFinal(),decision=await adapter.completeFinal(cut.cutId);
+  assert.equal(decision.allowed,false);assert.equal(decision.actionPerformed,false);assert.equal(adapter.mutationFence().allowed,false);
+  const state=await f.read();assert.deepEqual(state.requests.filter(request=>request.method==='turn/start'),originalStarts);
+  assert.equal(state.turns.length,1);assert.equal(state.items.length,2);assert(!state.methods.includes('thread/list'));
+  assert.deepEqual([...f.kernel.observed],[original.eventId]);assert.equal(f.kernel.acked.size,2);
+  assert.deepEqual(resumedCalls,[saved]);assert.equal(port.evidence().length,1);
 });

@@ -125,6 +125,7 @@ class KotlinJvmCompilerProvider(
         // Installed compiler identities are intrinsic to the approved profile,
         // even for limited requests without an owner-imported toolchain digest.
         val arguments = mutableListOf("-Xmx${compilerHeapMiB}m", "-Dktchecker.compiler.toolchain=${toolchain.digest}",
+            "-Dktchecker.compiler.mapping=${registry.mappingIdentity.contractId}:${registry.mappingIdentity.resourceDigest}",
             "-Dfile.encoding=UTF-8", "-Duser.language=en",
             "-Duser.country=US", "-Djava.io.tmpdir={output}/tmp", "-cp")
         modelBindingDigest?.let { arguments.add(1, KotlinJvmModelBinding.PROFILE_PROPERTY + it) }
@@ -148,14 +149,18 @@ class KotlinJvmCompilerProvider(
     internal fun analyzeObserved(input: AnalysisInput, cancellation: CancellationToken,
         timings: CompilerPhaseTimings): ProviderResult = analyzeWithTimings(input, cancellation, timings)
 
+    /** Owner handle only; the existing test-recorder entry and default path remain separate. */
+    internal fun analyzeObserved(input: AnalysisInput, cancellation: CancellationToken,
+        capture: CompilerCallCapture): ProviderResult = analyzeWithTimings(input, cancellation, capture.timings, capture)
+
     private fun analyzeWithTimings(input: AnalysisInput, cancellation: CancellationToken,
-        timings: CompilerPhaseTimings?): ProviderResult {
+        timings: CompilerPhaseTimings?, capture: CompilerCallCapture? = null): ProviderResult {
         val started = System.nanoTime()
-        return timings.observe(CompilerPhase.PROVIDER_CALL) { analyzeImpl(input, cancellation, started, timings) }
+        return timings.observe(CompilerPhase.PROVIDER_CALL) { analyzeImpl(input, cancellation, started, timings, capture) }
     }
 
     private fun analyzeImpl(input: AnalysisInput, cancellation: CancellationToken, started: Long,
-        timings: CompilerPhaseTimings?): ProviderResult {
+        timings: CompilerPhaseTimings?, capture: CompilerCallCapture?): ProviderResult {
         val request = freeze(input)
         val required = request.requiredRuleIds.distinct()
         fun unavailable(reason: String, status: String = "unavailable"): ProviderResult = ProviderResult(id, status,
@@ -180,7 +185,8 @@ class KotlinJvmCompilerProvider(
         val permit = runCatching { authority.authorize(request) }.getOrNull()
             ?: return unavailable("execution_not_authorized")
         val execution = request.execution ?: return unavailable("execution_profile_missing")
-        if (permit.expectedAnalysisKey != request.analysisKey() || permit.snapshotId != request.snapshot.snapshotId ||
+        val actualKey = request.analysisKey()
+        if (permit.expectedAnalysisKey != actualKey || permit.snapshotId != request.snapshot.snapshotId ||
             permit.materializedRoot.toAbsolutePath().normalize() != Path.of(request.materializedRoot).toAbsolutePath().normalize()) {
             return unavailable("execution_identity_binding_mismatch")
         }
@@ -194,6 +200,7 @@ class KotlinJvmCompilerProvider(
             cancellation.throwIfCancelled()
             if (System.nanoTime() >= deadline) throw ExecutionProblem("compiler_preparation_timeout", "Compiler preparation deadline elapsed")
         }
+        capture?.captureIdentity(actualKey, request, toolchain.digest, registry.mappingIdentity.resourceDigest, compilerHeapMiB)
         val sources: List<SealedCompilerSource>
         try {
             sources = timings.observe(CompilerPhase.INITIAL_VERIFICATION) {
@@ -266,6 +273,7 @@ class KotlinJvmCompilerProvider(
         val outcome = if (System.nanoTime() >= deadline && !cancellation.isCancelled()) ran.copy(
             status = "failed", reasons = (ran.reasons.filterNot { it == "execution_cancelled" } + "compiler_total_timeout").distinct(),
             cancelled = false, timedOut = true) else ran
+        capture?.captureOutcomes(ran, outcome, supportedRuleIds)
         timings.observe(CompilerPhase.EXECUTION_OBSERVER) { executionObserver(request, outcome) }
         return timings.observe(CompilerPhase.RESULT_NORMALIZATION) {
             normalize(request, required, sources, outcome, cancellation, started, modelPermit)
@@ -314,7 +322,8 @@ class KotlinJvmCompilerProvider(
             findings += Finding(mapping.ruleId, "Compiler ${diagnostic.upstreamId}", diagnostic.message,
                 "Actual compiler contract under the selected settings; a warning is not proof of unintended behavior.",
                 diagnostic.location, fingerprint, id, request.context.scope, diagnostic.severity,
-                mapping.kind, mapping.certainty, evidence = Collections.unmodifiableList(listOf(
+                mapping.kind, mapping.certainty, fixHint = CompilerDiagnosticParser.fixHint(diagnostic),
+                evidence = Collections.unmodifiableList(listOf(
                     Evidence("compiler-emission", "Kotlin$compilerVersion JVM exact diagnostic; phase tag=" +
                         (diagnostic.renderedPhase ?: "not rendered; not inferred"), digest = outputDigest),
                     Evidence("snapshot", "Registered immutable ${request.snapshot.snapshotId}; source batch, not inferred Gradle scope",
@@ -341,7 +350,7 @@ class KotlinJvmCompilerProvider(
             when {
                 mapping == null || !mapping.jvmApplicable -> { state = "unsupported"; reason = "no_jvm_mapping_for_rule" }
                 !trustedEmission -> { state = "failed"; reason = "compiler_execution_or_version_untrusted" }
-                outcome.exitCode != 0 || raw.isNotEmpty() -> { state = "failed"; reason = "failed_or_incomplete_compiler_task" }
+                incompleteCompilerTask(outcome.exitCode, parsed, raw) -> { state = "failed"; reason = "failed_or_incomplete_compiler_task" }
                 sourceSuppressionObserved -> { state = "unknown"; reason = "compiler_source_suppression_requires_scoped_coverage_evidence" }
                 CompilerFlags.activationGap(mapping, request.context.compilerArguments) != null -> {
                     state = "unknown"; reason = CompilerFlags.activationGap(mapping, request.context.compilerArguments)
@@ -408,6 +417,11 @@ class KotlinJvmCompilerProvider(
     )
 
     companion object {
+        // The caller supplies its post-normalization raw list. Clearing this one
+        // barrier says nothing about execution trust, scope or qualification.
+        internal fun incompleteCompilerTask(exitCode: Int?, parsed: CompilerParseResult,
+            raw: List<RawDiagnostic>): Boolean = exitCode != 0 || parsed.malformed || raw.isNotEmpty()
+
         /** Public finding evidence carries identities, never owner-private installation paths.
          * The exact selected path stays bound in the private runtime image and execution profile.
          */

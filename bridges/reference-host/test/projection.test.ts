@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { projectDiagnostic } from '../src/context-projection.js';
+import { prepareDiagnosticContext, projectDiagnostic } from '../src/context-projection.js';
 import { canonical, digest, InboxJournal } from '../src/journal.js';
 import { KernelBroker } from '../src/broker.js';
 import { ReferenceHost } from '../src/adapter.js';
@@ -111,4 +111,48 @@ test('owner configuration forbids model settings and insecure files; generation 
   const path=join(dir,'config.json');await writeFile(path,JSON.stringify(config),{mode:0o644});
   await chmod(path,0o644);
   await assert.rejects(readHostConfig(path),process.platform==='win32'?/private_state_platform_unqualified/:/host_configuration_permissions/);
+});
+
+
+test('retrieval attachments stay exact in finding obligations projected context and original payload checksums',()=>{
+  // Pure ordinary-event projection over synthetic fixtures; no insertion, ACK or model observation.
+  const r=registration(),base=event(r),reportDigest=digest('complete upstream report bytes');
+  const routed=(artifactRef?:string)=>{
+    const payload=JSON.parse(base.payload),finding=payload.result.findings[0];
+    finding.evidence=[{kind:'upstream_sarif',summary:'Complete upstream report',digest:reportDigest,artifactRef:null}];
+    if(artifactRef!==undefined)finding.retrievalAttachments=[{kind:'upstream_sarif',digest:reportDigest,artifactRef}];
+    const text=canonical(payload);
+    return {...base,payload:text,payloadDigest:digest(text)};
+  };
+  const first=routed('  /outputs/attempt-1/provider-a/detekt.sarif  ');
+  const second=routed('  /outputs/attempt-2/provider-b/detekt.sarif  ');
+  const a=projectDiagnostic(first),b=projectDiagnostic(second);
+  for(const [eventValue,projection] of [[first,a],[second,b]] as const){
+    const original=JSON.parse(eventValue.payload),projected=JSON.parse(projection.diagnosticPayload);
+    assert.deepEqual(projected.result.findings,original.result.findings);
+    assert.deepEqual(projected.result.findings[0].retrievalAttachments,original.result.findings[0].retrievalAttachments);
+    assert.equal(projection.findingObligations[0]!.findingDigest,digest(canonical(original.result.findings[0])));
+    assert.equal(projection.originalPayloadRef.payloadDigest,eventValue.payloadDigest);
+    assert.equal(projection.diagnosticPayloadDigest,digest(projection.diagnosticPayload));
+  }
+  assert.deepEqual(JSON.parse(first.payload).result.findings[0].evidence,JSON.parse(second.payload).result.findings[0].evidence);
+  assert.notEqual(a.findingObligations[0]!.findingDigest,b.findingObligations[0]!.findingDigest);
+  assert.notEqual(a.findingObligations[0]!.obligationId,b.findingObligations[0]!.obligationId);
+  assert.notEqual(a.diagnosticPayloadDigest,b.diagnosticPayloadDigest);
+  assert.notEqual(a.originalPayloadRef.payloadDigest,b.originalPayloadRef.payloadDigest);
+  // Hold comparison/currentness inputs fixed so only locator-containing payload bytes vary.
+  const ac=prepareDiagnosticContext(first,binding(r),base.sourceSnapshotId);
+  const bc=prepareDiagnosticContext(second,binding(r),base.sourceSnapshotId);
+  assert.notEqual(ac.text,bc.text);assert.notEqual(ac.digest,bc.digest);
+  for(const [context,eventValue] of [[ac,first],[bc,second]] as const){
+    const envelope=JSON.parse(context.text.slice(context.text.indexOf('\n')+1));
+    assert.equal(envelope.comparedSnapshotId,base.sourceSnapshotId);
+    assert.deepEqual(JSON.parse(envelope.diagnosticPayload).result.findings[0].retrievalAttachments,
+      JSON.parse(eventValue.payload).result.findings[0].retrievalAttachments);
+    assert.equal(context.digest,digest(context.text));
+  }
+  assert.throws(()=>projectDiagnostic({...second,payloadDigest:first.payloadDigest}),/event_digest_mismatch/);
+  const absent=routed(),absentProjection=projectDiagnostic(absent);
+  assert.equal(Object.hasOwn(JSON.parse(absentProjection.diagnosticPayload).result.findings[0],'retrievalAttachments'),false);
+  assert.equal(absentProjection.findingObligations[0]!.findingDigest,digest(canonical(JSON.parse(absent.payload).result.findings[0])));
 });

@@ -23,7 +23,10 @@ ktchecker overlay --request overlay.json [--out result.json]
 ktchecker prepare --request compilation.json [--authorize-execution] --out prepared.json
 ktchecker submit --prepared prepared.json [--wait-ms 10000]
 ktchecker model-plan --request PRIVATE.json --authorize-execution --compiler-java-home LINK_FREE_JDK --state NEW_DIR [--out result.json]
+ktchecker owner-model-session --request PRIVATE_TRANSPORT.json --selection-digest SHA256 --owner-action --authorize-execution
 ktchecker status|events|cancel --client ID [--review ID] [--cursor CURSOR] [--limit 20]
+ktchecker reassess --client ID --request policy-review.json [--out result.json]
+ktchecker policy-status --client ID --id REQUEST_ID [--out result.json]
 ktchecker suppressions inspect --client ID [--out policy.json]
 ktchecker suppressions add --client ID --request suppression.json --expected revision.json --owner-action
 ktchecker suppressions remove --client ID --id SUPPRESSION --expected revision.json --owner-action
@@ -37,10 +40,17 @@ ktchecker rpc
 Global options: --state DIR --compiler-dir DIR --compiler-java-home DIR --detekt-artifacts DIR --ktlint-artifacts DIR --workers 0|1|2
 Review commands never edit project source or grant execution/suppression permission.
 Only explicit owner prepare with --authorize-execution permits the pinned provider profiles.
-model-plan is an opt-in whole imported JVM main/test preview; it never grants release/final-answer success.
+model-plan requires separate explicit owner policy setup; use the owner-only framed session for the trusted host.
+owner-model-session retains one actual owner; configureCompilerPolicy is a separate explicit private operation.
+Neither route grants release/final-answer success.
 Compiler execution requires a complete link-free JDK 21 image. A rejected image is unavailable, not a launcher-only fallback.
 RPC accepts private NDJSON; use bridges/mcp for actual MCP. Do not send owner/adapter credentials to a model.
 Unavailable/partial analysis is not passing. Exit 0 on submit without waiting means accepted only.
+reassess accepts only reviewId, idempotencyKey, generation and expectedPolicyDigest in its request.
+reassess/policy-status require --workers 0 (the default): no provider workerLoop or policy-edit permission.
+Owner heartbeat, produced-resolution and policy-recovery may still mutate private state; this is not a read-only owner process.
+Their exit 0 means a historical policy view was published/fetched, never passing or completion permission.
+The returned policy_reassessed state and auditOnly value do not certify currentness or authorize a final action.
 """
 
 internal class Arguments(args: Array<String>) {
@@ -62,12 +72,13 @@ internal class Arguments(args: Array<String>) {
         }
         val allowed = setOf("state", "compiler-dir", "compiler-java-home", "detekt-artifacts", "ktlint-artifacts", "workers", "format", "id", "workspace", "worktree",
             "client", "session", "lineage", "out", "request", "prepared", "wait-ms", "review", "cursor", "limit", "finding",
-            "expected", "layer", "rule") + booleans
+            "expected", "layer", "rule", "selection-digest") + booleans
         if ((options.keys - allowed).isNotEmpty()) throw CliProblem("invalid_arguments", "Unknown command option.")
         if (options["format"]?.let { it != "json" } == true) throw CliProblem("invalid_arguments", "This preview supports --format json.")
     }
     operator fun get(name: String): String? = options[name]
     fun has(name: String): Boolean = name in options
+    internal fun hasOnly(names: Set<String>): Boolean = options.keys.all { it in names }
     fun required(name: String): String = options[name] ?: throw CliProblem("invalid_arguments", "Option --$name is required.")
     fun integer(name: String, default: Int): Int = if (has(name)) required(name).toIntOrNull()
         ?: throw CliProblem("invalid_arguments", "Option --$name requires an integer.") else default
@@ -85,7 +96,10 @@ internal fun runCli(args: Array<String>): Int {
         if (command == "doctor") { emit(doctor(), options["out"]); return 0 }
         if (command == "rules") { emit(Catalog().inspect(options["id"]), options["out"]); return 0 }
         if (command == "model-plan") return runOwnerModelPlan(options)
-        val workers = options.integer("workers", 2)
+        if (command == "owner-model-session") return runOwnerModelSession(options)
+        // Closed policy-command preflight precedes owner creation, credentials and any acceptance.
+        val policyCommand = if (command in setOf("reassess", "policy-status")) parsePolicyReassessmentCli(options) else null
+        val workers = if (policyCommand != null) 0 else options.integer("workers", 2)
         if (workers !in 0..2) throw CliProblem("invalid_arguments", "Preview supports zero to two persistent worker threads per process.")
         Workbench(WorkbenchOptions(options["state"]?.let(Path::of) ?: PrivateState.defaultPath(),
             options["compiler-dir"]?.let(Path::of), options["detekt-artifacts"]?.let(Path::of), workers,
@@ -131,6 +145,13 @@ internal fun runCli(args: Array<String>): Int {
                     }
                     emit(result(status), options["out"])
                     if (wait == 0L) 0 else reviewExit(status)
+                }
+                "reassess", "policy-status" -> {
+                    val selected = checkNotNull(policyCommand)
+                    val response = callPolicyReassessmentCli(selected, workbench.registration(selected.clientId).client, workbench)
+                    emit(response, options["out"])
+                    // Historical publication/retrieval only, not reviewExit or a completion decision.
+                    0
                 }
                 "status", "events", "cancel" -> {
                     val credential = workbench.registration(options.required("client")).client
@@ -196,6 +217,93 @@ internal fun runCli(args: Array<String>): Int {
         emit(buildJsonObject { put("contractVersion", PREVIEW_CONTRACT); put("status", "failed")
             putJsonObject("error") { put("code", code); put("message", message) } })
         3
+    }
+}
+
+/** Identifiers only: no caller-supplied raw input, policy capture, execution or owner permit. */
+internal sealed interface PolicyReassessmentCliCommand {
+    val clientId: String
+    data class Reassess(override val clientId: String, val request: PolicyReassessmentRequest) : PolicyReassessmentCliCommand
+    data class Status(override val clientId: String, val idempotencyKey: String) : PolicyReassessmentCliCommand
+}
+
+/** Read-only argument/file preflight. In particular, rejected flags cannot secretly publish a view. */
+internal fun parsePolicyReassessmentCli(options: Arguments): PolicyReassessmentCliCommand {
+    val command = options.words.singleOrNull()
+    if (command !in setOf("reassess", "policy-status")) {
+        throw CliProblem("invalid_arguments", "Policy commands do not accept positional arguments.")
+    }
+    val common = setOf("state", "compiler-dir", "compiler-java-home", "detekt-artifacts", "ktlint-artifacts",
+        "workers", "format", "client", "out")
+    val allowed = common + if (command == "reassess") setOf("request") else setOf("id")
+    if (!options.hasOnly(allowed)) {
+        throw CliProblem("invalid_arguments", "Policy commands accept identifiers only, not owner, execution, mutation or review-input options.")
+    }
+    if (options.integer("workers", 0) != 0) {
+        throw CliProblem("invalid_arguments", "Policy commands require zero workers; they cannot start queued provider work.")
+    }
+    val client = policyCliIdentifier(options.required("client"), "invalid_arguments")
+    options["out"]?.let(::validatePolicyCliOutput)
+    return if (command == "reassess") {
+        val request = decodePolicyReassessmentCliRequest(readOwnerFile<JsonObject>(options.required("request")))
+        PolicyReassessmentCliCommand.Reassess(client, request)
+    } else PolicyReassessmentCliCommand.Status(client, policyCliIdentifier(options.required("id"), "invalid_arguments"))
+}
+
+/** ASCII decimal token validation precedes stdlib conversion; no serializer numeric coercion. */
+internal fun decodePolicyReassessmentCliRequest(document: JsonObject): PolicyReassessmentRequest {
+    fun invalid(): Nothing = throw CliProblem("invalid_policy_reassessment_request",
+        "Expected only bounded reviewId/idempotencyKey strings, a positive integer generation and a full expectedPolicyDigest.")
+    if (document.keys != setOf("reviewId", "idempotencyKey", "generation", "expectedPolicyDigest")) invalid()
+    fun string(name: String): String {
+        val value = document[name] as? JsonPrimitive ?: invalid()
+        if (!value.isString) invalid()
+        return value.content
+    }
+    val review = policyCliIdentifier(string("reviewId"), "invalid_policy_reassessment_request")
+    val request = policyCliIdentifier(string("idempotencyKey"), "invalid_policy_reassessment_request")
+    val generationValue = document["generation"] as? JsonPrimitive ?: invalid()
+    val generationText = generationValue.content
+    if (generationValue.isString || !generationText.matches(Regex("[1-9][0-9]{0,18}"))) invalid()
+    val generation = generationText.toLongOrNull() ?: invalid()
+    val digest = string("expectedPolicyDigest")
+    if (!Digests.valid(digest)) invalid()
+    return PolicyReassessmentRequest(review, request, generation, digest)
+}
+
+private fun policyCliIdentifier(value: String, code: String): String {
+    if (value.isBlank() || value.length > 512 || value.any { it == '\u0000' || it.isISOControl() }) {
+        throw CliProblem(code, "Expected a bounded nonblank identifier without control characters.")
+    }
+    return value
+}
+
+/** Detect unusable output selections before acceptance, without creating/reserving/chmodding files. */
+private fun validatePolicyCliOutput(raw: String) {
+    if (raw.isBlank()) throw CliProblem("invalid_arguments", "Output must select a new file in an existing writable directory.")
+    val path = try { Path.of(raw).toAbsolutePath() } catch (_: java.nio.file.InvalidPathException) {
+        throw CliProblem("invalid_arguments", "Output must select a valid file path.")
+    }
+    val parent = path.parent
+    if (Files.exists(path, NOFOLLOW_LINKS) || parent == null || !Files.isDirectory(parent, NOFOLLOW_LINKS) || !Files.isWritable(parent)) {
+        throw CliProblem("invalid_arguments", "Output must select a new file in an existing writable directory.")
+    }
+    // This is not an output reservation: later I/O failure is recovered with the same request ID/status.
+}
+
+/** Fixed review RPC only. Preserve the trusted historical view, including state/auditOnly, verbatim. */
+internal fun callPolicyReassessmentCli(command: PolicyReassessmentCliCommand, credential: ClientCredential,
+                                     handler: RpcHandler): JsonObject {
+    if (credential.clientId != command.clientId) {
+        throw CliProblem("permission_denied", "Selected client and retained credential differ.")
+    }
+    return when (command) {
+        is PolicyReassessmentCliCommand.Reassess -> handler.call("review.policy.reassess", buildJsonObject {
+            put("credential", result(credential)); put("request", result(command.request))
+        })
+        is PolicyReassessmentCliCommand.Status -> handler.call("review.policy.status", buildJsonObject {
+            put("credential", result(credential)); put("idempotencyKey", command.idempotencyKey)
+        })
     }
 }
 

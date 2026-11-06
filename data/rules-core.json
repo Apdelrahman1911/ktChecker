@@ -35112,5 +35112,102 @@
     "status": "planned",
     "default_activation": "advisory",
     "disposition_reason": "Planned advisory candidate: display bounded evidence and intent/trust assumptions; do not present a heuristic as proven defective or secure."
+  },
+  {
+    "category": "kotlin.compiler.common",
+    "rationale": "Normalize only the exact compiler diagnostic emitted by the pinned task, not a source-text reconstruction. Mapping availability is not tested implementation or target qualification.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "implementation": "adapted",
+    "provider": "Kotlin compiler2.4.21 / FIR common",
+    "depth": "build",
+    "cost": "slow",
+    "status": "planned",
+    "id": "ktc.compiler.common.error_suppression",
+    "upstream_id": "ERROR_SUPPRESSION",
+    "problem": "Compiler diagnostic ERROR_SUPPRESSION: kotlin.Suppress names an unsupported hard-error suppression, even when its annotated body is valid.",
+    "sources": [
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L197",
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/expression/FirAnnotationExpressionChecker.kt#L249",
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/context/CheckerContext.kt#L63",
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L1030"
+    ],
+    "applicability": "An actual pinned FIR task resolving kotlin.Suppress and its literal String vararg names. One warning is reported per non-suppressible error-name argument or all-errors token, independently of a body error. Common registration needs no -Wextra or experimental switch. Compile each enabled target separately under its actual complete graph and settings.",
+    "version_scope": "Kotlin v2.4.21 SOURCE: atomic KtDiagnosticFactory1<String>, WARNING, DEFAULT positioning, General syntax section. Effective severity/reporting can depend on actual warning options. No candidate compiler run has verified this proposal.",
+    "compiler_factory": {
+      "container": "FirErrors",
+      "declaration_severity": "WARNING",
+      "source_section": "General syntax",
+      "declaration_line": 197
+    },
+    "upstream_message_template": "Suppression of error '{0}' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED. Please report your use case to the Kotlin issue tracker instead: https://kotl.in/issue",
+    "severity": "warning",
+    "kind": "probable_defect",
+    "certainty": "intent_dependent",
+    "default_activation": "advisory",
+    "limitations": "Not proof of an unintended behavioral defect or that an invalid program is safely suppressible. @Suppress(\"ERROR_SUPPRESSION\") cannot hide this warning through CheckerContext, but global warning options still matter. The dedicated -Xdont-warn-on-error-suppression option is not authorized by the current adapter and is not added here. Source suppression and disabled warnings cannot earn clean coverage from absence.",
+    "validation": {
+      "positive": "Independent valid-body fixture: @Suppress(\"INAPPLICABLE_OPERATOR_MODIFIER\") on an ordinary Int-returning function; expect one policy warning on that literal and no operator error. Unrun source expectation, not historical output.",
+      "negative": "Same valid body with @Suppress(\"UNUSED_PARAMETER\") names a warning, not a hard error. A user-defined same-spelling Suppress annotation is an independent resolved-identity negative. Neither absence nor a successful compiler exit grants clean coverage.",
+      "boundary": "Self-suppression uses @Suppress(\"ERROR_SUPPRESSION\", \"INAPPLICABLE_OPERATOR_MODIFIER\"): expect one warning on the second literal. Other per-literal and nonliteral/FIR constant-folding boundaries require separate work, not lexical assumptions.",
+      "platform_version": "Bind actual Kotlin2.4.21, language/API2.4, JVM target17, graph/classpath and task/source identity. Other tuples remain untested. Preserve effective diagnostic severity and any -Werror compiler failure rather than forcing the factory warning severity.",
+      "suppression": "The self-suppression control must still warn. Reuse exact positive bytes with already-allowed -Xwarning-level=ERROR_SUPPRESSION:disabled; absence is disabled/unknown coverage. Do not silently authorize the dedicated unsupported compiler switch.",
+      "regression": "Keep valid-body warning tests separate from invalid hard-error suppression observation. Retain full raw/normalized inventories, actual points/messages and failures. Do not reinterpret legacy443 raw companions or unknown suppressions."
+    },
+    "disposition_reason": "Proposed advisory/intent-dependent policy for root review under an explicit445 successor, not compiler activation or current catalog admission. Status remains planned; no runtime default is enabled by this record."
+  },
+  {
+    "category": "kotlin.compiler.common",
+    "rationale": "Normalize only the exact compiler diagnostic emitted by the pinned task, not a source-text reconstruction. Mapping availability is not tested implementation or target qualification.",
+    "platforms": [
+      "common",
+      "android",
+      "ios",
+      "desktop",
+      "jvm"
+    ],
+    "implementation": "adapted",
+    "provider": "Kotlin compiler2.4.21 / FIR common",
+    "depth": "build",
+    "cost": "slow",
+    "status": "planned",
+    "id": "ktc.compiler.common.inapplicable_operator_modifier",
+    "upstream_id": "INAPPLICABLE_OPERATOR_MODIFIER",
+    "problem": "Compiler diagnostic INAPPLICABLE_OPERATOR_MODIFIER: an explicit operator function has an illegal operator name or an inapplicable signature.",
+    "sources": [
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/gen/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrors.kt#L428",
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirOperatorModifierChecker.kt#L25",
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/providers/src/org/jetbrains/kotlin/fir/declarations/OperatorFunctionChecks.kt#L117",
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/testData/diagnostics/tests/OperatorChecks.kt#L91",
+      "https://raw.githubusercontent.com/JetBrains/kotlin/v2.4.21/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/diagnostics/FirErrorsDefaultMessages.kt#L1683"
+    ],
+    "applicability": "An actual pinned FIR task checking an explicitly written operator keyword; implicit inherited operators are skipped. Illegal name/anonymous cases and applicable IllegalOperatorDiagnostic cases emit this ERROR. Feature-deprecated signatures can instead emit the distinct warning sibling. Common registration needs no extra checker flags; compile each enabled target separately.",
+    "version_scope": "Kotlin v2.4.21 SOURCE: atomic KtDiagnosticFactory1<String>, ERROR, OPERATOR_MODIFIER positioning, Modifiers section. Explicit member operator fun hasNext(): Int violates the unconditional fully-expanded Boolean return check without a for-loop. No candidate has run.",
+    "compiler_factory": {
+      "container": "FirErrors",
+      "declaration_severity": "ERROR",
+      "source_section": "Modifiers",
+      "declaration_line": 428
+    },
+    "upstream_message_template": "'operator' modifier is not applicable to function: {0}.",
+    "severity": "error",
+    "kind": "correctness",
+    "certainty": "high",
+    "default_activation": "enabled_when_validated",
+    "limitations": "Import the exact emitted ID, not every operator-related failure. INAPPLICABLE_OPERATOR_MODIFIER_WARNING, UNSUPPORTED_FEATURE and operator-of type errors remain distinct. Mapping an expected error does not make compilation/provider status successful. Upstream lists this error as non-suppressible and describes error suppression as unspecified. Warning-level configuration cannot legitimately turn a factory ERROR into a clean disabled warning.",
+    "validation": {
+      "positive": "Independent class Cursor with operator fun hasNext(): Int = 1 and no loop: expect this ERROR on operator and nonzero compiler exit. Do not trigger separate HAS_NEXT_FUNCTION_TYPE_MISMATCH use-site semantics.",
+      "negative": "Same class and explicit operator with Boolean return and true body is the legitimate no-emission counterpart. The selected-ID absence is not an independent qualified-clean certificate.",
+      "boundary": "Keep the Int-returning member but remove explicit operator for an applicability negative. Future boundaries should preserve fully-expanded Boolean aliases and separately cover implicit inherited operators and feature-dependent warning siblings.",
+      "platform_version": "Require actual compiler2.4.21, language/API2.4, JVM target17, resolved dependencies, source/task identity and receipts. Other targets/configurations remain visible and untested; common registration is not platform qualification.",
+      "suppression": "Invalid operator with @Suppress(\"INAPPLICABLE_OPERATOR_MODIFIER\") is observation-only: operator count and exit stay unknown, never expected success/clean. Retain any ERROR_SUPPRESSION warning and every failure. Upstream prohibits changing factory ERROR severity.",
+      "regression": "New no-loop source is separate from old default35 positives/regressions. Future445 selected raw and normalized ID/point/message inventories must agree while all residual diagnostics remain preserved. Do not rewrite legacy443 null-stable-ID raw-companion oracles or failed reports."
+    },
+    "disposition_reason": "Proposed planned exact compilation-contract mapping, enabled only when independently validated. Requires explicit445 source/resource/receipt successor. It changes neither current1663x8 admission nor defaults."
   }
 ]

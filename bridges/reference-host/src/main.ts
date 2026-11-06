@@ -5,6 +5,7 @@ import { KernelBroker } from './broker.js';
 import { CodexHostPort } from './codex-host.js';
 import { ReferenceHost } from './adapter.js';
 import { HostError, InboxJournal } from './journal.js';
+import { requiresObservationAttempt } from './context-projection.js';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -34,7 +35,7 @@ async function main(): Promise<void> {
       const state = journal.read();
       const pending = Object.values(state.inbox).filter(entry => entry.event.deliveryRequired && !entry.observed);
       const key = pending.map(entry => entry.event.eventId).sort().join('\n');
-      if (attempts < maximum && key !== previousAttempt && pending.some(entry => ['result', 'cancelled', 'terminal'].includes(entry.event.kind))) {
+      if (attempts < maximum && key !== previousAttempt && pending.some(entry => requiresObservationAttempt(entry.event))) {
         previousAttempt = key; attempts++;
         try {
           const result = await adapter.requestModelObservation();

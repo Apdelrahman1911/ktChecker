@@ -348,16 +348,16 @@ class SyntaxProtocolAuthoringTest(unittest.TestCase):
         gate = re.search(r'val detektCorpusCohortNames = setOf\((.*?)\)', build, re.DOTALL)
         selected_names = re.findall(r'"([^"]+)"', gate.group(1))
         self.assertEqual(list(PREVIOUS_IDENTITIES) + [NAME], selected_names[:7])
-        self.assertEqual(list(PREVIOUS_IDENTITIES) + [NAME, "exception-observability-policy-v1"], selected_names)
+        self.assertEqual(list(PREVIOUS_IDENTITIES) + [NAME, "exception-observability-policy-v1"], selected_names[:8])
         for anchor in ("val expansion: Boolean get() = expansionPlan != null", "val protocol: Boolean get() = protocolPlan != null",
                        "BASELINE_AUTHORED_RULES = 10", "BASELINE_AUTHORED_ANALYSES = 91", "PRE_PROTOCOL_AUTHORED_RULES = 16",
                        "PRE_PROTOCOL_AUTHORED_ANALYSES = 145", "PRE_OBSERVABILITY_AUTHORED_RULES = 19", "PRE_OBSERVABILITY_AUTHORED_ANALYSES = 172",
-                       "FULL_AUTHORED_RULES = 22", "FULL_AUTHORED_ANALYSES = 199",
+                       "PRE_LOCAL_SHAPES_AUTHORED_RULES = 22", "PRE_LOCAL_SHAPES_AUTHORED_ANALYSES = 199",
                        "Collections.unmodifiableList(preProtocol + PROTOCOL_AND_CATCH_BOUNDARIES)",
                        "Collections.unmodifiableList(preObservability + EXCEPTION_OBSERVABILITY_POLICY)", "all.singleOrNull { it.name == name }"):
             self.assertIn(anchor, controls)
         self.assertIn("requiresExplicitOwnerOptIn", controls)
-        self.assertIn("if (!expansion && !protocol && !observability) null", controls)
+        self.assertIn("if (!expansion && !protocol && !observability && !localShapes) null", controls)
         self.assertIn("independentControlIds.getValue(rule)", controls)
         self.assertNotIn('tasks.named("check")', build)
         self.assertNotIn('tasks.named("test").dependsOn', build)
@@ -375,14 +375,14 @@ class SyntaxProtocolAuthoringTest(unittest.TestCase):
         self.assertEqual(38, len(old | pins | added))
         for path, sha in (old | pins | added).items():
             self.assertEqual(sha, digest((ROOT / path).read_bytes()))
-        for anchor in ("DetektCorpusExpansionPins.files + DetektCorpusProtocolPins.files + DetektCorpusObservabilityPins.files", "it.size == 38", "files.size == 8",
+        for anchor in ("DetektCorpusExpansionPins.files + DetektCorpusProtocolPins.files + DetektCorpusObservabilityPins.files", "it.size == 55", "files.size == 8",
                        "val bytes = filePins.keys.associateWith { readPinned(root, it) }",
                        "hash(bytes) == filePins.getValue(relative)", "bytes.contentEquals(readPinned(repository, path))",
-                       "listOf(BASELINE, EXPANSION, PROTOCOL, OBSERVABILITY)", "Files.walk(repository.resolve(root), 3)", "it.limit(65)",
+                       "listOf(BASELINE, EXPANSION, PROTOCOL, OBSERVABILITY, LOCAL_SHAPES)", "Files.walk(repository.resolve(root), 3)", "it.limit(65)",
                        "bytes.size in 1..1_048_576", "Files.newInputStream(path, NOFOLLOW_LINKS)", "!Files.isSymbolicLink",
                        "validateNamespace(EXPANSION", "validateNamespace(PROTOCOL", "boundRuleCount", "boundAnalysisCount",
                        "DetektCorpusCohort.preProtocol, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_RULES",
-                       "DetektCorpusCohort.preObservability, DetektCorpusCohort.FULL_AUTHORED_RULES",
+                       "DetektCorpusCohort.preObservability, DetektCorpusCohort.PRE_LOCAL_SHAPES_AUTHORED_RULES",
                        "validateNamespace(OBSERVABILITY", "validateNamedGaps(PROTOCOL)", "validateNamedGaps(OBSERVABILITY)",
                        "identity.flag(\"requires_explicit_owner_opt_in\")", "cohort.independentControlIds.getValue"):
             self.assertIn(anchor, inventory)
@@ -393,8 +393,8 @@ class SyntaxProtocolAuthoringTest(unittest.TestCase):
         for anchor in ("DetektCorpusInventory.load(repository)", "inventory.verify()", "DetektCorpusInventory.PROTOCOL",
                        '"providers/detekt-fixtures/test_syntax_protocol.py"', "DetektCorpusProtocolPins::class.java",
                        "path.startsWith(protocolFixtures)", "DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_ANALYSES",
-                       'assertEquals(13, approved.count { it.activation == "advisory" })',
-                       'assertEquals(9, approved.count { it.activation == "opt_in" })',
+                       'assertEquals(15, approved.count { it.activation == "advisory" })',
+                       'assertEquals(16, approved.count { it.activation == "opt_in" })',
                        'assertEquals(6, prior.count { it.activation == "opt_in" })',
                        'assertEquals(corpus.any { it.activation == "opt_in" }, cohort.requiresExplicitOwnerOptIn)',
                        "assertEquals(!case.disabled, selectedSarifId in parsedReport.enabledSarifIds",

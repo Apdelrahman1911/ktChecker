@@ -1,0 +1,265 @@
+{
+  "schema": "ktchecker/scoped-focused-control-update/1",
+  "checkpoint_date": "2026-11-05",
+  "release_qualified": false,
+  "combined_current_source_graph_passed": false,
+  "scope_reduced": false,
+  "new_distribution_packaged": false,
+  "coverage_ledger_unchanged": {
+    "required_catalog_rules": 1663,
+    "contexts_per_rule": 8,
+    "cells": 13304,
+    "implemented_cells": 2,
+    "tested_cells": 0,
+    "qualified_cells": 0,
+    "regenerated_or_promoted": false
+  },
+  "counting_boundary": "Separate source-bound lanes; do not sum overlapping runs, declared methods, Node runner outcomes or hosted testcase occurrences. Command durations are not analysis latency.",
+  "source_digest_scope": "For working_tree_digest: tracked + untracked nonignored actual bytes, missing files, symlinks and executable bits. Receipt hashes are SHA-256 of retained JSON bytes.",
+  "local_observations": {
+    "full_owner_focused_r2": {
+      "receipt_sha256": "5920c95632595e8caa89e8805af9206453e630d52e65deda610fc1e534ade8b4",
+      "source": {
+        "commit": "0751941aee98ed1761eb247ad3dd528bbad915c4",
+        "dirty": true,
+        "file_count": 4440,
+        "working_tree_digest": "sha256:1b86872eb55e0c7c5a6ff469ac709f860bda7c17af661df5d03b4f1039c76308"
+      },
+      "source_before_after_equal": true,
+      "gradle_exit": 0,
+      "outer_exit": 0,
+      "command_seconds": 70.03,
+      "methods": {
+        "executed": 101,
+        "passed": 101,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "groups": {
+        "owner_lineage_custody_policy": 62,
+        "detekt_full_arguments_binding_report_oracle": 39
+      },
+      "real_full_engine_invocations": 0,
+      "real_model_host_invocations": 0,
+      "boundary": "Focused local integration/custody/projection controls; not a full test graph, real FULL semantic engine run or host acceptance."
+    },
+    "config_kernel_prior_partial_lane": {
+      "receipt_sha256": "3fc04073fc505fa7c2209bb37b959039889c969b30929682b454b134e414a1c8",
+      "source": {
+        "commit": "0751941aee98ed1761eb247ad3dd528bbad915c4",
+        "dirty": true,
+        "file_count": 4414,
+        "working_tree_digest": "sha256:fef860ba5f1825825483a8dca8c1bebce39b862b900ca1b4da86d1b450a5355d"
+      },
+      "methods": {
+        "executed": 3,
+        "passed": 3,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit_seconds": 2.487,
+      "overall_lane_passed": false,
+      "gradle_exit": 1,
+      "gradle_seconds": 123.22,
+      "recorded_outer_wrapper_exit": 120,
+      "outer_delivery_success_established": false,
+      "full_controls_executed_in_this_lane": 0,
+      "boundary": "Actual ConfigStore/SQLite/kernel with synthetic providers. FULL production compilation passed, but test-source compilation failed; three passed methods do not make the larger lane pass."
+    },
+    "packaging_inert_helpers": {
+      "root_receipt_sha256": "dc60feba738e0c28bcee9adefab6f5b889c0ec23450cefed447959523dc5f5e5",
+      "inert_receipt_sha256": "a2b699088409dc0a11380e5be60c83409a16c969ca96e3a0a8f50d1fd61ce195",
+      "runner_source_sha256": "a775a8b7a6928e7cac23f538220ee8a394484a86a90832848ac28606dd1b3bba",
+      "test_source_sha256": "4103252ebd2c5822e7762ff067f20a0740e4fb6a926558a176b5d27576974445",
+      "executed_source_kind": "separately reviewed private source packet, not a packaged installation",
+      "methods": {
+        "executed": 30,
+        "passed": 30,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "subtests": {
+        "executed": 146,
+        "passed": 146
+      },
+      "guard_violations": 0,
+      "outer_exit": 0,
+      "outer_seconds": 0.401,
+      "actual_packaging_or_provider_model_execution": false,
+      "boundary": "Inert helper/source guards only; ordinary reads permitted, not a hostile-code sandbox. No archive, installed-image, license or publication acceptance."
+    },
+    "host_negative_controls_r1_retained": {
+      "receipt_sha256": "b2f6824dd0ab79719944e9b34afacee2cfd70708279bca3e080393422225658f",
+      "source": {
+        "commit": "0751941aee98ed1761eb247ad3dd528bbad915c4",
+        "dirty": true,
+        "file_count": 4449,
+        "working_tree_digest": "sha256:925bf06306c57826aebca91ad18bc163839bff7a9ae837efcfcea894dc6777c4"
+      },
+      "source_before_after_equal": true,
+      "declared_top_level_controls": 56,
+      "typescript_exit": 2,
+      "tests_executed": 0,
+      "boundary": "Two missing callback annotations stopped TypeScript compilation; no runtime test result."
+    },
+    "host_negative_controls_r2_retained": {
+      "receipt_sha256": "2952c4a9f60074ac91b0d85b5b6166c93afbe62cfe09e101130b796284d06804",
+      "source": {
+        "commit": "0751941aee98ed1761eb247ad3dd528bbad915c4",
+        "dirty": true,
+        "file_count": 4449,
+        "working_tree_digest": "sha256:5d0d7280dfc5ba442c637d74e90635e00bfc69c9f956a410c0ab2caa80d25207"
+      },
+      "source_before_after_equal": true,
+      "declared_top_level_controls": 56,
+      "typescript_exit": 0,
+      "test_exit": 1,
+      "node_heap_cap_mib": 256,
+      "node_reported_outcomes": {
+        "tests": 264,
+        "suites": 0,
+        "pass": 262,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "elapsed_seconds": 120.958,
+      "all_declared_controls_executed": false,
+      "boundary": "262 passing Node outcomes and two selected file-process OOM failures; do not label all 56 top-level controls executed or passed."
+    },
+    "host_negative_controls_r3": {
+      "build_receipt_sha256": "9a184e48546988d0062de645e41490d8595651b7b76583d6d29486770fb71038",
+      "test_receipt_sha256": "231728a67f34e485c9df9a505de3e7f7c5768abf8b792b7266764ddcbcbb9223",
+      "outer_receipt_sha256": "973e167acdc1ce365f9b8d765fe4188c250d273fc6c6cc5d69ee6867dc6e5ded",
+      "junit_sha256": "34e7f91c239cb2bd7db041ad77bfc0736f4efa9a4a31a5ece7e3aa26a50bd2ae",
+      "source": {
+        "commit": "0751941aee98ed1761eb247ad3dd528bbad915c4",
+        "dirty": true,
+        "file_count": 4449,
+        "working_tree_digest": "sha256:5d0d7280dfc5ba442c637d74e90635e00bfc69c9f956a410c0ab2caa80d25207"
+      },
+      "source_before_after_equal": true,
+      "declared_top_level_controls": 56,
+      "node_heap_cap_mib": 512,
+      "typescript_exit": 0,
+      "test_exit": 1,
+      "outer_exit": 1,
+      "test_command_seconds": 165.216,
+      "node_reported_outcomes": {
+        "tests": 297,
+        "suites": 0,
+        "pass": 296,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "junit_testcase_elements": {
+        "total": 289,
+        "passed": 288,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "junit_parent_testsuite_elements": 8,
+      "all_declared_controls_executed": false,
+      "passed": false,
+      "failure_classification": "One selected runner-test child aborted with SIGABRT and V8 heap OOM at the explicit 512 MiB cap, as verified by the lead from retained local output.",
+      "boundary": "Still a failed synthetic control suite, not real model/provider acceptance. Node reported outcomes include eight parent containers beyond JUnit testcase elements; do not add those parents to the testcase count."
+    }
+  },
+  "retained_predecessor": {
+    "id": "full_owner_focused_r1",
+    "receipt_sha256": "7cad2c4b8a4d9ecb8c04676b9525f8916c16437418a43fb0d0a4896a5795057d",
+    "gradle_exit": 1,
+    "outer_exit": 1,
+    "tests_executed": 0,
+    "declared_methods": 101,
+    "reason": "Harness duplicated a non-repeatable worker-limit option. R2 is a distinct attempt; earlier failure remains."
+  },
+  "hosted_sanitized_observations": {
+    "linux": {
+      "run_url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/42052349694",
+      "run_attempt": 1,
+      "api_head_commit": "0751941aee98ed1761eb247ad3dd528bbad915c4",
+      "actual_tested_source": {
+        "commit": "f0b85da7890d3c98c5fd8552a360a0627767a188",
+        "dirty": false,
+        "file_count": 4399,
+        "working_tree_digest": "sha256:773030400216061dd5ec895c86f6e4392718f38a732d4b39233cd7c97a600f6b"
+      },
+      "summary_sha256": "2691f989780e7416fadc47efef72b0bbcd107baf250a90b371681746ba8fb2ed",
+      "readback_sha256": "3389c21b837ae867357baa1995774aede3a033bb55641fdd22c7517bf0678335",
+      "profile": "checker-host-supported-library-controls",
+      "job_status": "failure",
+      "evidence_state": "incomplete",
+      "retained_report_summaries": 130,
+      "testcase_occurrences": {
+        "error": 0,
+        "failure": 3,
+        "passed": 1461,
+        "skipped": 2,
+        "tests": 1466
+      },
+      "failed_suite": "dev.ktchecker.compiler.live.model.ModelLiveMaterializationTest",
+      "native_or_full_graph_success_inferred": false,
+      "boundary": "Only retained sanitized summaries read; case names do not prove causes. Held materialization investigation remains on hold, not reopened by this update; hosted raw logs and original hosted report bodies were not opened for this update."
+    },
+    "darwin": {
+      "run_url": "https://github.com/Apdelrahman1911/ktChecker/actions/runs/42052589522",
+      "run_attempt": 1,
+      "workflow_commit": "0751941aee98ed1761eb247ad3dd528bbad915c4",
+      "actual_summary_commit": "0751941aee98ed1761eb247ad3dd528bbad915c4",
+      "source_before_sha256": "e44f55a89ff535d23e1274ff02d75ff28e02fdb4536d6f44aee3d5fe64aa0836",
+      "summary_sha256": "c5c5c0b476dfba415fad86a19483dccdfe04dd2c80795d99273238e2850fdec6",
+      "readback_sha256": "75bc53fd168fa7d2369ba7ad62a35f2cfd24a5e210fb3ffb79cf23bda3ff2bb0",
+      "profile": "darwin-private-state-components-v1",
+      "native_controls_attempted": true,
+      "native_controls_executed": null,
+      "expected_native_controls": 16,
+      "verified": false,
+      "default_darwin_enabled": false,
+      "summary_error": "owned_command_failed",
+      "boundary": "Sanitized summary observed, not native success. Unknown executed count is neither zero nor the expected 16; no Apple target or platform qualification."
+    }
+  },
+  "source_only_work_at_cutoff": {
+    "fir_container_origin": {
+      "authored_methods": 22,
+      "independent_review": "pending",
+      "execution_claimed": false
+    },
+    "preview_benchmark_collector": {
+      "new_authored_methods": 34,
+      "independent_review": "source_hold_correction_pending",
+      "execution_claimed": false
+    },
+    "real_paired_bridge": {
+      "state": "work_in_progress",
+      "actual_acceptance_claimed": false
+    }
+  },
+  "unchanged_boundaries": [
+    "No runtime-default or rule-scope change.",
+    "No general full/incremental equivalence, real-world precision or warm 1–3-second useful-result qualification.",
+    "No new license choice, publication approval or new packaged preview.",
+    "Prior failed, skipped, incomplete and unexecuted evidence remains retained."
+  ],
+  "status_cutoff": "Root-confirmed failed host-control R3 and checksum-only JDK download; no result for subsequently planned canonical/exporter control execution.",
+  "downloaded_prerequisite_only": {
+    "receipt_sha256": "7e9913382872d706fc17138a5ba3d5163c97d47698b4bfb2c111ec21a4cfdabb",
+    "identity": "Temurin 21.0.13+9 Linux x64 JDK archive",
+    "bytes": 207858352,
+    "archive_sha256": "d7f5d5cf865a2902b70ff549b97586a7d3f234e016f041ab447ea740c7d66d1c",
+    "download_seconds": 10.203,
+    "checksum_verified": true,
+    "signature_verified": false,
+    "extracted": false,
+    "executed": false,
+    "boundary": "Prerequisite download only. Checksum comes from the official HTTPS API; no code execution, model/engine result or new qualification is implied."
+  }
+}

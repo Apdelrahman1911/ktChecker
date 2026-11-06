@@ -3,6 +3,7 @@ package dev.ktchecker.cli
 import dev.ktchecker.compiler.live.model.KotlinJvmModelLiveCompilerProvider
 import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.ObservedExportPlanEvidence
+import dev.ktchecker.kernel.OwnerFullCatalog1665
 import dev.ktchecker.projectmodel.*
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 
@@ -33,7 +34,7 @@ internal fun ownerProducedParentFaults(catalog: Catalog, coordinator: AnalysisPr
         // under-ARM typed-origin rendering must have supplied exactly this raw reason itself.
         if (CONFIGURATION_INPUT_CLOSURE_UNPROVEN !in child.reasons) return fault("owner_observed_raw_taint_missing")
     } else if (input.context.policies.keys.any { it == OBSERVED_ASSURANCE_POLICY || it.startsWith("ktchecker.observed-") }) return fault("owner_observed_origin_required")
-    if (input.requiredRuleIds != catalog.ids.sorted() || input.requiredRuleIds.size != 1663 || input.context.fullProject ||
+    if (input.requiredRuleIds != catalog.ids.sorted() || !OwnerFullCatalog1665.accepts(input.requiredRuleIds) || input.context.fullProject ||
         coordinator.id != "ktchecker-coordinator" || modelProvider.id != KotlinJvmModelLiveCompilerProvider.PROVIDER_ID ||
         modelProvider.version != KotlinJvmModelLiveCompilerProvider.VERSION) return fault("owner_produced_operational_identity_mismatch")
     val activation = validatedActivation(input, catalog)

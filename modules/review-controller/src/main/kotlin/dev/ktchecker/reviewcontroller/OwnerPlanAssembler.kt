@@ -137,7 +137,7 @@ class AssembledReviewPlan internal constructor(
         if ((model is OwnerPlanModelOrigin.Observed) != (observedEvidence != null)) return null
         if (!graph.reference.friend || graph.modelDigest != model.identity.modelDigest ||
             plan.slots.size != 2 || provenance.slots.size != 2 || preparations.size != 2 ||
-            provenance.inventory.ruleIds.size != 1663 || model.compilationIds.toSet() != graph.compilationIds.toSet() ||
+            !OwnerFullCatalog1665.accepts(provenance.inventory.ruleIds) || model.compilationIds.toSet() != graph.compilationIds.toSet() ||
             provenance.slots.map { it.compilationId }.toSet() != graph.compilationIds.toSet() ||
             provenance.slots.any { !it.sourceOrigin.sameModel(model) || it.policyIdentity == null || it.executionIdentity != null } ||
             preparations.any { it.policy == null || it.execution != null } ||
@@ -271,11 +271,12 @@ class OwnerPlanAssembler(
             val old = id?.let { before?.compilation(it) }
             val sourceModel = if (current == null && old != null) before!! else after
             val verified = id?.let { sourceModel.context(it) }
-            val obligation = when (after) {
-                is OwnerPlanModelOrigin.Verified -> if (historical) null else impact.obligations.singleOrNull { it.compilationId == id }
-                is OwnerPlanModelOrigin.Observed -> impact.obligations.singleOrNull {
-                    it.compilationId == id && it.context == (selection.previousScope ?: verified?.context?.scope)
-                }
+            // Match the exact selected audit label, not ID alone or a null wildcard. A raw
+            // exported label cannot upgrade an unavailable context or the old administrative slot.
+            val selectedScope = selection.previousScope ?: verified?.context?.scope
+                ?: (current ?: old)?.let { exportedScope(sourceModel, it) }
+            val obligation = impact.obligations.singleOrNull {
+                it.compilationId == id && it.context == selectedScope
             }
             val slotId = when {
                 historical -> "retired-context:${digest(listOf(id!!, canonical(selection.previousScope!!)))}"

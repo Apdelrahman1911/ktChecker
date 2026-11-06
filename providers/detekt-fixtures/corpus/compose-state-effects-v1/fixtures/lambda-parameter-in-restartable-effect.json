@@ -1,0 +1,316 @@
+{
+  "schema_version": 1,
+  "rule_id": "ktc.compose.pack.LambdaParameterInRestartableEffect",
+  "upstream_id": "Compose:LambdaParameterInRestartableEffect",
+  "default_activation": "advisory",
+  "depth": "syntax",
+  "entity_kind": "parameter_name",
+  "source_oracle": {
+    "kind": "tagged_source_prediction_not_observation",
+    "tag": "v0.6.8",
+    "commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+    "implementation": {
+      "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/LambdaParameterInRestartableEffect.kt",
+      "sha256": "4f79026e65ee8453073b31e1e7bf0b1f996178ca9701adee82e47abb6ec5efaa",
+      "line_ranges": [
+        [
+          23,
+          124
+        ]
+      ]
+    },
+    "wrapper": {
+      "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/LambdaParameterInRestartableEffectCheck.kt",
+      "sha256": "6b2554d6385c2911455a019233e89df819ed4f82180d675968bcee8cb2b57603",
+      "line_ranges": [
+        [
+          11,
+          17
+        ]
+      ]
+    },
+    "tests": {
+      "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/LambdaParameterInRestartableEffectCheckTest.kt",
+      "sha256": "c201867f8b598144f48b5dbbb613f5f871081445116ecb2e0cb936cc8beddf2e",
+      "line_ranges": [
+        [
+          21,
+          119
+        ]
+      ]
+    }
+  },
+  "boundary": "Fixed effect names and syntactic callbacks/keys/shadowing; no symbol ownership, temporal analysis, or proof of callback freshness. The two real alternatives have different restart semantics.",
+  "cases": [
+    {
+      "id": "positive",
+      "kind": "positive",
+      "purpose": "A callback parameter is captured by an effect keyed only on Unit.",
+      "source_basis": [
+        "LambdaParameterInRestartableEffect.kt:23-124",
+        "LambdaParameterInRestartableEffectCheckTest.kt:21-57"
+      ],
+      "semantic_interpretation": "positive",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\n\n@Composable\nfun ReadyEffect(onReady: () -> Unit) {\n    LaunchedEffect(Unit) { onReady() }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 23,
+          "text": "onReady"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 23,
+          "text": "onReady"
+        }
+      ]
+    },
+    {
+      "id": "valid-alternative",
+      "kind": "valid_alternative",
+      "purpose": "Use rememberUpdatedState when callback changes must not restart this effect.",
+      "source_basis": [
+        "LambdaParameterInRestartableEffectCheckTest.kt:60-80",
+        "runtime1.5.0:rememberUpdatedState"
+      ],
+      "semantic_interpretation": "valid_alternative",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\nimport androidx.compose.runtime.getValue\nimport androidx.compose.runtime.rememberUpdatedState\n\n@Composable\nfun ReadyEffect(onReady: () -> Unit) {\n    val latestOnReady by rememberUpdatedState(onReady)\n    LaunchedEffect(Unit) { latestOnReady() }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "keyed-callback",
+      "kind": "valid_control",
+      "purpose": "If restarting is intended, make the callback an explicit effect key; this is a policy choice, not an equivalent rewrite.",
+      "source_basis": [
+        "LambdaParameterInRestartableEffect.kt:108-124",
+        "LambdaParameterInRestartableEffectCheckTest.kt:60-80",
+        "runtime1.5.0:LaunchedEffect"
+      ],
+      "semantic_interpretation": "valid_control",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\n\n@Composable\nfun ReadyEffect(onReady: () -> Unit) {\n    LaunchedEffect(onReady) { onReady() }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "suppression-neighbor",
+      "kind": "suppression_neighbor",
+      "purpose": "Suppress one callback declaration's diagnostic but retain a neighbor's parameter report.",
+      "source_basis": [
+        "LambdaParameterInRestartableEffect.kt:121-124",
+        "detekt:Entity.kt:28",
+        "detekt:Suppressions.kt:19-45"
+      ],
+      "semantic_interpretation": "suppression_neighbor",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\n\n@Suppress(\"Compose:LambdaParameterInRestartableEffect\")\n@Composable\nfun QuietEffect(onReady: () -> Unit) {\n    LaunchedEffect(Unit) { onReady() }\n}\n\n@Composable\nfun VisibleEffect(onReady: () -> Unit) {\n    LaunchedEffect(Unit) { onReady() }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 13,
+          "column": 18,
+          "end_line": 13,
+          "end_column": 25,
+          "text": "onReady"
+        }
+      ],
+      "suppressed_targets": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 23,
+          "text": "onReady"
+        }
+      ],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 13,
+          "column": 18,
+          "end_line": 13,
+          "end_column": 25,
+          "text": "onReady"
+        }
+      ]
+    },
+    {
+      "id": "effect-import-alias",
+      "kind": "alias_control",
+      "purpose": "Aliasing the real restartable effect hides it from the fixed callee-name set.",
+      "source_basis": [
+        "Composables.kt:352-366",
+        "LambdaParameterInRestartableEffect.kt:29-33"
+      ],
+      "semantic_interpretation": "known_syntax_false_negative_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect as RestartingEffect\n\n@Composable\nfun ReadyEffect(onReady: () -> Unit) {\n    RestartingEffect(Unit) { onReady() }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "local-lambda-typealias",
+      "kind": "alias_control",
+      "purpose": "The tag really does discover a same-file function typealias; this is not an assumed semantic alias resolution.",
+      "source_basis": [
+        "Lambdas.kt:77-95",
+        "LambdaParameterInRestartableEffect.kt:35-39"
+      ],
+      "semantic_interpretation": "supported_same_file_syntax_alias",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\n\ntypealias ReadyCallback = () -> Unit\n\n@Composable\nfun ReadyEffect(onReady: ReadyCallback) {\n    LaunchedEffect(Unit) { onReady() }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 16,
+          "end_line": 9,
+          "end_column": 23,
+          "text": "onReady"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 16,
+          "end_line": 9,
+          "end_column": 23,
+          "text": "onReady"
+        }
+      ]
+    },
+    {
+      "id": "unrelated-effect-homonym",
+      "kind": "homonym_control",
+      "purpose": "A synchronous application helper is not a restartable Compose effect, but its name triggers the heuristic.",
+      "source_basis": [
+        "Composables.kt:352-366",
+        "LambdaParameterInRestartableEffect.kt:29-124"
+      ],
+      "semantic_interpretation": "known_syntax_false_positive_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\nprivate fun LaunchedEffect(key: Any?, block: () -> Unit) = block()\n\n@Composable\nfun ReadyEffect(onReady: () -> Unit) {\n    LaunchedEffect(Unit) { onReady() }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 23,
+          "text": "onReady"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 23,
+          "text": "onReady"
+        }
+      ]
+    },
+    {
+      "id": "selected-main-excludes-test",
+      "kind": "source_set_control",
+      "purpose": "Select the valid main source only; the captured test file contains the ordinary positive trigger.",
+      "source_basis": [
+        "detekt-provider:compilation-membership",
+        "fixture:positive",
+        "fixture:valid-alternative"
+      ],
+      "semantic_interpretation": "unselected_source_is_not_analyzed_or_qualified",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\nimport androidx.compose.runtime.getValue\nimport androidx.compose.runtime.rememberUpdatedState\n\n@Composable\nfun ReadyEffect(onReady: () -> Unit) {\n    val latestOnReady by rememberUpdatedState(onReady)\n    LaunchedEffect(Unit) { latestOnReady() }\n}\n",
+        "src/test/kotlin/TestOnly.kt": "package fixtures.compose.outside\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.LaunchedEffect\n\n@Composable\nfun ReadyEffect(onReady: () -> Unit) {\n    LaunchedEffect(Unit) { onReady() }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "excluded_positive_oracle": [
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 7,
+          "column": 16,
+          "end_line": 7,
+          "end_column": 23,
+          "text": "onReady"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    }
+  ],
+  "observation": {
+    "actual_execution": null,
+    "tested": false,
+    "qualified": false,
+    "real_world_precision": null,
+    "coverage_certificate": null
+  }
+}

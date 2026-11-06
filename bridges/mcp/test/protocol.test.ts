@@ -4,27 +4,79 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Client } from '@modelcontextprotocol/client';
+import { CLIENT_CAPABILITIES_META_KEY, CLIENT_INFO_META_KEY, PROTOCOL_VERSION_META_KEY, Client } from '@modelcontextprotocol/client';
 import { StdioClientTransport } from '@modelcontextprotocol/client/stdio';
-import { bridgeConfigSchema, MCP_PROFILE } from '../src/server.js';
-import { PREVIEW_CONTRACT } from '../src/rpc.js';
+import { bridgeConfigSchema, FINDING_WIRE_CAPABILITY, MCP_PROFILE } from '../src/server.js';
+import { FINDING_WIRE_PROFILE, PREVIEW_CONTRACT } from '../src/rpc.js';
 
-const brokerFixture=`import readline from 'node:readline';readline.createInterface({input:process.stdin}).on('line',line=>{const r=JSON.parse(line);const {credential,...params}=r.params;process.stdout.write(JSON.stringify({id:r.id,contractVersion:'${PREVIEW_CONTRACT}',result:{contractVersion:'${PREVIEW_CONTRACT}',method:r.method,clientId:credential.clientId,params,state:'pending',outcome:'unknown',...(params.reviewId==='large'?{large:'x'.repeat(40000)}:{})}})+'\\n')});`;
-async function setup(t: {after(fn:()=>Promise<unknown>):void}, mode: 'legacy'|{pin:string}={pin:MCP_PROFILE}) {
+const compatibleCapabilities={experimental:{[FINDING_WIRE_CAPABILITY]:{profile:FINDING_WIRE_PROFILE}}};
+type Capabilities=NonNullable<ConstructorParameters<typeof Client>[1]>['capabilities'];
+const attachment={kind:'upstream_sarif',digest:'sha256:'+'c'.repeat(64),artifactRef:'  /outputs/attempt-1/provider-a/detekt.sarif  '};
+const brokerFixture=`
+import readline from 'node:readline';let dispatchCount=0;
+readline.createInterface({input:process.stdin}).on('line',line=>{
+  const r=JSON.parse(line);
+  if(r.findingWireProfile!=='${FINDING_WIRE_PROFILE}')return process.stdout.write(JSON.stringify({id:r.id,contractVersion:'${PREVIEW_CONTRACT}',error:{code:'incompatible_finding_wire_profile',message:'Profile required'}})+'\\n');
+  const {credential,...params}=r.params;
+  const result={contractVersion:'${PREVIEW_CONTRACT}',method:r.method,clientId:credential.clientId,params,state:'pending',outcome:'unknown',dispatchCount:++dispatchCount,
+    ...(params.reviewId==='large'?{large:'x'.repeat(40000)}:{}),
+    ...(params.reviewId==='attachments'?{findings:[{ruleId:'fixture.rule',evidence:[{kind:'upstream_sarif',summary:'Complete report',digest:'${attachment.digest}',artifactRef:null}],retrievalAttachments:[${JSON.stringify(attachment)}]}]}:{})};
+  process.stdout.write(JSON.stringify({id:r.id,contractVersion:'${PREVIEW_CONTRACT}',findingWireProfile:'${FINDING_WIRE_PROFILE}',result})+'\\n');
+});`;
+async function fixtureTransport(){
   const dir=await mkdtemp(join(tmpdir(),'ktchecker-mcp-test-'));
   const path=join(dir,'config.json');
   await writeFile(path,JSON.stringify({broker:{command:process.execPath,args:['--input-type=module','-e',brokerFixture]},credential:{clientId:'client-a',token:'fixture-private-client-capability'},submissions:{prepared:{patchId:'p1',idempotencyKey:'key-p1',input:{snapshot:{snapshotId:'fixture-only'},materializedRoot:'/owner/prepared/fixture'}}}}),{mode:0o600});
   const transport=new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL('../src/main.js',import.meta.url)),'--config',path],stderr:'pipe'});
-  const client=new Client({name:'ktchecker-sdk-protocol-test',version:'0.1.0'},{versionNegotiation:{mode}});
+  return {dir,transport};
+}
+async function setup(t: {after(fn:()=>Promise<unknown>):void}, mode: 'legacy'|{pin:string}={pin:MCP_PROFILE}, capabilities:Capabilities=compatibleCapabilities) {
+  const {dir,transport}=await fixtureTransport();
+  const client=new Client({name:'ktchecker-sdk-protocol-test',version:'0.1.0'},
+    {versionNegotiation:{mode},...(capabilities===undefined?{}:{capabilities})});
   t.after(async()=>{await client.close();await rm(dir,{recursive:true,force:true});});
   await client.connect(transport);
   return client;
 }
 
+// Low-level SDK transport deliberately varies per-request metadata, including invalid data.
+// No SDK client capability cache or model tool argument is used as a replacement grant.
+async function rawPeer(t:{after(fn:()=>Promise<unknown>):void}){
+  const {dir,transport}=await fixtureTransport();let nextId=0;
+  t.after(async()=>{await transport.close();await rm(dir,{recursive:true,force:true});});
+  await transport.start();
+  return {close:()=>transport.close(),request:(method:string,params:Record<string,unknown>,capabilities:unknown=compatibleCapabilities,protocol:string=MCP_PROFILE)=>{
+    const id=++nextId;
+    return new Promise<Record<string,unknown>>((resolve,reject)=>{
+      const timer=setTimeout(()=>reject(new Error('fixture_response_timeout')),5000);
+      const fail=(error:unknown)=>{clearTimeout(timer);reject(error);};
+      transport.onerror=fail;transport.onclose=()=>fail(new Error('fixture_peer_closed'));
+      transport.onmessage=message=>{
+        if(!('id' in message)||message.id!==id)return;
+        clearTimeout(timer);resolve(message as unknown as Record<string,unknown>);
+      };
+      void transport.send({jsonrpc:'2.0',id,method,params:{...params,_meta:{
+        [PROTOCOL_VERSION_META_KEY]:protocol,[CLIENT_INFO_META_KEY]:{name:'raw-admission-fixture',version:'0.1.0'},
+        [CLIENT_CAPABILITIES_META_KEY]:capabilities,
+      }}}).catch(fail);
+    });
+  }};
+}
+function wireResult(reply:Record<string,unknown>):Record<string,unknown>{
+  assert.equal(reply.error,undefined);
+  assert(reply.result&&typeof reply.result==='object'&&!Array.isArray(reply.result));
+  return reply.result as Record<string,unknown>;
+}
+function compatibilityError(reply:Record<string,unknown>):void{
+  const result=wireResult(reply);assert.equal(result.isError,true);
+  assert.equal((result.structuredContent as {error:{code:string}}).error.code,'incompatible_finding_wire_profile');
+  assert(!JSON.stringify(reply).includes('fixture-private-client-capability'));
+}
+
 test('official SDK current-profile discovery/tools and structured preview result', {timeout:10000}, async t=>{
   const client=await setup(t);
   const tools=await client.listTools();
-  assert.deepEqual(tools.tools.map(x=>x.name).sort(),['review.cancel','review.events','review.status','review.submit']);
+  assert.deepEqual(tools.tools.map(x=>x.name).sort(),['review.cancel','review.events','review.policy.reassess','review.policy.status','review.status','review.submit']);
   for(const method of ['review.ack','review.observe','client.register','gate.complete','snapshot.register']) assert(!tools.tools.some(x=>x.name===method));
   const result=await client.callTool({name:'review.status',arguments:{reviewId:'r1'}});
   assert.equal(result.isError,undefined);
@@ -60,4 +112,70 @@ test('legacy handshake rejected rather than masquerading as modern MCP', {timeou
 });
 test('configuration does not accept adapter credentials or arbitrary server properties',()=>{
   assert.throws(()=>bridgeConfigSchema.parse({broker:{command:'ktchecker',args:['rpc']},credential:{clientId:'c',token:'token'},adapter:{token:'secret'}}));
+});
+
+// All admission controls below are synthetic SOURCE, not executed profile conformance.
+test('admitted SDK client retains nonempty attachment locators without adding profile to result bytes',{timeout:10000},async t=>{
+  const client=await setup(t);
+  const result=await client.callTool({name:'review.status',arguments:{reviewId:'attachments'}});
+  assert.equal(result.isError,undefined);
+  const body=result.structuredContent as {findings:{retrievalAttachments:unknown[]}[];params:unknown};
+  assert.deepEqual(body.findings[0]!.retrievalAttachments,[attachment]);
+  assert.deepEqual(body.params,{reviewId:'attachments'});
+  assert.equal(Object.hasOwn(body,'findingWireProfile'),false);
+});
+test('old current-profile SDK peer may discover tools but cannot invoke without the Finding declaration',{timeout:10000},async t=>{
+  const client=await setup(t,{pin:MCP_PROFILE},{});
+  assert.equal((await client.listTools()).tools.length,6);
+  const result=await client.callTool({name:'review.status',arguments:{reviewId:'r1'}});
+  assert.equal(result.isError,true);
+  assert.equal((result.structuredContent as {error:{code:string}}).error.code,'incompatible_finding_wire_profile');
+});
+test('discovery advertises exact admission; all six unadmitted tools fail before any broker dispatch',{timeout:15000},async t=>{
+  const peer=await rawPeer(t);
+  const discovery=wireResult(await peer.request('server/discover',{},{}));
+  assert.deepEqual((discovery.capabilities as {experimental:Record<string,unknown>}).experimental[FINDING_WIRE_CAPABILITY],{profile:FINDING_WIRE_PROFILE});
+  const operations:[string,Record<string,unknown>][]=[
+    ['review.submit',{submissionId:'prepared'}],['review.status',{reviewId:'r1'}],
+    ['review.policy.reassess',{reviewId:'r1',idempotencyKey:'policy-1',generation:1,expectedPolicyDigest:'sha256:'+'c'.repeat(64)}],
+    ['review.policy.status',{idempotencyKey:'policy-1'}],['review.events',{}],['review.cancel',{reviewId:'r1'}],
+  ];
+  for(const [name,args] of operations)compatibilityError(await peer.request('tools/call',{name,arguments:args},{}));
+  const accepted=wireResult(await peer.request('tools/call',{name:'review.status',arguments:{reviewId:'r1'}}));
+  assert.equal((accepted.structuredContent as {dispatchCount:number}).dispatchCount,1);
+});
+test('missing, malformed, extra-field and different declarations never imply admission',{timeout:15000},async t=>{
+  const peer=await rawPeer(t);
+  for(const capabilities of [
+    {experimental:{}},
+    {experimental:{[FINDING_WIRE_CAPABILITY]:{}}},
+    {experimental:{[FINDING_WIRE_CAPABILITY]:{profile:1}}},
+    {experimental:{[FINDING_WIRE_CAPABILITY]:{profile:'ktchecker/finding-retrieval-attachments-2'}}},
+    {experimental:{[FINDING_WIRE_CAPABILITY]:{profile:FINDING_WIRE_PROFILE,allowLegacy:true}}},
+    {experimental:{'ktchecker/other-wire':{profile:FINDING_WIRE_PROFILE}}},
+  ])compatibilityError(await peer.request('tools/call',{name:'review.status',arguments:{reviewId:'r1'}},capabilities));
+  for(const capabilities of [null,{experimental:{[FINDING_WIRE_CAPABILITY]:[]}}]){
+    const reply=await peer.request('tools/call',{name:'review.status',arguments:{reviewId:'r1'}},capabilities);
+    if(reply.error===undefined)compatibilityError(reply); // The SDK may reject invalid envelope data earlier.
+    else assert.equal(Object.hasOwn(reply,'result'),false);
+  }
+  const wrongProtocol=await peer.request('tools/call',{name:'review.status',arguments:{reviewId:'r1'}},compatibleCapabilities,'2026-07-29');
+  assert(wrongProtocol.error!==undefined||wireResult(wrongProtocol).isError===true);
+  const spoof=await peer.request('tools/call',{name:'review.status',arguments:{reviewId:'r1',findingWireProfile:FINDING_WIRE_PROFILE}},{});
+  assert(spoof.error!==undefined||wireResult(spoof).isError===true);
+  const accepted=wireResult(await peer.request('tools/call',{name:'review.status',arguments:{reviewId:'r1'}}));
+  assert.equal((accepted.structuredContent as {dispatchCount:number}).dispatchCount,1);
+});
+test('request and reconnect boundaries never inherit a previous successful capability grant',{timeout:15000},async t=>{
+  const first=await rawPeer(t),params={name:'review.status',arguments:{reviewId:'r1'}};
+  assert.notEqual(wireResult(await first.request('tools/call',params)).isError,true);
+  compatibilityError(await first.request('tools/call',params,{}));
+  compatibilityError(await first.request('tools/call',params,{experimental:{[FINDING_WIRE_CAPABILITY]:{profile:'other'}}}));
+  const next=wireResult(await first.request('tools/call',params));
+  assert.equal((next.structuredContent as {dispatchCount:number}).dispatchCount,2);
+  await first.close();
+  const reconnected=await rawPeer(t);
+  compatibilityError(await reconnected.request('tools/call',params,{}));
+  const accepted=wireResult(await reconnected.request('tools/call',params));
+  assert.equal((accepted.structuredContent as {dispatchCount:number}).dispatchCount,1);
 });

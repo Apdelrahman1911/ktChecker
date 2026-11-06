@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "corpus_id": "detekt-syntax-local-shapes-v1",
+  "authoring_state": "unexecuted",
+  "rule_id": "ktc.kotlin.detekt.style.may-be-constant",
+  "upstream_id": "style:MayBeConstant",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "severity": "info",
+  "kind": "style",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "b3c4c881887958e7f4ec1395de32c695f680ee1def19d7efcbb47249b0a813d5",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-style/src/main/kotlin/dev/detekt/rules/style/MayBeConstant.kt",
+    "source_file_sha256": "ae0b166452da891d1d583bcd528652027b0acafe58bb80690783a9170506dae0",
+    "source_archive_sha256": "4f18e9ac263a157229db846ac18d3a71b8861d74d415da3ebd0fa085dee461a6",
+    "source_archive_entry": "dev/detekt/rules/style/MayBeConstant.kt",
+    "predicate_line_numbers": [
+      36,
+      51,
+      61,
+      74,
+      78,
+      80,
+      87,
+      94,
+      99,
+      107,
+      109,
+      120,
+      123
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/style/MayBeConstant",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:10af708fa83bfc82168bc4b24a2fe18ba2a5821f81628e74713aba1ad75e84a5"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [],
+  "bounded_predicate": "Report eligible nonlocal val declarations at top level or in an object when the initializer is a recognized literal, a locally collected const-name text, supported arithmetic, or parentheses. Reject var/actual/getter/already-const/override, class instances and most annotations. Entity.atName(property). Explicit declared type and binding/effect/ABI validity are not checked. No rule-specific options.",
+  "selection_rationale": "Adds storage/constant eligibility advice distinct from function-body and data-class mutability rules. Local scope, accessor semantics, declared nullable type and supported arithmetic demonstrate limits without resolving names or inventing a performance claim.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.maybeconstant\n\nval retryLimit: Int = 3\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 4,
+        "end_line": 3,
+        "end_column": 14,
+        "span": "retryLimit",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A top-level immutable primitive literal can be represented as a compile-time constant in a context where inlining/interoperability is intended; this remains explicit opt-in policy."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.maybeconstant\n\nconst val RETRY_LIMIT: Int = 3\n"
+    },
+    "expected": [],
+    "intent": "A legal const val already expresses the intended compile-time value and must not report."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.maybeconstant\n\nval retryLimit: Int = 3\n",
+      "SuppressedCase.kt": "@file:Suppress(\"MayBeConstant\")\n\npackage suppressed.corpus.maybeconstant\n\nval retryLimit: Int = 3\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 4,
+        "end_line": 3,
+        "end_column": 14,
+        "span": "retryLimit",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.maybeconstant\n\nval optionalLimit: Int? = 3\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 17,
+          "span": "optionalLimit",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The literal initializer matches, but the explicitly nullable declared type is not permitted for const val. Keep this anticipated unsafe-advice false positive instead of treating the initializer as sufficient semantic proof.",
+      "id": "nullable-declared-type-is-not-const-eligible",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.maybeconstant\n\nfun retryLimit(): Int {\n    val localLimit = 3\n    return localLimit\n}\n"
+      },
+      "expected": [],
+      "intent": "A local immutable literal is legal code but cannot be declared const at local scope; the explicit local-property exclusion keeps it unreported.",
+      "id": "local-literal-cannot-be-const",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.maybeconstant\n\nconst val BASE_LIMIT: Int = 1\nval totalLimit: Int = BASE_LIMIT + 2\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 14,
+          "span": "totalLimit",
+          "occurrence": 0
+        }
+      ],
+      "intent": "A same-file const name combined with supported arithmetic is recognized; the already-const BASE_LIMIT is not a second finding. No cross-file or overloaded-operator binding is inferred.",
+      "id": "same-file-constant-arithmetic-shape",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.maybeconstant\n\nval retryLimit: Int get() = 3\n"
+      },
+      "expected": [],
+      "intent": "An accessor-backed property is deliberately excluded even when its body returns a literal; property access behavior is a separate API surface.",
+      "id": "getter-backed-property-is-excluded",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    }
+  ],
+  "analysis_cost": {
+    "standard_cases": 6,
+    "independent_controls": 4,
+    "authored_analyses": 10,
+    "per_rule_non_analysis_calls": 3,
+    "per_cohort_cli_probes": 1,
+    "actual_executions": 0
+  },
+  "limitations": [
+    "Explicit nullable/non-primitive types can make a reported property invalid as const; source initializer shape alone is insufficient.",
+    "Const-name collection and the exact @JvmField annotation spelling are syntactic. Cross-file resolution, name collisions, all annotation aliases and object nesting are not comprehensively covered.",
+    "Inlining a public value can change binary compatibility and update behavior. No performance or interoperability benefit is measured, and no automatic rewrite is permitted by these data.",
+    "No rule-specific options exist.",
+    "Local syntactic advice only. No binding identity, safe automatic rewrite, whole-program reachability, binary ABI compatibility, call effect, reflection completeness, performance or semantic qualification follows.",
+    "The six lifecycle cases include a disabled-rule configuration control, pinned-version positive replay and negative child-snapshot replay; the latter two are not new predicates. Every other negative/control keeps this rule active.",
+    "Only the existing explicit JVM LIGHT input is proposed. Common and Native requests must abstain without launching; no parser/compiler/Kotlin 2.4.21 versus embedded 2.4.10 compatibility or multiplatform qualification.",
+    "File-level suppression is authored; declaration-level aliases, baselines and generated-code inclusion policy are not newly qualified."
+  ],
+  "qualification_note": "Authored expected ranges and concrete counterexamples come from primary source and language reasoning before execution, never detector outputs. Preserve any unexpected findings/misses and stop; do not rewrite oracles to force a pass. Existing activation/severity/certainty remain exact. Independent oracle/source review, root adoption, fresh controls and separately admitted single-cohort real isolated calls are required. No natural-project precision, safety, release or historical-stage transfer."
+}

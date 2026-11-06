@@ -32,6 +32,7 @@ class DetektSyntaxCorpusIntegrationTest {
     private val expansionFixtures: Path get() = repository.resolve(DetektCorpusInventory.EXPANSION)
     private val protocolFixtures: Path get() = repository.resolve(DetektCorpusInventory.PROTOCOL)
     private val observabilityFixtures: Path get() = repository.resolve(DetektCorpusInventory.OBSERVABILITY)
+    private val localShapeFixtures: Path get() = repository.resolve(DetektCorpusInventory.LOCAL_SHAPES)
     private lateinit var inventory: DetektCorpusInventory
     private val enabled: Boolean get() = System.getProperty("ktchecker.detekt.corpus.integration") == "true"
     private lateinit var cohort: DetektCorpusCohort
@@ -127,8 +128,8 @@ class DetektSyntaxCorpusIntegrationTest {
         assertEquals(DetektCorpusCohort.FULL_AUTHORED_RULES, approved.size)
         assertEquals(DetektCorpusCohort.authoredRuleIds, approved.map { it.ruleId }.toSet())
         assertEquals(DetektCorpusCohort.FULL_AUTHORED_ANALYSES, approved.sumOf { 6 + it.controls.size })
-        assertEquals(13, approved.count { it.activation == "advisory" })
-        assertEquals(9, approved.count { it.activation == "opt_in" })
+        assertEquals(15, approved.count { it.activation == "advisory" })
+        assertEquals(16, approved.count { it.activation == "opt_in" })
         val previousIds = DetektCorpusCohort.preProtocol.flatMap { it.analysesByRule.keys }.toSet()
         val previous = approved.filter { it.ruleId in previousIds }
         assertEquals(DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_RULES, previous.size)
@@ -141,6 +142,12 @@ class DetektSyntaxCorpusIntegrationTest {
         assertEquals(DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_ANALYSES, prior.sumOf { 6 + it.controls.size })
         assertEquals(13, prior.count { it.activation == "advisory" })
         assertEquals(6, prior.count { it.activation == "opt_in" })
+        val preLocalIds = DetektCorpusCohort.preLocalShapes.flatMap { it.analysesByRule.keys }.toSet()
+        val preLocal = approved.filter { it.ruleId in preLocalIds }
+        assertEquals(DetektCorpusCohort.PRE_LOCAL_SHAPES_AUTHORED_RULES, preLocal.size)
+        assertEquals(DetektCorpusCohort.PRE_LOCAL_SHAPES_AUTHORED_ANALYSES, preLocal.sumOf { 6 + it.controls.size })
+        assertEquals(13, preLocal.count { it.activation == "advisory" })
+        assertEquals(9, preLocal.count { it.activation == "opt_in" })
         val corpus = cohort.analysesByRule.keys.map { id -> approved.single { it.ruleId == id } }
         for (fixture in corpus) assertEquals(cohort.analysesByRule.getValue(fixture.ruleId), 6 + fixture.controls.size)
         assertEquals(corpus.any { it.activation == "opt_in" }, cohort.requiresExplicitOwnerOptIn)
@@ -253,7 +260,7 @@ class DetektSyntaxCorpusIntegrationTest {
                 val coverage = result.coverage.single()
                 assertEquals(fixture.ruleId, coverage.ruleId)
                 assertEquals(input.context.scope, coverage.context)
-                assertEquals("executed", coverage.provenance)
+                assertEquals(if (case.disabled) "not_executed" else "executed", coverage.provenance)
                 val selectedSarifId = DetektCatalog.byId.getValue(fixture.ruleId).sarifId
                 val parsedReport = DetektReportParser().parse(actual.report("detekt.sarif"), input)
                 assertEquals(!case.disabled, selectedSarifId in parsedReport.enabledSarifIds,
@@ -412,7 +419,7 @@ class DetektSyntaxCorpusIntegrationTest {
             put("implementation_evidence", JsonArray(emptyList())); put("cases", JsonArray(emptyList()))
             put("qualification_evidence", JsonArray(emptyList()))
             put("gaps", JsonArray((fixture.limitations +
-                "Full twenty-two-rule/199-analysis authoring scope retained; prior nineteen/172 and sixteen/145 remain intact. This rule is not_run, not a scope exclusion or borrowed execution.").map(::JsonPrimitive)))
+                "Full thirty-one-rule/287-analysis authoring scope retained; prior twenty-two/199, nineteen/172 and sixteen/145 remain intact. This rule is not_run, not a scope exclusion or borrowed execution.").map(::JsonPrimitive)))
         }
         witness.verify()
         owned.verifyDirectories()
@@ -441,7 +448,7 @@ class DetektSyntaxCorpusIntegrationTest {
                 put("module", ":${cohort.contextId}"); put("compilation", "main"); put("analysis_mode", "light")
                 put("kotlin_version", "2.4.21"); put("compiler_version", "2.4.21"); put("embedded_kotlin_version", DETEKT_EMBEDDED_KOTLIN)
                 put("jdk_version", System.getProperty("java.version")); put("library_versions", buildJsonObject {})
-                put("scope_note", "${corpus.size} actually checked ${cohort.name} syntax routes only. Full twenty-two/199 authoring scope remains not_run; prior nineteen/172 and sixteen/145 are intact and ${notRun.size} other rows are not exclusions. Unqualified.")
+                put("scope_note", "${corpus.size} actually checked ${cohort.name} syntax routes only. Full thirty-one/287 authoring scope remains not_run; prior twenty-two/199, nineteen/172 and sixteen/145 are intact and ${notRun.size} other rows are not exclusions. Unqualified.")
             })
             put("start_witness", witness.manifestReference); put("rules", JsonArray(rows))
             put("approved_corpus_rule_count", DetektCorpusCohort.FULL_AUTHORED_RULES); put("approved_corpus_analysis_count", DetektCorpusCohort.FULL_AUTHORED_ANALYSES); put("full_corpus_state", "not_run")
@@ -576,12 +583,13 @@ class DetektSyntaxCorpusIntegrationTest {
         inventory.verify()
         val sourceRoots = listOf("modules/provider-detekt/src/main", "modules/provider-detekt/src/corpusTest",
             "modules/provider-runtime/src/main", "modules/provider-runtime/native", "modules/contracts/src/main", "modules/snapshot/src/main",
-            "providers/detekt-fixtures/corpus/syntax-v1", DetektCorpusInventory.EXPANSION, DetektCorpusInventory.PROTOCOL, DetektCorpusInventory.OBSERVABILITY).map(repository::resolve)
+            "providers/detekt-fixtures/corpus/syntax-v1", DetektCorpusInventory.EXPANSION, DetektCorpusInventory.PROTOCOL, DetektCorpusInventory.OBSERVABILITY, DetektCorpusInventory.LOCAL_SHAPES).map(repository::resolve)
         val buildFiles = listOf("build.gradle.kts", "settings.gradle.kts", "gradle.properties", "gradle/wrapper/gradle-wrapper.properties",
             "modules/provider-detekt/build.gradle.kts", "modules/provider-runtime/build.gradle.kts",
             "modules/contracts/build.gradle.kts", "modules/snapshot/build.gradle.kts",
             "providers/detekt-fixtures/test_syntax_corpus.py", "providers/detekt-fixtures/test_syntax_expansion.py",
             "providers/detekt-fixtures/test_syntax_protocol.py", "providers/detekt-fixtures/test_syntax_observability.py",
+            "providers/detekt-fixtures/test_syntax_local_shapes.py",
             "providers/detekt-fixtures/corpus/syntax-v1/README.md")
             .map(repository::resolve)
         fun sourceFiles(): List<Path> = (sourceRoots.flatMap { directory ->
@@ -596,7 +604,7 @@ class DetektSyntaxCorpusIntegrationTest {
         }
         val nativeAnchor = Class.forName("dev.ktchecker.providers.runtime.OwnedProcessSupervisor", false, IsolatedProcessRunner::class.java.classLoader)
         val types = listOf(DetektSyntaxCorpusIntegrationTest::class.java, DetektProvider::class.java, DetektCatalog::class.java,
-            DetektCorpusInventory::class.java, DetektCorpusExpansionPins::class.java, DetektCorpusProtocolPins::class.java, DetektCorpusObservabilityPins::class.java, CorpusInvocationSpec::class.java,
+            DetektCorpusInventory::class.java, DetektCorpusExpansionPins::class.java, DetektCorpusProtocolPins::class.java, DetektCorpusObservabilityPins::class.java, DetektCorpusLocalShapesPins::class.java, CorpusInvocationSpec::class.java,
             DetektCorpusCohort::class.java, DetektCorpusBudget::class.java, DetektCorpusSettings::class.java, DetektCorpusEvidence::class.java,
             DetektReportParser::class.java, IsolatedProcessRunner::class.java, ExecutionPermit::class.java,
             ExactExecutionAuthority::class.java, OwnedProcessContainment::class.java, OwnedSupervisorIdentity::class.java, nativeAnchor,
@@ -670,7 +678,7 @@ class DetektSyntaxCorpusIntegrationTest {
             "${repository.relativize(it.key).toString().replace('\\', '/')}:${Digests.sha256(it.value)}"
         })
         val fixtureSetDigest = Digests.sha256(sources.entries.filter { (path, _) ->
-            (path.startsWith(fixtures) || path.startsWith(expansionFixtures) || path.startsWith(protocolFixtures) || path.startsWith(observabilityFixtures)) && path.toString().endsWith(".json") }
+            (path.startsWith(fixtures) || path.startsWith(expansionFixtures) || path.startsWith(protocolFixtures) || path.startsWith(observabilityFixtures) || path.startsWith(localShapeFixtures)) && path.toString().endsWith(".json") }
             .sortedBy { repository.relativize(it.key).toString() }.joinToString("\n") {
                 "${repository.relativize(it.key).toString().replace('\\', '/')}:${Digests.sha256(it.value)}" })
         return Witness(refs + manifest, manifest, supervisorIdentity, Digests.sha256(sources.getValue(runtimeSource)),
@@ -772,6 +780,7 @@ class DetektSyntaxCorpusIntegrationTest {
         return inventory.fixtures.map { item ->
             require(item.number("schema_version") == 1 && item.string("authoring_state") == "unexecuted")
             require(item.string("corpus_id") == when (item.string("rule_id")) {
+                in DetektCorpusLocalShapesPins.controlIds -> "detekt-syntax-local-shapes-v1"
                 in DetektCorpusObservabilityPins.controlIds -> "detekt-syntax-exception-observability-v1"
                 in DetektCorpusProtocolPins.controlIds -> "detekt-syntax-protocol-v1"
                 in DetektCorpusExpansionPins.controlIds -> "detekt-syntax-expansion-v1"

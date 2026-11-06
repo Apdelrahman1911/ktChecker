@@ -6,7 +6,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { constants, closeSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, opendirSync,
   readSync, statfsSync, writeSync, type BigIntStats } from 'node:fs';
 import { dirname, isAbsolute, join, normalize, parse, relative, sep } from 'node:path';
-import { PREVIEW_CONTRACT, PRIVATE_RPC_LINE_BYTES, type BrokerPort, type JsonObject } from '@ktchecker/mcp-preview/rpc';
+import { FINDING_WIRE_PROFILE, PREVIEW_CONTRACT, PRIVATE_RPC_LINE_BYTES, type BrokerPort, type JsonObject } from '@ktchecker/mcp-preview/rpc';
 import { canonical, digest, HostError } from '../src/journal.js';
 
 export const REAL_MODEL_CASE = 'ktc_live_model_no_test_feasibility';
@@ -58,10 +58,15 @@ export function safeRealFailure(error: unknown): string {
 /** One ORIGINAL observation clock, captured before any fixture/home/owner preparation.
  * A wait timeout never cancels anything and never establishes a refreshed execution budget.
  */
+const originalRealModelClocks = new WeakSet<object>();
 export class RealModelClock {
   readonly enteredNanos = process.hrtime.bigint();
   readonly enteredAt = new Date().toISOString();
   readonly originalDeadlineNanos = this.enteredNanos + BigInt(REAL_MODEL_OVERALL_MS) * 1_000_000n;
+  constructor() {
+    requireReal(new.target === RealModelClock, 'real_model_original_clock_type');
+    originalRealModelClocks.add(this); Object.freeze(this);
+  }
   elapsedMs(): number { return Number(process.hrtime.bigint() - this.enteredNanos) / 1_000_000; }
   remainingMs(): number {
     const remaining = Math.floor(Number(this.originalDeadlineNanos - process.hrtime.bigint()) / 1_000_000);
@@ -78,6 +83,12 @@ export class RealModelClock {
     } finally { if (timer) clearTimeout(timer); } // Timer only; never process or owner cleanup.
   }
 }
+
+/** Exact original construction, not instanceof/prototype imitation or copied numeric deadlines. */
+export function isOriginalRealModelClock(value: unknown): value is RealModelClock {
+  return value !== null && typeof value === 'object' && originalRealModelClocks.has(value);
+}
+Object.freeze(RealModelClock.prototype); Object.freeze(RealModelClock);
 
 function fileKey(stat: BigIntStats): string { return stat.dev.toString() + ':' + stat.ino.toString(); }
 function unchanged(a: BigIntStats, b: BigIntStats): boolean {
@@ -331,7 +342,7 @@ export class RetainedRealModelOwner implements BrokerPort {
     this.check(); requireReal(!this.eofPermitted && this.pending.size < 4 && /^[a-z][a-zA-Z0-9_.]*$/.test(method), 'real_model_owner_request_state');
     requireReal(++this.requests <= 4096 && ['owner.hello', 'owner.phase.begin', 'owner.phase.status', 'owner.retire',
       'review.events', 'review.ack', 'review.observe', 'gate.prepare', 'gate.complete'].includes(method), 'real_model_owner_operation_bound');
-    const id = randomUUID(), bytes = Buffer.from(JSON.stringify({ id, method, params }) + '\n', 'utf8');
+    const id = randomUUID(), bytes = Buffer.from(JSON.stringify({ id, method, params, findingWireProfile: FINDING_WIRE_PROFILE }) + '\n', 'utf8');
     requireReal(bytes.length <= REAL_MODEL_RPC_BYTES, 'real_model_owner_request_bound');
     return new Promise<T>((resolve, reject) => {
       // Wait bound only. Owner captures/retains its own ORIGINAL clocks before registration IO.
@@ -354,6 +365,11 @@ export class RetainedRealModelOwner implements BrokerPort {
         Object.hasOwn(envelope, 'result') === Object.hasOwn(envelope, 'error')) { this.fail('real_model_owner_contract_invalid'); return; }
       const pending = this.pending.get(envelope.id);
       if (!pending) { this.fail('real_model_owner_unsolicited_response'); return; }
+      // Per-reply admission only. Unknown remote outcome uses the existing poison path,
+      // retaining owner stdin/pipes: no rollback assumption, EOF, signal or retry.
+      if (Object.hasOwn(envelope, 'result') && envelope.findingWireProfile !== FINDING_WIRE_PROFILE) {
+        this.fail('incompatible_finding_wire_profile'); return;
+      }
       this.pending.delete(envelope.id); clearTimeout(pending.timer);
       if (Object.hasOwn(envelope, 'error')) { pending.reject(new HostError('real_model_owner_rpc_rejected')); this.fail('real_model_owner_rpc_rejected'); return; }
       pending.resolve(envelope.result);

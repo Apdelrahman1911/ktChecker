@@ -314,11 +314,12 @@ internal class ParentPlans(
 
     private fun acceptChild(c: Connection, binding: ClientBinding, child: Child, staged: InputArchive.Staged?): ReviewStatus {
         val input = child.slot.input
-        if (c.count("SELECT COUNT(*) FROM work WHERE work_key=?", child.key) == 0L) {
+        val workDomain = c.one("SELECT provider_key,fair_key FROM work WHERE work_key=?", child.key) { it.getString(1) to it.getString(2) }
+        val fairKey = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
+        if (workDomain != null && workDomain != (service.providerKey to fairKey)) fail("ledger_corrupt", "Retained parent work has a different provider or physical worktree")
+        ledger.admitProviderFairness(c, workDomain?.first ?: service.providerKey, workDomain?.second ?: fairKey, binding.clientId)
+        if (workDomain == null) {
             val ready = staged ?: fail("archive_missing", "Prepared parent input is unavailable")
-            val fairKey = Digests.sha256(canonical(listOf(binding.ownerId, binding.workspaceId, binding.worktreeId)))
-            c.execute("""INSERT OR IGNORE INTO fair_queues(fair_key,last_served)
-                VALUES(?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", fairKey)
             c.execute("""INSERT INTO work(work_key,input_json,frozen_json,provider_key,fair_key,state,archive_bytes,created_at)
                 VALUES(?,?,?,?,?,?,?,?)""", child.key, canonical(input), canonical(ready.input), service.providerKey, fairKey,
                 if (child.slot.state == "pending") "queued" else "complete", ready.bytes, System.currentTimeMillis())
@@ -336,8 +337,6 @@ internal class ParentPlans(
         c.execute("""INSERT INTO reviews(review_id,client_id,patch_id,idempotency_key,request_hash,request_json,input_json,work_key,sequence,policy_certificate,created_at)
             VALUES(?,?,?,?,?,?,?,?,?,?,?)""", review, binding.clientId, child.request.patchId, child.request.idempotencyKey,
             Digests.sha256(requestJson), requestJson, canonical(input), child.key, sequence, service.admittedPolicyCertificate, System.currentTimeMillis())
-        c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
-            SELECT ?,fair_key,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter') FROM work WHERE work_key=?""", binding.clientId, child.key)
         c.execute("UPDATE clients SET next_review=next_review+1,epoch=epoch+1 WHERE client_id=?", binding.clientId)
         val raw = c.one("SELECT result_json FROM work WHERE work_key=? AND state='complete'", child.key) {
             it.getString(1)?.let { json -> ContractJson.decodeFromString<ProviderResult>(json) }

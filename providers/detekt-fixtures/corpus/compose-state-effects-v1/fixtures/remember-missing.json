@@ -1,0 +1,332 @@
+{
+  "schema_version": 1,
+  "rule_id": "ktc.compose.pack.RememberMissing",
+  "upstream_id": "Compose:RememberMissing",
+  "default_activation": "advisory",
+  "depth": "syntax",
+  "entity_kind": "call_expression",
+  "source_oracle": {
+    "kind": "tagged_source_prediction_not_observation",
+    "tag": "v0.6.8",
+    "commit": "84794e3175a8ab6e1d024a5db6c299be2454ae6b",
+    "implementation": {
+      "path": "rules/common/src/main/kotlin/io/nlopez/compose/rules/RememberStateMissing.kt",
+      "sha256": "7338da30bcb4f0beb5627f9125b796464de8e1e492b796192398a2f7e4f7db16",
+      "line_ranges": [
+        [
+          15,
+          37
+        ]
+      ]
+    },
+    "wrapper": {
+      "path": "rules/detekt/src/main/kotlin/io/nlopez/compose/rules/detekt/RememberStateMissingCheck.kt",
+      "sha256": "c93ef5119f4bde5ade9511820fa13f146b81a02754fb6999fa8e7cf9d79fee76",
+      "line_ranges": [
+        [
+          11,
+          17
+        ]
+      ]
+    },
+    "tests": {
+      "path": "rules/detekt/src/test/kotlin/io/nlopez/compose/rules/detekt/RememberStateMissingCheckTest.kt",
+      "sha256": "0e56765994dc0cf36ae2cd978e30458d6cff5ce20bbfda44f32583136e9f855e",
+      "line_ranges": [
+        [
+          18,
+          83
+        ]
+      ]
+    }
+  },
+  "boundary": "Callee names and ancestors beginning with remember (or named retain), not API identity or data flow. Neither import aliases nor homonyms are resolved.",
+  "cases": [
+    {
+      "id": "positive",
+      "kind": "positive",
+      "purpose": "Unremembered Compose state is recreated during recomposition.",
+      "source_basis": [
+        "RememberStateMissing.kt:15-25",
+        "RememberStateMissingCheckTest.kt:29-49"
+      ],
+      "semantic_interpretation": "positive",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.mutableStateOf\n\n@Composable\nfun SearchEntry() {\n    val query = mutableStateOf(\"initial\")\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 41,
+          "text": "mutableStateOf(\"initial\")"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 41,
+          "text": "mutableStateOf(\"initial\")"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "valid-alternative",
+      "kind": "valid_alternative",
+      "purpose": "Remember the actual Compose state instance, rather than renaming a call.",
+      "source_basis": [
+        "RememberStateMissingCheckTest.kt:53-67",
+        "Composables.kt:369-375",
+        "runtime1.5.0:remember"
+      ],
+      "semantic_interpretation": "valid_alternative",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\n\n@Composable\nfun SearchEntry() {\n    val query = remember { mutableStateOf(\"initial\") }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "suppression-neighbor",
+      "kind": "suppression_neighbor",
+      "purpose": "Only the annotated declaration is suppressed; a same-file neighbor still reports.",
+      "source_basis": [
+        "RememberStateMissing.kt:15-25",
+        "detekt:Suppressions.kt:19-45"
+      ],
+      "semantic_interpretation": "suppression_neighbor",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.mutableStateOf\n\n@Suppress(\"Compose:RememberMissing\")\n@Composable\nfun QuietSearch() {\n    val query = mutableStateOf(\"quiet\")\n}\n\n@Composable\nfun VisibleSearch() {\n    val query = mutableStateOf(\"visible\")\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 14,
+          "column": 16,
+          "end_line": 14,
+          "end_column": 41,
+          "text": "mutableStateOf(\"visible\")"
+        }
+      ],
+      "suppressed_targets": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 16,
+          "end_line": 9,
+          "end_column": 39,
+          "text": "mutableStateOf(\"quiet\")"
+        }
+      ],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 14,
+          "column": 16,
+          "end_line": 14,
+          "end_column": 41,
+          "text": "mutableStateOf(\"visible\")"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "factory-import-alias",
+      "kind": "alias_control",
+      "purpose": "The genuine unremembered API is missed after a Kotlin import alias; empty output is not safety.",
+      "source_basis": [
+        "RememberStateMissing.kt:18-21"
+      ],
+      "semantic_interpretation": "known_syntax_false_negative_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.mutableStateOf as searchState\n\n@Composable\nfun SearchEntry() {\n    val query = searchState(\"initial\")\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "remember-import-alias",
+      "kind": "alias_control",
+      "purpose": "A legitimate aliased remember call is not recognized by the ancestor-name heuristic.",
+      "source_basis": [
+        "RememberStateMissing.kt:18-25",
+        "Composables.kt:369-375",
+        "runtime1.5.0:remember"
+      ],
+      "semantic_interpretation": "known_syntax_false_positive_probe",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember as keep\n\n@Composable\nfun SearchEntry() {\n    val query = keep { mutableStateOf(\"initial\") }\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 23,
+          "end_line": 9,
+          "end_column": 48,
+          "text": "mutableStateOf(\"initial\")"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 9,
+          "column": 23,
+          "end_line": 9,
+          "end_column": 48,
+          "text": "mutableStateOf(\"initial\")"
+        }
+      ],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "unrelated-factory-homonym",
+      "kind": "homonym_control",
+      "purpose": "Two local String helpers are not Compose state. Raw names both match; only the reviewed generic message family can become a low-certainty heuristic advisory, never collection advice.",
+      "source_basis": [
+        "RememberStateMissing.kt:18-25",
+        "RememberStateMissing.kt:38-41"
+      ],
+      "semantic_interpretation": "known_syntax_false_positive_probe_and_withheld_unreviewed_collection_family",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\n\nprivate fun mutableStateOf(text: String): String = text\nprivate fun mutableIntListOf(text: String): String = text\n\n@Composable\nfun SearchEntry() {\n    val query = mutableStateOf(\"initial\")\n    val unrelatedCollectionName = mutableIntListOf(\"unrelated\")\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 10,
+          "column": 16,
+          "end_line": 10,
+          "end_column": 41,
+          "text": "mutableStateOf(\"initial\")"
+        },
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 11,
+          "column": 34,
+          "end_line": 11,
+          "end_column": 63,
+          "text": "mutableIntListOf(\"unrelated\")"
+        }
+      ],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 10,
+          "column": 16,
+          "end_line": 10,
+          "end_column": 41,
+          "text": "mutableStateOf(\"initial\")"
+        }
+      ],
+      "expected_withheld_raw_findings": [
+        {
+          "path": "src/main/kotlin/Subject.kt",
+          "line": 11,
+          "column": 34,
+          "end_line": 11,
+          "end_column": 63,
+          "text": "mutableIntListOf(\"unrelated\")"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "outside-composition",
+      "kind": "valid_control",
+      "purpose": "A state factory used outside a composable is outside this detector's visitor scope.",
+      "source_basis": [
+        "RememberStateMissingCheckTest.kt:18-26",
+        "DetektRule.kt:68-75"
+      ],
+      "semantic_interpretation": "valid_control",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.mutableStateOf\n\nfun createSearchState() = mutableStateOf(\"initial\")\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "uninvoked_raw_source_oracle": []
+    },
+    {
+      "id": "selected-main-excludes-test",
+      "kind": "source_set_control",
+      "purpose": "Select the valid main source only; the captured test file contains the ordinary positive trigger.",
+      "source_basis": [
+        "detekt-provider:compilation-membership",
+        "fixture:positive",
+        "fixture:valid-alternative"
+      ],
+      "semantic_interpretation": "unselected_source_is_not_analyzed_or_qualified",
+      "sources": {
+        "src/main/kotlin/Subject.kt": "package fixtures.compose\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.mutableStateOf\nimport androidx.compose.runtime.remember\n\n@Composable\nfun SearchEntry() {\n    val query = remember { mutableStateOf(\"initial\") }\n}\n",
+        "src/test/kotlin/TestOnly.kt": "package fixtures.compose.outside\n\nimport androidx.compose.runtime.Composable\nimport androidx.compose.runtime.mutableStateOf\n\n@Composable\nfun SearchEntry() {\n    val query = mutableStateOf(\"initial\")\n}\n"
+      },
+      "compilation_files": [
+        "src/main/kotlin/Subject.kt"
+      ],
+      "expected_raw_findings": [],
+      "suppressed_targets": [],
+      "expected_admitted_findings": [],
+      "expected_withheld_raw_findings": [],
+      "excluded_positive_oracle": [
+        {
+          "path": "src/test/kotlin/TestOnly.kt",
+          "line": 8,
+          "column": 16,
+          "end_line": 8,
+          "end_column": 41,
+          "text": "mutableStateOf(\"initial\")"
+        }
+      ],
+      "uninvoked_raw_source_oracle": []
+    }
+  ],
+  "observation": {
+    "actual_execution": null,
+    "tested": false,
+    "qualified": false,
+    "real_world_precision": null,
+    "coverage_certificate": null
+  }
+}

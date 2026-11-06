@@ -94,20 +94,28 @@ internal class PolicyMatcher(
         return PolicySelector.ExactFinding(rule.canonicalId, fingerprint(anchor), anchor)
     }
 
-    fun explain(snapshot: ConfigSnapshot, input: AnalysisInput, finding: Finding): SuppressionExplanation {
+    fun explain(snapshot: ConfigSnapshot, input: AnalysisInput, finding: Finding): SuppressionExplanation =
+        explainCaptured(snapshot, snapshot, input, finding, reassessment = false)
+
+    /** Called only with the private, checked captures/input of a reassessment subject. */
+    fun explainReassessment(original: ConfigSnapshot, current: ConfigSnapshot, input: AnalysisInput, finding: Finding): SuppressionExplanation =
+        explainCaptured(original, current, input, finding, reassessment = true)
+
+    private fun explainCaptured(original: ConfigSnapshot, snapshot: ConfigSnapshot, input: AnalysisInput,
+                                finding: Finding, reassessment: Boolean): SuppressionExplanation {
         val rule = aliases.rule(finding.ruleId)
         fun decision(disposition: PolicyDisposition, message: String, fingerprint: String? = null,
                      entry: String? = null, layer: ConfigLayer? = null, attempts: List<MatchAttempt> = emptyList()) =
             SuppressionExplanation(finding, rule?.canonicalId, fingerprint, disposition, message, entry, layer, immutableList(attempts))
 
-        if (snapshot.registryDigest != aliases.digest || !inputBindingMatches(snapshot, input, finding)) {
+        if (snapshot.registryDigest != aliases.digest || !inputBindingMatches(original, input, finding)) {
             return decision(PolicyDisposition.OPEN, "Identity/registry mismatch: no policy matching was authorized for this finding.")
         }
         if (rule == null) return decision(PolicyDisposition.OPEN, "Unknown rule identity; aliases are not guessed.")
         val sourceCurrent = sourceMatches(input, finding)
-        val anchor = anchor(snapshot.binding, input, finding, rule, sourceCurrent)
+        val anchor = anchor(snapshot.binding, input, finding, rule, verifyIdentity = sourceCurrent && !reassessment)
         val fingerprint = fingerprint(anchor)
-        val lifecycle = lifecycleVerifier.verify(snapshot.binding, input, finding, rule.canonicalId)?.takeIf {
+        val lifecycle = (if (reassessment) null else lifecycleVerifier.verify(snapshot.binding, input, finding, rule.canonicalId))?.takeIf {
             it.certificateId.isNotBlank() && it.snapshotId == input.snapshot.snapshotId && it.policyDigest == snapshot.policyDigest &&
                 it.canonicalRuleId == rule.canonicalId && it.providerId == finding.providerId && it.fingerprint == fingerprint &&
                 it.disposition in setOf(PolicyDisposition.FIXED, PolicyDisposition.UNAVAILABLE, PolicyDisposition.BASELINED)
@@ -123,7 +131,7 @@ internal class PolicyMatcher(
             return decision(lifecycle.disposition, "Trusted lifecycle evidence/accounting is retained, not inferred from a provider label.", fingerprint)
         }
         if (!sourceCurrent) return decision(PolicyDisposition.OPEN, "Finding source bytes/range are not bound to this immutable snapshot.", fingerprint)
-        if (snapshot.ruleSettings[rule.canonicalId]?.enabled == false && rule.disablingAllowed && !rule.failureProtected) {
+        if (!reassessment && snapshot.ruleSettings[rule.canonicalId]?.enabled == false && rule.disablingAllowed && !rule.failureProtected) {
             return decision(PolicyDisposition.DISABLED, "Rule explicitly disabled by owner configuration; this is not fixed.", fingerprint)
         }
 
@@ -204,13 +212,8 @@ internal class PolicyMatcher(
         }
     }
 
-    private fun inputBindingMatches(snapshot: ConfigSnapshot, input: AnalysisInput, finding: Finding): Boolean {
-        val manifest = input.snapshot
-        val binding = snapshot.binding
-        return manifest.ownerId == binding.ownerId && manifest.workspaceId == binding.workspaceId &&
-            manifest.worktreeId == binding.worktreeId && Digests.valid(manifest.snapshotId) &&
-            input.context.configurationDigest == snapshot.policyDigest && finding.context == input.context.scope
-    }
+    private fun inputBindingMatches(snapshot: ConfigSnapshot, input: AnalysisInput, finding: Finding): Boolean =
+        inputMatchesPolicy(snapshot, input) && finding.context == input.context.scope
 
     private fun sourceMatches(input: AnalysisInput, finding: Finding): Boolean =
         (listOf(finding.location) + finding.relatedLocations).all { location ->
@@ -281,6 +284,15 @@ internal class PolicyMatcher(
             is SuppressionScope.Target -> 2
             SuppressionScope.Project -> 1
         }
+}
+
+/** Shared exact input/policy binding: reassessment checks this against the ORIGINAL policy. */
+internal fun inputMatchesPolicy(snapshot: ConfigSnapshot, input: AnalysisInput): Boolean {
+    val manifest = input.snapshot
+    val binding = snapshot.binding
+    return manifest.ownerId == binding.ownerId && manifest.workspaceId == binding.workspaceId &&
+        manifest.worktreeId == binding.worktreeId && Digests.valid(manifest.snapshotId) &&
+        input.context.configurationDigest == snapshot.policyDigest
 }
 
 internal fun isNarrow(selector: PolicySelector, scope: SuppressionScope): Boolean = selector is PolicySelector.ExactFinding ||

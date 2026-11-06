@@ -51,9 +51,9 @@ class DetektCorpusInventoryTest {
         assertEquals(172, prior.sumOf { 6 + controls(it).size })
         assertEquals(13, prior.count { it.text("default_activation") == "advisory" })
         assertEquals(6, prior.count { it.text("default_activation") == "opt_in" })
-        assertEquals(22, inventory.fixtures.size)
+        assertEquals(DetektCorpusCohort.FULL_AUTHORED_RULES, inventory.fixtures.size)
         assertEquals(DetektCorpusCohort.authoredRuleIds, inventory.fixtures.map { it.text("rule_id") }.toSet())
-        assertEquals(199, inventory.fixtures.sumOf { 6 + controls(it).size })
+        assertEquals(DetektCorpusCohort.FULL_AUTHORED_ANALYSES, inventory.fixtures.sumOf { 6 + controls(it).size })
         val old = inventory.fixtures.filter { it.text("corpus_id") == "detekt-syntax-corpus-v1" }
         assertEquals(10, old.size)
         assertEquals(91, old.sumOf { 6 + controls(it).size })
@@ -299,7 +299,7 @@ class DetektCorpusInventoryTest {
         val priorIds = DetektCorpusCohort.preObservability.flatMap { it.analysesByRule.keys }.toSet()
         assertEquals(16, inventory.fixtures.count { it.text("rule_id") in previousIds })
         assertEquals(19, inventory.fixtures.count { it.text("rule_id") in priorIds })
-        assertEquals(22, inventory.fixtures.size)
+        assertEquals(DetektCorpusCohort.FULL_AUTHORED_RULES, inventory.fixtures.size)
         inventory.verify()
     }
 

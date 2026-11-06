@@ -109,6 +109,8 @@ private class SemanticCheckers(session: FirSession, emitter: SemanticFactEmitter
 
 /** One collector per compiler invocation, never global FIR state or cross-project mutable sessions. */
 internal class SemanticFactEmitter(val request: SemanticFactsRequest, output: Path) {
+    // No observer object, VFS reads or new output fields on the unchanged default route.
+    val binaryOriginObserver: FirJvmBinaryOrigins? = if (request.observeJvmBinaryOrigins) FirJvmBinaryOrigins() else null
     private val root = Path.of(request.sourceRoot).toRealPath()
     private val output: Path
     private val sources = request.sources.associateBy { root.resolve(it.path).normalize() }

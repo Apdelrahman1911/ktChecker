@@ -243,7 +243,12 @@ class ExactDetektModelExecutionAuthority(private val permit: DetektModelPermit) 
 }
 
 internal fun detektModelBearingInput(input: AnalysisInput): Boolean {
-    val profileBound = input.execution?.arguments?.any { it.startsWith(DetektVerifiedModelBinding.PROFILE_PROPERTY) } == true
+    // Either nominal model marker is a one-way refusal on the legacy route, even if the
+    // caller erases model policies. Recognition grants neither FULL nor LIGHT authority.
+    val profileBound = input.execution?.arguments?.any {
+        it.startsWith(DetektVerifiedModelBinding.PROFILE_PROPERTY) ||
+            it.startsWith(DetektVerifiedFullModelBinding.PROFILE_PROPERTY)
+    } == true
     val policies = input.context.policies
     val legacyDeclared = policies["ktchecker.model"] == "owner-declared-single-compilation" &&
         policies["ktchecker.coverage"] == "partial-project" && !input.context.fullProject &&

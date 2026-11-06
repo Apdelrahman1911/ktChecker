@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "corpus_id": "detekt-syntax-local-shapes-v1",
+  "authoring_state": "unexecuted",
+  "rule_id": "ktc.kotlin.detekt.style.unused-parameter",
+  "upstream_id": "style:UnusedParameter",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "advisory",
+  "severity": "warning",
+  "kind": "probable_defect",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "99b1d99534928b6bec1e7989c2e8740e8f79f7776469e3a870b9f5eeeb5884d7",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-style/src/main/kotlin/dev/detekt/rules/style/UnusedParameter.kt",
+    "source_file_sha256": "f09347da0c460d7cdf5255f3d5a83ca2e70f3f7aaa50f9a7ce42f8cecd420dcb",
+    "source_archive_sha256": "4f18e9ac263a157229db846ac18d3a71b8861d74d415da3ebd0fa085dee461a6",
+    "source_archive_entry": "dev/detekt/rules/style/UnusedParameter.kt",
+    "predicate_line_numbers": [
+      47,
+      50,
+      52,
+      56,
+      60,
+      66,
+      69,
+      75,
+      82,
+      92,
+      102,
+      110,
+      121,
+      123
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/style/UnusedParameter",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:740af64cf296b817d3779e99fa8f541c6713428d333cc9a642f209a73a705e23"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [
+    {
+      "name": "allowedNames",
+      "type": "String (full-match Regex)",
+      "defaults": "ignored|expected"
+    }
+  ],
+  "bounded_predicate": "Visit relevant named functions only, collect parameter names not matching allowedNames, then remove names encountered as local properties or reference-expression text (except named-argument labels). Abstract/open/override/operator/main/external/expect/actual/protected functions, interfaces, and expect/external class bodies are excluded. Entity.atName(parameter). This is not lexical binding or API-usage proof.",
+  "selection_rationale": "Adds a local declaration-use concern absent from the existing 22 rules. Named-argument and nested-shadow controls constrain the claim; one genuine regex control justifies the fourth additional analysis.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.unusedparameter\n\nfun cachedToken(unusedRetry: Int): String = \"ready\"\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 16,
+        "end_line": 3,
+        "end_column": 27,
+        "span": "unusedRetry",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A cache accessor accepts a retry input that never participates in its result. The advisory highlights the unused declaration; removing a public parameter still requires caller/ABI review."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.unusedparameter\n\nfun cacheKey(retry: Int): String = \"retry-$retry\"\n"
+    },
+    "expected": [],
+    "intent": "An actual reference in string interpolation consumes the parameter while this rule remains active; no exemption or rule disable."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.unusedparameter\n\nfun cachedToken(unusedRetry: Int): String = \"ready\"\n",
+      "SuppressedCase.kt": "@file:Suppress(\"UnusedParameter\")\n\npackage suppressed.corpus.unusedparameter\n\nfun cachedToken(unusedRetry: Int): String = \"ready\"\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 16,
+        "end_line": 3,
+        "end_column": 27,
+        "span": "unusedRetry",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.unusedparameter\n\nfun reservedHook(ignored: String, expected: Int): String = \"reserved\"\n"
+      },
+      "expected": [],
+      "intent": "Default allowedNames exempts exactly ignored and expected, a legitimate deliberately reserved callback boundary. No fictitious option is applied.",
+      "id": "default-reserved-names-are-exempt",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.unusedparameter\n\nfun reserve(reservedToken: String, stale: Int): String = \"reserved\"\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 35,
+          "end_line": 3,
+          "end_column": 40,
+          "span": "stale",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Genuine allowedNames regex permits reservedToken only; unrelated stale remains an active warning. A broad option never silently disables the rule.",
+      "options": {
+        "allowedNames": "reserved.*"
+      },
+      "id": "configured-reserved-regex-retains-neighbor",
+      "case_kind": "configuration",
+      "assessment": "genuine_upstream_option"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.unusedparameter\n\nprivate fun render(width: Int): String = \" \".repeat(width)\nfun blank(width: Int): String = render(width = 2)\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 10,
+          "end_line": 4,
+          "end_column": 15,
+          "span": "width",
+          "occurrence": 2
+        }
+      ],
+      "intent": "The width label on the call is not a reference to blank's width parameter. render's own parameter is consumed. This distinguishes parameter use from named-argument spelling.",
+      "id": "named-argument-label-does-not-use-parameter",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.unusedparameter\n\nfun column(width: Int): String {\n    fun label(width: Int): String = width.toString()\n    return label(2)\n}\n"
+      },
+      "expected": [],
+      "intent": "The nested function consumes only its own width, yet the outer name-only scan also removes column's width. Retain this anticipated false negative; do not claim lexical binding or safe parameter removal.",
+      "id": "nested-function-shadowing-hides-unused-outer",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_negative"
+    }
+  ],
+  "analysis_cost": {
+    "standard_cases": 6,
+    "independent_controls": 4,
+    "authored_analyses": 10,
+    "per_rule_non_analysis_calls": 3,
+    "per_cohort_cli_probes": 1,
+    "actual_executions": 0
+  },
+  "limitations": [
+    "Advisory/warning/intent-dependent does not make every unused public/callback parameter a defect.",
+    "Name-only references/local declarations can hide unused outer parameters; constructor/lambda parameters and excluded function/class categories are not fully checked.",
+    "Only the actual allowedNames option and default name exception are controlled here; expect/actual/external behavior is source-documented but no Common/Native compiler execution is proposed.",
+    "Local syntactic advice only. No binding identity, safe automatic rewrite, whole-program reachability, binary ABI compatibility, call effect, reflection completeness, performance or semantic qualification follows.",
+    "The six lifecycle cases include a disabled-rule configuration control, pinned-version positive replay and negative child-snapshot replay; the latter two are not new predicates. Every other negative/control keeps this rule active.",
+    "Only the existing explicit JVM LIGHT input is proposed. Common and Native requests must abstain without launching; no parser/compiler/Kotlin 2.4.21 versus embedded 2.4.10 compatibility or multiplatform qualification.",
+    "File-level suppression is authored; declaration-level aliases, baselines and generated-code inclusion policy are not newly qualified."
+  ],
+  "qualification_note": "Authored expected ranges and concrete counterexamples come from primary source and language reasoning before execution, never detector outputs. Preserve any unexpected findings/misses and stop; do not rewrite oracles to force a pass. Existing activation/severity/certainty remain exact. Independent oracle/source review, root adoption, fresh controls and separately admitted single-cohort real isolated calls are required. No natural-project precision, safety, release or historical-stage transfer."
+}

@@ -64,6 +64,16 @@ RUNTIME_CAUSAL_CODES = {
     "snapshot_root_invalid", "snapshot_verification_failed",
 }
 
+# Independently specified synthetic Native pair contract; do not derive expected
+# names from the production validator. These constants prove no execution.
+NATIVE_PAIR_CASE = "incompatible-actual"
+NATIVE_PAIR_ASSERTIONS = {
+    "actual_compiler_rejected_incompatible_actual", "compiler_failure_not_successful_facts",
+    "exact_incompatible_return_type_diagnostic_point", "native_graph_and_request_bound",
+    "native_leaf_fir_context_observed", "expect_actual_sources_and_return_types_exact",
+    "expect_actual_candidate_relation_observed", "facts_do_not_qualify_rules",
+}
+
 
 def fixture_symlink(test_case, link, target, *, target_is_directory=False):
     """Real owned fixture IO only; one known Windows privilege gap is a skip."""
@@ -97,6 +107,25 @@ def native_summary():
     for coordinate in ("selected-native-2.4.21:bin/konanc", "selected-native-2.4.21:konan/konan.properties",
                        "selected-native-2.4.21:konan/lib/kotlin-native-compiler-embeddable.jar", "fixture-dependency:klib:iosSimulatorArm64"):
         value["artifacts"].append({"coordinate": coordinate, "digest": "sha256:" + "3" * 64, "omittedCoordinateDigest": None})
+    # A NEW SYNTHETIC fifth case/sixth execution exercises the Native-only
+    # metadata roster. It is not retained Native FIR/diagnostic evidence.
+    snapshot = value["cases"][0]["snapshotId"]
+    value["cases"].append({
+        "name": NATIVE_PAIR_CASE, "passed": True,
+        "assertions": {name: True for name in NATIVE_PAIR_ASSERTIONS},
+        "snapshotId": snapshot, "requestDigest": "sha256:" + "8" * 64, "analysisId": "sha256:" + "9" * 64,
+        "state": "incomplete", "compilerExitCode": 1, "reasons": ["semantic_compilation_failed"],
+        "completeForSupportedVocabulary": False, "observedCompilerVersions": ["2.4.21"],
+        "counts": {"visitedSourceInputs": 2, "shards": 2, "declarations": 2, "symbolFacts": 2,
+                   "uniqueSymbolIds": 2, "calls": 0, "typeUses": 2, "expectActualCandidates": 1, "unknownFacts": 0},
+        "unknownReasonCounts": {},
+    })
+    value["executions"].append({
+        "label": NATIVE_PAIR_CASE, "snapshotId": snapshot, "analysisKey": "sha256:" + "a" * 64,
+        "status": "executed", "exitCode": 1, "reasons": [],
+        "metrics": {"elapsedMillis": 1, "cpuMillis": None, "peakRssBytes": None, "outputBytes": 1},
+        "stdoutDigest": "sha256:" + "b" * 64, "stderrDigest": "sha256:" + "c" * 64,
+    })
     return value
 
 
@@ -207,7 +236,161 @@ class SemanticMetadataTests(unittest.TestCase):
         self.assertFalse(value["customRulesQualified"])
 
     def test_synthetic_native_metadata_shape_is_valid_but_is_not_execution(self):
-        self.assertEqual([], self.validate(native_summary()))
+        value = native_summary()
+        self.assertEqual([], self.validate(value))
+        self.assertEqual(5, len(value["cases"]))
+        self.assertEqual(6, len(value["executions"]))
+        self.assertFalse(value["tupleQualified"])
+        self.assertFalse(value["customRulesQualified"])
+
+    def test_native_pair_has_an_independent_exact_roster_and_requires_explicit_native_mode(self):
+        self.assertEqual({"positive", "unresolved", "malformed", "missing-dependency"}, set(checks.ASSERTIONS))
+        self.assertEqual(5, len(checks.LABELS))
+        self.assertEqual(NATIVE_PAIR_ASSERTIONS, checks.NATIVE_EXPECT_ACTUAL_ASSERTIONS)
+        self.assertEqual(8, len(NATIVE_PAIR_ASSERTIONS))
+        self.assertEqual(set(checks.ASSERTIONS) | {NATIVE_PAIR_CASE}, set(checks.fixture_assertions("native")))
+        self.assertNotIn(NATIVE_PAIR_CASE, checks.fixture_assertions("jvm"))
+        value = native_summary()
+        case = next(row for row in value["cases"] if row["name"] == NATIVE_PAIR_CASE)
+        execution = next(row for row in value["executions"] if row["label"] == NATIVE_PAIR_CASE)
+        self.assertEqual(NATIVE_PAIR_ASSERTIONS, set(case["assertions"]))
+        self.assertTrue(checks.valid_case_metadata(case, "native"))
+        self.assertTrue(checks.valid_execution_metadata(execution, "native"))
+        self.assertFalse(checks.valid_case_metadata(case))
+        self.assertFalse(checks.valid_execution_metadata(execution))
+
+    def test_native_pair_and_positive_case_each_require_their_own_case_and_execution(self):
+        for label in (NATIVE_PAIR_CASE, "positive"):
+            for omit in ("case", "execution", "both"):
+                value = native_summary()
+                if omit in {"case", "both"}:
+                    value["cases"] = [row for row in value["cases"] if row["name"] != label]
+                if omit in {"execution", "both"}:
+                    value["executions"] = [row for row in value["executions"] if row["label"] != label]
+                with self.subTest(label=label, omit=omit):
+                    self.assertIn("semantic_summary_missing_exact_fixture_cases", self.validate(value))
+
+    def test_synthetic_native_pair_cannot_be_grafted_into_jvm_roster(self):
+        native_value = native_summary()
+        case = next(row for row in native_value["cases"] if row["name"] == NATIVE_PAIR_CASE)
+        execution = next(row for row in native_value["executions"] if row["label"] == NATIVE_PAIR_CASE)
+        for shape in ("replace", "append"):
+            value = jvm_summary()
+            if shape == "replace":
+                value["cases"][-1] = copy.deepcopy(case)
+                value["executions"][-1] = copy.deepcopy(execution)
+            else:
+                value["cases"].append(copy.deepcopy(case))
+                value["executions"].append(copy.deepcopy(execution))
+            with self.subTest(shape=shape):
+                self.assertTrue(self.validate(value))
+                projection = checks.metadata_projection(value, "jvm", "jvm")
+                self.assertNotIn(NATIVE_PAIR_CASE, {row["name"] for row in projection["cases"]})
+                self.assertNotIn(NATIVE_PAIR_CASE, {row["label"] for row in projection["executions"]})
+
+    def test_native_pair_requires_exact_compiler_exit_one_on_both_records(self):
+        for subject in ("case", "execution", "both"):
+            for exit_code in (None, 0, 2, -1, True):
+                value = native_summary()
+                if subject in {"case", "both"}:
+                    next(row for row in value["cases"] if row["name"] == NATIVE_PAIR_CASE)["compilerExitCode"] = exit_code
+                if subject in {"execution", "both"}:
+                    next(row for row in value["executions"] if row["label"] == NATIVE_PAIR_CASE)["exitCode"] = exit_code
+                with self.subTest(subject=subject, exit_code=exit_code):
+                    self.assertTrue(self.validate(value))
+
+    def test_native_pair_process_failure_is_not_compiler_rejection(self):
+        for status in ("failed", "unavailable", "not_executed", "cancelled", "timeout", "executed"):
+            value = native_summary()
+            execution = next(row for row in value["executions"] if row["label"] == NATIVE_PAIR_CASE)
+            execution.update(status=status, exitCode=1, reasons=["process_start_unconfirmed"])
+            with self.subTest(status=status):
+                self.assertIn("semantic_summary_actual_execution_invalid", self.validate(value))
+
+    def test_native_pair_needs_incomplete_nonvacuous_bound_fir_metadata(self):
+        changes = [
+            ("passed", False), ("state", "extracted"), ("state", "failed"),
+            ("completeForSupportedVocabulary", True), ("reasons", []),
+            ("observedCompilerVersions", []), ("requestDigest", "invalid"),
+        ]
+        changes += [("counts." + key, amount) for key, amounts in (
+            ("visitedSourceInputs", (0, 1, 3)), ("shards", (0, 1, 3)),
+            ("declarations", (0, 1)), ("expectActualCandidates", (0,)),
+        ) for amount in amounts]
+        for key, replacement in changes:
+            value = native_summary()
+            case = next(row for row in value["cases"] if row["name"] == NATIVE_PAIR_CASE)
+            if key.startswith("counts."):
+                case["counts"][key.partition(".")[2]] = replacement
+            else:
+                case[key] = replacement
+            with self.subTest(key=key, replacement=replacement):
+                self.assertTrue(self.validate(value))
+        for key in ("counts", "unknownReasonCounts"):
+            value = native_summary()
+            next(row for row in value["cases"] if row["name"] == NATIVE_PAIR_CASE)[key] = {}
+            # Empty unknownReasonCounts alone is valid for this zero-unknown
+            # synthetic case; omitting a FIR count map or count key is not.
+            if key == "unknownReasonCounts":
+                next(row for row in value["cases"] if row["name"] == NATIVE_PAIR_CASE)["counts"]["unknownFacts"] = 1
+            with self.subTest(missing=key):
+                self.assertTrue(self.validate(value))
+
+    def test_native_pair_requires_every_assertion_not_an_empty_or_partial_all(self):
+        for assertion in sorted(NATIVE_PAIR_ASSERTIONS):
+            for alteration in ("false", "missing", "integer"):
+                value = native_summary()
+                assertions = next(row for row in value["cases"] if row["name"] == NATIVE_PAIR_CASE)["assertions"]
+                if alteration == "missing":
+                    del assertions[assertion]
+                else:
+                    assertions[assertion] = False if alteration == "false" else 1
+                with self.subTest(assertion=assertion, alteration=alteration):
+                    self.assertTrue(self.validate(value))
+        for assertions in ({}, {**dict.fromkeys(NATIVE_PAIR_ASSERTIONS, True), "extra_assertion": True}):
+            value = native_summary()
+            next(row for row in value["cases"] if row["name"] == NATIVE_PAIR_CASE)["assertions"] = assertions
+            self.assertTrue(self.validate(value))
+
+    def test_native_negative_cannot_replace_independent_positive_success(self):
+        for key, replacement in (("passed", False), ("compilerExitCode", 1),
+                                 ("completeForSupportedVocabulary", False), ("state", "incomplete")):
+            value = native_summary()
+            next(row for row in value["cases"] if row["name"] == "positive")[key] = replacement
+            with self.subTest(key=key):
+                self.assertIn("semantic_summary_fixture_assertions_invalid", self.validate(value))
+
+    def test_native_pair_private_diagnostic_and_original_outcome_fields_are_never_projected(self):
+        value = native_summary()
+        case = next(row for row in value["cases"] if row["name"] == NATIVE_PAIR_CASE)
+        case["locatedDiagnostics"] = [{
+            "stream": "stderr", "upstreamId": "EXPECT_ACTUAL_INCOMPATIBLE_RETURN_TYPE", "severity": "error",
+            "reportedPoint": {"path": "PRIVATE/nativeMain/Actual.kt", "startLine": 2, "startColumn": 11},
+            "rangeKind": "compiler_reported_point",
+        }]
+        case["bundle"] = {"source": "PRIVATE source", "symbol": "PRIVATE symbol"}
+        execution = next(row for row in value["executions"] if row["label"] == NATIVE_PAIR_CASE)
+        execution["originalOutcome"] = {"stdout": "PRIVATE stdout", "stderr": "PRIVATE stderr", "command": ["PRIVATE executable"]}
+        projection = checks.metadata_projection(value, "native", "iosSimulatorArm64")
+        encoded = json.dumps(projection)
+        for private in ("locatedDiagnostics", "reportedPoint", "EXPECT_ACTUAL_INCOMPATIBLE_RETURN_TYPE",
+                        "compiler_reported_point", "originalOutcome", "PRIVATE"):
+            self.assertNotIn(private, encoded)
+        self.assertFalse(checks.valid_case_metadata(case, "native"))
+        self.assertFalse(checks.valid_execution_metadata(execution, "native"))
+        self.assertTrue(self.validate(value))
+
+    def test_native_roster_bounds_reject_added_or_duplicate_rows_even_with_valid_prefix(self):
+        for key, label_key in (("cases", "name"), ("executions", "label")):
+            for label in (NATIVE_PAIR_CASE, "unrecognized-extra"):
+                value = native_summary()
+                extra = copy.deepcopy(next(row for row in value[key] if row[label_key] == NATIVE_PAIR_CASE))
+                extra[label_key] = label
+                value[key].append(extra)
+                with self.subTest(key=key, label=label):
+                    projection = checks.metadata_projection(value, "native", "iosSimulatorArm64")
+                    self.assertEqual(5 if key == "cases" else 6, len(projection[key]))
+                    self.assertTrue(self.validate(value))
 
     def test_fixed_runtime_causal_codes_preserve_full_enum_but_not_raw_details(self):
         self.assertEqual(RUNTIME_CAUSAL_CODES, checks.RUNTIME_FAILURE_REASONS)
@@ -368,7 +551,7 @@ class SemanticWrapperTests(unittest.TestCase):
             self.assertIn(f"-PsemanticNativeHome={data_dir / native.HOME_NAME}", arguments)
             self.assertIn(f"-PsemanticJavaHome={java_home.resolve()}", arguments)
             self.assertEqual((checks.TASK,), kwargs["require_tasks"])
-            self.assertEqual(12, len(kwargs["additional_output_paths"]))
+            self.assertEqual(14, len(kwargs["additional_output_paths"]))
             private = argument.output.parent / "raw/native-semantic-driver"
             raw = b"PRIVATE raw facts, source, symbols and compiler commands"
             (private / "results.json").write_bytes(raw)
@@ -394,7 +577,7 @@ class SemanticWrapperTests(unittest.TestCase):
             result, gradle = self.run_attempt(root, argument, java_home, data_dir, summary)
             gradle.assert_called_once()
             self.assertEqual("passed", result["state"])
-            self.assertEqual(5, result["compiler_execution_count"])
+            self.assertEqual(6, result["compiler_execution_count"])
             self.assertTrue(result["private_evidence_digest_verified"])
             self.assertFalse(result["native_distribution_downloaded_by_wrapper"])
             self.assertFalse(result["android_required_for_this_gate"])

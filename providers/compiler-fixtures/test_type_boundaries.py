@@ -163,6 +163,27 @@ class TypeBoundaryInputContractTest(unittest.TestCase):
         self.assertEqual({'implemented': False, 'tested': False, 'qualified': False, 'attempted': False},
                          inventory['per_id_evidence_promotion_from_authorship'])
         self.assertEqual(443, inventory['catalog_mappings'])
+        # Bind only the frozen legacy source plan, never the active445 catalog.
+        generator = ast.parse((FIXTURES / 'generate_fixtures.py').read_text(encoding='utf-8'))
+
+        def assigned_value(name):
+            values = [node.value for node in generator.body
+                      if isinstance(node, ast.Assign) and len(node.targets) == 1
+                      and isinstance(node.targets[0], ast.Name) and node.targets[0].id == name]
+            self.assertEqual(1, len(values), name)
+            return values[0]
+
+        legacy_size = assigned_value('LEGACY_AUTHORED_CATALOG_MAPPINGS')
+        self.assertIsInstance(legacy_size, ast.Constant)
+        self.assertIs(int, type(legacy_size.value))
+        self.assertEqual(443, legacy_size.value)
+        generated_inventory = assigned_value('inventory')
+        self.assertIsInstance(generated_inventory, ast.Dict)
+        catalog_values = [value for key, value in zip(generated_inventory.keys, generated_inventory.values)
+                          if isinstance(key, ast.Constant) and key.value == 'catalog_mappings']
+        self.assertEqual(1, len(catalog_values))
+        self.assertIsInstance(catalog_values[0], ast.Name)
+        self.assertEqual('LEGACY_AUTHORED_CATALOG_MAPPINGS', catalog_values[0].id)
         self.assertEqual((98, 42, 56, 16), (inventory['ordinary_pairs'], inventory['original_ordinary_pairs'],
                                           inventory['expanded_ordinary_pairs'], inventory['planned_unsupported_kmp_graphs']))
         self.assertEqual(18, inventory['supplemental_type_boundary_source_plans'])

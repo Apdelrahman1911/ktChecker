@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "corpus_id": "detekt-syntax-local-shapes-v1",
+  "authoring_state": "unexecuted",
+  "rule_id": "ktc.kotlin.detekt.style.protected-member-in-final-class",
+  "upstream_id": "style:ProtectedMemberInFinalClass",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "severity": "info",
+  "kind": "style",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "84ada7d40530d9de80a203e968dd6f882fcb9a425f68953a5ce26a52f43dc61d",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-style/src/main/kotlin/dev/detekt/rules/style/ProtectedMemberInFinalClass.kt",
+    "source_file_sha256": "fbfd3dbb38c1a1ed1476c51bd849f4e6830fff304a0aa336ea2c9be5dfc6bd08",
+    "source_archive_sha256": "4f18e9ac263a157229db846ac18d3a71b8861d74d415da3ebd0fa085dee461a6",
+    "source_archive_entry": "dev/detekt/rules/style/ProtectedMemberInFinalClass.kt",
+    "predicate_line_numbers": [
+      23,
+      29,
+      35,
+      46,
+      55,
+      65,
+      69
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/style/ProtectedMemberInFinalClass",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:b28a4a646846eab67b16e124bd991b5e9c04ed3a557b5310ba3e04393f029152"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [],
+  "bounded_predicate": "Inspect primary constructor, body declarations and companions of classes that are neither open, abstract, sealed nor enum. Report protected declarations unless override or the special JVM-finalize shape. Entity.from(declaration). No rule-specific options and no all-open/plugin awareness.",
+  "selection_rationale": "Complements actual declaration-use cases with a modifier-bound visibility boundary, unlike existing data-class/public-library policies. Four controls separately cover open, inherited override, sealed and intentional primary-constructor contexts.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.protectedmember\n\nclass DigestSlot {\n    protected val suffix: String = \".idx\"\n    fun fileName(base: String): String = base + suffix\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 4,
+        "end_line": 4,
+        "end_column": 41,
+        "span": "protected val suffix: String = \".idx\"",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A final-by-default class cannot be subclassed, so protected state advertises an extension surface that does not exist in plain source. This remains explicit opt-in advice, not an architecture mandate."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.protectedmember\n\nclass DigestSlot {\n    private val suffix: String = \".idx\"\n    fun fileName(base: String): String = base + suffix\n}\n"
+    },
+    "expected": [],
+    "intent": "The same encapsulated member is explicitly private in the final class. The selected rule is active and no API identity inference is needed."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.protectedmember\n\nclass DigestSlot {\n    protected val suffix: String = \".idx\"\n    fun fileName(base: String): String = base + suffix\n}\n",
+      "SuppressedCase.kt": "@file:Suppress(\"ProtectedMemberInFinalClass\")\n\npackage suppressed.corpus.protectedmember\n\nclass DigestSlot {\n    protected val suffix: String = \".idx\"\n    fun fileName(base: String): String = base + suffix\n}\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 4,
+        "column": 4,
+        "end_line": 4,
+        "end_column": 41,
+        "span": "protected val suffix: String = \".idx\"",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.protectedmember\n\nopen class ExtensibleSlot {\n    protected val suffix: String = \".idx\"\n}\n"
+      },
+      "expected": [],
+      "intent": "An intentionally open class exposes legitimate subclass state and is excluded by the modifier predicate.",
+      "id": "open-class-protected-extension-state-is-valid",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.protectedmember\n\nopen class BaseSlot {\n    protected open fun suffix(): String = \".base\"\n}\nclass DigestSlot : BaseSlot() {\n    protected override fun suffix(): String = \".idx\"\n}\n"
+      },
+      "expected": [],
+      "intent": "The final subclass preserves inherited protected override visibility. The override exemption is a separate valid API boundary from the open-container exemption.",
+      "id": "protected-override-preserves-inherited-contract",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.protectedmember\n\nsealed class ClosedSlots {\n    protected val family: String = \"storage\"\n}\n"
+      },
+      "expected": [],
+      "intent": "Sealed hierarchies have controlled subclasses; the explicit sealed modifier exempts them even though they are not spelled open.",
+      "id": "sealed-hierarchy-is-not-final-container",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.protectedmember\n\nclass Ticket protected constructor(val value: String) {\n    companion object {\n        fun issue(value: String): Ticket = Ticket(value)\n    }\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 13,
+          "end_line": 3,
+          "end_column": 53,
+          "span": "protected constructor(val value: String)",
+          "occurrence": 0
+        }
+      ],
+      "intent": "An intentional factory-only final class can use a protected primary constructor. The rule still flags the whole constructor as opt-in visibility advice; factory access and ABI intent do not become a defect.",
+      "id": "factory-only-protected-primary-constructor-still-reports",
+      "case_kind": "regression",
+      "assessment": "opt_in_policy_limit"
+    }
+  ],
+  "analysis_cost": {
+    "standard_cases": 6,
+    "independent_controls": 4,
+    "authored_analyses": 10,
+    "per_rule_non_analysis_calls": 3,
+    "per_cohort_cli_probes": 1,
+    "actual_executions": 0
+  },
+  "limitations": [
+    "All-open compiler plugins or externally generated subclasses are outside this source-only modifier check.",
+    "Protected factories can be intentional; no private/internal automatic rewrite or ABI safety is asserted.",
+    "JVM finalize, companion/nested special cases and enum/abstract categories remain source-documented rather than comprehensively compiled/tested.",
+    "Local syntactic advice only. No binding identity, safe automatic rewrite, whole-program reachability, binary ABI compatibility, call effect, reflection completeness, performance or semantic qualification follows.",
+    "The six lifecycle cases include a disabled-rule configuration control, pinned-version positive replay and negative child-snapshot replay; the latter two are not new predicates. Every other negative/control keeps this rule active.",
+    "Only the existing explicit JVM LIGHT input is proposed. Common and Native requests must abstain without launching; no parser/compiler/Kotlin 2.4.21 versus embedded 2.4.10 compatibility or multiplatform qualification.",
+    "File-level suppression is authored; declaration-level aliases, baselines and generated-code inclusion policy are not newly qualified."
+  ],
+  "qualification_note": "Authored expected ranges and concrete counterexamples come from primary source and language reasoning before execution, never detector outputs. Preserve any unexpected findings/misses and stop; do not rewrite oracles to force a pass. Existing activation/severity/certainty remain exact. Independent oracle/source review, root adoption, fresh controls and separately admitted single-cohort real isolated calls are required. No natural-project precision, safety, release or historical-stage transfer."
+}

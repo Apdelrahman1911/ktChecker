@@ -2,6 +2,15 @@ package dev.ktchecker.compiler
 
 /** No response files, shell, plugins, extra source roots, output paths or -J escape. */
 object CompilerFlags {
+    // Exact Kotlin v2.4.21 common registrations, despite their factory-file Extra section.
+    // Authoritative source spans: providers/compiler-fixtures/checker-activation-2.4.21.json.
+    // This is compiler activation only, never owner-policy opt-in or coverage qualification.
+    private val commonExtraSectionCheckersKotlin2421 = setOf(
+        "ARRAY_EQUALITY_OPERATOR_CAN_BE_REPLACED_WITH_CONTENT_EQUALS",
+        "REDUNDANT_CALL_OF_CONVERSION_METHOD",
+        "UNUSED_EXPRESSION",
+        "UNUSED_LAMBDA_EXPRESSION",
+    )
     private val standalone = setOf("-Werror", "-nowarn", "-progressive", "-Wextra", "-Xmulti-platform", "-Xexpect-actual-classes",
         "-Xuse-fir-experimental-checkers")
     private val paired = setOf("-language-version", "-api-version", "-jvm-target", "-module-name")
@@ -54,8 +63,10 @@ object CompilerFlags {
         if (mapping.upstreamId == "EMPTY_RANGE" && "-Xuse-fir-experimental-checkers" !in arguments) {
             return "compiler_experimental_checker_not_enabled"
         }
-        if (((mapping.sourceSection.equals("Extra checkers", ignoreCase = true) && mapping.upstreamId != "EMPTY_RANGE") ||
-                mapping.upstreamId == "UNREACHABLE_CODE") && "-Wextra" !in arguments) {
+        val commonCheckerInPinnedVersion = CompilerRuleRegistry.VERSION == "2.4.21" && mapping.backend == "common" &&
+            mapping.upstreamId in commonExtraSectionCheckersKotlin2421
+        if (((mapping.sourceSection.equals("Extra checkers", ignoreCase = true) && mapping.upstreamId != "EMPTY_RANGE" &&
+                    !commonCheckerInPinnedVersion) || mapping.upstreamId == "UNREACHABLE_CODE") && "-Wextra" !in arguments) {
             return "compiler_extra_checker_not_enabled"
         }
         if ((mapping.sourceSection.contains("return value", ignoreCase = true) || mapping.upstreamId.startsWith("RETURN_VALUE_NOT_USED")) &&

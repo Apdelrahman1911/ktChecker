@@ -39,7 +39,7 @@ class PlainJvmModelTargetTest {
             listOf("org.jetbrains.kotlin.jvm", "com.android.application"),
             listOf("org.jetbrains.kotlin.jvm", "com.android.test"))) {
             val changed = f.graph.copy(modules = f.graph.modules.map { if (it.id == ":lib") it.copy(pluginIds = plugins) else it })
-            assertEquals("model_invalid", assertFailsWith<ProjectModelException> { f.owner.import(f.capture, changed) }.code)
+            assertEquals("model_invalid", assertOwnerFixtureModelFailure(f.owner.work) { f.owner.import(f.capture, changed) }.code)
         }
     }
 
@@ -48,7 +48,7 @@ class PlainJvmModelTargetTest {
         val selected = f.graph.compilations.last()
         for (changed in listOf(selected.copy(target = "jvm"), selected.copy(platform = "js"), selected.copy(target = " "),
             selected.copy(target = "\t"), selected.copy(target = "\u0000"), selected.copy(target = "x".repeat(4097)))) {
-            assertEquals("model_invalid", assertFailsWith<ProjectModelException> {
+            assertEquals("model_invalid", assertOwnerFixtureModelFailure(f.owner.work) {
                 f.owner.import(f.capture, f.graph.copy(compilations = f.graph.compilations.map { if (it.id == selected.id) changed else it }))
             }.code)
         }
@@ -65,7 +65,7 @@ class PlainJvmModelTargetTest {
         val selected = f.graph.compilations.first()
         for (changed in listOf(selected.copy(id = ""), selected.copy(platform = ""), selected.copy(name = ""),
             selected.copy(compileTaskPath = ""), selected.copy(dependencyConfiguration = ""))) {
-            assertEquals("model_invalid", assertFailsWith<ProjectModelException> {
+            assertEquals("model_invalid", assertOwnerFixtureModelFailure(f.owner.work) {
                 f.owner.import(f.capture, f.graph.copy(compilations = f.graph.compilations.map { if (it.id == selected.id) changed else it }))
             }.code)
         }

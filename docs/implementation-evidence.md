@@ -7,6 +7,145 @@ catalog mapping, mocked diagnostic, or successful prerequisite probe does not
 establish the next category. Release gates in [validation-ci.md](validation-ci.md)
 and [PLAN.md](PLAN.md) remain unchanged.
 
+## Original default35 compiler breadth execution — 2026-11-05 (incomplete)
+
+**Independent readback is complete; the actual cohort is not: outer/host exit 1,
+Gradle `:provider-compiler:compilerFixtures` FAILED.** Exact original command/result:
+`build/ci-evidence/compiler-diagnostic-breadth-default-first-20261105-r1/`.
+The failure remains `Diagnostic breadth remains incomplete`, not an accepted pass,
+publication error or budget stop. No retry, resume, merge or later cohort is included.
+
+- **35 reservations/returned jobs; 34 confirmed child executions; 30 input receipts.**
+  The explicit Kotlin 2.4.20 denial had no child. Four unchanged controls matched.
+  **25 known oracle matches** (ten expected ERRORs, 15 alternatives), **five null
+  suppression expectations**, zero unexpected known mismatches. **13 input compiler/
+  provider tasks failed** (15 including controls); matching an expected diagnostic
+  does not turn failed compilation into successful compilation.
+- Suppression attempts **21/23 exited 2 with code-generation crashes**, retaining
+  71/58 residual info rows; **22 exited 1** with an unmapped operator error;
+  **24/25 exited 0 but remained partial with `ERROR_SUPPRESSION` warnings**.
+  All five remain unknown/unvalidated. The unmapped `INAPPLICABLE_OPERATOR_MODIFIER`
+  companions in attempts 2/27 also remain explicit, with no invented rule or span.
+- Independent DATA review checked **75 checkpoints (69 light/six full)** and
+  **30,509 reference occurrences**. Cleanup receipts are bounded original
+  observations, not fresh process-absence probes. All **98 ordinary pairs,
+  16 unsupported graphs, 443 mappings and 100 declarations** remain visible
+  (90 paths plus ten option-off reuses; 30 selected, 70 unselected—not excluded).
+- Root before/after records **4,629 files** at
+  `56f4f44f9fcfaf9d295ab57b646e1520cc395d0808077fcfb1b79224f3301f46`.
+  The reviewer matched **488 START sources** and actual role/JDK/compiler/native
+  artifact custody, not the whole 4,629-file aggregate or source-to-binary reproducibility.
+  Separate **77/77 focused controls plus 39/39 coverage controls** are not cohort credit.
+
+The original `root-result.json` retains its empty run-marker array/pending-readback
+field. Independent `OUTER-READBACK.json` joins both markers from that same stdout;
+no “latest” discovery or rewrite was used. Readback packet:
+`/tmp/ktc-default35-independent-readback-r1-20261105-1sjd197b`, `READBACK.json` SHA-256
+`41923eb1e406b382727e7be7289872417bf0f05142b1896bb36465d11c4e2eef`.
+
+Run-local stages remain **0/0/0**; the separate last strict global inventory remains
+**two implemented / zero tested / zero qualified, all defaults false**. Full scope
+is still **1,663 × eight = 13,304 cells**. No clean/full-project, installed-image,
+Native, performance or release qualification; the current image remains
+**NOT-YET-VERIFIED**. Separate 35/40/40 schedules are not pooled. Upcoming eight-path
+adoption/tests and any later execution remain outside this receipt.
+
+## Later source-bound controls and current inventory — 2026-11-05
+
+**Source adoption, executed controls and rule qualification remain distinct.**
+These separate receipts are not a combined current-source graph pass, authentic
+host-model acceptance, fresh package or release qualification. Earlier failures
+and source bindings remain intact. Paths below are under `build/ci-evidence/`.
+
+| Retained receipt | Actual result and limit |
+| --- | --- |
+| `registry-refresh-jvm35-20261105-r1/root-result.json`; `registry-coverage-python-controls-20261105-r1/root-summary.json` | Corrected **35/35 JVM + 34/34 Python breadth controls = 69/69**, plus separate **39/39 coverage-bookkeeping controls**. Each fresh lane exited 0 with zero failures/errors/skips and exact method rosters. Synthetic/source controls, **not a compiler provider cohort**; no old pass was transferred. |
+| `current-coverage-successor-20261105-r1/root-result.json` and `inventory.json` | A **fresh strict-wrapper execution**, exit 0, **6.739 s**, valid inventory: **1,663 × eight = 13,304 rows; 11,448 mapped, two implemented, zero tested, zero qualified**. Independent readback verified the exact **73-input / 47-reference** closure and all **450 withdrawn provider cells** with zero current stages. Runtime defaults and qualification aggregates remain false; this is accounting, not provider execution. |
+| `light3-local-declaration-use-20261105-r1/outer-exit.json` and `command.json` | First three-rule LIGHT cohort **failed**, exit 1, with the recorded **60-second child timeout**: **11 invocations reserved, ten checked, seven native execution confirmations**. The ceiling was 39, **not 39 completed**. Run completion/publication remained false; no retry or cleanup proof is claimed. |
+| `breadth-r2-python-explicit34-20261105-r1/EVIDENCE-READBACK.json` | Original Python controls **32/34**, exit 1: a literal checkpoint-count assertion and an authority-name lexical false positive. With the separately executed original JVM **35/35**, the original breadth result remains **67/69**, not a pass; neither failure was overwritten by the corrected lanes. |
+| `astra-combined-jvm-controls-20261105-r1/root-verification.json` | **146/146 selected JVM methods**, zero failures/errors/skips; wrapper and Gradle exit 0. Includes the original 35 breadth controls. Real infrastructure with synthetic providers/fixtures, not complete module suites or genuine compiler/model execution. |
+| `detekt-full-seven-20261105-r1/root-verification.json` | **Seven original Detekt FULL outcomes**, all exit 0, findings **[2, 0, 0, 0, 1, 1, 1]**; **1/1 JUnit** passed. Actual Detekt 2.0.0-alpha.6 over a **synthetic Kotlin 2.4.10 model**, not an authentic exported model or execution of its modeled compiler. Independent readback did not rerun it; child rule rows remain untested/unqualified. |
+
+The corrected controls and strict inventory bind 4,628 unchanged source files at
+`fbc4d75ee7b6f5028a233d26305e86954a808b5df5536b28fb3372dc049a5a6a`,
+following the reviewed six-path `registry-coverage-adoption-20261105-r1/adoption.json`.
+Earlier JVM146 and LIGHT bind
+`d727c1f1b4c65bce927b7097561b8ee74086830412eb4d9095da91bcfb3f4389`;
+the original Python lane pins its own 429-file closure and records that
+root-reported full-source identity. FULL7 instead binds 4,519 files at
+`00a8fa517bd0fb74674f7bae3cb064d0e2aa3ca29109b80c8b144e49cb71fa5c`.
+The fresh inventory is **50,535,057 bytes**, SHA-256
+`5a962e37b7a1467e6c25e6c8fed8f85f3decf5fae12094af8fe994b7dbbe8e95`;
+its observed counts are not inherited from the predecessor selector. Later edits
+and the subsequent planned genuine compiler cohort are **outside this checkpoint**.
+
+Hosted macOS failures stay separate: [implementation
+42052349694](https://github.com/Apdelrahman1911/ktChecker/actions/runs/42052349694)
+records **seven failures across three importer/model suites**, not a whole-job
+denominator; [planning 42052349836](https://github.com/Apdelrahman1911/ktChecker/actions/runs/42052349836)
+records **1,318 cases: 1,271 passed, nine failed, two errors, 36 skipped**;
+[bridges 42052349834](https://github.com/Apdelrahman1911/ktChecker/actions/runs/42052349834)
+records **MCP 16/20 passed, four failed**, and **reference host 127/181 passed,
+45 failed, nine skipped**. Two reference-host failure names remain unavailable.
+These PR reports tested merge
+`f0b85da7890d3c98c5fd8552a360a0627767a188`, not merely API head
+`0751941aee98ed1761eb247ad3dd528bbad915c4` or current local corrections.
+The [manual Darwin run 42052589522](https://github.com/Apdelrahman1911/ktChecker/actions/runs/42052589522)
+is separately bound to that head: `owned_command_failed`, unverified, native
+controls attempted but executed count **unknown**, not zero or the planned count.
+Only permitted sanitized observations were read; no denied raw logs or held
+materialization/native investigation was opened. No fresh macOS success is claimed.
+
+Sanitized hosted observation pins: `FAILURES.json`
+`754bbca698a3342e9f327a93b89e3852bedc7a7ce32bedc5a2afa66bd6f56aad`;
+`SOURCE-TUPLE.json`
+`75690a0bdf6181be0bea7f760d180932bf137573d1dc7dfc1e4dc814bfd384b0`.
+
+## Focused controls and exact hosted observations — 2026-11-05
+
+The [focused update](evidence/focused-controls-20261105.json) keeps receipt hashes,
+source identities and separate denominators. **This is not a combined current-source
+graph pass, new distribution, live-model acceptance or release qualification.**
+The full scope remains **1,663 × eight = 13,304 cells: two implemented, zero tested,
+zero qualified**; this update does not regenerate or promote that ledger.
+
+| Separate local lane | Actual result and limit |
+| --- | --- |
+| Owner lineage/custody/policy plus Detekt FULL controls | **101/101 methods** (62 owner + 39 FULL), zero failures/errors/skips; Gradle and outer exit 0, **70.030 s**. Source digest `1b86872eb55e0c7c5a6ff469ac709f860bda7c17af661df5d03b4f1039c76308` stayed unchanged. **Zero real FULL-engine or model/host invocations**; not semantic-provider or full-graph acceptance. |
+| Earlier config/kernel lane | **3/3 methods passed**, **2.487 s JUnit**, with actual ConfigStore/SQLite/kernel and synthetic providers. The larger lane **failed** during FULL test-source compilation; Gradle exit 1 and recorded wrapper exit 120 remain distinct. Its 39 FULL controls did not run. |
+| Inert packaging helpers | **30/30 methods, 146/146 subtests**, zero guard violations; outer exit 0, **0.401 s**. Separate reviewed helper-source packet only: **no actual packaging, installed-image, provider or model execution**. Ordinary reads were allowed; no hostile-code sandbox is claimed. |
+| Expanded current-image host negative controls | Selection remains **56 top-level controls**, separate from earlier host receipts. R1 compilation failed before tests. R2 compiled but reported **262 passing Node outcomes and two OOM file-process failures** at 256 MiB. R3 compiled at 512 MiB but **still failed**, with **297 Node-reported outcomes: 296 pass, one OOM file failure**, **165.216 s**. Its JUnit contains **289 testcase elements: 288 pass, one failure**, plus **eight parent containers**—not 297 testcase elements. Neither failed lane proves 56/56 execution or a suite pass. |
+
+The owner lane's earlier zero-test harness failure is also retained. These runs
+use distinct source identities and do not add together; whole-command durations
+are not analysis latency or the warm useful-result target.
+
+[Hosted Linux run 42052349694](https://github.com/Apdelrahman1911/ktChecker/actions/runs/42052349694)
+actually tested merge **`f0b85da7890d3c98c5fd8552a360a0627767a188`**, not API head
+`0751941aee98ed1761eb247ad3dd528bbad915c4`. Its retained sanitized summaries contain
+**1,466 testcase occurrences: 1,461 passed, three failed, two skipped**. The job
+failed and evidence is incomplete; all three failures belong to the held
+`ModelLiveMaterializationTest` suite. No failure cause or new investigation is
+inferred from case names. No hosted raw logs or original hosted report bodies were opened for
+this update.
+
+[Exact-commit Darwin run 42052589522](https://github.com/Apdelrahman1911/ktChecker/actions/runs/42052589522)
+retains a failed, unverified component summary for **`0751941aee98ed1761eb247ad3dd528bbad915c4`**.
+Native controls were attempted; the executed count is **unknown**, not zero or the
+16 expected cases. Default Darwin enablement remains false; this is not native,
+Apple-target or platform qualification.
+
+A separate Temurin 21.0.13+9 Linux x64 JDK archive was downloaded and checksum
+verified (**207,858,352 bytes, 10.203 s**); it was **not extracted or executed** at
+this cutoff. That prerequisite is not engine/model evidence or signature verification.
+
+No result is included for the subsequently planned canonical/exporter controls.
+FIR container observation's **22** controls remain source-only with review pending;
+the benchmark collector's **34 new** controls are unexecuted with review corrections
+pending. The real paired bridge remains work in progress. No real host-context/token
+or benchmark measurement, runtime-default change, license choice, binary publication
+or fresh package is established. Earlier checkpoints retain their own bindings.
+
 ## Parallel implementation checkpoint — 2026-11-05
 
 The [machine-readable checkpoint](evidence/parallel-checkpoint-20261105.json)

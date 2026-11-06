@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "provider_id": "detekt",
+  "provider_version": "2.0.0-alpha.6",
+  "embedded_kotlin_version": "2.4.10",
+  "six_case_plan": {
+    "positive": "Run the exact owner-selected syntax route on these immutable source bytes. Expected ranges are authored from the pinned predicate, never observed output.",
+    "negative": "Run the independent valid alternative with this SAME rule active and require an enabled upstream descriptor even with no finding.",
+    "configuration": "Replay original positive bytes with the selected rule explicitly disabled. This is a separately counted configuration control, never a scope/default-activation reduction.",
+    "version": "Replay positive bytes under the pinned CLI; require a fresh per-cohort version probe and two per-rule Common/Native abstentions. Modeled baseline 2.4.21 versus parser 2.4.10 remains unqualified.",
+    "suppression": "Use genuine upstream file annotation only on an additional package-isolated copy; the unsuppressed original neighbor must keep every expected range.",
+    "regression": "Seal the negative correction as the child of suppression, delete the obsolete suppressed copy, and verify both registered parent and child unchanged."
+  },
+  "corpus_id": "detekt-syntax-local-shapes-v1",
+  "authoring_state": "unexecuted",
+  "rule_id": "ktc.kotlin.detekt.style.function-only-returning-constant",
+  "upstream_id": "style:FunctionOnlyReturningConstant",
+  "relation": "exact",
+  "depth": "syntax",
+  "default_activation": "opt_in",
+  "severity": "info",
+  "kind": "style",
+  "certainty": "intent_dependent",
+  "catalog_record_sha256": "06cce2226f0cbe5230cb3db60750331ae3d9ad1d8755e9305261e4d29732c4ca",
+  "source_citation": {
+    "url": "https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-rules-style/src/main/kotlin/dev/detekt/rules/style/FunctionOnlyReturningConstant.kt",
+    "source_file_sha256": "ca8d485460ab98ed6227dbf23b3e8092707e8e1c77b4726a5724da33ee84e71f",
+    "source_archive_sha256": "4f18e9ac263a157229db846ac18d3a71b8861d74d415da3ebd0fa085dee461a6",
+    "source_archive_entry": "dev/detekt/rules/style/FunctionOnlyReturningConstant.kt",
+    "predicate_line_numbers": [
+      34,
+      38,
+      41,
+      44,
+      46,
+      51,
+      53,
+      61,
+      64,
+      71,
+      76,
+      83,
+      85,
+      88,
+      95
+    ],
+    "research_only": true
+  },
+  "light_eligibility": {
+    "wrapper": {
+      "class": "dev/detekt/rules/style/FunctionOnlyReturningConstant",
+      "artifact": "detekt-cli-2.0.0-alpha.6-all.jar",
+      "entry_sha256": "sha256:ee74068256ed0e93b33a6ed4aa48f253c90b3be6b4dbd06dea3a43a29ff21875"
+    },
+    "requires_analysis_api": false,
+    "evidence_kind": "pinned_classfile_ancestry_only_not_execution",
+    "qualification": false
+  },
+  "upstream_rule_options": [
+    {
+      "name": "ignoreOverridableFunction",
+      "type": "Boolean",
+      "defaults": true
+    },
+    {
+      "name": "ignoreActualFunction",
+      "type": "Boolean",
+      "defaults": true
+    },
+    {
+      "name": "excludedFunctions",
+      "type": "List<String> (name globs)",
+      "defaults": []
+    }
+  ],
+  "bounded_predicate": "Report a named function whose body is a literal constant/string without interpolation, or whose block has exactly one return of such a constant. Default ignoreOverridableFunction excludes override/open/interface functions; ignoreActualFunction excludes actual; excludedFunctions uses whole-name glob regexes. Entity.atName(function). Literal null matches even though const val cannot be null.",
+  "selection_rationale": "Adds constant-returning API advice without duplicating the existing EqualsAlwaysReturnsTrueOrFalse contract rule. Override/option, null eligibility and selective glob controls are necessary context, not additional lifecycle counts.",
+  "positive": {
+    "sources": {
+      "Case.kt": "package corpus.constantfunction\n\nfun retries(): Int = 3\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 4,
+        "end_line": 3,
+        "end_column": 11,
+        "span": "retries",
+        "occurrence": 0
+      }
+    ],
+    "intent": "A no-argument helper only returns a literal policy value. Exposing a const may be clearer in some APIs, but function identity, overrides and ABI are explicit design choices, not defects."
+  },
+  "negative": {
+    "sources": {
+      "Case.kt": "package corpus.constantfunction\n\nconst val RETRIES: Int = 3\n"
+    },
+    "expected": [],
+    "intent": "The intended compile-time value is represented by a legal const val instead of a function; the active rule has no function to report."
+  },
+  "suppression": {
+    "sources": {
+      "Case.kt": "package corpus.constantfunction\n\nfun retries(): Int = 3\n",
+      "SuppressedCase.kt": "@file:Suppress(\"FunctionOnlyReturningConstant\")\n\npackage suppressed.corpus.constantfunction\n\nfun retries(): Int = 3\n"
+    },
+    "expected": [
+      {
+        "path": "Case.kt",
+        "line": 3,
+        "column": 4,
+        "end_line": 3,
+        "end_column": 11,
+        "span": "retries",
+        "occurrence": 0
+      }
+    ],
+    "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias."
+  },
+  "controls": [
+    {
+      "sources": {
+        "Case.kt": "package corpus.constantfunction\n\ninterface RetryPolicy { fun retries(): Int }\nclass FixedRetryPolicy : RetryPolicy {\n    override fun retries(): Int = 3\n}\n"
+      },
+      "expected": [],
+      "intent": "An implementation returns a fixed value to satisfy an interface contract; default ignoreOverridableFunction permits this legitimate override.",
+      "id": "overridden-contract-default-exemption",
+      "case_kind": "regression",
+      "assessment": "predicate_boundary"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.constantfunction\n\ninterface RetryPolicy { fun retries(): Int }\nclass FixedRetryPolicy : RetryPolicy {\n    override fun retries(): Int = 3\n}\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 17,
+          "end_line": 5,
+          "end_column": 24,
+          "span": "retries",
+          "occurrence": 1
+        }
+      ],
+      "intent": "With the genuine ignoreOverridableFunction option set false, the same override is intentionally reported. This opt-in policy result cannot authorize replacing an interface method with a constant.",
+      "options": {
+        "ignoreOverridableFunction": false
+      },
+      "id": "configured-overrides-report-with-contract-intact",
+      "case_kind": "configuration",
+      "assessment": "genuine_upstream_option"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.constantfunction\n\nfun noCachedToken(): String? = null\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 4,
+          "end_line": 3,
+          "end_column": 17,
+          "span": "noCachedToken",
+          "occurrence": 0
+        }
+      ],
+      "intent": "Literal null is a KtConstantExpression and matches, but Kotlin const val cannot be null. Preserve the anticipated false-positive rewrite suggestion instead of claiming const eligibility.",
+      "id": "null-literal-is-not-legal-const-value",
+      "case_kind": "regression",
+      "assessment": "anticipated_upstream_false_positive"
+    },
+    {
+      "sources": {
+        "Case.kt": "package corpus.constantfunction\n\nfun generatedRetries(): Int = 3\nfun manualRetries(): Int = 4\n"
+      },
+      "expected": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 4,
+          "end_column": 17,
+          "span": "manualRetries",
+          "occurrence": 0
+        }
+      ],
+      "intent": "The actual excludedFunctions glob excludes generatedRetries only; manualRetries still reports. This demonstrates configured policy without a disabled rule or scope reduction.",
+      "options": {
+        "excludedFunctions": [
+          "generated*"
+        ]
+      },
+      "id": "configured-function-glob-keeps-unexcluded-neighbor",
+      "case_kind": "configuration",
+      "assessment": "genuine_upstream_option"
+    }
+  ],
+  "analysis_cost": {
+    "standard_cases": 6,
+    "independent_controls": 4,
+    "authored_analyses": 10,
+    "per_rule_non_analysis_calls": 3,
+    "per_cohort_cli_probes": 1,
+    "actual_executions": 0
+  },
+  "limitations": [
+    "A function returning a literal may be an intentional public API, callable reference or future extension point. No ABI or refactoring safety is proved.",
+    "Null is a literal constant expression but is not a legal const value; this is retained as a concrete limit.",
+    "ignoreActualFunction is a real upstream option documented here but not newly exercised with Common/Native/actual compilation. The two other options have active contrast controls.",
+    "Local syntactic advice only. No binding identity, safe automatic rewrite, whole-program reachability, binary ABI compatibility, call effect, reflection completeness, performance or semantic qualification follows.",
+    "The six lifecycle cases include a disabled-rule configuration control, pinned-version positive replay and negative child-snapshot replay; the latter two are not new predicates. Every other negative/control keeps this rule active.",
+    "Only the existing explicit JVM LIGHT input is proposed. Common and Native requests must abstain without launching; no parser/compiler/Kotlin 2.4.21 versus embedded 2.4.10 compatibility or multiplatform qualification.",
+    "File-level suppression is authored; declaration-level aliases, baselines and generated-code inclusion policy are not newly qualified."
+  ],
+  "qualification_note": "Authored expected ranges and concrete counterexamples come from primary source and language reasoning before execution, never detector outputs. Preserve any unexpected findings/misses and stop; do not rewrite oracles to force a pass. Existing activation/severity/certainty remain exact. Independent oracle/source review, root adoption, fresh controls and separately admitted single-cohort real isolated calls are required. No natural-project precision, safety, release or historical-stage transfer."
+}

@@ -245,8 +245,9 @@ internal class OwnerModelTreePin private constructor(
 internal class OwnerModelCommandCustody(
     private val workbench: Workbench,
     private val runtime: OwnerLiveModelRuntime,
-    private val originalDeadline: OwnedApplicationDeadline,
+    private val clock: OwnerModelCommandClock,
 ) : OwnerModelMaterializationCustody {
+    private val originalDeadline: OwnedApplicationDeadline get() = clock.originalDeadline
     private val lock = Any()
     private var generation: ModelCompilerGenerationRequest? = null
     private var retainedPlan: PreparedOwnerModelPlan? = null
@@ -296,7 +297,7 @@ internal class OwnerModelCommandCustody(
             graph.originalDeadlineIdentity == originalDeadline.identity && graph.originalDeadlineMillis == originalDeadline.durationMillis &&
             graph.observedExport == observedEvidence)
         val ids = Catalog().ids.sorted()
-        ownerModelRequire(ids.size == 1663 && definition.slots.all { slot ->
+        ownerModelRequire(OwnerFullCatalog1665.accepts(ids) && definition.slots.all { slot ->
             slot.input.snapshot == model.snapshot && slot.input.requiredRuleIds == ids && !slot.input.context.fullProject &&
                 slot.input.execution == null && slot.input.outputRoot == null &&
                 slot.input.context.policies[OBSERVED_ASSURANCE_POLICY] == OBSERVED_EXPORT_PROFILE &&
@@ -413,7 +414,7 @@ internal class OwnerModelCommandCustody(
             p.copy(context = slot.input.context) == slot.input && p.context == value.compilation.context.copy(policies = p.context.policies) &&
             slot.input.context.policies.all { p.context.policies[it.key] == it.value } &&
             p.context.compilerArguments == slot.input.context.compilerArguments &&
-            p.context.compilationFiles == slot.input.context.compilationFiles && p.requiredRuleIds.size == 1663 &&
+            p.context.compilationFiles == slot.input.context.compilationFiles && OwnerFullCatalog1665.accepts(p.requiredRuleIds) &&
             p.execution == null && p.outputRoot == null && !p.context.fullProject)
         val producer = if (slot.slotId == graph.consumer.slotId) synchronized(lock) { attempts[graph.producer.slotId] }
             ?: throw CliProblem("owner_model_producer_custody_unavailable", "Consumer requires this exact retained producer.") else null
@@ -425,7 +426,7 @@ internal class OwnerModelCommandCustody(
             if (producer == null) null else certificate.producerPublicationCertificate,
             if (producer == null) null else certificate.producedManifest, observedExport = graph.observedExport)
         ownerModelRequire(certificate == expected && certificate.reviewId.isNotBlank() && certificate.reviewId.length <= 256 &&
-            attempt.workKey == certificate.workKey() && attempt.resolutionCertificateId == expected.digest() && attempt.attempt >= 1 &&
+            attempt.workKey == certificate.workKey() && attempt.resolutionCertificateId == expected.digest() && attempt.attempt == 1L &&
             attempt.originInstance == attempt.admission.originInstance && value.prepared.compilerRuleIds.isNotEmpty() &&
             value.prepared.compilerRuleIds == value.prepared.compilerRuleIds.distinct().sorted() &&
             value.prepared.compilerRuleIds.all { it in p.requiredRuleIds && it in runtime.provider.supportedRuleIds })
@@ -598,7 +599,7 @@ internal class OwnerModelCommandCustody(
         }
     }
 
-    private fun checkpoint() { ownerModelCheckpoint(originalDeadline) }
+    private fun checkpoint() { clock.checkpoint() }
 }
 
 internal fun ownerModelDirectories(files: Collection<String>): Set<String> = buildSet {

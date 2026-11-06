@@ -1,8 +1,7 @@
-/** Explicitly SYNTHETIC, pure full1663 join controls. None of these values grants live custody,
+/** Explicitly SYNTHETIC, historical full1663 join controls. None of these values grants live custody,
  * native/compiler execution, actual model observation or release qualification. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { PREVIEW_CONTRACT } from '@ktchecker/mcp-preview/rpc';
 import { canonical, digest } from '../src/journal.js';
 import { prepareDiagnosticContext } from '../src/context-projection.js';
@@ -13,8 +12,9 @@ import { acceptedRealPhase, completeRealPhase, fullRealRules, publicRealText, RE
 import { DeliveryReceiptCapture, deliveryBinding, verifyDeliveryReceiptJoin } from './delivery-receipts.js';
 import { REAL_MODEL_CONTEXT_BYTES, REAL_MODEL_PUBLIC_BYTES, REAL_MODEL_RPC_BYTES } from './real-model-run-support.js';
 
-const ids = ['core', 'libraries', 'platform', 'ecosystem'].flatMap(name =>
-  (JSON.parse(readFileSync(new URL('../../../../data/rules-' + name + '.json', import.meta.url), 'utf8')) as { id: string }[]).map(value => value.id)).sort();
+// Explicit retained SOURCE fixture; the current1665 catalogs/CONTROL_RULES are never narrowed.
+import { HISTORICAL_RULE_IDS } from './required-rule-vector-fixtures.js';
+const ids = [...HISTORICAL_RULE_IDS];
 
 function fixture() {
   const r = registration(), b = binding(r);
@@ -51,7 +51,7 @@ function fixture() {
   return { r, b, phase, accepted, completion, events, state };
 }
 
-test('all FOUR catalog inputs bind the exact sorted1663 identity vector, never a count-only prefix', () => {
+test('historical SOURCE fixture binds the exact sorted1663 identity vector, never current catalogs or a count-only prefix', () => {
   assert.equal(fullRealRules(ids).length, 1663);
   for (const changed of [ids.slice(0, -1), [...ids].reverse(), [...ids.slice(0, -1), ids[0]!], [...ids.slice(0, -1), 'synthetic-new-rule']])
     assert.throws(() => fullRealRules(changed));

@@ -29,7 +29,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
     private data class Stored(
         val request: ProducedPlanAdmissionRequest, val authorityIdentity: String,
         val archives: List<DeclaredArchiveIdentity>, val reviews: Map<String, String>,
-        val cancelled: Boolean, val frontier: Long,
+        val cancelled: Boolean, val frontier: Long, val currentCatalog: Boolean,
     )
     private val retained = ConcurrentHashMap<String, Live>()
     private val executions = ConcurrentHashMap<String, Pair<Live, ResolvedPlanExecution>>()
@@ -108,7 +108,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                 val archiveIdentities = archives.map { it.identity }
                 val archiveBytes = archiveIdentities.sumOf { it.byteCount }
                 val fair = fairKey(binding)
-                c.execute("INSERT OR IGNORE INTO fair_queues(fair_key,last_served) VALUES(?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))", fair)
+                ledger.admitProviderFairness(c, admitted.providerKey, fair, binding.clientId)
                 c.execute("""INSERT INTO produced_plan_admissions(plan_id,origin_instance,authority_identity,provider_key,
                     producer_slot_id,consumer_slot_id,fair_key,archives_json,archive_bytes,admission_digest) VALUES(?,?,?,?,?,?,?,?,?,?)""",
                     id, service.instanceId, grant.authorityIdentity, service.providerKey, admitted.declaration.producer.slotId,
@@ -176,7 +176,29 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         return used + addition
     }
 
+    /** Fresh admission recognizes exactly one reviewed catalog; legacy readability is not a grant. */
     private fun validateDeclaration(binding: ClientBinding, request: SubmitPlanRequest, plan: RequiredReviewPlan) {
+        if (plan.slots.any { !OwnerFullCatalog1665.accepts(it.input.requiredRuleIds) }) {
+            fail("produced_plan_catalog_contract_mismatch", "Fresh produced admission requires ${OwnerFullCatalog1665.ID}; no old vector is upgraded")
+        }
+        validateDeclarationShape(binding, request, plan)
+    }
+
+    /**
+     * READ ONLY: original accepted1663 declarations had a count/sorted/distinct gate, not an
+     * exact-ID digest. Preserve that original shape and EVERY existing relation check; imposing
+     * a new historical ID oracle would hide valid old obligations. A false return marks them
+     * unsupported, never eligible for admission, execution, resolution or completion credit.
+     */
+    private fun validateRecordedDeclaration(binding: ClientBinding, request: SubmitPlanRequest, plan: RequiredReviewPlan): Boolean {
+        validateDeclarationShape(binding, request, plan)
+        val ids = plan.slots.first().input.requiredRuleIds
+        val current = OwnerFullCatalog1665.accepts(ids)
+        if (!current && ids.size != 1663) corrupt()
+        return current
+    }
+
+    private fun validateDeclarationShape(binding: ClientBinding, request: SubmitPlanRequest, plan: RequiredReviewPlan) {
         val graph = plan.jvmProduced ?: fail("produced_plan_declaration_missing", "Typed graph declaration is required")
         val observed = graph.observedExport
         if (observed != null) {
@@ -223,7 +245,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             if (slot.state != "declared" || slot.identity != null || slot.reasons.isEmpty() ||
                 slot.reasons.any { it !in allowedReasons } ||
                 input.snapshot != snapshot || input.materializedRoot != source || input.execution != null || input.outputRoot != null ||
-                input.requiredRuleIds.size != 1663 || input.requiredRuleIds != input.requiredRuleIds.distinct().sorted() ||
+                input.requiredRuleIds != input.requiredRuleIds.distinct().sorted() ||
                 input.requiredRuleIds != plan.slots.first().input.requiredRuleIds ||
                 Digests.sha256(canonical(input.requiredRuleIds)) != graph.requiredRulesDigest ||
                 input.context.policies["ktchecker.catalog-inventory"] != graph.catalogDigest ||
@@ -234,7 +256,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                 input.context.classpath.size > 16 || input.context.classpath.any { !it.path.endsWith(".jar") } ||
                 input.context.compilationFiles.isNullOrEmpty() || input.context.compilationFiles.orEmpty().any { !it.endsWith(".kt") } ||
                 Digests.sha256(canonical(rawContext)) != declared.rawContextDigest || contextIdentity(input) == null) {
-                fail("produced_plan_declaration_mismatch", "Declared raw model/source/config/1663 obligations cannot be narrowed or relabeled")
+                fail("produced_plan_declaration_mismatch", "Declared raw model/source/config and exact whole-rule obligations cannot be narrowed or relabeled")
             }
             identifier(slot.slotId, "produced slot")
             slot.reasons.forEach { identifier(it, "declared reason") }
@@ -319,12 +341,12 @@ internal class ProducedPlans(private val service: KernelService, private val aut
     private fun insertReady(c: Connection, live: Live, execution: ResolvedPlanExecution, staged: InputArchive.Staged) {
         val binding = live.request.binding
         val key = execution.workKey
+        // Admission, not resolution/restart, created this provider membership atomically.
+        ledger.requireProviderFairness(c, execution.certificate.providerKey, fairKey(binding), binding.clientId)
         c.execute("""INSERT INTO work(work_key,input_json,frozen_json,provider_key,fair_key,state,archive_bytes,created_at)
             VALUES(?,?,?,?,?,'queued',?,?)""", key, canonical(execution.input), canonical(staged.input), execution.certificate.providerKey,
             fairKey(binding), staged.bytes, System.currentTimeMillis())
         insertResolution(c, live.request.planId, Resolution(execution.slotId, execution.reviewId, "ready", execution))
-        c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
-            VALUES(?,?,(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'))""", binding.clientId, fairKey(binding))
     }
 
     private fun insertResolution(c: Connection, planId: String, value: Resolution) {
@@ -344,13 +366,17 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         } ?: return true
         // Another broker cannot discard/replay this still-live origin's execution authority.
         if (row.second != service.instanceId) return false
+        val stored = load(c, row.first)
+        if (!stored.currentCatalog) {
+            failWorkWithoutExecution(c, key, PRODUCED_CATALOG_GENERATION_UNSUPPORTED)
+            return false
+        }
         val pair = executions[key]
         if (pair == null || pair.first.request.planId != row.first || pair.first.request.originInstance != service.instanceId ||
             !pair.first.grant.validity.isCurrent() || pair.first.grant.clock.isExpired()) {
             failWorkWithoutExecution(c, key, "produced_live_origin_or_budget_unavailable")
             return false
         }
-        val stored = load(c, row.first)
         resolution(c, stored, pair.second.slotId) ?: corrupt()
         if (stored.cancelled || c.count("SELECT cancelled FROM reviews WHERE review_id=?", pair.second.reviewId) != 0L) {
             failWorkWithoutExecution(c, key, "produced_execution_cancelled_before_claim")
@@ -366,6 +392,9 @@ internal class ProducedPlans(private val service: KernelService, private val aut
     fun attempt(key: String, original: AnalysisInput, effective: AnalysisInput, attempt: Long,
         verifyFrozen: () -> Unit): ProducedExecutionAttempt {
         val (live, execution) = executions[key] ?: fail("produced_plan_live_authority_unavailable", "Restart cannot reconstruct a produced execution grant")
+        if (!OwnerFullCatalog1665.accepts(execution.input.requiredRuleIds)) {
+            fail(PRODUCED_CATALOG_GENERATION_UNSUPPORTED, "Recorded legacy execution cannot acquire current authority")
+        }
         requireLive(live.grant)
         if (live.request.originInstance != service.instanceId || execution.input != original || key != execution.workKey) corrupt()
         live.grant.verifyForAdmission()
@@ -377,6 +406,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
     /** Called after exact teardown and frozen result detach, outside the writer; unknown errors deny. */
     fun operationalFaults(key: String, original: AnalysisInput, effective: AnalysisInput, result: ProviderResult): List<String> {
         val (live, execution) = executions[key] ?: return listOf("produced_live_publication_authority_unavailable")
+        if (!OwnerFullCatalog1665.accepts(execution.input.requiredRuleIds)) return listOf(PRODUCED_CATALOG_GENERATION_UNSUPPORTED)
         val rawFaults = observedResultFaults(live.request.declaration.observedExport, result)
         val ownerFaults = try {
             requireLive(live.grant)
@@ -397,7 +427,9 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         if (live.grant.clock.isExpired()) faults += "produced_original_deadline_exceeded"
         if (!live.grant.validity.isCurrent()) faults += "produced_import_superseded_or_revoked"
         if (Thread.currentThread().isInterrupted) faults += "analysis_interrupted"
-        if (cancelled(c, load(c, live.request.planId))) faults += "produced_dependency_cancelled"
+        val stored = load(c, live.request.planId)
+        if (!stored.currentCatalog) faults += PRODUCED_CATALOG_GENERATION_UNSUPPORTED
+        if (cancelled(c, stored)) faults += "produced_dependency_cancelled"
         if (service.isStopped() || c.count("SELECT COUNT(*) FROM instances WHERE instance_id=? AND closed=0", service.instanceId) != 1L) faults += "produced_broker_closed"
         val publication = ProducedWorkPublication(key, attempt, service.instanceId, execution.certificate.digest(), original.analysisKey(),
             effective.analysisKey(), service.providerKey, rawDigest, faults.distinct().sorted(),
@@ -441,6 +473,16 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             AND NOT EXISTS(SELECT 1 FROM plan_slot_resolution_claims claim WHERE claim.plan_id=a.plan_id AND claim.slot_id=a.consumer_slot_id)
             ORDER BY f.produced_last_served,p.rowid LIMIT 1""", service.instanceId) { it.getString(1) } ?: return@transaction null
         val stored = load(c, id)
+        if (!stored.currentCatalog) {
+            // Append an unavailable obligation, never a claim, reservation, provider call or
+            // current successor. The original D/reviews/archives/results/events stay literal.
+            val slot = stored.request.declaration.consumer.slotId
+            insertResolution(c, id, Resolution(slot, stored.reviews.getValue(slot), "unavailable",
+                reasons = listOf(PRODUCED_CATALOG_GENERATION_UNSUPPORTED)))
+            c.execute("UPDATE clients SET epoch=epoch+1 WHERE client_id=?", stored.request.binding.clientId)
+            appendPlanEvent(c, stored.request.binding, localStatus(c, stored.request.binding.clientId, id), "plan_unavailable")
+            return@transaction null
+        }
         val nonce = UUID.randomUUID().toString()
         val declaredBytes = stored.archives.single { it.slotId == stored.request.declaration.consumer.slotId }.byteCount
         // Explicit first-profile capacity gap: full output JAR + copied K are conservatively
@@ -465,6 +507,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         var unavailable: List<String> = emptyList()
         var publication: ProducedWorkPublication? = null
         try {
+            if (!stored.currentCatalog) fail(PRODUCED_CATALOG_GENERATION_UNSUPPORTED, "Legacy consumer has no current execution authority")
             if (selected.reservedBytes == 0L) fail("produced_consumer_archive_capacity_unavailable", "The conservative retained-output bound does not fit; all obligations remain, no consumer callback runs")
             if (live == null) fail("produced_live_origin_unavailable", "Accepted authority is non-restorable")
             requireLive(live.grant)
@@ -531,6 +574,10 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             ready = null; reasons = listOf("produced_broker_closed")
         }
         if (Thread.currentThread().isInterrupted) { ready = null; reasons = listOf("produced_resolution_interrupted") }
+        // A publication-only retry must not reanimate an unsupported recorded generation.
+        if (!current.currentCatalog || !selected.stored.currentCatalog) {
+            ready = null; reasons = (reasons + PRODUCED_CATALOG_GENERATION_UNSUPPORTED).distinct()
+        }
         if (ready != null) {
             val producer = resolution(c, current, current.request.declaration.producer.slotId)?.execution ?: corrupt()
             if (publication(c, producer) != pending.publication || pending.publication?.operationalFaults?.isNotEmpty() != false) {
@@ -592,6 +639,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
     fun localStatus(c: Connection, clientId: String, id: String): ParentPlanStatus {
         val stored = load(c, id)
         if (stored.request.binding.clientId != clientId) fail("plan_not_found", "Parent is not available to this client")
+        val generationReasons = if (stored.currentCatalog) emptyList() else listOf(PRODUCED_CATALOG_GENERATION_UNSUPPORTED)
         val slots = stored.request.definition.slots.map { slot ->
             val relation = resolution(c, stored, slot.slotId)
             val review = service.readStatus(c, stored.reviews.getValue(slot.slotId), clientId)
@@ -599,13 +647,13 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             val extra = if (relation == null && (current == null || !current.grant.validity.isCurrent()))
                 listOf("produced_live_authority_not_restored_or_revoked") else emptyList()
             PlanSlotStatus(slot.slotId, review.reviewId, slot.input.context.scope, slot.input.requiredRuleIds,
-                if (review.cancelled) "cancelled" else if (relation?.state == "unavailable") "unavailable" else review.state,
-                (slot.reasons + review.reasons + extra).distinct())
+                if (review.cancelled) "cancelled" else if (!stored.currentCatalog || relation?.state == "unavailable") "unavailable" else review.state,
+                (slot.reasons + review.reasons + extra + generationReasons).distinct())
         }
         val cancelled = stored.cancelled || slots.any { it.state == "cancelled" }
         val state = if (cancelled) "cancelled" else if (slots.any { it.state in setOf("incomplete", "unavailable") }) "incomplete" else "pending"
         return ParentPlanStatus(id, clientId, stored.request.request.patchId, stored.request.definition.slots.first().input.snapshot.snapshotId,
-            stored.request.planDigest, state, slots, listOf("produced_plan_preview_unqualified") +
+            stored.request.planDigest, state, slots, listOf("produced_plan_preview_unqualified") + generationReasons +
                 (if (stored.request.declaration.observedExport != null) listOf(OBSERVED_EXPORT_CONFIGURATION_GAP) else emptyList()) +
                 if (cancelled) listOf("parent_cancelled_obligations_retained") else emptyList())
     }
@@ -642,7 +690,9 @@ internal class ProducedPlans(private val service: KernelService, private val aut
         return try {
         requireReviewRelation(c, reviewId)
         val link = c.one("SELECT plan_id,slot_id FROM plan_slots WHERE review_id=?", reviewId) { it.getString(1) to it.getString(2) } ?: return false
-        val saved = resolution(c, load(c, link.first), link.second)?.execution ?: return false
+        val stored = load(c, link.first)
+        if (!stored.currentCatalog) return false
+        val saved = resolution(c, stored, link.second)?.execution ?: return false
         saved.input == executionInput
         } catch (_: Exception) { false }
     }
@@ -657,7 +707,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
             if (canonical(plan) != encoded || r.getString("routing_id") != null || r.getString("client_id") != plan.binding.clientId ||
                 r.getString("request_hash") != Digests.sha256(canonical(plan.request)) || r.getString("patch_id") != plan.request.patchId ||
                 r.getString("idempotency_key") != plan.request.idempotencyKey) corrupt()
-            validateDeclaration(plan.binding, plan.request, plan)
+            val currentCatalog = validateRecordedDeclaration(plan.binding, plan.request, plan)
             val request = ProducedPlanAdmissionRequest(plan, id, r.getString("plan_digest"), r.getString("provider_key"), r.getString("origin_instance"))
             request.declaration.observedExport?.let { observed ->
                 if (c.one("SELECT value FROM metadata WHERE key=?", observedNonceKey(observed)) { it.getString(1) } != observedNonceValue(request)) corrupt()
@@ -688,7 +738,7 @@ internal class ProducedPlans(private val service: KernelService, private val aut
                 if (archive.archiveKey != expectedKey || archive.declarationInputKey != slot.input.analysisKey()) corrupt()
                 requireArchivedRelation(slot.input, archive.frozenInput, archive.archiveKey)
             }
-            Stored(request, r.getString("authority_identity"), archives, reviews, r.getInt("cancelled") != 0, frontier)
+            Stored(request, r.getString("authority_identity"), archives, reviews, r.getInt("cancelled") != 0, frontier, currentCatalog)
         } ?: corrupt()
         if (resolution(c, row, row.request.declaration.producer.slotId)?.state != "ready") corrupt()
         return row

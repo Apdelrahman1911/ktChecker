@@ -117,7 +117,9 @@ def collect(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
         if result["environment"].get("state") != "passed":
             result["errors"].append("Observed environment preflight did not pass")
         environment_source = result["environment"].get("source", {})
-        if environment_source.get("working_tree_digest") != result["source"].get("working_tree_digest"):
+        # Identical source bytes at another commit are not this tested candidate.
+        if any(environment_source.get(key) != result["source"].get(key)
+               for key in ("commit", "working_tree_digest")):
             result["errors"].append("Environment and reports do not bind the same actual source tree")
     else:
         result["missing_evidence"].append(str(args.environment))
@@ -164,7 +166,9 @@ def collect(args: argparse.Namespace, root: Path = REPO_ROOT) -> dict:
         result["command_results"].append(value)
         if value.get("state") != "passed":
             result["errors"].append(f"Command/smoke evidence did not pass: {path.name}")
-        if value.get("source") and value["source"].get("working_tree_digest") != result["source"].get("working_tree_digest"):
+        # Availability-only receipts may omit source; do not give them a binding.
+        if value.get("source") and any(value["source"].get(key) != result["source"].get(key)
+                                       for key in ("commit", "working_tree_digest")):
             result["errors"].append(f"Command evidence source differs from the tested tree: {path.name}")
     result["state"] = "passed" if status == "success" and not result["errors"] and not result["missing_evidence"] else "incomplete"
     return result

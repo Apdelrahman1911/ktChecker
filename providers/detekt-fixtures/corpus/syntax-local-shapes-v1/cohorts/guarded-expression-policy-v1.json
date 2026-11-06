@@ -1,0 +1,1399 @@
+{
+  "schema": "ktchecker/detekt-syntax-local-shapes-case-matrix/1",
+  "cohort_id": "guarded-expression-policy-v1",
+  "state": "AUTHORED_NOT_RUN",
+  "candidate_only": true,
+  "baseline_scope_reference": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/scope.json",
+  "analyses": [
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 8,
+          "end_column": 5,
+          "span": "if (ready) {\n        if (permitted) {\n            send()\n        }\n    }",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ec760e61c648163010c99331e8ef09948faada6f6a285da91329502f4138f40e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4c005c15b51b25474d540352b4bb26425c1f312effd00bd3492eb5ea13c0faaa",
+          "bytes": 178
+        }
+      ],
+      "expected_override": null,
+      "intent": "A guarded callback has two standalone nested positive guards; combining them can reduce nesting, but readability and evaluation intent remain an explicit policy choice.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ce1771847debe899e8429dd9d39b72fe283dbc894a6ba50b7689395994857f21",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f15b90e92a10dc6121eb96a9d45166a3cdca7dca1dd99b30f114d451783c83b4",
+          "bytes": 152
+        }
+      ],
+      "expected_override": null,
+      "intent": "Short-circuit conjunction retains the order and conditional callback for these boolean inputs without a nested if. This is an actual source alternative, not a disabled rule.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ec760e61c648163010c99331e8ef09948faada6f6a285da91329502f4138f40e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4c005c15b51b25474d540352b4bb26425c1f312effd00bd3492eb5ea13c0faaa",
+          "bytes": 178
+        }
+      ],
+      "expected_override": [],
+      "intent": "A guarded callback has two standalone nested positive guards; combining them can reduce nesting, but readability and evaluation intent remain an explicit policy choice.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 8,
+          "end_column": 5,
+          "span": "if (ready) {\n        if (permitted) {\n            send()\n        }\n    }",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ec760e61c648163010c99331e8ef09948faada6f6a285da91329502f4138f40e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4c005c15b51b25474d540352b4bb26425c1f312effd00bd3492eb5ea13c0faaa",
+          "bytes": 178
+        }
+      ],
+      "expected_override": null,
+      "intent": "A guarded callback has two standalone nested positive guards; combining them can reduce nesting, but readability and evaluation intent remain an explicit policy choice.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 4,
+          "column": 4,
+          "end_line": 8,
+          "end_column": 5,
+          "span": "if (ready) {\n        if (permitted) {\n            send()\n        }\n    }",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b8ac640485cfbd4ddffd44256ccbc7d40a4fe6e8fe0a3dda396fc4261ee2b9d4",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4c005c15b51b25474d540352b4bb26425c1f312effd00bd3492eb5ea13c0faaa",
+          "bytes": 178
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "50bfb7f308f32aafe2ef301cf8290e23f0244e0e6000b6456fb949c4d068fcb8",
+          "bytes": 232
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ce1771847debe899e8429dd9d39b72fe283dbc894a6ba50b7689395994857f21",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "f15b90e92a10dc6121eb96a9d45166a3cdca7dca1dd99b30f114d451783c83b4",
+          "bytes": 152
+        }
+      ],
+      "expected_override": null,
+      "intent": "Short-circuit conjunction retains the order and conditional callback for these boolean inputs without a nested if. This is an actual source alternative, not a disabled rule.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "outer-else-preserves-distinct-recovery",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "e4c6e373b1cc6aaa62cf34ffb2f4171d6111a239f2acbcd5486e6c02859c8173",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "8685130e2b9fc05c2b53643bc2fd6a86e4123b20e06654e4ec975cd41e2415b8",
+          "bytes": 213
+        }
+      ],
+      "expected_override": null,
+      "intent": "An outer else has a distinct recovery action; blindly collapsing would redirect behavior. The no-else boundary correctly leaves this structure alone.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "inner-else-preserves-conditional-denial",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "ad2b34d2ca3d0f4b335b6a38353514ddb48a38832e1d8e8c1838f974a6ef2574",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "57055eede09d14e2044c6fc6325ac8128fa5f35c9041417e6ef162dced6766f2",
+          "bytes": 181
+        }
+      ],
+      "expected_override": null,
+      "intent": "The inner else must only run when ready, so the two positive conditions are not interchangeable with a simple combined guard.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "braceless-nested-guard-is-not-normalized",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/collapsible-if-statements.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "1be45e62c87822f2ad1e6ea77256d54aff5a480f49d3c91769184a06372e5f69",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "3af4bb269b81e130c2c8d78add098d5e128b32540b1ff6abd66671544283e261",
+          "bytes": 138
+        }
+      ],
+      "expected_override": null,
+      "intent": "A braceless nested guard is still collapsible in this simple case, but the exact child/container shape does not match. Keep the syntactic false negative instead of normalizing braces.",
+      "selected_sarif_rule_id": "detekt.style.CollapsibleIfStatements",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 38,
+          "end_line": 3,
+          "end_column": 74,
+          "span": "if (value is String) value else null",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b7605bb67ba327bb2579cfdd3a5fe2a251097b695e9f9d21116bd4d5404cbfb5",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "711bfdc3dfd14dc5a8ffd2d53f92ac41bd5c0c92e66538c321b7611926b0c404",
+          "bytes": 100
+        }
+      ],
+      "expected_override": null,
+      "intent": "A stable local parameter is narrowed by a type test then returned unchanged or null. The conventional as? form is directly meaningful for this constrained input.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "aa21e6120c7dc08ab016298e2ba17bceec8efc05065a254269bf394b498de954",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "315a5c20876f8d3f70b7ee8236ba9b86581da524b139ad9a01d7ee45f5efe619",
+          "bytes": 80
+        }
+      ],
+      "expected_override": null,
+      "intent": "The same stable input uses an actual safe-cast expression; the active shape rule has no if to report.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b7605bb67ba327bb2579cfdd3a5fe2a251097b695e9f9d21116bd4d5404cbfb5",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "711bfdc3dfd14dc5a8ffd2d53f92ac41bd5c0c92e66538c321b7611926b0c404",
+          "bytes": 100
+        }
+      ],
+      "expected_override": [],
+      "intent": "A stable local parameter is narrowed by a type test then returned unchanged or null. The conventional as? form is directly meaningful for this constrained input.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 38,
+          "end_line": 3,
+          "end_column": 74,
+          "span": "if (value is String) value else null",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b7605bb67ba327bb2579cfdd3a5fe2a251097b695e9f9d21116bd4d5404cbfb5",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "711bfdc3dfd14dc5a8ffd2d53f92ac41bd5c0c92e66538c321b7611926b0c404",
+          "bytes": 100
+        }
+      ],
+      "expected_override": null,
+      "intent": "A stable local parameter is narrowed by a type test then returned unchanged or null. The conventional as? form is directly meaningful for this constrained input.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 38,
+          "end_line": 3,
+          "end_column": 74,
+          "span": "if (value is String) value else null",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "25e29d80dc1a73cdb9db11e7f69662e2df978cd840cd0f5b52d84abfe83169bb",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "711bfdc3dfd14dc5a8ffd2d53f92ac41bd5c0c92e66538c321b7611926b0c404",
+          "bytes": 100
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "8da57489edb70e442faa093e58796721b4b6a5344a7e584b2b26a53e6494121e",
+          "bytes": 139
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "aa21e6120c7dc08ab016298e2ba17bceec8efc05065a254269bf394b498de954",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "315a5c20876f8d3f70b7ee8236ba9b86581da524b139ad9a01d7ee45f5efe619",
+          "bytes": 80
+        }
+      ],
+      "expected_override": null,
+      "intent": "The same stable input uses an actual safe-cast expression; the active shape rule has no if to report.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "negated-test-with-single-expression-blocks",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 38,
+          "end_line": 3,
+          "end_column": 83,
+          "span": "if (value !is String) { null } else { value }",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "0c82f43be3b74a47e442f1286c3d243528607c5451c26bb444491ae68ff9cd24",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "4e53bab3d4b371a03fd0a59e76b00e60916ea2613b5ad849664b249b5b8437cf",
+          "bytes": 109
+        }
+      ],
+      "expected_override": null,
+      "intent": "Negated type test and single-expression blocks reverse the accepted branches without changing the stable-parameter meaning.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "branch-effect-is-not-safe-cast-shape",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "8ae2b0bb4f2ce622567e978e2e349f40f29aad5d1eeb61bac065d5db9a5afec7",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "b7f3ab67b863d1e48e8d19a3c0cdb508068ce31c75c9874c6b4efcd55367e1a4",
+          "bytes": 144
+        }
+      ],
+      "expected_override": null,
+      "intent": "A branch performs recording before yielding the value. It is not a single-expression identity branch, so dropping it would lose an effect and no finding is expected.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "qualified-property-is-not-name-reference",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "anticipated_upstream_false_negative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "5d337276c00067c83033ca3a4cc64126bbf9df6615ae160bde94623a7522731b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "dbb4f6445eabd5e3f0508176c7a869699e6433287ea88deb3419e86b43abf761",
+          "bytes": 139
+        }
+      ],
+      "expected_override": null,
+      "intent": "A qualified stable property is not a bare KtNameReferenceExpression. The equivalent-looking shape is a documented miss, not type/effect resolution.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "unstable-getter-spelling-is-not-safe-rewrite-proof",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/safe-cast.json",
+      "fixture_json_pointer": "/controls/3",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 5,
+          "column": 27,
+          "end_line": 5,
+          "end_column": 69,
+          "span": "if (observed is String) observed else null",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "anticipated_upstream_false_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "c5aa2f99ea1c167e37eefd94bb0942ba5ce6d064e8e7524b768e1d22825d2bde",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "0acf65db7b0e5a4c42067c4cfe8bd37e7a4cdd196c3863d4d278254a52d502ce",
+          "bytes": 168
+        }
+      ],
+      "expected_override": null,
+      "intent": "The property getter may return different values or perform effects on each access. Its simple identifier spelling still matches; replacing two reads with one as? is not generally equivalent. Retain this anticipated unsafe-advice false positive without executing the callback.",
+      "selected_sarif_rule_id": "detekt.style.SafeCast",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "positive",
+      "case_kind": "positive",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 31,
+          "end_line": 6,
+          "end_column": 1,
+          "span": "when (code) {\n    0 -> \"empty\"\n    else -> \"present\"\n}",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "independent_positive",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "c17a75caa4516babafeaa7a11bf9e16cf507e25a71a917ecfb25545bba11bc19",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "9411a84202299d80115531c33ec0d3d498b6b5a41c899363de58447ec0da9f78",
+          "bytes": 113
+        }
+      ],
+      "expected_override": null,
+      "intent": "A binary branch with one condition and one default is an explicit if-versus-when readability convention. It is not a correctness assertion.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "negative",
+      "case_kind": "negative",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "independent_valid_alternative",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "bdc225a0796ab1f2d9ad1aadffc22c7bfd6df8b35866dc27b4f4ffac2c2f1a82",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "52964af0b10d9a739922c45542345bc91156e08575de6cf04222c8ca68cfcc3b",
+          "bytes": 96
+        }
+      ],
+      "expected_override": null,
+      "intent": "An equivalent binary conditional on a stable integer parameter uses if; the selected rule remains active.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "configuration",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "explicit_disabled_control_not_scope_reduction",
+      "rule_disabled_for_this_configuration_control": true,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": false,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "c17a75caa4516babafeaa7a11bf9e16cf507e25a71a917ecfb25545bba11bc19",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "9411a84202299d80115531c33ec0d3d498b6b5a41c899363de58447ec0da9f78",
+          "bytes": 113
+        }
+      ],
+      "expected_override": [],
+      "intent": "A binary branch with one condition and one default is an explicit if-versus-when readability convention. It is not a correctness assertion.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": false
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "version",
+      "case_kind": "version",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/positive",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 31,
+          "end_line": 6,
+          "end_column": 1,
+          "span": "when (code) {\n    0 -> \"empty\"\n    else -> \"present\"\n}",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "source_replay_for_pinned_engine_tuple_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "c17a75caa4516babafeaa7a11bf9e16cf507e25a71a917ecfb25545bba11bc19",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "9411a84202299d80115531c33ec0d3d498b6b5a41c899363de58447ec0da9f78",
+          "bytes": 113
+        }
+      ],
+      "expected_override": null,
+      "intent": "A binary branch with one condition and one default is an explicit if-versus-when readability convention. It is not a correctness assertion.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "suppression",
+      "case_kind": "suppression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/suppression",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 31,
+          "end_line": 6,
+          "end_column": 1,
+          "span": "when (code) {\n    0 -> \"empty\"\n    else -> \"present\"\n}",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "real_upstream_suppression_with_unsuppressed_neighbor",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "49c3c7a350e92caa7ba09b60e5fa11e4c84bcbbbd43e1620fc80035ed67c1aed",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "9411a84202299d80115531c33ec0d3d498b6b5a41c899363de58447ec0da9f78",
+          "bytes": 113
+        },
+        {
+          "path": "SuppressedCase.kt",
+          "sha256": "54e3e496a6c50cd2d2c8b57dfdcc8cc3555c069758f0e903f25dade947595fd0",
+          "bytes": 162
+        }
+      ],
+      "expected_override": null,
+      "intent": "Genuine file-scoped upstream suppression only on a package-isolated positive copy. The byte-identical unsuppressed Case.kt keeps all authored ranges; no host filtering or ktChecker-ID alias.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "regression",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/negative",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "negative_child_snapshot_replay_not_new_predicate",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "bdc225a0796ab1f2d9ad1aadffc22c7bfd6df8b35866dc27b4f4ffac2c2f1a82",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "52964af0b10d9a739922c45542345bc91156e08575de6cf04222c8ca68cfcc3b",
+          "bytes": 96
+        }
+      ],
+      "expected_override": null,
+      "intent": "An equivalent binary conditional on a stable integer parameter uses if; the selected rule remains active.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "grouped-conditions-remain-when",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/controls/0",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "b365c67f72904dd4afde89678a5be0c334f7ef0e7aff2ec7552a1bf027e47b71",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "dfe43bc57f187b3a0720e366d5a497b17c18c150f7d99c2d4bcf22d805a74480",
+          "bytes": 114
+        }
+      ],
+      "expected_override": null,
+      "intent": "Grouped alternatives share an outcome but there is more than one condition in the first entry; this explicit readability boundary is not just an entry-count test.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "exhaustive-two-arm-when-without-else",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/controls/1",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "predicate_boundary",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "63b791cc61755532b233b000b397d555f05b756ac9cbf2dd05968d86e08e7c5b",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "24fca5e6781979b98c1123ddd83e12c495a77097dbadfbdd56f543e6429e13a0",
+          "bytes": 127
+        }
+      ],
+      "expected_override": null,
+      "intent": "The exhaustive boolean choice intentionally has no else; the rule requires an else and must not manufacture one.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "subject-declaration-default-policy-reports",
+      "case_kind": "regression",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/controls/2",
+      "authored_expected_ranges": [
+        {
+          "path": "Case.kt",
+          "line": 3,
+          "column": 37,
+          "end_line": 6,
+          "end_column": 1,
+          "span": "when (val code = read()) {\n    0 -> \"empty\"\n    else -> \"present-$code\"\n}",
+          "occurrence": 0
+        }
+      ],
+      "authored_expected_count": 1,
+      "assessment": "opt_in_policy_limit",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {},
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3e3bba276b0edf404ff1a7a821807d9d5696fd7e073644aa6cc5e9e3ce35752e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "cc9506c2705b179a6374b994d4b0a02a9383c3eb05918f39dc8d8c0e020f8ebc",
+          "bytes": 138
+        }
+      ],
+      "expected_override": null,
+      "intent": "A when subject declares a value reused in the default branch, preserving a single callback evaluation and local scope. Default false still reports; no semantics-preserving simple if rewrite is assumed.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    },
+    {
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "configured-subject-declaration-exemption",
+      "case_kind": "configuration",
+      "fixture_path": "providers/detekt-fixtures/corpus/syntax-local-shapes-v1/fixtures/use-if-instead-of-when.json",
+      "fixture_json_pointer": "/controls/3",
+      "authored_expected_ranges": [],
+      "authored_expected_count": 0,
+      "assessment": "genuine_upstream_option",
+      "rule_disabled_for_this_configuration_control": false,
+      "upstream_options": {
+        "ignoreWhenContainingVariableDeclaration": true
+      },
+      "require_active_upstream_descriptor": true,
+      "require_actual_native_launch": true,
+      "state": "not_run",
+      "attempted": false,
+      "observed_findings": null,
+      "natural_project_observation": false,
+      "source_set_sha256": "3e3bba276b0edf404ff1a7a821807d9d5696fd7e073644aa6cc5e9e3ce35752e",
+      "source_files": [
+        {
+          "path": "Case.kt",
+          "sha256": "cc9506c2705b179a6374b994d4b0a02a9383c3eb05918f39dc8d8c0e020f8ebc",
+          "bytes": 138
+        }
+      ],
+      "expected_override": null,
+      "intent": "The actual ignoreWhenContainingVariableDeclaration option exempts the byte-identical subject-declaration source while leaving the rule active. It preserves a legitimate one-read scoped idiom.",
+      "selected_sarif_rule_id": "detekt.style.UseIfInsteadOfWhen",
+      "selected_sarif_descriptor_enabled_required": true
+    }
+  ],
+  "invocation_schedule": [
+    {
+      "ordinal": 1,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 0
+    },
+    {
+      "ordinal": 2,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 3,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 1
+    },
+    {
+      "ordinal": 4,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 2
+    },
+    {
+      "ordinal": 5,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 3
+    },
+    {
+      "ordinal": 6,
+      "kind": "cli_probe",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "cli-version-probe",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "expected_version": "2.0.0-alpha.6"
+    },
+    {
+      "ordinal": 7,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 8,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 9,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 4
+    },
+    {
+      "ordinal": 10,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 5
+    },
+    {
+      "ordinal": 11,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "outer-else-preserves-distinct-recovery",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 6
+    },
+    {
+      "ordinal": 12,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "inner-else-preserves-conditional-denial",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 7
+    },
+    {
+      "ordinal": 13,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.collapsible-if-statements",
+      "case_id": "braceless-nested-guard-is-not-normalized",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 8
+    },
+    {
+      "ordinal": 14,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 9
+    },
+    {
+      "ordinal": 15,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 16,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 10
+    },
+    {
+      "ordinal": 17,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 11
+    },
+    {
+      "ordinal": 18,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 12
+    },
+    {
+      "ordinal": 19,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 20,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 21,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 13
+    },
+    {
+      "ordinal": 22,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 14
+    },
+    {
+      "ordinal": 23,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "negated-test-with-single-expression-blocks",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 15
+    },
+    {
+      "ordinal": 24,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "branch-effect-is-not-safe-cast-shape",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 16
+    },
+    {
+      "ordinal": 25,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "qualified-property-is-not-name-reference",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 17
+    },
+    {
+      "ordinal": 26,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.safe-cast",
+      "case_id": "unstable-getter-spelling-is-not-safe-rewrite-proof",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 18
+    },
+    {
+      "ordinal": 27,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "positive",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 19
+    },
+    {
+      "ordinal": 28,
+      "kind": "changed_configuration_authorization_denial",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "configuration-permit-replay",
+      "native_launch_required": false,
+      "runtime_callback_required": true,
+      "required_no_execution_code": "execution_not_authorized"
+    },
+    {
+      "ordinal": 29,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "negative",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 20
+    },
+    {
+      "ordinal": 30,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "configuration",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 21
+    },
+    {
+      "ordinal": 31,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "version",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 22
+    },
+    {
+      "ordinal": 32,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "unsupported-common",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "common"
+    },
+    {
+      "ordinal": 33,
+      "kind": "unsupported_target_abstention",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "unsupported-native",
+      "native_launch_required": false,
+      "runtime_callback_required": false,
+      "request_target": "native"
+    },
+    {
+      "ordinal": 34,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "suppression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 23
+    },
+    {
+      "ordinal": 35,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "regression",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 24
+    },
+    {
+      "ordinal": 36,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "grouped-conditions-remain-when",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 25
+    },
+    {
+      "ordinal": 37,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "exhaustive-two-arm-when-without-else",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 26
+    },
+    {
+      "ordinal": 38,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "subject-declaration-default-policy-reports",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 27
+    },
+    {
+      "ordinal": 39,
+      "kind": "detector_analysis",
+      "rule_id": "ktc.kotlin.detekt.style.use-if-instead-of-when",
+      "case_id": "configured-subject-declaration-exemption",
+      "native_launch_required": true,
+      "runtime_callback_required": true,
+      "matrix_index": 28
+    }
+  ],
+  "counts": {
+    "authored_analyses": 29,
+    "all_calls": 39,
+    "native_launch_ceiling": 30,
+    "expected_runtime_callbacks": 33,
+    "planned_progress_events": 119,
+    "independent_controls": 11,
+    "authored_alert_bearing_analyses": 12,
+    "authored_zero_finding_analyses": 17,
+    "authored_expected_finding_observations": 12,
+    "unique_rule_source_sets": 19,
+    "unique_rule_source_configuration_sets": 23,
+    "independent_control_assessments": {
+      "predicate_boundary": 6,
+      "anticipated_upstream_false_negative": 2,
+      "anticipated_upstream_false_positive": 1,
+      "opt_in_policy_limit": 1,
+      "genuine_upstream_option": 1
+    },
+    "actual_executions": 0,
+    "actual_findings": null,
+    "natural_project_observations": 0,
+    "precision_reviewed_natural_observations": 0
+  },
+  "explicit_opt_in_policy_rule_ids": [
+    "ktc.kotlin.detekt.style.collapsible-if-statements",
+    "ktc.kotlin.detekt.style.safe-cast",
+    "ktc.kotlin.detekt.style.use-if-instead-of-when"
+  ],
+  "source_authored_not_observed": true
+}

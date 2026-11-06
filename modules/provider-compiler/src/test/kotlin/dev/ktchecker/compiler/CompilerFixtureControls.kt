@@ -7,7 +7,7 @@ import dev.ktchecker.providers.runtime.ProcessOutcome
 internal data class CompilerFixtureSettings(
     val fixtureDirectory: String,
     val cohort: String,
-    val maxAttempts: Int = if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS else MAX_ATTEMPTS,
+    val maxAttempts: Int = maximumAttemptsFor(cohort),
     val overallMillis: Long = MAX_OVERALL_MILLIS,
     val perJobMillis: Long = MAX_PER_JOB_MILLIS,
     val evidenceBytes: Long = MAX_EVIDENCE_BYTES,
@@ -19,6 +19,9 @@ internal data class CompilerFixtureSettings(
         if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) require(maxAttempts <= CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS) {
             "Nullability source schedule never reserves more than35 calls"
         }
+        if (cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS) require(maxAttempts <= CompilerFixtureDiagnosticBreadthPlan.maxAttempts(cohort)) {
+            "Diagnostic breadth keeps its separate reviewed35/40-call selector bound"
+        }
         require(overallMillis in 1..MAX_OVERALL_MILLIS && perJobMillis in 1..MAX_PER_JOB_MILLIS)
         require(evidenceBytes in MIN_EVIDENCE_BYTES..MAX_EVIDENCE_BYTES)
     }
@@ -26,6 +29,7 @@ internal data class CompilerFixtureSettings(
     fun selects(authoredCohort: String?, ruleId: String? = null): Boolean {
         val name = authoredName(authoredCohort)
         if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) return false // Separate authored observations, not ordinary pairs.
+        if (cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS) return false // Private source oracles are not ordinary pairs.
         if (cohort == CompilerFixtureSupplementalPlan.SELECTOR) return false // Ordinary six-kind pairs are outside this schedule.
         val selectedIds = ORIGINAL_ID_COHORTS[cohort] ?: return cohort == "all" || cohort == name
         val stableId = requireNotNull(ruleId) { "Original ID subcohorts require the explicit stable fixture rule ID" }
@@ -51,12 +55,23 @@ internal data class CompilerFixtureSettings(
         return true
     }
 
+    fun selectsDiagnosticBreadth(authoredCohort: String, ruleId: String, kind: String): Boolean {
+        if (cohort !in CompilerFixtureDiagnosticBreadthPlan.SELECTORS) return false
+        require(authoredCohort == CompilerFixtureDiagnosticBreadthPlan.AUTHORED_COHORT) { "Unknown authored diagnostic breadth cohort" }
+        require(ruleId in CompilerFixtureDiagnosticBreadthPlan.RULE_IDS) { "Unknown reviewed diagnostic breadth rule ID" }
+        require(kind in CompilerFixtureDiagnosticBreadthPlan.KINDS + "option_off") { "Unknown diagnostic breadth source/call kind" }
+        if (ruleId !in CompilerFixtureDiagnosticBreadthPlan.ruleIds(cohort)) return false
+        require(kind != "option_off" || cohort != CompilerFixtureDiagnosticBreadthPlan.DEFAULT_SELECTOR) { "Default breadth has no option-off calls" }
+        return true
+    }
+
     fun description(): Map<String, Any> = mapOf(
         "named_cohort" to cohort, "maximum_attempts" to maxAttempts,
         "overall_timeout_millis" to overallMillis, "per_job_timeout_millis" to perJobMillis,
         "maximum_evidence_bytes" to evidenceBytes, "reserved_terminal_evidence_bytes" to TERMINAL_RESERVE_BYTES,
         "maximum_job_evidence_bytes" to JOB_RESERVE_BYTES,
         "selection_kind" to when {
+            cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS -> "explicit_diagnostic_breadth_source_oracles_only"
             cohort == CompilerFixtureNullabilityPlan.SELECTOR -> "explicit_authored_nullability_variants_only"
             cohort == CompilerFixtureSupplementalPlan.SELECTOR -> "explicit_authored_supplemental_variants_only"
             cohort in ORIGINAL_ID_COHORTS -> "stable_original_rule_id_subset"
@@ -67,14 +82,19 @@ internal data class CompilerFixtureSettings(
             CompilerFixtureSupplementalPlan.RULE_IDS.sorted() else emptyList<String>(),
         "supplemental_source_kinds" to if (cohort == CompilerFixtureSupplementalPlan.SELECTOR)
             CompilerFixtureSupplementalPlan.KINDS else emptyList<String>(),
-        "ordinary_six_kind_scheduling" to (cohort != CompilerFixtureSupplementalPlan.SELECTOR && cohort != CompilerFixtureNullabilityPlan.SELECTOR),
+        "ordinary_six_kind_scheduling" to (cohort != CompilerFixtureSupplementalPlan.SELECTOR && cohort != CompilerFixtureNullabilityPlan.SELECTOR &&
+            cohort !in CompilerFixtureDiagnosticBreadthPlan.SELECTORS),
         "authority_scope" to "trusted_harness_invocation_only_not_project_policy_JSON_or_execution_permission",
         "unselected_scope" to "visible_not_run_not_excluded", "resume_or_merge" to false,
-    ) + if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) mapOf(
+    ) + (if (cohort == CompilerFixtureNullabilityPlan.SELECTOR) mapOf(
         "explicit_nullability_rule_ids" to CompilerFixtureNullabilityPlan.RULE_IDS.sorted(),
         "nullability_source_kinds" to CompilerFixtureNullabilityPlan.KINDS,
         "selector_maximum_attempts" to CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS,
-    ) else emptyMap()
+    ) else emptyMap()) + (if (cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS) mapOf(
+        "explicit_diagnostic_breadth_rule_ids" to CompilerFixtureDiagnosticBreadthPlan.ruleIds(cohort).sorted(),
+        "diagnostic_breadth_source_kinds" to CompilerFixtureDiagnosticBreadthPlan.KINDS,
+        "selector_maximum_attempts" to CompilerFixtureDiagnosticBreadthPlan.maxAttempts(cohort),
+    ) else emptyMap())
 
     companion object {
         const val MAX_ATTEMPTS = 48
@@ -153,7 +173,7 @@ internal data class CompilerFixtureSettings(
         private val AUTHORED_COHORT_SELECTORS = setOf("original", "overrides", "visibility", "types_conventions",
             "inline_constructors", "opt_in", "jvm", "type_boundaries", "all")
         val COHORTS = AUTHORED_COHORT_SELECTORS + ORIGINAL_ID_COHORTS.keys + CompilerFixtureSupplementalPlan.SELECTOR +
-            CompilerFixtureNullabilityPlan.SELECTOR
+            CompilerFixtureNullabilityPlan.SELECTOR + CompilerFixtureDiagnosticBreadthPlan.SELECTORS
 
         init {
             require(ORIGINAL_ID_COHORTS.size == 10 && ORIGINAL_RULE_IDS.size == 42)
@@ -170,6 +190,12 @@ internal data class CompilerFixtureSettings(
             "2026-11-04-jvm_record_external" -> "jvm"
             "2026-11-04-type_boundaries" -> "type_boundaries"
             else -> error("Unknown authored cohort; refusing a silent scope omission: $value")
+        }
+
+        fun maximumAttemptsFor(cohort: String): Int = when {
+            cohort == CompilerFixtureNullabilityPlan.SELECTOR -> CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS
+            cohort in CompilerFixtureDiagnosticBreadthPlan.SELECTORS -> CompilerFixtureDiagnosticBreadthPlan.maxAttempts(cohort)
+            else -> MAX_ATTEMPTS
         }
 
         /** Gradle JavaExec appends the fixture directory; options and that one positional may be in either order. */
@@ -193,8 +219,7 @@ internal data class CompilerFixtureSettings(
                     ?: error("Invalid bounded fixture option: $name")
             } ?: default
             val cohort = options["cohort"] ?: error("Explicit --cohort=<named cohort> is required; no unbounded all default")
-            val attemptLimit = if (cohort == CompilerFixtureNullabilityPlan.SELECTOR)
-                CompilerFixtureNullabilityPlan.PLANNED_ATTEMPTS.toLong() else MAX_ATTEMPTS.toLong()
+            val attemptLimit = maximumAttemptsFor(cohort).toLong()
             return CompilerFixtureSettings(directories.single(), cohort,
                 number("max-attempts", attemptLimit, attemptLimit).toInt(),
                 number("overall-seconds", MAX_OVERALL_MILLIS / 1_000, MAX_OVERALL_MILLIS / 1_000) * 1_000,

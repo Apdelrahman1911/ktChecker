@@ -18,7 +18,7 @@ class KernelProducedProgressAssertionTest {
     @Test fun assertingProgressCollectionCannotBeSwallowedIntoCleanPublicationWhileValidProgressStillResolves() {
         for (asserting in listOf(false, true)) {
             val name = if (asserting) "asserting-progress" else "valid-progress"
-            val f = ProducedLaneFixture(temp.resolve("fixture-$name"))
+            val f = ProducedLane1665Fixture(temp.resolve("fixture-$name"))
             val accesses = AtomicInteger(); val providerCatches = AtomicInteger()
             val sentinel = AssertionError("synthetic provider-owned collection assertion")
             val provider = f.Provider { input, emit ->
@@ -35,18 +35,18 @@ class KernelProducedProgressAssertionTest {
                     }
                 }
             }
-            KernelService.open(temp.resolve("ledger-$name"), provider, ProducedLaneFixture.CONFIG,
+            KernelService.open(temp.resolve("ledger-$name"), provider, ProducedLane1665Fixture.CONFIG,
                 planAuthority = f, preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
-                val client = service.registerClient(ProducedLaneFixture.binding(name)); val definition = f.definition(client.binding, name)
+                val client = service.registerClient(ProducedLane1665Fixture.binding(name)); val definition = f.definition(client.binding, name)
                 val plan = service.submitPlan(client.client, definition.request)
                 val result = f.finished(service, client, plan.slots.first().reviewId)
-                val producer = f.typedAttempts.single { it.execution.slotId == ProducedLaneFixture.PRODUCER }
+                val producer = f.typedAttempts.single { it.execution.slotId == ProducedLane1665Fixture.PRODUCER }
                 val expectedRaw = f.partial(producer.effective)
                 val expectedFaults = if (asserting) listOf("progress_serialization_failed") else emptyList()
                 assertEquals(if (asserting) 1 else 0, accesses.get(), "The negative control must really encounter the hostile collection")
                 assertEquals(expectedRaw, result.result); assertEquals("incomplete", result.state)
                 assertEquals(f.rules, expectedRaw.coverage.map { it.ruleId }); assertTrue(expectedRaw.coverage.all { !it.qualified })
-                val expectedProgress = if (asserting) ProviderResult(ProducedLaneFixture.PROVIDER, "incomplete",
+                val expectedProgress = if (asserting) ProviderResult(ProducedLane1665Fixture.PROVIDER, "incomplete",
                     reasons = expectedFaults, providerVersion = provider.version) else expectedRaw
                 service.ledger.read { c ->
                     assertNotNull(c.one("SELECT result_json,progress_faults_json,validation_json FROM work WHERE work_key=?", producer.workKey) { row ->
@@ -78,7 +78,7 @@ class KernelProducedProgressAssertionTest {
                 } else {
                     assertEquals("ready", f.resolved(service, plan.slots.last().reviewId))
                     val consumerResult = f.finished(service, client, plan.slots.last().reviewId)
-                    val consumer = f.typedAttempts.single { it.execution.slotId == ProducedLaneFixture.CONSUMER }
+                    val consumer = f.typedAttempts.single { it.execution.slotId == ProducedLane1665Fixture.CONSUMER }
                     assertEquals(f.partial(consumer.effective), consumerResult.result)
                     assertEquals(1, f.resolutionCalls.getValue(definition.request.planRef).get())
                     assertEquals(2, provider.calls.get()); assertEquals(2, f.typedAttempts.size)

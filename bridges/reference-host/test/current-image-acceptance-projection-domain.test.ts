@@ -40,18 +40,18 @@ function request(event: ReviewEvent): ModelRequest {
     requestDigest: digest(canonical({ hostThreadId: b.hostThreadId, generation: b.client.generation, contexts })) };
 }
 
-for (const compilation of ['main', 'test']) test(`actual empty ${compilation} target retains all1663 identities and4989 exact validation predicates`, () => {
-  assert.equal(rules.length, 1663);
-  assert.equal(digest(canonical(rules)), 'sha256:fc45c20ddecf87113dc392a3127f4dfa9d2dd75177a71252f8fd9c67929e316b');
+for (const compilation of ['main', 'test']) test(`actual empty ${compilation} target retains all1665 identities and4995 exact validation predicates`, () => {
+  assert.equal(rules.length, 1665);
+  assert.equal(digest(canonical(rules)), 'sha256:121660fc2a5aed084688d0c549f9e1bece2ec514e9ace4748211b55fa87cc1c5');
   const f = fixture(compilation), original = f.event.payload, projected = projectDiagnostic(f.event);
   const value = JSON.parse(projected.diagnosticPayload), summary = value.result.coverageSummary;
-  assert.equal(summary.totalRows, 1663); assert.equal(summary.requiredUnsuccessfulRows, 1663);
-  assert.equal(summary.requiredUnqualifiedRows, 1663); assert.equal(summary.contextCount, 1);
+  assert.equal(summary.totalRows, 1665); assert.equal(summary.requiredUnsuccessfulRows, 1665);
+  assert.equal(summary.requiredUnqualifiedRows, 1665); assert.equal(summary.contextCount, 1);
   assert.equal(summary.fullCoverageDigest, digest(canonical(f.payload.result.coverage)));
   assert.equal(summary.contextsDigest, digest(canonical([canonical(f.payload.result.coverage[0].context)])));
-  assert.equal(summary.validationReasonProjection.omittedReasonCount, 4989);
+  assert.equal(summary.validationReasonProjection.omittedReasonCount, 4995);
   assert.equal(summary.validationReasonProjection.fullReasonArrayDigest, digest(canonical(f.payload.reasons)));
-  for (const group of summary.validationReasonProjection.groups) assert.equal(group.matchingCoverageRows, 1663);
+  for (const group of summary.validationReasonProjection.groups) assert.equal(group.matchingCoverageRows, 1665);
   assert.equal(value.state, 'incomplete'); assert(value.reasons.includes(gap)); assert(value.reasons.includes('produced_plan_preview_unqualified'));
   assert.deepEqual(value.result.reasons, f.payload.result.reasons); assert.deepEqual(value.result.rawDiagnostics, f.payload.result.rawDiagnostics);
   assert.deepEqual(value.result.findings, f.payload.result.findings); assert.equal(f.event.payload, original);

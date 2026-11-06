@@ -4,6 +4,7 @@ import dev.ktchecker.compiler.KotlinJvmModelBinding
 import dev.ktchecker.compiler.live.model.*
 import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.PreparedInputObserver
+import dev.ktchecker.kernel.OwnerFullCatalog1665
 import dev.ktchecker.projectmodel.VerifiedProjectModel
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.workerprotocol.ApplicationWire as Wire
@@ -50,7 +51,7 @@ internal class RealProducedJvmEntry(
     @Volatile var success: ModelSuccessfulJvmOutput? = null
 }
 
-/** Test-only full1663 aggregator plus genuine KernelService observer. No fake K, manual compile,
+/** Test-only full1665 aggregator plus genuine KernelService observer. No fake K, manual compile,
  * narrow parent, dropped diagnostics, ordinary activation or serialized execution grants.
  */
 internal class RealProducedJvmCustody(
@@ -69,7 +70,7 @@ internal class RealProducedJvmCustody(
     fun retain(phase: Int, original: AnalysisInput, model: VerifiedProjectModel,
         preview: KotlinJvmProducedOutputPreview, resolved: JvmProducedPreviewCompilation,
         provider: KotlinJvmModelLiveCompilerProvider, producerSuccess: ModelSuccessfulJvmOutput?): RealProducedJvmEntry {
-        realExpect(original.requiredRuleIds == catalog.ids.sorted() && original.requiredRuleIds.size == 1663 &&
+        realExpect(original.requiredRuleIds == catalog.ids.sorted() && OwnerFullCatalog1665.accepts(original.requiredRuleIds) &&
             original.execution == null && original.outputRoot == null && preview.model === model && resolved.binding.model === model &&
             original.context.compilerArguments == model.compilation(resolved.binding.compilationId)?.compilerArguments &&
             !original.context.fullProject && model.issues.isNotEmpty(), "real_produced_original_parent_identity")
@@ -133,7 +134,7 @@ internal class RealProducedJvmCustody(
         val entry = synchronized(lock) { effectiveAttempts[input] }
             ?: throw RealModelProblem("real_produced_analyze_outside_observer")
         val permit = requireNotNull(entry.permit)
-        realExpect(input === entry.kernelEffective && input.requiredRuleIds.size == 1663 && !entry.observerFinished,
+        realExpect(input === entry.kernelEffective && OwnerFullCatalog1665.accepts(input.requiredRuleIds) && !entry.observerFinished,
             "real_produced_kernel_parent_mismatch")
         val result = entry.provider.analyze(permit.input, cancellation)
         // Preserve every child row/finding/raw diagnostic/reason exactly. Other parent rows remain
@@ -287,8 +288,11 @@ internal class RealProducedJvmCustody(
         val value = requireNotNull(entry.materialization)
         verify(entry, value)
         val child = requireNotNull(entry.childResult)
+        // Child rows precede remaining obligations in the RAW result. Sort only this ID check,
+        // never the retained rows/findings/reasons themselves; duplicates still fail the contract.
         realExpect(entry.observerFinished && entry.verificationCalls.get() >= 3 && result == entry.fullResult &&
-            result.coverage.size == 1663 && result.coverage.map { it.ruleId }.toSet() == catalog.ids && !result.complete() &&
+            result.coverage.size == OwnerFullCatalog1665.RULE_COUNT && result.coverage.map { it.ruleId }.toSet() == catalog.ids &&
+            OwnerFullCatalog1665.accepts(result.coverage.map { it.ruleId }.sorted()) && !result.complete() &&
             child.coverage.map { it.ruleId } == entry.compilerRules && child.coverage.all { it.provenance == "executed" && !it.qualified && it.certificateId == null } &&
             child.status in setOf("failed", "partial") && result.findings == child.findings && result.rawDiagnostics == child.rawDiagnostics,
             "real_produced_full_unqualified_result_not_verified")

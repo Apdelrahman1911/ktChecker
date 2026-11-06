@@ -1,7 +1,10 @@
+@file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
+
 package dev.ktchecker.semantic
 
 import dev.ktchecker.contracts.*
 import dev.ktchecker.providers.runtime.*
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -20,9 +23,47 @@ object SemanticFixtureRunner {
         val label: String, val snapshotId: String, val analysisKey: String, val command: List<String>,
         val status: String, val exitCode: Int?, val reasons: List<String>, val metrics: AnalysisMetrics,
         val stdoutDigest: String, val stderrDigest: String,
+        val originalOutcome: OriginalProcessOutcomeEvidence? = null,
     )
+    /** Lossless private field projection of the ORIGINAL returned ProcessOutcome, not a permit,
+     * reconstructed report handle or independent execution proof. Null original data stays null. */
+    @Serializable internal data class OriginalProcessOutcomeEvidence(
+        val status: String, val reasons: List<String>, val exitCode: Int?,
+        val stdout: String, val stderr: String, val outputDirectory: String?, val command: List<String>,
+        val cancelled: Boolean, val timedOut: Boolean, val truncated: Boolean, val metrics: AnalysisMetrics,
+        val outputIdentity: String?, val supervisorIdentity: OriginalSupervisorIdentityEvidence?,
+        val executionConfirmed: Boolean, val executed: Boolean, val successfulExecution: Boolean,
+    )
+    @Serializable internal data class OriginalSupervisorIdentityEvidence(
+        val protocolVersion: String, val target: String, val sourceDigest: String, val binaryDigest: String,
+    )
+
+    internal fun executionEvidence(label: String, snapshotId: String, analysisKey: String,
+                                  outcome: ProcessOutcome): ExecutionEvidence {
+        val original = OriginalProcessOutcomeEvidence(outcome.status, outcome.reasons.toList(), outcome.exitCode,
+            outcome.stdout, outcome.stderr, outcome.outputDirectory?.toString(), outcome.command.toList(),
+            outcome.cancelled, outcome.timedOut, outcome.truncated, outcome.metrics.copy(),
+            outcome.outputIdentityForPrivateEvidence(), outcome.supervisorIdentity?.let {
+                OriginalSupervisorIdentityEvidence(it.protocolVersion, it.target, it.sourceDigest, it.binaryDigest)
+            }, outcome.executionConfirmed, outcome.executed, outcome.successfulExecution)
+        return ExecutionEvidence(label, snapshotId, analysisKey, original.command, original.status, original.exitCode,
+            original.reasons, original.metrics, Digests.sha256(original.stdout), Digests.sha256(original.stderr), original)
+    }
+
+    /** Caller supplies a fresh owner-private result directory. Do not reopen/overwrite an old
+     * attempt. The record is private data, never a constructor for ProcessOutcome or authority. */
+    internal fun writePrivateExecutionEvidence(directory: Path, evidence: ExecutionEvidence): Path {
+        require(evidence.label in setOf("dependency", "positive", "unresolved", "malformed", "missing-dependency", NATIVE_EXPECT_ACTUAL_CASE))
+        requireNotNull(evidence.originalOutcome) { "Original process outcome is required for a new private record" }
+        val path = directory.resolve("${evidence.label}-execution.json")
+        Files.writeString(path, ContractJson.encodeToString(evidence) + "\n", CREATE_NEW)
+        return path
+    }
+
     @Serializable internal data class CaseEvidence(
         val name: String, val passed: Boolean, val assertions: Map<String, Boolean>, val bundle: SemanticFactBundle,
+        @EncodeDefault(EncodeDefault.Mode.NEVER)
+        val locatedDiagnostics: List<NativeExpectActualDiagnosticEvidence> = emptyList(),
     )
     @Serializable internal data class SuiteEvidence(
         val adapterId: String = SEMANTIC_ADAPTER_ID,
@@ -39,6 +80,8 @@ object SemanticFixtureRunner {
 
     private lateinit var mode: String
     private lateinit var target: String
+    private var observeJvmBinaryOrigins: Boolean = false
+    private var directIntLiteralArgumentVersion: Int? = null
     private lateinit var resultPath: Path
     private lateinit var resultDirectory: Path
     private lateinit var frozen: FixtureMaterialization
@@ -56,11 +99,18 @@ object SemanticFixtureRunner {
     private val problems = mutableListOf<String>()
 
     @JvmStatic fun main(args: Array<String>) {
+        run(args)
+    }
+
+    /** The separate literal fixture entrypoint opts in; the original entrypoint stays absent. */
+    internal fun run(args: Array<String>, directIntLiteralArgumentVersion: Int? = null) {
         val options = parseFixtureArguments(args)
         mode = options["mode"] ?: "jvm"
         target = options["target"] ?: "jvm"
         require(mode in setOf("jvm", "native"))
         require(if (mode == "jvm") target == "jvm" else target in setOf("iosArm64", "iosSimulatorArm64", "linuxX64"))
+        observeJvmBinaryOrigins = semanticFixtureJvmOriginsRequested(mode, options["jvm-binary-origins"])
+        this.directIntLiteralArgumentVersion = semanticFixtureDirectIntLiteralArgumentVersion(mode, directIntLiteralArgumentVersion)
         val fixtureRoot = Path.of(requireNotNull(options["fixtures"])).toAbsolutePath().normalize()
         resultPath = Path.of(requireNotNull(options["result"])).toAbsolutePath().normalize()
         resultDirectory = resultPath.parent
@@ -77,12 +127,13 @@ object SemanticFixtureRunner {
             negative("unresolved", listOf("negative/Unresolved.kt"), dependencies)
             negative("malformed", listOf("negative/Malformed.kt"), dependencies)
             negative("missing-dependency", positiveSources(), dependencies.filterNot { it.coordinate.startsWith("fixture-dependency:") })
+            if (mode == "native") incompatibleActual(dependencies)
         } catch (e: Exception) {
             problems += problemCode(e, "semantic_fixture_driver_failed")
             // Only a bounded class/message summary from this trusted fixture; no terminal dump.
             System.err.println("Semantic fixture: ${problems.last()}: ${e.message?.take(400)}")
         }
-        val successful = problems.isEmpty() && cases.size == 4 && cases.all { it.passed }
+        val successful = problems.isEmpty() && cases.size == (if (mode == "native") 5 else 4) && cases.all { it.passed }
         val report = SuiteEvidence(state = if (successful) "passed" else if (executions.isEmpty()) "unavailable" else "failed",
             mode = mode, target = target, observedAt = Instant.now().toString(),
             testedCommit = gitCommit(fixtureRoot.parent.parent), runner = runnerEvidence(), artifacts = artifacts.distinct(),
@@ -164,7 +215,8 @@ object SemanticFixtureRunner {
 
     private fun positiveSources(): List<String> = listOf("sources/commonMain/Api.kt", "sources/commonMain/External.kt",
         "sources/commonMain/Coordinates.kt", "sources/intermediateMain/Intermediate.kt",
-        "sources/${if (mode == "jvm") "jvmMain" else "nativeMain"}/Platform.kt")
+        "sources/${if (mode == "jvm") "jvmMain" else "nativeMain"}/Platform.kt") +
+        if (directIntLiteralArgumentVersion != null) listOf(DIRECT_INT_LITERAL_FIXTURE_PATH) else emptyList()
 
     private fun positive(dependencies: List<ArtifactIdentity>) {
         val request = request("positive", positiveSources(), dependencies)
@@ -216,6 +268,7 @@ object SemanticFixtureRunner {
             "native_is_not_jvm_substitution" to (mode != "native" || bundle.shards.any { it.compilerContext.platform.contains("Native", true) }),
             "facts_do_not_qualify_rules" to (!bundle.customRulesQualified && !bundle.tupleQualified),
         )
+        if (directIntLiteralArgumentVersion != null) assertions.putAll(directIntLiteralFixtureAssertions(request, bundle))
         recordCase("positive", assertions, bundle)
     }
 
@@ -237,8 +290,65 @@ object SemanticFixtureRunner {
         recordCase(label, assertions, bundle)
     }
 
-    private fun recordCase(label: String, assertions: Map<String, Boolean>, bundle: SemanticFactBundle) {
-        val evidence = CaseEvidence(label, assertions.values.all { it }, assertions, bundle)
+    /** A real Native rejection case, independent of the successful positive Native compilation. */
+    private fun incompatibleActual(dependencies: List<ArtifactIdentity>) {
+        check(mode == "native")
+        val paths = listOf(NATIVE_EXPECT_SOURCE, NATIVE_ACTUAL_SOURCE)
+        val request = request(NATIVE_EXPECT_ACTUAL_CASE, paths, dependencies)
+        val outcome = execute(NATIVE_EXPECT_ACTUAL_CASE, paths, dependencies, fragmentArguments(request), request)
+        val bundle = bundle(request, outcome)
+        val actualInput = request.sources.single { it.path == NATIVE_ACTUAL_SOURCE }
+        val actualBytes = Files.readAllBytes(frozen.root.resolve(actualInput.path))
+        val diagnostic = parseNativeExpectActualDiagnostic(outcome.stdout, outcome.stderr, frozen.root, actualInput, actualBytes)
+        // DECLARATION_NAME_ONLY in the selected compiler begins at the name on fixture line 3.
+        // This expected start is an assertion, never a fabricated reported endpoint.
+        val expectedPoint = SourceCoordinates(actualInput, actualBytes).span(2, 11, 2, 11)
+        val allSymbols = bundle.shards.flatMap { it.symbols }.associateBy { it.id }
+        fun declaration(path: String, flag: String, classifier: String, text: String): SymbolFact? =
+            allSymbols.values.singleOrNull { symbol ->
+                val source = symbol.source
+                symbol.kind == "function" && !symbol.local && symbol.qualifiedName == "fixture.semantic.expectactual.mismatchValue" &&
+                    flag in symbol.flags && symbol.parameters.isEmpty() && symbol.typeParameterCount == 0 &&
+                    symbol.returnType == TypeFact("class", classifier, false) &&
+                    source != null && !source.synthetic && source.path == path && sourceText(source) == text
+            }
+        val expected = declaration(NATIVE_EXPECT_SOURCE, "expect", "kotlin.String", "expect fun mismatchValue(): String")
+        val actual = declaration(NATIVE_ACTUAL_SOURCE, "actual", "kotlin.Int", "actual fun mismatchValue(): Int = 1")
+        val assertions = linkedMapOf(
+            "actual_compiler_rejected_incompatible_actual" to (outcome.successfulExecution && outcome.exitCode == 1),
+            "compiler_failure_not_successful_facts" to (bundle.state == "incomplete" && bundle.compilerExitCode == 1 &&
+                !bundle.completeForSupportedVocabulary && "semantic_compilation_failed" in bundle.reasons),
+            "exact_incompatible_return_type_diagnostic_point" to (diagnostic?.reportedPoint == expectedPoint),
+            "native_graph_and_request_bound" to (request.leafSourceSet == "nativeMain" &&
+                request.sourceSets == listOf(SemanticSourceSet("commonMain"), SemanticSourceSet("nativeMain", listOf("commonMain"))) &&
+                request.sources.map { it.path } == paths && request.sources.map { it.sourceSet } == listOf("commonMain", "nativeMain") &&
+                bundle.target == target && bundle.requestDigest == request.digest() && bundle.snapshotId == request.snapshotId &&
+                bundle.analysisId == request.analysisId && bundle.compilationId == request.compilationId &&
+                bundle.shards.size == 2 && bundle.shards.map { it.input }.toSet() == request.sources.toSet() &&
+                bundle.shards.all { it.requestDigest == request.digest() && it.snapshotId == request.snapshotId &&
+                    it.analysisId == request.analysisId && it.toolchainId == request.toolchainId &&
+                    it.pluginDigest == request.pluginArtifact.digest && it.observedCompilerVersion == SEMANTIC_COMPILER_VERSION }),
+            "native_leaf_fir_context_observed" to bundle.shards.any {
+                it.input == actualInput && it.compilerContext.platform.contains("Native", true)
+            },
+            "expect_actual_sources_and_return_types_exact" to (expected != null && actual != null &&
+                expected.source?.sourceSet == "commonMain" && actual.source?.sourceSet == "nativeMain"),
+            // Matching is NOT final compatibility. Do not require a mismatched_candidate: a
+            // return-type rejection can follow successful FIR expect/actual candidate matching.
+            "expect_actual_candidate_relation_observed" to (expected != null && actual != null &&
+                bundle.shards.flatMap { it.expectActual }.any {
+                    it.actualSymbolId == actual.id && it.expectSymbolId == expected.id &&
+                        it.actualSourceSet == "nativeMain" && it.expectSourceSet == "commonMain" &&
+                        it.matching in setOf("matched_candidate", "mismatched_candidate")
+                }),
+            "facts_do_not_qualify_rules" to (!bundle.customRulesQualified && !bundle.tupleQualified),
+        )
+        recordCase(NATIVE_EXPECT_ACTUAL_CASE, assertions, bundle, listOfNotNull(diagnostic))
+    }
+
+    private fun recordCase(label: String, assertions: Map<String, Boolean>, bundle: SemanticFactBundle,
+                           locatedDiagnostics: List<NativeExpectActualDiagnosticEvidence> = emptyList()) {
+        val evidence = CaseEvidence(label, assertions.values.all { it }, assertions, bundle, locatedDiagnostics)
         cases += evidence
         Files.writeString(resultDirectory.resolve("$label-facts.json"), ContractJson.encodeToString(evidence) + "\n")
     }
@@ -246,20 +356,32 @@ object SemanticFixtureRunner {
     private fun request(label: String, paths: List<String>, dependencies: List<ArtifactIdentity>): SemanticFactsRequest {
         val leaf = if (mode == "jvm") "jvmMain" else "nativeMain"
         val positive = label in setOf("positive", "missing-dependency")
-        val sets = if (positive) listOf(SemanticSourceSet("commonMain"), SemanticSourceSet("intermediateMain", listOf("commonMain")),
-            SemanticSourceSet(leaf, listOf("intermediateMain"))) else listOf(SemanticSourceSet("negative"))
-        val sourceSets = if (positive) mapOf("sources/commonMain/" to "commonMain", "sources/intermediateMain/" to "intermediateMain",
-            "sources/$leaf/" to leaf) else mapOf("negative/" to "negative")
+        val incompatibleActual = label == NATIVE_EXPECT_ACTUAL_CASE
+        require(!incompatibleActual || mode == "native")
+        val sets = when {
+            positive -> listOf(SemanticSourceSet("commonMain"), SemanticSourceSet("intermediateMain", listOf("commonMain")),
+                SemanticSourceSet(leaf, listOf("intermediateMain")))
+            incompatibleActual -> listOf(SemanticSourceSet("commonMain"), SemanticSourceSet("nativeMain", listOf("commonMain")))
+            else -> listOf(SemanticSourceSet("negative"))
+        }
+        val sourceSets = when {
+            positive -> mapOf("sources/commonMain/" to "commonMain", "sources/intermediateMain/" to "intermediateMain", "sources/$leaf/" to leaf)
+            incompatibleActual -> mapOf("negative/expectActual/commonMain/" to "commonMain", "negative/expectActual/nativeMain/" to "nativeMain")
+            else -> mapOf("negative/" to "negative")
+        }
         val inputs = paths.map { path ->
             val entry = frozen.manifest.files.single { it.path == path }
             SemanticSource(path, entry.digest, entry.size, sourceSets.entries.single { path.startsWith(it.key) }.value)
         }
         val toolchainId = Digests.sha256(ContractJson.encodeToString(compilerArtifacts + javaArtifacts + plugin))
+        val literalBinding = directIntLiteralArgumentVersion?.let { "|direct-int-literal-arguments-v$it" }.orEmpty()
         val planId = Digests.sha256("$SEMANTIC_ADAPTER_ID|$target|$label|${frozen.manifest.snapshotId}|$toolchainId|" +
-            ContractJson.encodeToString(sets) + ContractJson.encodeToString(dependencies) + commonArguments().joinToString("\u0000"))
+            ContractJson.encodeToString(sets) + ContractJson.encodeToString(dependencies) + commonArguments().joinToString("\u0000") + literalBinding)
         return SemanticFactsRequest(frozen.manifest.snapshotId, planId, toolchainId, compilerArtifacts, plugin,
-            frozen.root.toString(), inputs, sets, if (positive) leaf else "negative", target, "semantic-fixture-$label",
-            compilerArguments = commonArguments(), dependencyArtifacts = dependencies)
+            frozen.root.toString(), inputs, sets, if (positive || incompatibleActual) leaf else "negative", target, "semantic-fixture-$label",
+            compilerArguments = commonArguments(), dependencyArtifacts = dependencies,
+            observeJvmBinaryOrigins = observeJvmBinaryOrigins,
+            directIntLiteralArgumentVersion = directIntLiteralArgumentVersion)
     }
 
     private fun fragmentArguments(request: SemanticFactsRequest): List<String> = listOf("-Xmulti-platform", "-Xexpect-actual-classes",
@@ -318,8 +440,9 @@ object SemanticFixtureRunner {
             Files.createDirectory(output.resolve("native-cache"))
         })
         val outcome = IsolatedProcessRunner().run(input, authority)
-        executions += ExecutionEvidence(label, input.snapshot.snapshotId, input.analysisKey(), outcome.command, outcome.status, outcome.exitCode,
-            outcome.reasons, outcome.metrics, Digests.sha256(outcome.stdout), Digests.sha256(outcome.stderr))
+        val evidence = executionEvidence(label, input.snapshot.snapshotId, input.analysisKey(), outcome)
+        executions += evidence // Keep the actual attempt counted even if private publication subsequently fails.
+        writePrivateExecutionEvidence(resultDirectory, evidence)
         Files.writeString(resultDirectory.resolve("$label-stdout.txt"), outcome.stdout)
         Files.writeString(resultDirectory.resolve("$label-stderr.txt"), outcome.stderr)
         return outcome
@@ -360,4 +483,15 @@ object SemanticFixtureRunner {
         if (!process.waitFor(5, TimeUnit.SECONDS)) { process.destroyForcibly(); null }
         else process.inputStream.bufferedReader().readText().trim().takeIf { process.exitValue() == 0 && it.matches(Regex("[0-9a-f]{40,64}")) }
     }.getOrNull()
+}
+
+/** Data-only opt-in parsing. It neither starts a compiler nor broadens this driver's five JVM jobs. */
+internal fun semanticFixtureJvmOriginsRequested(mode: String, value: String?): Boolean {
+    val requested = when (value) {
+        null, "false" -> false
+        "true" -> true
+        else -> throw IllegalArgumentException("Expected --jvm-binary-origins true or false")
+    }
+    require(!requested || mode == "jvm") { "JVM origin observation does not substitute for Native/iOS semantics" }
+    return requested
 }

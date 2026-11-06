@@ -412,25 +412,46 @@ class KernelPublicationFenceTest {
         val legacyWorkKey = Digests.sha256(canonical(listOf(legacyProviderKey, input.analysisKey())))
         val ledger = Ledger(database, config)
         // Synthetic OFFLINE old-identity fixture, after the only scheduler has closed. Transplant
-        // only the work/provider key and its matching certificate, keeping real archived bytes,
-        // raw/effective evidence, timestamps, receipts and review IDs unchanged. This is NOT an
-        // implementation of historical migration or evidence that an old execution met a deadline.
+        // the work/provider identity, its scheduling-domain keys and matching certificate, keeping
+        // physical mappings, exact scheduling ages, archived bytes, raw/effective evidence,
+        // timestamps, receipts and review IDs unchanged. This is NOT an implementation of
+        // historical migration or evidence that an old execution met a deadline.
         ledger.transaction { c ->
             assertEquals(0L, c.count("SELECT COUNT(*) FROM instances WHERE closed=0"), "The old fixture scheduler must be stopped")
+            assertEquals(1L, c.count("SELECT COUNT(*) FROM work"))
             assertEquals(1L, c.count("SELECT COUNT(*) FROM work WHERE state='complete' AND owner_instance IS NULL"))
+            assertEquals(0L, c.count("SELECT COUNT(*) FROM produced_plan_admissions"))
+            fun schedulingDomain(): List<String?> = assertNotNull(c.one("""SELECT
+                q.fair_key,q.last_served,q.produced_last_served,fc.client_id,fc.fair_key,fc.last_served,
+                pq.last_served,pc.last_served,(SELECT value FROM metadata WHERE key='dispatch_counter')
+                FROM reviews r JOIN work w ON w.work_key=r.work_key
+                JOIN fair_queues q ON q.fair_key=w.fair_key
+                JOIN fair_clients fc ON fc.client_id=r.client_id AND fc.fair_key=q.fair_key
+                JOIN provider_fair_queues pq ON pq.provider_key=w.provider_key AND pq.fair_key=q.fair_key
+                JOIN provider_fair_clients pc ON pc.provider_key=w.provider_key AND pc.client_id=fc.client_id
+                WHERE r.review_id=?""", completed.reviewId) { row ->
+                (1..row.metaData.columnCount).map { row.getString(it) }
+            })
+            val originalSchedulingDomain = schedulingDomain()
             val certificateParts = assertNotNull(c.one("""SELECT input_key,effective_key,result_digest FROM work_certificates
                 WHERE work_key=?""", currentWorkKey) { listOf(it.getString(1), it.getString(2), it.getString(3)) })
             val legacyCertificate = Digests.sha256(canonical(certificateParts + legacyProviderKey))
             assertEquals(1, c.execute("""INSERT INTO work(work_key,input_json,frozen_json,provider_key,fair_key,state,
-                owner_instance,attempt,lease_until,deadline,result_json,validation_json,progress_limited,archive_bytes,created_at)
+                owner_instance,attempt,lease_until,deadline,result_json,validation_json,progress_faults_json,progress_limited,archive_bytes,created_at)
                 SELECT ?,input_json,frozen_json,?,fair_key,state,owner_instance,attempt,lease_until,deadline,result_json,
-                    validation_json,progress_limited,archive_bytes,created_at FROM work WHERE work_key=?""",
+                    validation_json,progress_faults_json,progress_limited,archive_bytes,created_at FROM work WHERE work_key=?""",
                 legacyWorkKey, legacyProviderKey, currentWorkKey))
             assertEquals(1, c.execute("UPDATE reviews SET work_key=? WHERE work_key=?", legacyWorkKey, currentWorkKey))
             c.execute("UPDATE work_progress SET work_key=? WHERE work_key=?", legacyWorkKey, currentWorkKey)
             assertEquals(1, c.execute("""UPDATE work_certificates SET work_key=?,provider_key=?,certificate_id=? WHERE work_key=?""",
                 legacyWorkKey, legacyProviderKey, legacyCertificate, currentWorkKey))
             assertEquals(1, c.execute("DELETE FROM work WHERE work_key=?", currentWorkKey))
+            assertEquals(1, c.execute("UPDATE provider_fair_queues SET provider_key=? WHERE provider_key=?",
+                legacyProviderKey, currentProviderKey))
+            assertEquals(1, c.execute("UPDATE provider_fair_clients SET provider_key=? WHERE provider_key=?",
+                legacyProviderKey, currentProviderKey))
+            assertEquals(originalSchedulingDomain, schedulingDomain(), "Preserve physical mappings and exact scheduling ages")
+            ledger.verifyProviderFairness(c)
         }
         val historical = rawPublicationAudit(ledger, completed.reviewId)
         val upgradedProvider = PlanTestProvider()

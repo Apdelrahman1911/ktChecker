@@ -3,6 +3,7 @@ package dev.ktchecker.cli
 import dev.ktchecker.compiler.CompilerRuleRegistry
 import dev.ktchecker.compiler.live.model.KotlinJvmModelLiveCompilerProvider
 import dev.ktchecker.contracts.*
+import dev.ktchecker.kernel.OwnerFullCatalog1665
 import dev.ktchecker.kernel.ObservedExportPlanEvidence
 import dev.ktchecker.projectmodel.*
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
@@ -83,9 +84,32 @@ class OwnerObservedOperationalTest {
             assertTrue(s.faults(s.actual, parent).isEmpty(), "Pure shape match, NOT output/execute authority")
             assertContains(s.actual.reasons, CONFIGURATION_INPUT_CLOSURE_UNPROVEN)
             assertContains(parent.reasons, "${s.provider.id}:$CONFIGURATION_INPUT_CLOSURE_UNPROVEN")
-            assertEquals(1663, parent.coverage.size); assertEquals(f.catalog.ids.sorted(), parent.coverage.map { it.ruleId })
+            assertEquals(1665, parent.coverage.size); assertEquals(f.catalog.ids.sorted(), parent.coverage.map { it.ruleId })
+            assertTrue(OwnerFullCatalog1665.accepts(parent.coverage.map { it.ruleId }))
+            for (added in listOf(OwnerFullCatalog1665.ERROR_SUPPRESSION, OwnerFullCatalog1665.INAPPLICABLE_OPERATOR_MODIFIER)) {
+                val row = parent.coverage.single { it.ruleId == added }
+                assertTrue(row.required); assertFalse(row.tested); assertFalse(row.qualified); assertNull(row.certificateId)
+                assertFalse(row.successful())
+            }
             assertEquals("partial", parent.status); assertFalse(parent.completeFor(s.input))
             assertTrue(parent.coverage.all { it.required && !it.tested && !it.qualified && it.certificateId == null })
+        }
+    }
+
+    @Test fun observedOriginCannotRepairLegacyMissingAddedDuplicateOrSameCountReplacementObligations() {
+        OwnerModelFixtures().use { f ->
+            val s = Shape(f); val parent = s.project(); val current = s.input.requiredRuleIds
+            val added = listOf(OwnerFullCatalog1665.ERROR_SUPPRESSION, OwnerFullCatalog1665.INAPPLICABLE_OPERATOR_MODIFIER)
+            val legacy = current - added.toSet()
+            assertEquals(1663, legacy.size)
+            val substituted = (current - added.first() + "ktc.compiler.common.unreviewed_same_count_substitute").sorted()
+            val duplicated = (current - added.first() + current.first()).sorted()
+            assertEquals(1665, substituted.size); assertEquals(1665, duplicated.size)
+            (listOf(legacy, substituted, duplicated, current.reversed()) + added.map { current - it }).forEach { ids ->
+                assertFalse(OwnerFullCatalog1665.accepts(ids))
+                assertEquals(listOf("owner_produced_operational_identity_mismatch"),
+                    s.faults(s.actual, parent, candidateInput = s.input.copy(requiredRuleIds = ids)))
+            }
         }
     }
 

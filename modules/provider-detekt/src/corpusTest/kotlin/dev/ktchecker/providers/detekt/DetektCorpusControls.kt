@@ -9,16 +9,18 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.serialization.json.*
 
-/** Eight closed, disjoint plans; old ten/91, sixteen/145 and nineteen/172 identities stay exact. No aggregate selector. */
+/** Eleven closed, disjoint plans; all eight prior identities and 22/199 authored inputs stay exact. No aggregate selector. */
 internal class DetektCorpusCohort private constructor(val name: String, analysesByRule: Map<String, Int>,
     private val expansionPlan: String? = null, private val protocolPlan: String? = null,
-    private val observabilityPlan: String? = null) {
+    private val observabilityPlan: String? = null, private val localShapesPlan: String? = null) {
     val expansion: Boolean get() = expansionPlan != null
     val protocol: Boolean get() = protocolPlan != null
     val observability: Boolean get() = observabilityPlan != null
-    val evidenceStem: String get() = when { observability -> "syntax-exception-observability"; protocol -> "syntax-protocol"; expansion -> "syntax-expansion"; else -> "syntax-corpus" }
-    val namespace: String? get() = when { observability -> DetektCorpusObservabilityPins.ROOT; protocol -> DetektCorpusProtocolPins.ROOT; expansion -> DetektCorpusExpansionPins.ROOT; else -> null }
+    val localShapes: Boolean get() = localShapesPlan != null
+    val evidenceStem: String get() = when { localShapes -> "syntax-local-shapes"; observability -> "syntax-exception-observability"; protocol -> "syntax-protocol"; expansion -> "syntax-expansion"; else -> "syntax-corpus" }
+    val namespace: String? get() = when { localShapes -> DetektCorpusLocalShapesPins.ROOT; observability -> DetektCorpusObservabilityPins.ROOT; protocol -> DetektCorpusProtocolPins.ROOT; expansion -> DetektCorpusExpansionPins.ROOT; else -> null }
     val independentControlIds: Map<String, List<String>> get() = when {
+        localShapes -> DetektCorpusLocalShapesPins.controlIds
         observability -> DetektCorpusObservabilityPins.controlIds
         protocol -> DetektCorpusProtocolPins.controlIds
         expansion -> DetektCorpusExpansionPins.controlIds
@@ -28,6 +30,7 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
     val requiresExplicitOwnerOptIn: Boolean get() = name in setOf(
         "opt-in-policy-v1", "public-contract-policy-v1", "protocol-and-catch-boundaries-v1",
         "exception-observability-policy-v1",
+        "local-declaration-use-v1", "guarded-expression-policy-v1", "constant-and-body-policy-v1",
     )
     val contextId: String get() = "detekt-$evidenceStem-$name"
     val analysesByRule: Map<String, Int> = Collections.unmodifiableMap(LinkedHashMap(analysesByRule))
@@ -44,14 +47,14 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         invocationsByKind.getValue(CorpusInvocationKind.AUTHORIZATION_DENIAL)
 
     init {
-        require(listOf(expansionPlan, protocolPlan, observabilityPlan).count { it != null } <= 1)
+        require(listOf(expansionPlan, protocolPlan, observabilityPlan, localShapesPlan).count { it != null } <= 1)
         require(name.matches(Regex("[a-z0-9-]+")))
         require(this.analysesByRule.isNotEmpty() && this.analysesByRule.values.all { it >= 6 })
         require(plannedInvocations <= MAX_INVOCATIONS)
     }
 
     // Keep the exceptions plan's exact identity; changed source/images still require new evidence.
-    val planIdentity: String get() = observabilityPlan ?: protocolPlan ?: expansionPlan ?: buildString {
+    val planIdentity: String get() = localShapesPlan ?: observabilityPlan ?: protocolPlan ?: expansionPlan ?: buildString {
         append("detekt-corpus-cohort/1\n$name\n")
         analysesByRule.forEach { (rule, count) -> append("$rule=$count\n") }
         invocationsByKind.forEach { (kind, count) -> append("${kind.id}=$count\n") }
@@ -59,7 +62,7 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         append("limits=$MAX_INVOCATIONS/$MAX_AGGREGATE_MILLIS/$MAX_CHILD_MILLIS\n")
     }
 
-    val expectedSchedule: List<CorpusInvocationSpec>? = if (!expansion && !protocol && !observability) null else
+    val expectedSchedule: List<CorpusInvocationSpec>? = if (!expansion && !protocol && !observability && !localShapes) null else
         Collections.unmodifiableList(buildList {
             this@DetektCorpusCohort.analysesByRule.keys.forEachIndexed { ruleIndex, rule ->
                 (listOf("positive", "negative", "configuration", "version", "suppression", "regression") +
@@ -85,8 +88,10 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         const val PRE_PROTOCOL_AUTHORED_ANALYSES = 145
         const val PRE_OBSERVABILITY_AUTHORED_RULES = 19
         const val PRE_OBSERVABILITY_AUTHORED_ANALYSES = 172
-        const val FULL_AUTHORED_RULES = 22
-        const val FULL_AUTHORED_ANALYSES = 199
+        const val PRE_LOCAL_SHAPES_AUTHORED_RULES = 22
+        const val PRE_LOCAL_SHAPES_AUTHORED_ANALYSES = 199
+        const val FULL_AUTHORED_RULES = 31
+        const val FULL_AUTHORED_ANALYSES = 287
         val EXCEPTIONS_CORE = DetektCorpusCohort("exceptions-core-v1", linkedMapOf(
             "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally" to 8,
             "ktc.kotlin.detekt.exceptions.swallowed-exception" to 11,
@@ -134,6 +139,24 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
             "ktc.kotlin.detekt.exceptions.print-stack-trace" to 9,
             "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause" to 9,
         ))
+        private fun localShapes(name: String, rules: Map<String, Int>) =
+            DetektCorpusCohort(name, rules, localShapesPlan = DetektCorpusLocalShapesPins.planIdentities.getValue(name))
+        // Mixed declaration cohort keeps two advisory hints and one explicit opt-in visibility policy.
+        val LOCAL_DECLARATION_USE = localShapes("local-declaration-use-v1", linkedMapOf(
+            "ktc.kotlin.detekt.style.unused-parameter" to 10,
+            "ktc.kotlin.detekt.style.unused-private-class" to 9,
+            "ktc.kotlin.detekt.style.protected-member-in-final-class" to 10,
+        ))
+        val GUARDED_EXPRESSION_POLICY = localShapes("guarded-expression-policy-v1", linkedMapOf(
+            "ktc.kotlin.detekt.style.collapsible-if-statements" to 9,
+            "ktc.kotlin.detekt.style.safe-cast" to 10,
+            "ktc.kotlin.detekt.style.use-if-instead-of-when" to 10,
+        ))
+        val CONSTANT_AND_BODY_POLICY = localShapes("constant-and-body-policy-v1", linkedMapOf(
+            "ktc.kotlin.detekt.style.function-only-returning-constant" to 10,
+            "ktc.kotlin.detekt.style.expression-body-syntax" to 10,
+            "ktc.kotlin.detekt.style.may-be-constant" to 10,
+        ))
         val baseline: List<DetektCorpusCohort> = Collections.unmodifiableList(listOf(
             EXCEPTIONS_CORE, ITERATION_CORE, VALUE_CORE, OPT_IN_POLICY,
         ))
@@ -141,7 +164,11 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
             PERFORMANCE_SHAPES, PUBLIC_CONTRACT_POLICY,
         ))
         val preObservability: List<DetektCorpusCohort> = Collections.unmodifiableList(preProtocol + PROTOCOL_AND_CATCH_BOUNDARIES)
-        val all: List<DetektCorpusCohort> = Collections.unmodifiableList(preObservability + EXCEPTION_OBSERVABILITY_POLICY)
+        val preLocalShapes: List<DetektCorpusCohort> = Collections.unmodifiableList(preObservability + EXCEPTION_OBSERVABILITY_POLICY)
+        val localShapeCohorts: List<DetektCorpusCohort> = Collections.unmodifiableList(listOf(
+            LOCAL_DECLARATION_USE, GUARDED_EXPRESSION_POLICY, CONSTANT_AND_BODY_POLICY,
+        ))
+        val all: List<DetektCorpusCohort> = Collections.unmodifiableList(preLocalShapes + localShapeCohorts)
         val authoredRuleIds: Set<String> = Collections.unmodifiableSet(linkedSetOf(
             "ktc.kotlin.detekt.exceptions.throwing-exception-from-finally",
             "ktc.kotlin.detekt.exceptions.swallowed-exception",
@@ -165,6 +192,15 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
             "ktc.kotlin.detekt.exceptions.rethrow-caught-exception",
             "ktc.kotlin.detekt.exceptions.print-stack-trace",
             "ktc.kotlin.detekt.exceptions.throwing-exceptions-without-message-or-cause",
+            "ktc.kotlin.detekt.style.unused-parameter",
+            "ktc.kotlin.detekt.style.unused-private-class",
+            "ktc.kotlin.detekt.style.protected-member-in-final-class",
+            "ktc.kotlin.detekt.style.collapsible-if-statements",
+            "ktc.kotlin.detekt.style.safe-cast",
+            "ktc.kotlin.detekt.style.use-if-instead-of-when",
+            "ktc.kotlin.detekt.style.function-only-returning-constant",
+            "ktc.kotlin.detekt.style.expression-body-syntax",
+            "ktc.kotlin.detekt.style.may-be-constant",
         ))
 
         init {
@@ -174,6 +210,9 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
             require(preProtocol.sumOf { it.analysesByRule.values.sum() } == PRE_PROTOCOL_AUTHORED_ANALYSES)
             require(preObservability.flatMap { it.analysesByRule.keys }.size == PRE_OBSERVABILITY_AUTHORED_RULES)
             require(preObservability.sumOf { it.analysesByRule.values.sum() } == PRE_OBSERVABILITY_AUTHORED_ANALYSES)
+            require(preLocalShapes.flatMap { it.analysesByRule.keys }.size == PRE_LOCAL_SHAPES_AUTHORED_RULES)
+            require(preLocalShapes.sumOf { it.analysesByRule.values.sum() } == PRE_LOCAL_SHAPES_AUTHORED_ANALYSES)
+            require(localShapeCohorts.flatMap { it.analysesByRule.keys }.toSet() == DetektCorpusLocalShapesPins.controlIds.keys)
             val selected = all.flatMap { it.analysesByRule.keys }
             require(all.map { it.name }.distinct().size == all.size)
             require(selected.size == FULL_AUTHORED_RULES && selected.toSet() == authoredRuleIds)
@@ -181,7 +220,7 @@ internal class DetektCorpusCohort private constructor(val name: String, analyses
         }
 
         fun selected(name: String?): DetektCorpusCohort = requireNotNull(all.singleOrNull { it.name == name }) {
-            "Real corpus requires one explicit -PdetektCorpusCohort from ${all.map { it.name }}; no implicit/full-ten execution path or full-sixteen/full-nineteen/full-twenty-two/aggregate selector"
+            "Real corpus requires one explicit -PdetektCorpusCohort from ${all.map { it.name }}; no implicit/full-ten execution path or full-sixteen/full-nineteen/full-twenty-two/full-thirty-one/aggregate selector"
         }
     }
 }

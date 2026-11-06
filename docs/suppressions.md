@@ -213,6 +213,72 @@ while acquiring source locks. The numeric-revision overload is a cooperative
 convenience, not the full strict content/generation/expiration fence. No successful
 gate remains current after a later edit, policy change or expiration.
 
+## Private same-raw reassessment (unadopted)
+
+The private config/kernel/Workbench/CLI SOURCE adds a separate policy view of the
+**same certified raw execution**. This is implemented-in-private but unadopted;
+it is not present in the retained installation and is not runtime-verified.
+TypeScript MCP/reference-host wiring is pending. See the [private RPC contract](protocol.md#private-preview-extension-policy-reassessment-unadopted)
+and [CLI syntax](implementation-usage.md#private-policy-reassessment-cli-unadopted).
+
+First make any policy change through a separate explicit owner/controller action
+under the existing mutation authority. A subsequent review request supplies only
+identifiers and the expected current full policy digest; it cannot mutate policy,
+provide owner consent, authorize source changes or analysis execution, or grant
+completion. Reassessment does not call a provider, materialize a new input or
+acquire/revive execution grants. Expiration remains a policy-identity change,
+not a stored mutation or fresh consent.
+
+Compatibility requires the same complete configuration binding and rule registry,
+the **entire unchanged effective rule-settings map** (including unrelated and
+unselected rules), and unchanged analysis authority. Suppression/baseline changes
+can qualify only within those limits. Enabling/disabling rules is not this path;
+changed execution settings, code/provider routes, activation, model, dependencies,
+toolchain, source bytes or paths cannot be waved through as policy-only changes.
+The owner adapter checks the original complete preparation and its retained typed
+admission, not a caller's equivalence flag. Missing/legacy admission is unavailable;
+it is never backfilled from today's configuration. This byte-bound path does not
+inherit movement or lifecycle proof from an old capture.
+
+The original input (including its original configuration digest), raw result,
+effective result, full policy, work/policy certificates and historical delivery
+records remain unchanged. The kernel requires complete certified raw coverage
+for that unchanged original input, then permits only finding dispositions
+`open`, `accepted`, `suppressed` and `baselined` to differ in an additional view.
+It does not rewrite status, coverage, diagnostics, evidence or execution keys;
+intrinsic execution/verification failures cannot be waived. A later open view
+reopens policy accounting, not the original execution. Reassessment is not absence
+proof, a fix, a fresh execution or permission to remove an old delivery obligation.
+
+### Retained captures and bounds
+
+Before acceptance, the owner adapter retains exact original/current full
+`FrozenConfig` documents in the private content-addressed `policy-captures`
+archive. Events contain compact capture/digest references, not the full private
+policy documents. Keep the original preparation/admission and referenced captures
+with their accepted history. Recovery restores those exact captures outside the
+ledger transaction; it never substitutes live policy, reapplies raw findings or
+creates execution authority. Missing, changed or unsupported captures/authority
+fail closed for recovery/currentness; a historical status read is not that proof.
+
+The Workbench archive defaults are **2,048 documents**, **8,388,608 bytes per
+document** and **256 MiB total**. The kernel separately bounds a result by
+`maxResultBytes`, an event by `maxEventPageBytes`, retained policy-event payloads
+per client by `4 × maxEventPageBytes`, and total policy views by
+`maxRetainedReviews`. Reaching a bound refuses new acceptance; history is not
+evicted to make room. A failed/raced preaccept preparation or partial archive
+write can leave harmless unused captures consuming the same bounded archive
+quota, but not an accepted view or permission. This is not an orphan-free or
+power-loss durability claim; existing cooperative private-storage limits apply.
+
+New `policy_reassessed` events require their own per-client delivery/observation;
+original obligations persist. Full-policy/source currentness and expiration are
+fenced in **config → source → kernel transaction** order. A retained view may
+later become stale. Ordinary Workbench remains partial, nonauthoritative and
+audit-only; plan/routed/produced reassessment and integrated use are unsupported.
+Even `auditOnly=false` in another trusted integration is not an allow decision:
+all existing scope, coverage, history, delivery and guarded-action checks remain.
+
 ## Tests and release limits
 
 Module tests cover signed authority/payload/scope tampering, forged lifecycle

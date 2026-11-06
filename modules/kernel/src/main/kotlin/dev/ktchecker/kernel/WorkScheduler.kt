@@ -9,7 +9,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
 /**
- * Fixed workers and two-level durable worktree/client fair queues, coordinated across JVMs.
+ * Fixed workers and two-level durable provider-local worktree/client ages, coordinated across JVMs.
+ * Physical worktree identity and aggregate concurrency caps still span all provider keys.
  * A dispatch spends only its selected sponsor client's turn. Other subscribers receive shared
  * computation without losing priority for their own older work. Fairness bounds dispatch chances
  * among a finite set of eligible queues, not provider CPU seconds or submission latency.
@@ -39,6 +40,8 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
         val deadline: Long,
         val startedNanos: Long,
         val sponsorClient: String,
+        val providerKey: String,
+        val fairKey: String,
         val produced: Boolean = false,
         val progress: ClaimProgress = ClaimProgress(),
     )
@@ -80,14 +83,10 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
 
     fun start() {
         ledger.transaction { c ->
+            // Recheck under the startup writer; no missing schema4 age is reconstructed.
+            ledger.verifyProviderFairness(c)
             c.execute("INSERT INTO instances(instance_id,pid,process_start,heartbeat) VALUES(?,?,?,?)",
                 instanceId, process.pid(), instanceStart, System.currentTimeMillis())
-            // Restore durable sponsors if needed within schema3; this is not a schema upgrade.
-            // New admission creates these rows atomically with the individual subscription.
-            c.execute("""INSERT OR IGNORE INTO fair_clients(client_id,fair_key,last_served)
-                SELECT DISTINCT r.client_id,w.fair_key,
-                    (SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter')
-                FROM review_executions r JOIN work w ON w.work_key=r.work_key""")
             recoverDead(c)
         }
         repeat(config.workerCount) { index ->
@@ -159,10 +158,14 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
         if (stopped.get()) return@transaction null
         recoverDead(c)
         if (c.count("SELECT COUNT(*) FROM work WHERE state='running'") >= config.globalParallelism) return@transaction null
+        // LEFT joins deliberately expose a missing age as the earliest candidate; validation
+        // below fails closed instead of silently hiding an otherwise eligible retained job.
         var candidate = c.one("""SELECT w.*,r.client_id AS sponsor_client FROM work w
-            JOIN fair_queues f ON f.fair_key=w.fair_key
+            LEFT JOIN fair_queues physical_tree ON physical_tree.fair_key=w.fair_key
+            LEFT JOIN provider_fair_queues f ON f.provider_key=w.provider_key AND f.fair_key=physical_tree.fair_key
             JOIN review_executions r ON r.work_key=w.work_key
-            JOIN fair_clients client_queue ON client_queue.client_id=r.client_id AND client_queue.fair_key=w.fair_key
+            LEFT JOIN fair_clients physical_client ON physical_client.client_id=r.client_id AND physical_client.fair_key=w.fair_key
+            LEFT JOIN provider_fair_clients client_queue ON client_queue.provider_key=w.provider_key AND client_queue.client_id=physical_client.client_id
             WHERE w.state='queued' AND w.provider_key=? AND
                 NOT EXISTS(SELECT 1 FROM plan_slot_resolutions x JOIN produced_plan_admissions a ON a.plan_id=x.plan_id
                     WHERE x.work_key=w.work_key AND a.origin_instance<>?) AND
@@ -170,8 +173,10 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
             ORDER BY f.last_served,client_queue.last_served,r.sequence,r.rowid,w.rowid LIMIT 1""", service.providerKey, instanceId, config.perWorktreeParallelism) {
             Claim(it.getString("work_key"), ContractJson.decodeFromString(it.getString("input_json")),
                 ContractJson.decodeFromString(it.getString("frozen_json")), it.getLong("attempt") + 1,
-                System.currentTimeMillis() + config.analysisTimeoutMillis, System.nanoTime(), it.getString("sponsor_client"))
+                System.currentTimeMillis() + config.analysisTimeoutMillis, System.nanoTime(), it.getString("sponsor_client"),
+                it.getString("provider_key"), it.getString("fair_key"))
         } ?: return@transaction null
+        ledger.requireProviderFairness(c, candidate.providerKey, candidate.fairKey, candidate.sponsorClient)
         if (!service.producedPlans.mayClaim(c, candidate.key)) return@transaction null
         if (service.producedPlans.isProduced(c, candidate.key)) {
             val clock = service.producedPlans.clock(candidate.key) ?: return@transaction null
@@ -181,6 +186,12 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
         c.execute("""UPDATE work SET state='running',owner_instance=?,attempt=?,lease_until=?,deadline=?
             WHERE work_key=? AND state='queued'""", instanceId, candidate.attempt, now + config.leaseMillis, candidate.deadline, candidate.key)
         c.execute("UPDATE metadata SET value=CAST(value AS INTEGER)+1 WHERE key='dispatch_counter'")
+        c.execute("""UPDATE provider_fair_queues SET last_served=(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter')
+            WHERE provider_key=? AND fair_key=?""", candidate.providerKey, candidate.fairKey)
+        c.execute("""UPDATE provider_fair_clients SET last_served=(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter')
+            WHERE provider_key=? AND client_id=?""", candidate.providerKey, candidate.sponsorClient)
+        // Preserve the aggregate execution-age meaning for existing readers/lanes. These ages
+        // no longer order provider-filtered execution claims; produced_last_served is separate.
         c.execute("""UPDATE fair_queues SET last_served=(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter')
             WHERE fair_key=(SELECT fair_key FROM work WHERE work_key=?)""", candidate.key)
         c.execute("""UPDATE fair_clients SET last_served=(SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter')
@@ -254,7 +265,14 @@ internal class WorkScheduler(private val service: KernelService) : AutoCloseable
             json = canonical(result)
         }
         // Freeze all provider-owned collections before publishing to multiple consumers.
-        result = ContractJson.decodeFromString(json)
+        // Valid construction can precede caller-owned list mutation; decode must not let a
+        // rejected final DTO strand the claim or publish its unmatched original JSON bytes.
+        result = try { ContractJson.decodeFromString<ProviderResult>(json) }
+        catch (fault: Throwable) {
+            if (fault !is Exception && fault !is AssertionError) throw fault
+            operational += "provider_result_deserialization_failed"
+            failure("provider_result_deserialization_failed").also { json = canonical(it) }
+        }
         // A teardown error must not erase an earlier provider result, finding or execution
         // failure. Keep raw evidence intact and fail this attempt's broker validation closed.
         if (preparationCleanupFailed) operational += "prepared_input_cleanup_failed"

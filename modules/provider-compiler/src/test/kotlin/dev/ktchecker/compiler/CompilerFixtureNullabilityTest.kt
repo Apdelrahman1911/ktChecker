@@ -79,7 +79,7 @@ class CompilerFixtureNullabilityTest {
         assertEquals(268_435_456L, CompilerFixtureSettings.MAX_EVIDENCE_BYTES)
         assertEquals(16_777_216L, CompilerFixtureSettings.JOB_RESERVE_BYTES)
         assertEquals(8_388_608L, CompilerFixtureSettings.TERMINAL_RESERVE_BYTES)
-        for (selector in CompilerFixtureSettings.COHORTS - plan.SELECTOR) {
+        for (selector in CompilerFixtureSettings.COHORTS - plan.SELECTOR - CompilerFixtureDiagnosticBreadthPlan.SELECTORS) {
             val old = CompilerFixtureSettings.parse(arrayOf("fixtures", "--cohort=$selector"))
             assertEquals(48, old.maxAttempts)
             assertEquals(48, CompilerFixtureSettings("fixtures", selector, maxAttempts = 48).maxAttempts)
@@ -103,13 +103,22 @@ class CompilerFixtureNullabilityTest {
         assertEquals(36, plan.START_CAPTURE_PATHS.size)
         assertEquals(36, plan.START_CAPTURE_PATHS.toSet().size)
         assertEquals(6, plan.SOURCE_METADATA_PINS.size)
+        val current = CompilerRuleRegistry.load()
+        assertEquals(445, current.mappings.size)
+        assertEquals(CompilerFixtureMappingContract.REFUSAL, assertFailsWith<IllegalStateException> {
+            CompilerFixtureMappingContract.requireLegacy(current.mappingIdentity)
+        }.message)
+        assertFails { plan.verifyCapturedMetadata(::fixtureText) }
+        assertEquals(setOf("test_nullability_protocols.py"),
+            plan.SOURCE_METADATA_PINS.filter { (path, digest) -> Digests.sha256(fixtureText(path)).removePrefix("sha256:") != digest }.keys)
+        val legacyText: (String) -> String = { CompilerLegacy443SourceData.metadataText(fixtureRoot(), it) }
         val reads = mutableListOf<String>()
-        plan.verifyCapturedMetadata { path -> reads += path; fixtureText(path) }
+        plan.verifyCapturedMetadata { path -> reads += path; legacyText(path) }
         assertEquals(plan.SOURCE_METADATA_PINS.keys.toList(), reads)
         plan.SOURCE_METADATA_PINS.forEach { (path, digest) ->
-            assertEquals(digest, Digests.sha256(fixtureText(path)).removePrefix("sha256:"))
-            assertFails { plan.verifyCapturedMetadata { current -> fixtureText(current) + if (current == path) "\n" else "" } }
-            assertFails { plan.verifyCapturedMetadata { current -> if (current == path) "" else fixtureText(current) } }
+            assertEquals(digest, Digests.sha256(legacyText(path)).removePrefix("sha256:"))
+            assertFails { plan.verifyCapturedMetadata { selected -> legacyText(selected) + if (selected == path) "\n" else "" } }
+            assertFails { plan.verifyCapturedMetadata { selected -> if (selected == path) "" else legacyText(selected) } }
         }
         assertEquals(false, manifest().getValue("run_complete").jsonPrimitive.boolean)
         assertEquals("authored_unscheduled_source_only_additive_plan", manifest().getValue("status").jsonPrimitive.content)

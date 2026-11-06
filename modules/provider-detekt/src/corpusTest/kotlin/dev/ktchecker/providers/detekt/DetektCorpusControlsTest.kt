@@ -50,11 +50,13 @@ class DetektCorpusControlsTest {
         assertEquals(10, DetektCorpusCohort.BASELINE_AUTHORED_RULES)
         assertEquals(16, DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_RULES)
         assertEquals(19, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_RULES)
-        assertEquals(22, DetektCorpusCohort.FULL_AUTHORED_RULES)
+        assertEquals(22, DetektCorpusCohort.PRE_LOCAL_SHAPES_AUTHORED_RULES)
+        assertEquals(31, DetektCorpusCohort.FULL_AUTHORED_RULES)
         assertEquals(91, DetektCorpusCohort.BASELINE_AUTHORED_ANALYSES)
         assertEquals(145, DetektCorpusCohort.PRE_PROTOCOL_AUTHORED_ANALYSES)
         assertEquals(172, DetektCorpusCohort.PRE_OBSERVABILITY_AUTHORED_ANALYSES)
-        assertEquals(199, DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
+        assertEquals(199, DetektCorpusCohort.PRE_LOCAL_SHAPES_AUTHORED_ANALYSES)
+        assertEquals(287, DetektCorpusCohort.FULL_AUTHORED_ANALYSES)
         assertTrue(cohort.planIdentity.contains("10/91/not_run"))
         assertEquals("sha256:1a04a745f3a90b093f07725c33f7aa5e4f68dcb4e08300e7498eabb23046469f", Digests.sha256(cohort.planIdentity))
     }
@@ -71,7 +73,7 @@ class DetektCorpusControlsTest {
         val rules = plans.flatMap { it.analysesByRule.keys }
         assertEquals(10, rules.size)
         assertEquals(10, rules.distinct().size)
-        assertEquals(DetektCorpusCohort.authoredRuleIds - DetektCorpusExpansionPins.controlIds.keys - DetektCorpusProtocolPins.controlIds.keys - DetektCorpusObservabilityPins.controlIds.keys, rules.toSet())
+        assertEquals(DetektCorpusCohort.authoredRuleIds - DetektCorpusExpansionPins.controlIds.keys - DetektCorpusProtocolPins.controlIds.keys - DetektCorpusObservabilityPins.controlIds.keys - DetektCorpusLocalShapesPins.controlIds.keys, rules.toSet())
         assertEquals(91, plans.sumOf { it.analysesByRule.values.sum() })
         for (plan in plans) {
             assertSame(plan, DetektCorpusCohort.selected(plan.name))
@@ -91,7 +93,8 @@ class DetektCorpusControlsTest {
         assertEquals(6, DetektCorpusCohort.preProtocol.size)
         assertFailsWith<UnsupportedOperationException> { (DetektCorpusCohort.preObservability as MutableList<DetektCorpusCohort>).clear() }
         assertEquals(7, DetektCorpusCohort.preObservability.size)
-        assertEquals(8, DetektCorpusCohort.all.size)
+        assertEquals(8, DetektCorpusCohort.preLocalShapes.size)
+        assertEquals(11, DetektCorpusCohort.all.size)
     }
 
     @Test fun `a rule from another authored cohort fails before reservation`() {
@@ -232,7 +235,7 @@ class DetektCorpusControlsTest {
                 val (selectedRule, count) = entry
                 repeat(count) { caseIndex ->
                     val case = listOf("positive", "negative", "configuration", "version", "suppression", "regression")
-                        .getOrNull(caseIndex) ?: if (selected.expansion || selected.protocol || selected.observability)
+                        .getOrNull(caseIndex) ?: if (selected.expansion || selected.protocol || selected.observability || selected.localShapes)
                             selected.independentControlIds.getValue(selectedRule)[caseIndex - 6] else "control-$caseIndex"
                     checkedNative(budget, CorpusInvocationKind.ANALYSIS, selectedRule, case)
                     if (case == "positive") {
@@ -267,7 +270,8 @@ class DetektCorpusControlsTest {
         }
         assertEquals(listOf(116, 116, 74, 77, 113, 113), sizes.take(6))
         assertEquals(listOf(116, 116, 74, 77, 113, 113, 113), sizes.take(7))
-        assertEquals(listOf(116, 116, 74, 77, 113, 113, 113, 113), sizes)
+        assertEquals(listOf(116, 116, 74, 77, 113, 113, 113, 113), sizes.take(8))
+        assertEquals(listOf(119, 119, 122), sizes.drop(8))
     }
 
     @Test fun `incomplete run cannot finish and progress write failure stops before a call`() {
@@ -295,8 +299,8 @@ class DetektCorpusControlsTest {
         assertEquals(145, DetektCorpusCohort.preProtocol.sumOf { it.analysesByRule.values.sum() })
         assertEquals(19, DetektCorpusCohort.preObservability.flatMap { it.analysesByRule.keys }.distinct().size)
         assertEquals(172, DetektCorpusCohort.preObservability.sumOf { it.analysesByRule.values.sum() })
-        assertEquals(22, DetektCorpusCohort.all.flatMap { it.analysesByRule.keys }.distinct().size)
-        assertEquals(199, DetektCorpusCohort.all.sumOf { it.analysesByRule.values.sum() })
+        assertEquals(22, DetektCorpusCohort.preLocalShapes.flatMap { it.analysesByRule.keys }.distinct().size)
+        assertEquals(199, DetektCorpusCohort.preLocalShapes.sumOf { it.analysesByRule.values.sum() })
         for (plan in added) {
             assertEquals(listOf(9, 9, 9), plan.analysesByRule.values.toList())
             assertEquals(37, plan.plannedInvocations)
@@ -311,7 +315,7 @@ class DetektCorpusControlsTest {
     }
 
     @Test fun `new schedules reject reordered analysis and fabricated control before reservation`() {
-        for (plan in DetektCorpusCohort.all.filter { it.expansion || it.protocol || it.observability }) {
+        for (plan in DetektCorpusCohort.all.filter { it.expansion || it.protocol || it.observability || it.localShapes }) {
             val events = mutableListOf<JsonObject>()
             val budget = DetektCorpusBudget(settings(plan), { events += it })
             val selectedRule = plan.analysesByRule.keys.first()

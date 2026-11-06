@@ -23,7 +23,7 @@ class KernelProducedAdmissionRetentionTest {
 
     /** Unlike the older fixture's ref-keyed authority, simultaneous exact requests keep separate
      * kernel-created request identities. No loser can replace the winner's live preparation. */
-    private class Authority(private val f: ProducedLaneFixture) : ReviewPlanAuthority {
+    private class Authority(private val f: ProducedLane1665Fixture) : ReviewPlanAuthority {
         val admissions = ConcurrentHashMap<String, ProducedPlanAdmissionRequest>()
         val preparations = ConcurrentHashMap<String, ProducedPlanPreparationRequest>()
         val producerCalls = ConcurrentHashMap<String, AtomicInteger>()
@@ -49,16 +49,16 @@ class KernelProducedAdmissionRetentionTest {
                         assertFalse(Files.exists(Path.of(archive.frozen.materializedRoot)))
                         assertEquals(archive.held, archive.readInput())
                     }
-                    val archive = preparation.archive(ProducedLaneFixture.PRODUCER)
+                    val archive = preparation.archive(ProducedLane1665Fixture.PRODUCER)
                     val original = archive.original
                     val dependency = Digests.sha256("synthetic-producer:${request.planId}:${original.analysisKey()}")
                     val input = original.copy(context = original.context.copy(dependencyDigest = dependency,
                         policies = original.context.policies + mapOf(
                             "ktchecker.execution-plan" to Digests.sha256(canonical(emptyMap<String, TrustedExecution>())),
-                            ProducedLaneFixture.PREVIEW to request.declaration.graphDigest,
+                            ProducedLane1665Fixture.PREVIEW to request.declaration.graphDigest,
                             "ktchecker.jvm-produced-resolution" to dependency)))
                     beforeProducerReturn(preparation)
-                    PreparedProducedExecution(ProducedLaneFixture.PRODUCER, input,
+                    PreparedProducedExecution(ProducedLane1665Fixture.PRODUCER, input,
                         Digests.sha256("synthetic-producer-binding:${request.planId}")) { archive.verify() }
                 }, operationalFaults = { check ->
                     assertSame(request, check.admission)
@@ -86,7 +86,7 @@ class KernelProducedAdmissionRetentionTest {
             }
         }
         val provider = object : AnalysisProvider {
-            override val id = ProducedLaneFixture.PROVIDER
+            override val id = ProducedLane1665Fixture.PROVIDER
             override val supportedRuleIds = f.rules.toSet()
             override fun analyze(input: AnalysisInput, cancellation: CancellationToken): ProviderResult {
                 cancellation.throwIfCancelled()
@@ -117,7 +117,7 @@ class KernelProducedAdmissionRetentionTest {
         assertEquals(3L, c.count("SELECT next_review FROM clients WHERE client_id=?", client.binding.clientId))
         assertEquals(2L, c.count("SELECT review_frontier FROM parent_plans WHERE plan_id=?", plan.planId))
         assertEquals(definition.slots.map { it.input.requiredRuleIds }, plan.slots.map { it.requiredRuleIds })
-        assertTrue(plan.slots.all { it.requiredRuleIds.size == 1663 })
+        assertTrue(plan.slots.all { it.requiredRuleIds.size == 1665 })
     }
     private fun archiveInventory(service: KernelService): Map<String, String> {
         val root = service.root.resolve("inputs")
@@ -129,12 +129,12 @@ class KernelProducedAdmissionRetentionTest {
         "Unexpected SQL fault")
 
     @Test fun twoProvenPreInstallRollbacksReleaseLiveCapacityForAnUnrelatedValidClientWithoutRestart() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val authority = Authority(f)
-        val config = ProducedLaneFixture.CONFIG.copy(workerCount = 0, maxRetainedReviews = 2)
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val authority = Authority(f)
+        val config = ProducedLane1665Fixture.CONFIG.copy(workerCount = 0, maxRetainedReviews = 2)
         KernelService.open(temp.resolve("ledger"), authority.provider, config, planAuthority = authority,
             preparedInputObserver = authority.observer, resultPolicy = f.policy).use { service ->
-            val rejected = service.registerClient(ProducedLaneFixture.binding("rejected"))
-            val valid = service.registerClient(ProducedLaneFixture.binding("valid"))
+            val rejected = service.registerClient(ProducedLane1665Fixture.binding("rejected"))
+            val valid = service.registerClient(ProducedLane1665Fixture.binding("valid"))
             service.ledger.transaction { c ->
                 c.execute("""CREATE TRIGGER synthetic_admission_preinstall_abort BEFORE INSERT ON parent_plans
                     BEGIN SELECT RAISE(ABORT,'synthetic_admission_preinstall_abort'); END""")
@@ -184,18 +184,18 @@ class KernelProducedAdmissionRetentionTest {
     }
 
     @Test fun concurrentFinalIdempotencyLosersNeverConsumeTheWinnersOrAnotherClientsLiveCapacity() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val authority = Authority(f)
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val authority = Authority(f)
         val prepared = CountDownLatch(4); val releasePreparation = CountDownLatch(1)
         val executionEntered = CountDownLatch(1); val releaseExecution = CountDownLatch(1)
         val pool = Executors.newFixedThreadPool(4)
-        val config = ProducedLaneFixture.CONFIG.copy(workerCount = 4, globalParallelism = 1,
+        val config = ProducedLane1665Fixture.CONFIG.copy(workerCount = 4, globalParallelism = 1,
             perWorktreeParallelism = 1, maxRetainedReviews = 4)
         try {
             KernelService.open(temp.resolve("ledger"), authority.provider, config, planAuthority = authority,
                 preparedInputObserver = authority.observer, resultPolicy = f.policy).use { service ->
                 try {
-                    val duplicateClient = service.registerClient(ProducedLaneFixture.binding("duplicate"))
-                    val otherClient = service.registerClient(ProducedLaneFixture.binding("other"))
+                    val duplicateClient = service.registerClient(ProducedLane1665Fixture.binding("duplicate"))
+                    val otherClient = service.registerClient(ProducedLane1665Fixture.binding("other"))
                     val definition = f.definition(duplicateClient.binding, "duplicate")
                     authority.beforeProducerReturn = { preparation ->
                         if (preparation.admission.request == definition.request) {
@@ -203,7 +203,7 @@ class KernelProducedAdmissionRetentionTest {
                         }
                     }
                     authority.beforeProvider = { attempt ->
-                        if (attempt.admission.request == definition.request && attempt.execution.slotId == ProducedLaneFixture.PRODUCER) {
+                        if (attempt.admission.request == definition.request && attempt.execution.slotId == ProducedLane1665Fixture.PRODUCER) {
                             executionEntered.countDown(); assertTrue(releaseExecution.await(10, TimeUnit.SECONDS))
                         }
                     }
@@ -282,12 +282,12 @@ class KernelProducedAdmissionRetentionTest {
     }
 
     @Test fun postInstallCommitFailuresKeepTheirOwnedArchiveQuarantineRatherThanMasqueradingAsCleanPreInstallAbort() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val authority = Authority(f)
-        val config = ProducedLaneFixture.CONFIG.copy(workerCount = 0, maxRetainedReviews = 2)
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val authority = Authority(f)
+        val config = ProducedLane1665Fixture.CONFIG.copy(workerCount = 0, maxRetainedReviews = 2)
         KernelService.open(temp.resolve("ledger"), authority.provider, config, planAuthority = authority,
             preparedInputObserver = authority.observer, resultPolicy = f.policy).use { service ->
-            val rejected = service.registerClient(ProducedLaneFixture.binding("post-install"))
-            val unrelated = service.registerClient(ProducedLaneFixture.binding("unrelated"))
+            val rejected = service.registerClient(ProducedLane1665Fixture.binding("post-install"))
+            val unrelated = service.registerClient(ProducedLane1665Fixture.binding("unrelated"))
             service.ledger.transaction { c ->
                 c.execute("CREATE TABLE synthetic_admission_fk_target(id TEXT PRIMARY KEY)")
                 c.execute("""CREATE TABLE synthetic_admission_deferred_guard(id TEXT PRIMARY KEY,missing_id TEXT NOT NULL,

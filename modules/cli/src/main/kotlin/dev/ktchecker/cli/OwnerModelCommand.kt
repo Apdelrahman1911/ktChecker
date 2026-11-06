@@ -1,17 +1,15 @@
 package dev.ktchecker.cli
 
+import dev.ktchecker.compiler.CompilerSnapshot
 import dev.ktchecker.compiler.KotlinJvmModelException
 import dev.ktchecker.compiler.KotlinJvmRuntimeException
 import dev.ktchecker.compiler.KotlinJvmToolchain
-import dev.ktchecker.compiler.live.CompilerApplicationNamespace
 import dev.ktchecker.contracts.*
 import dev.ktchecker.kernel.*
 import dev.ktchecker.projectmodel.*
 import dev.ktchecker.providers.runtime.OwnedApplicationDeadline
 import dev.ktchecker.snapshot.*
 import dev.ktchecker.workerprotocol.CompilerModelWire as ModelWire
-import java.nio.CharBuffer
-import java.nio.charset.CodingErrorAction
 import java.nio.file.Files
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
@@ -19,15 +17,26 @@ import java.util.Base64
 import java.util.Collections
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 
 internal const val OWNER_MODEL_ORIGINAL_MILLIS = 120_000L
-private const val OWNER_MODEL_REQUEST_BYTES = 8_388_608
-// Normally one CLI owner. An already-open concurrent owner must not overwrite/discard an older
-// quarantine; this set never authorizes another open and is not a restart/recovery registry.
+// A retained owner is never overwritten/discarded or a restart/recovery registry.
 private val quarantinedOwnerModelCommands = Collections.synchronizedSet(mutableSetOf<OwnerModelCommandSession>())
+private val ownerModelQuarantineAnchorStarted = AtomicBoolean()
+// Initialize the never-released idle primitive BEFORE any owner can enter an application.
+// Neither the fallback nor the newly started anchor allocates its lifetime primitive.
+private val ownerModelQuarantineIdle = CountDownLatch(1)
+private fun idleRetainingOwnerModelCommands(): Nothing {
+    while (true) { try { ownerModelQuarantineIdle.await() } catch (_: Throwable) { /* Idle only; no cleanup retry/exit. */ } }
+}
+private fun startOwnerModelQuarantineAnchor() {
+    if (ownerModelQuarantineAnchorStarted.compareAndSet(false, true)) {
+        Thread({ idleRetainingOwnerModelCommands() }, "ktchecker-owner-model-quarantine").apply {
+            isDaemon = false // In-process adapter failure cannot silently drop its last owner.
+        }.start()
+    }
+}
 
 /** Complete explicit immutable submission, never a scan/diff of a mutable checkout. */
 @Serializable internal data class OwnerModelSubmittedFile(
@@ -78,241 +87,305 @@ internal class OwnerModelPlanStatus internal constructor(
     val children: List<ReviewStatus> = Collections.unmodifiableList(children.toList())
     // The produced parent remains pending/incomplete even after work finishes. A failed consumer
     // resolution has no compiler result; retain its real unavailable row, never invent a return.
-    val terminal: Boolean = parent.slots.zip(this.children).all { (slot, child) ->
-        (child.cancelled && child.state == "cancelled") ||
+    val terminal: Boolean = parent.slots.isNotEmpty() && parent.slots.size == this.children.size &&
+        parent.slots.zip(this.children).all { (slot, child) ->
+        slot.reviewId == child.reviewId && child.clientId == parent.clientId && child.sourceSnapshotId == parent.sourceSnapshotId && (
+            (child.cancelled && child.state == "cancelled") ||
             (slot.state == "unavailable" && child.state == "incomplete" && child.reasons.isNotEmpty()) ||
-            (child.result != null && child.state in setOf("complete", "incomplete", "cancelled"))
+            (child.result != null && child.state in setOf("complete", "incomplete", "cancelled")))
     }
 }
 
+/** Host-facing DATA plus a nonserialized capability retained by the exact same owner service. */
+internal class OwnerModelNominalSubmission internal constructor(
+    val data: JsonObject,
+    val deliveryHandle: OwnerModelDeliveryHandle,
+)
+
 /**
- * Interim one-parent production owner composition. This is NOT yet a patch/fix history service:
- * state must be new and before=null. A subsequent implementation must preserve actual snapshot
- * and ledger lineage, not infer it from caller-supplied previousPatchDigest metadata.
+ * Same Workbench/registration/snapshot ledger for a bounded patch/fix lineage. Each patch has its
+ * own immutable original120s, observed invocation, run/output directories, intent, import, worker
+ * generation and whole D/P/K/C/E custody. Only preselected artifact bytes/private Gradle metadata
+ * persist. The per-owner gate never holds a monitor across IO, export, retire or kernel callbacks.
  *
- * One exact original clock covers preparation/export/import/admission/jobs. No ordinary scalar
- * submission, imported capability reuse, new attempt clock, ACK or model observation occurs here.
- * The retained delivery handle lets a trusted in-process adapter use the SAME broker separately.
+ * No ordinary RPC/model DTO creates this service or a delivery handle. A trusted adapter may use
+ * broker/registration for actual delivery separately; this service never ACKs or observes a model.
  */
 internal class OwnerModelCommandSession private constructor(
-    private val document: OwnerModelCommandDocument,
-    val originalDeadline: OwnedApplicationDeadline,
-    private val invocation: ObservedExportInvocation,
     private val statePin: OwnerModelRootPin,
-    private val runPin: OwnerModelRootPin,
-    private val cache: OwnerModelCacheSeed,
+    private val commandPin: OwnerModelRootPin,
+    private val runsPin: OwnerModelRootPin,
+    private val firstRun: OwnerModelRootPin,
+    private val firstClock: OwnerModelCommandClock,
+    private val selected: OwnerModelInvocationSelection,
+    private val gradle: OwnerModelTreePin,
+    private val firstCache: OwnerModelCacheSeed,
     private val workbench: Workbench,
     private val runtime: OwnerLiveModelRuntime,
-    private val registration: ClientRegistration,
-    private val intent: OwnerModelIntent,
-    private val requestDigest: String,
+    val registration: ClientRegistration,
+    private val initialDocument: OwnerModelCommandDocument?,
 ) : AutoCloseable {
-    private val submitted = AtomicBoolean()
+    val profile: String get() = OWNER_MODEL_LINEAGE_PROFILE
+    val broker: KernelService get() = workbench.kernel
+    // Compatibility audit accessor: first entry's ORIGINAL clock, never newest/remaining time.
+    val originalDeadline: OwnedApplicationDeadline get() = firstClock.originalDeadline
+    private val gate = OwnerModelLineageGate()
+    private val historyLock = Any()
+    private val attempts = mutableListOf<OwnerModelCommandAttempt>()
+    private val admissions = OwnerModelExactHandles<OwnerModelPlanAdmission, OwnerModelCommandAttempt>()
+    private val handles = OwnerModelExactHandles<OwnerModelDeliveryHandle, OwnerModelCommandAttempt>()
     private val closed = AtomicBoolean()
     private val quarantined = AtomicBoolean()
-    private val retirementRequested = AtomicBoolean()
-    private val retainedAdmission = AtomicReference<OwnerModelPlanAdmission?>()
-    private val parentSubmissionAttempted = AtomicBoolean()
-    private val returnedParent = AtomicReference<ParentPlanStatus?>()
-    private val custody = OwnerModelCommandCustody(workbench, runtime, originalDeadline)
-    private var commit: SnapshotCommit? = null
-    private var export: OwnerObservedExport? = null
-    private var model: ObservedProjectModel? = null
-    private var prepared: PreparedOwnerModelPlan? = null
-    private var attemptedPlan: RequiredReviewPlan? = null
-    private var attemptedReasons: List<String> = emptyList()
-    private var generation: OwnerModelGeneration? = null
+    private val unknownHistory = AtomicBoolean()
+    private val compilerPolicy = OwnerModelCompilerPolicy(workbench, registration, runtime.provider.supportedRuleIds, commandPin, firstClock)
+    val isQuarantined: Boolean get() = quarantined.get()
+    private var lastCache = firstCache
+    // Allocate this protected callsite and its callbacks during owner construction, BEFORE any
+    // source/export/application attempt. quarantine() itself does not allocate callback arguments
+    // or perform an unguarded initial retain that can bypass the lifetime fallback.
+    private val lifetime = OwnerModelLifetimeQuarantine(
+        fence = { quarantined.set(true); gate.stop() },
+        retain = { quarantinedOwnerModelCommands.add(this) },
+        deny = { firstClock.deny(); retainedAttempts().forEach { it.quarantine() } },
+        startAnchor = ::startOwnerModelQuarantineAnchor,
+        idle = ::idleRetainingOwnerModelCommands,
+    )
 
-    fun submitCompletedPatch(): OwnerModelPlanAdmission {
-        checkpoint()
-        ownerModelRequire(submitted.compareAndSet(false, true), "owner_model_command_submission_replayed")
-        val captured = workbench.overlay(OverlayDocument(document.workspaceId, document.worktreeId,
-            document.clientId, document.sessionId, document.patchId,
-            changes = document.files.map { file -> OverlayChange("put", file.path, file.content, file.contentBase64,
-                executable = file.executable) }, scope = SnapshotScope("complete explicitly submitted immutable owner files")))
-        commit = captured
-        ownerModelRequire(!captured.replayed && captured.headRevision == 1L && captured.manifest.parentSnapshotId == null &&
-            captured.manifest.producerBaseSnapshotId == null && captured.manifest.patchId == document.patchId &&
-            captured.manifest.clientId == registration.binding.clientId && captured.manifest.sessionId == registration.binding.sessionId &&
-            captured.manifest.capture.kind == CaptureKind.IMMUTABLE_OVERLAY && captured.manifest.capture.coherent &&
-            captured.manifest.entries.size == document.files.size && captured.manifest.scope.exclusions.isEmpty() &&
-            captured.manifest.scope.unknownInputs.isEmpty(), "owner_model_snapshot_submission_mismatch")
-        checkpoint()
-        val identity = SnapshotIdentity(registration.binding.ownerId, document.workspaceId, document.worktreeId)
-        val materialized = workbench.snapshots.materialize(identity, captured.snapshotId, runPin.path.resolve("snapshot"), readOnly = true)
-        checkpoint()
-        val actualExport = OwnerObservedExport(workbench, runtime.installation, intent, materialized, runPin.path,
-            Path.of(document.gradleHome), cache, originalDeadline, invocation)
-        export = actualExport
-        val imported = actualExport.run()
-        model = imported
-        ownerModelRequire(imported.invocation === invocation && imported.invocation.originalDeadline === originalDeadline &&
-            imported.snapshot == captured.toContractManifest() && imported.assuranceProfile == OBSERVED_EXPORT_PROFILE &&
-            imported.issues.any { it.kind == CONFIGURATION_INPUT_CLOSURE_UNPROVEN && it.scopeId == null },
-            "owner_model_observed_return_mismatch")
-        checkpoint()
-        if (imported.jvmProducedGraph != null) {
-            val selected = OwnerModelGeneration(workbench, runtime, CompilerApplicationNamespace(registration.binding.ownerId,
-                document.workspaceId, document.worktreeId), runPin.path.resolve("generation"), originalDeadline, custody)
-            generation = selected
-            selected.open() // Genuine fixed installed worker, never a fabricated HELLO or compiler return.
-        }
-        val assembled = try {
-            workbench.prepareObservedModelReview(intent, null, imported, materialized)
-        } catch (failure: ObservedModelPlanUnavailable) {
-            attemptedPlan = failure.attemptedPlan
-            attemptedReasons = failure.reasons.toList()
-            throw failure // Full unsupported/removed/extra vector is evidence, NOT an admitted prefix.
-        }
-        prepared = assembled
-        attemptedPlan = assembled.assembly.plan
-        ownerModelRequire(assembled.assembly.provenance.observedAfter === imported &&
-            assembled.assembly.provenance.observedBefore == null && assembled.request == intent.request &&
-            assembled.assembly.plan.jvmProduced != null, "owner_model_nominal_parent_unavailable")
-        custody.retain(assembled, imported) // BEFORE submission can trigger any kernel callback.
-        checkpoint()
-        // Sticky BEFORE the call: an exception can occur after a durable kernel commit.
-        // Never retry or report false/unaccepted solely because no verified handle came back.
-        ownerModelRequire(parentSubmissionAttempted.compareAndSet(false, true), "owner_model_parent_submission_replayed")
-        val accepted = workbench.submitModelPlan(registration.client, assembled.request)
-        returnedParent.set(accepted) // Retain the actual returned object even if verification throws.
-        verifyParent(assembled, accepted)
-        val handle = OwnerModelPlanAdmission(captured, assembled, imported, accepted,
-            OwnerModelDeliveryHandle(workbench.kernel, registration, accepted.planId))
-        ownerModelRequire(retainedAdmission.compareAndSet(null, handle), "owner_model_parent_handle_replayed")
-        return handle
+    /** Bridge DATA binding only: compares the ACTUAL copied installation and owner image before
+     * explicit policy/review. It returns no installation, execution permit, model or receipt. */
+    internal fun bindTransportInstallation(transport: OwnerModelTransportPreparedSelection) {
+        ownerModelRequire(gate.enteredCount == 0 && !closed.get() && !quarantined.get() &&
+            selected == transport.invocation, "owner_transport_installation_binding_unavailable")
+        firstClock.checkpoint(); workbench.verifyOwnerCode()
+        ownerModelRequire(workbench.ownerCodeDigest == transport.selection.ownerCodeImageDigest,
+            "owner_transport_owner_image_changed")
+        transport.verifyInitialCopies(runtime.installation, firstClock::checkpoint)
+        firstClock.checkpoint()
     }
 
-    /** Audit reads are allowed after expiry; this never refreshes a clock or launches any work. */
-    fun status(handle: OwnerModelPlanAdmission): OwnerModelPlanStatus {
-        ownerModelRequire(!closed.get() && retainedAdmission.get() === handle, "owner_model_delivery_handle_mismatch")
-        statePin.verify(); runPin.verify()
-        val parent = workbench.kernel.planStatus(registration.client, handle.parent.planId)
-        verifyParent(handle.prepared, parent)
-        val children = parent.slots.map { slot ->
-            val childPatch = "plan-child:" + ownerProducedDigest(ContractJson.encodeToJsonElement(listOf(parent.planId, slot.slotId)))
-            workbench.kernel.status(registration.client, slot.reviewId).also { child ->
-                ownerModelRequire(child.reviewId == slot.reviewId && child.clientId == parent.clientId &&
-                    child.sourceSnapshotId == parent.sourceSnapshotId && child.patchId == childPatch,
-                    "owner_model_parent_child_mismatch")
-            }
-        }
-        return OwnerModelPlanStatus(parent, children)
-    }
-
-    fun await(handle: OwnerModelPlanAdmission): OwnerModelPlanStatus {
-        var observed = status(handle)
-        while (!observed.terminal && !originalDeadline.isExpired() && !Thread.currentThread().isInterrupted) {
-            Thread.sleep(25)
-            observed = status(handle)
-        }
-        return observed
-    }
-
-    /** Explicit command-owner retirement, at most once. close() itself never retires a generation. */
-    fun retireOwnedGeneration() {
-        ownerModelRequire(retirementRequested.compareAndSet(false, true), "owner_model_command_retirement_replayed")
-        generation?.takeIf { it.wasOpened }?.retire()
-    }
-
-    // For Gradle this is only the approved child-group-quiescent boundary, NOT a resource-CLOSED
-    // receipt. Native helper image/pipe cleanup can remain asynchronous after a successful return.
-    val safeToClose: Boolean get() = export?.safeToClose != false &&
-        generation?.let { !it.wasOpened || it.retirementVerified } != false
-
-    fun quarantine() {
-        quarantined.set(true)
-        export?.quarantine()
-        generation?.quarantine()
-    }
-
-    override fun close() {
-        ownerModelRequire(safeToClose && !quarantined.get(), "owner_model_cleanup_unverified_retained")
-        if (closed.compareAndSet(false, true)) workbench.close()
-    }
-
-    /** No credential, source content, ACK, observation, useful-complete or final gate claim. */
-    fun evidence(status: OwnerModelPlanStatus? = null, failureCode: String? = null): JsonObject = buildJsonObject {
-        put("contractVersion", PREVIEW_CONTRACT); put("schema", "ktchecker/owner-observed-model-command/1")
-        put("state", if (quarantined.get()) "cleanup_unverified_quarantine" else if (failureCode != null) "failed_unaccepted_or_incomplete"
-            else if (status?.terminal == true) "observed_preview_terminal" else "observed_preview_pending")
-        put("requestDigest", requestDigest); put("taskId", document.taskId)
-        put("binding", ContractJson.encodeToJsonElement(registration.binding))
-        put("originalDeadlineIdentity", originalDeadline.identity); put("originalDeadlineMillis", originalDeadline.durationMillis)
-        put("originalDeadlineExpired", originalDeadline.isExpired()); put("observedInvocationId", invocation.identity)
-        put("ownerState", statePin.path.toString()); put("runRoot", runPin.path.toString())
-        put("parentSubmissionAttempted", parentSubmissionAttempted.get())
-        put("parentAccepted", when {
-            retainedAdmission.get() != null -> JsonPrimitive(true)
-            parentSubmissionAttempted.get() -> JsonNull
-            else -> JsonPrimitive(false)
-        })
-        put("parentSubmissionState", when {
-            retainedAdmission.get() != null -> "verified_accepted"
-            parentSubmissionAttempted.get() -> "attempted_outcome_unverified"
-            else -> "not_attempted"
-        })
-        put("submissionReturnedParent", returnedParent.get()?.let { ContractJson.encodeToJsonElement(it) } ?: JsonNull)
-        put("snapshotCommit", commit?.let { ContractJson.encodeToJsonElement(it) } ?: JsonNull)
-        put("originalDeclaredPlan", attemptedPlan?.let { ContractJson.encodeToJsonElement(it) } ?: JsonNull)
-        put("preparationReasons", prepared?.let { ContractJson.encodeToJsonElement(it.preparationReasons) }
-            ?: ContractJson.encodeToJsonElement(attemptedReasons))
-        put("parent", status?.parent?.let { ContractJson.encodeToJsonElement(it) }
-            ?: retainedAdmission.get()?.parent?.let { ContractJson.encodeToJsonElement(it) } ?: JsonNull)
-        put("children", status?.let { ContractJson.encodeToJsonElement(it.children) } ?: JsonNull)
-        put("reviewVectorTerminal", status?.terminal ?: false)
-        put("observedEvidenceIdentity", model?.evidenceIdentity?.let(::JsonPrimitive) ?: JsonNull)
-        put("observedExport", export?.evidence() ?: JsonNull)
-        put("generation", generation?.evidence() ?: JsonNull); put("custody", custody.evidence())
-        put("failureCode", failureCode?.let(::JsonPrimitive) ?: JsonNull)
-        put("assurance", OBSERVED_EXPORT_PROFILE); put("configurationInputClosureProven", false)
-        put("mandatoryGap", CONFIGURATION_INPUT_CLOSURE_UNPROVEN)
-        put("retirementRequested", retirementRequested.get()); put("safeToClose", safeToClose)
-        put("patchFixLineageSupported", false); put("hostInsertionOrObservationPerformed", false)
-        put("releaseQualified", false); put("usefulComplete", false); put("finalAnswerAuthorized", false)
-    }
-
-    private fun verifyParent(plan: PreparedOwnerModelPlan, parent: ParentPlanStatus) {
-        val definition = plan.assembly.plan
-        ownerModelRequire(parent.clientId == registration.binding.clientId && parent.patchId == document.patchId &&
-            parent.planDigest == plan.assembly.planDigest && parent.sourceSnapshotId == requireNotNull(commit).snapshotId &&
-            parent.slots.map { it.slotId } == definition.slots.map { it.slotId } &&
-            parent.slots.all { it.reviewId.isNotBlank() } && parent.slots.map { it.reviewId }.distinct().size == parent.slots.size &&
-            parent.slots.zip(definition.slots).all { (actual, declared) ->
-                actual.context == declared.input.context.scope && actual.requiredRuleIds == declared.input.requiredRuleIds
-            }, "owner_model_parent_admission_mismatch")
-    }
-
-    private fun checkpoint() {
+    /** Explicit trusted owner/config surface, NOT an effect of review/submit/authorize-execution. */
+    fun configureCompilerPolicy(selection: OwnerModelCompilerPolicySelection): JsonObject {
         ownerModelRequire(!closed.get() && !quarantined.get(), "owner_model_command_unavailable")
-        ownerModelCheckpoint(originalDeadline); invocation.verifyLive()
-        statePin.verify(); runPin.verify()
+        val operation = gate.enterPolicy()
+        var failed = true
+        try {
+            // The helper freezes the caller's whole explicit choice BEFORE its first IO.
+            val actual = compilerPolicy.configure(selection)
+            failed = false
+            return actual
+        } catch (failure: Throwable) {
+            if (compilerPolicy.historyUncertain) { unknownHistory.set(true); quarantine() }
+            throw failure
+        } finally { gate.leave(operation, failed) }
     }
+
+    /** Legacy single-document entry is the first patch of this SAME service, not another route. */
+    fun submitCompletedPatch(): OwnerModelPlanAdmission {
+        val document = initialDocument ?: throw CliProblem("owner_model_initial_document_unavailable", "Use the complete typed patch entry.")
+        val patch = OwnerModelCompletedPatch(document.patchId, document.taskId, 1L, registration.binding, null, 0L,
+            listOf(OwnerModelPatchRoot("project", "")), document.files.sortedBy { it.path }.map { file ->
+                OwnerModelPatchFile("project", file.path, file.contentBase64 ?: Base64.getEncoder()
+                    .encodeToString(requireNotNull(file.content).toByteArray(Charsets.UTF_8)), file.executable)
+            })
+        return submit(patch, selected, null, SubmitPlanRequest(document.patchId, document.idempotencyKey, document.planRef))
+    }
+
+    /** Exact host contract. Phase views deny work; only the fresh per-patch nominal clock grants it. */
+    fun submitCompletedPatch(patch: OwnerModelCompletedPatch, selection: OwnerModelInvocationSelection,
+                             clockScope: OwnerModelClockScope): OwnerModelNominalSubmission {
+        val accepted = submit(patch, selection, clockScope)
+        return try {
+            val attempt = admissions.exact(accepted)
+            OwnerModelNominalSubmission(attempt.admissionData(accepted), accepted.deliveryHandle)
+        } catch (failure: Throwable) {
+            unknownHistory.set(true); quarantine(); throw failure
+        }
+    }
+
+    private fun submit(patch: OwnerModelCompletedPatch, selection: OwnerModelInvocationSelection,
+                       scope: OwnerModelClockScope?, request: SubmitPlanRequest? = null): OwnerModelPlanAdmission {
+        // First owner installation already spent this first120s. Later genuinely new patches get
+        // a NEW original before copy/validation/retirement/capture. No old attempt is renewed.
+        val clock = if (gate.enteredCount == 0) firstClock else
+            OwnerModelCommandClock(OwnedApplicationDeadline.afterMillis(OWNER_MODEL_ORIGINAL_MILLIS), scope)
+        ownerModelRequire(!closed.get() && !quarantined.get(), "owner_model_command_unavailable")
+        val operation = gate.enter(patch.patchId, patch.ordinal, clock, scope)
+        var retainedAttempt: OwnerModelCommandAttempt? = null
+        var failed = true
+        var registeringHandle = false
+        try {
+            val previous = synchronized(historyLock) { attempts.lastOrNull() }
+            val attempt = OwnerModelCommandAttempt(patch.patchId, patch.taskId, patch.ordinal, clock, workbench, runtime,
+                registration, statePin, previous, compilerPolicy)
+            retainedAttempt = attempt
+            synchronized(historyLock) { attempts.add(attempt) } // Failed entries are retained too.
+            attempt.freeze(patch) // Copy the ENTIRE caller patch before owner-root/registration IO.
+            if (scope != null) clock.attachOriginalPhases(scope)
+            clock.checkpoint(); verifyRoots()
+            ownerModelRequire(workbench.registration(registration.binding.clientId) == registration,
+                "owner_model_registration_changed")
+            ownerModelRequire(freezeSelection(selection, clock) == selected, "owner_model_lineage_selection_changed")
+            compilerPolicy.verifyCurrent(clock::checkpoint) // READ ONLY. Never enable rules during a review.
+            // This transition explicitly owns the one retirement. Status alone never means CLOSED.
+            if (previous != null) {
+                ownerModelRequire(previous.admission != null && previous.model != null && previous.snapshotCommit != null,
+                    "owner_model_previous_history_unavailable")
+                previous.retireForNextPatch()
+                clock.checkpoint()
+            }
+            val run = if (previous == null) firstRun else ownerModelFreshDirectory(runsPin.path.resolve(patch.ordinal.toString()))
+            val cache = if (previous == null) firstCache else lastCache.nextUse(run.path, clock, runtime.installation)
+            lastCache = cache
+            clock.checkpoint()
+            val accepted = attempt.submit(run, cache, gradle, request)
+            registeringHandle = true
+            admissions.retain(accepted, attempt); handles.retain(accepted.deliveryHandle, attempt)
+            registeringHandle = false
+            failed = false
+            return accepted
+        } catch (failure: Throwable) {
+            retainedAttempt?.failed(ownerModelCommandFailure(failure))
+            if (registeringHandle) unknownHistory.set(true)
+            if (needsQuarantine) quarantine()
+            throw failure
+        } finally { gate.leave(operation, failed) }
+    }
+
+    /** Exact object identity map, including old admissions. JSON/digest equality cannot look up it. */
+    fun status(handle: OwnerModelPlanAdmission): OwnerModelPlanStatus = audit {
+        val attempt = admissions.exact(handle)
+        attempt.status(handle)
+    }
+    fun status(handle: OwnerModelDeliveryHandle): OwnerModelPlanStatus = audit {
+        val attempt = handles.exact(handle)
+        ownerModelRequire(handle.broker === broker && handle.registration === registration, "owner_model_delivery_owner_mismatch")
+        attempt.status(requireNotNull(attempt.admission))
+    }
+    fun await(handle: OwnerModelPlanAdmission): OwnerModelPlanStatus = audit {
+        val attempt = admissions.exact(handle)
+        attempt.await(handle)
+    }
+    private fun <T> audit(block: () -> T): T {
+        ownerModelRequire(!closed.get(), "owner_model_command_closed")
+        return try { verifyRoots(); block() }
+        catch (failure: Throwable) {
+            // An unknown actual history read may not be skipped to open a new patch/generation.
+            unknownHistory.set(true); quarantine(); throw failure
+        }
+    }
+
+    /** Explicit owner close preparation only. Never retry a retirement already requested. */
+    fun retireOwnedGeneration() {
+        val operation = gate.enterMaintenance()
+        var failed = true
+        try {
+            ownerModelRequire(!quarantined.get() && !closed.get(), "owner_model_retirement_not_available")
+            retainedAttempts().forEach { if (!it.retirementWasRequested) it.retireOwnedGeneration() }
+            if (needsQuarantine) quarantine()
+            failed = false
+        } catch (failure: Throwable) { if (needsQuarantine) quarantine(); throw failure }
+        finally { gate.leave(operation, failed) }
+    }
+    private val needsQuarantine: Boolean get() = unknownHistory.get() || compilerPolicy.historyUncertain || retainedAttempts().any { it.needsQuarantine }
+    val safeToClose: Boolean get() = gate.idle && !quarantined.get() && !unknownHistory.get() &&
+        !compilerPolicy.historyUncertain && retainedAttempts().all { it.safeToClose }
+    fun quarantine() = lifetime.enter()
+    override fun close() {
+        val operation = gate.enterMaintenance()
+        try {
+            if (quarantined.get() || unknownHistory.get() || compilerPolicy.historyUncertain || retainedAttempts().any { !it.safeToClose }) {
+                quarantine()
+                throw CliProblem("owner_model_cleanup_unverified_retained", "The exact owner is retained; close never retires or drops live custody.")
+            }
+            if (closed.compareAndSet(false, true)) {
+                try { workbench.close() }
+                catch (failure: Throwable) { unknownHistory.set(true); quarantine(); throw failure }
+            }
+        } finally { gate.leave(operation, failed = true) }
+    }
+
+    /** Whole cumulative evidence, not a fresh-state snapshot that forgets failed/removed contexts. */
+    fun evidence(status: OwnerModelPlanStatus? = null, failureCode: String? = null): JsonObject {
+        val retained = retainedAttempts()
+        val latest = retained.lastOrNull()?.let { if (status == null) it.evidence() else it.evidence(status) }
+        val effectiveFailure = failureCode?.let(::JsonPrimitive) ?: latest?.get("failureCode") ?: JsonNull
+        return buildJsonObject {
+            latest?.forEach { (key, value) -> put(key, value) }
+            if (latest == null) {
+                put("originalDeadlineIdentity", originalDeadline.identity); put("originalDeadlineMillis", originalDeadline.durationMillis)
+                put("parentAccepted", false); put("parentSubmissionAttempted", false)
+            }
+            put("contractVersion", PREVIEW_CONTRACT); put("schema", "ktchecker/owner-observed-model-command/2")
+            put("profile", profile); put("binding", ContractJson.encodeToJsonElement(registration.binding))
+            put("state", if (quarantined.get()) "cleanup_or_history_unverified_quarantine"
+                else if (effectiveFailure != JsonNull) "failed_unaccepted_or_incomplete"
+                else if (status?.terminal == true) "observed_preview_terminal" else "observed_preview_pending")
+            put("ownerState", statePin.path.toString()); put("safeToClose", safeToClose)
+            put("failureCode", effectiveFailure)
+            put("unknownHistory", unknownHistory.get())
+            put("ownerCompilerPolicy", compilerPolicy.evidence())
+            put("attemptHistory", JsonArray(retained.map { it.evidence() }))
+            put("retainedAttemptCount", retained.size); put("maximumRetainedPatches", OWNER_MODEL_MAX_PATCHES)
+            put("patchFixLineageSupported", true); put("restartLineageRecoverySupported", false)
+            put("supportedObservedDomain", "whole_declared_main_test_only_unsupported_shapes_unaccepted")
+            put("assurance", OBSERVED_EXPORT_PROFILE); put("configurationInputClosureProven", false)
+            put("mandatoryGap", CONFIGURATION_INPUT_CLOSURE_UNPROVEN)
+            put("fullResourceCleanupReceiptAvailable", false); put("hostInsertionOrObservationPerformed", false)
+            put("fullProject", false); put("releaseQualified", false); put("usefulComplete", false); put("finalAnswerAuthorized", false)
+        }
+    }
+    private fun retainedAttempts(): List<OwnerModelCommandAttempt> = synchronized(historyLock) { attempts.toList() }
+    private fun verifyRoots() { statePin.verify(); commandPin.verify(); runsPin.verify() }
 
     companion object {
-        /** originalDeadline MUST be allocated by the owner at entry, before reading/validating input. */
+        /** Explicit command factory. Caller starts its ORIGINAL clock BEFORE reading the request. */
         fun open(request: OwnerModelCommandDocument, stateRoot: Path, javaHome: Path, authorizeExecution: Boolean,
                  originalDeadline: OwnedApplicationDeadline): OwnerModelCommandSession {
-            ownerModelCheckpoint(originalDeadline)
-            ownerModelRequire(quarantinedOwnerModelCommands.isEmpty(), "owner_model_quarantine_retained")
-            ownerModelRequire(originalDeadline.durationMillis == OWNER_MODEL_ORIGINAL_MILLIS && authorizeExecution,
-                "owner_model_explicit_execution_consent_required")
-            val invocation = ObservedExportInvocation(originalDeadline) // Before capture/copy or any launch.
-            // Typed callers also get strict Unicode validation: never replace an unpaired
-            // surrogate before freezing the complete explicit source/identity document.
-            val encoded = try {
-                val buffer = Charsets.UTF_8.newEncoder().onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .encode(CharBuffer.wrap(Digests.canonical(ContractJson.encodeToJsonElement(request))))
-                ByteArray(buffer.remaining()).also { buffer.get(it) }
-            } catch (_: Exception) { throw CliProblem("owner_model_request_invalid", "Expected exact valid Unicode input.") }
+            val clock = OwnerModelCommandClock(originalDeadline)
+            clock.checkpoint()
+            val encoded = ownerModelStrictBytes(ContractJson.encodeToJsonElement(request))
             ownerModelRequire(encoded.size in 1..OWNER_MODEL_REQUEST_BYTES, "owner_model_request_limit")
             val document = ContractJson.decodeFromString<OwnerModelCommandDocument>(strictJsonDocument(encoded, "owner_model_request_invalid"))
             validateOwnerModelDocument(document, originalDeadline)
+            val selection = OwnerModelInvocationSelection(document.gradleHome, document.gradleCacheSeed, javaHome.toString(),
+                document.compilerArtifactPaths, authorizeExecution)
+            return create(OwnerModelLineageRegistration(document.workspaceId, document.worktreeId, document.clientId,
+                document.sessionId, document.lineageId), selection, stateRoot, clock, document, encoded)
+        }
+
+        /**
+         * Owner/host factory, before the first completed-patch capture. Construction/install time
+         * belongs to the first original120s; submit cannot reset it. Initial phase views, when
+         * already available, also cover construction. No existing state/registration is reopened.
+         */
+        fun openLineage(registration: OwnerModelLineageRegistration, selection: OwnerModelInvocationSelection,
+                        stateRoot: Path, originalOverall: OwnerModelPhaseFence? = null,
+                        originalPhases: OwnerModelClockScope? = null,
+                        invocationRoot: Path = stateRoot.resolve("model-command/runs"),
+                        originalExportFence: OwnerModelPhaseFence? = null): OwnerModelCommandSession {
+            val deadline = OwnedApplicationDeadline.afterMillis(OWNER_MODEL_ORIGINAL_MILLIS) // FIRST statement.
+            val clock = OwnerModelCommandClock(deadline, originalPhases, originalOverall ?: originalPhases?.overall,
+                originalExportFence ?: originalPhases?.originalExport)
+            ownerModelRequire(invocationRoot == stateRoot.resolve("model-command/runs"), "owner_model_invocation_root_mismatch")
+            return create(registration, selection, stateRoot, clock, null, null)
+        }
+
+        private fun create(request: OwnerModelLineageRegistration, selection: OwnerModelInvocationSelection,
+                           stateRoot: Path, clock: OwnerModelCommandClock, document: OwnerModelCommandDocument?,
+                           documentBytes: ByteArray?): OwnerModelCommandSession {
+            clock.checkpoint()
+            ownerModelRequire(quarantinedOwnerModelCommands.isEmpty(), "owner_model_quarantine_retained")
+            val bytes = ownerModelStrictBytes(ContractJson.encodeToJsonElement(request))
+            ownerModelRequire(bytes.size in 1..OWNER_MODEL_REQUEST_BYTES, "owner_model_request_limit")
+            val registrationRequest = ContractJson.decodeFromString<OwnerModelLineageRegistration>(
+                strictJsonDocument(bytes, "owner_model_request_invalid"))
+            listOf(registrationRequest.workspaceId, registrationRequest.worktreeId, registrationRequest.clientId,
+                registrationRequest.sessionId, registrationRequest.lineageId).forEach(::ownerModelIdentity)
+            val chosen = freezeSelection(selection, clock)
             val selectedState = ownerModelPath(stateRoot, false)
-            val selectedJava = ownerModelPath(javaHome)
-            val selectedGradle = ownerModelPath(Path.of(document.gradleHome))
-            val selectedSeed = ownerModelPath(Path.of(document.gradleCacheSeed))
+            val selectedJava = ownerModelPath(Path.of(chosen.compilerJavaHome))
+            val selectedGradle = ownerModelPath(Path.of(chosen.gradleHome))
+            val selectedSeed = ownerModelPath(Path.of(chosen.gradleCacheSeed))
             val selectedRoots = listOf(selectedState, selectedJava, selectedGradle, selectedSeed)
             ownerModelRequire(selectedRoots.indices.all { i -> selectedRoots.indices.all { j ->
                 i == j || !selectedRoots[i].startsWith(selectedRoots[j])
@@ -320,41 +393,57 @@ internal class OwnerModelCommandSession private constructor(
             ownerModelRequire(!Files.exists(selectedState, NOFOLLOW_LINKS), "owner_model_fresh_state_required")
             val statePin = ownerModelFreshDirectory(selectedState)
             val state = PrivateState(selectedState)
-            val runPin = ownerModelFreshDirectory(state.root.resolve("model-command"))
-            ownerModelWrite(runPin.path.resolve("owner-request.json"), encoded, OWNER_MODEL_REQUEST_BYTES) {
-                ownerModelCheckpoint(originalDeadline)
-            }
-            val cache = OwnerModelCacheSeed(selectedSeed, runPin.path, originalDeadline)
-            val artifacts = cache.selectCompiler(document.compilerArtifactPaths)
-            ownerModelCheckpoint(originalDeadline)
+            val command = ownerModelFreshDirectory(state.root.resolve("model-command"))
+            val installationRoot = ownerModelFreshDirectory(command.path.resolve("artifacts"))
+            val runs = ownerModelFreshDirectory(command.path.resolve("runs"))
+            val firstRun = ownerModelFreshDirectory(runs.path.resolve("1"))
+            val bootstrap = documentBytes ?: ownerModelStrictBytes(buildJsonObject {
+                put("registration", ContractJson.encodeToJsonElement(registrationRequest))
+                put("selection", ContractJson.encodeToJsonElement(chosen))
+            })
+            ownerModelWrite(command.path.resolve("owner-request.json"), bootstrap, OWNER_MODEL_REQUEST_BYTES, clock::checkpoint)
+            val cache = OwnerModelCacheSeed(selectedSeed, installationRoot.path, firstRun.path, clock)
+            val artifacts = cache.selectCompiler(chosen.compilerArtifactPaths)
+            clock.checkpoint()
             val installation = KotlinJvmToolchain(selectedJava.resolve("bin/java"), artifacts)
-            ownerModelCheckpoint(originalDeadline)
-            cache.bindInstallation(installation, originalDeadline)
+            clock.checkpoint(); cache.bindInstallation(installation, clock.originalDeadline)
+            val gradle = OwnerModelTreePin.capture(selectedGradle, 50_000, CompilerSnapshot.MAX_TOTAL_ARTIFACT_BYTES,
+                checkpoint = clock::checkpoint)
             val home = Workbench.distributionHome() ?: throw CliProblem("owner_model_distribution_unavailable",
                 "Use the installed distribution's fixed model worker.")
-            val bridge = OwnerModelFilePin.capture(ownerModelPath(home.resolve(OWNER_MODEL_WORKER)), ModelWire.MAX_BRIDGE_BYTES) {
-                ownerModelCheckpoint(originalDeadline)
-            }
+            val bridge = OwnerModelFilePin.capture(ownerModelPath(home.resolve(OWNER_MODEL_WORKER)), ModelWire.MAX_BRIDGE_BYTES,
+                clock::checkpoint)
             val runtime = OwnerLiveModelRuntime(state.ownerId, installation, bridge.digest, OWNER_MODEL_ORIGINAL_MILLIS)
             var workbench: Workbench? = null
             try {
                 val selected = Workbench(WorkbenchOptions(state = state.root, workerCount = 1,
                     compilerJavaHome = selectedJava, liveModelRuntime = runtime))
                 workbench = selected
-                ownerModelCheckpoint(originalDeadline)
-                val registration = selected.register(document.workspaceId, document.worktreeId, document.clientId,
-                    document.sessionId, document.lineageId)
-                val intent = selected.beginModelReview(document.clientId,
-                    SubmitPlanRequest(document.patchId, document.idempotencyKey, document.planRef), authorizeExecution, originalDeadline)
-                ownerModelRequire(intent.originalDeadline === originalDeadline && intent.binding == registration.binding)
-                bridge.verify { ownerModelCheckpoint(originalDeadline) }
-                return OwnerModelCommandSession(document, originalDeadline, invocation, statePin, runPin, cache,
-                    selected, runtime, registration, intent, Digests.sha256(encoded))
+                clock.checkpoint()
+                val registration = selected.register(registrationRequest.workspaceId, registrationRequest.worktreeId,
+                    registrationRequest.clientId, registrationRequest.sessionId, registrationRequest.lineageId)
+                val identity = SnapshotIdentity(registration.binding.ownerId, registration.binding.workspaceId, registration.binding.worktreeId)
+                val head = selected.snapshots.registerWorktree(identity)
+                ownerModelRequire(head == WorktreeState(identity, listOf(SnapshotRoot()), 0L, null, 0L,
+                    LiveState.UNVERIFIED, null, 0), "owner_model_fresh_snapshot_lineage_required")
+                bridge.verify(clock::checkpoint)
+                return OwnerModelCommandSession(statePin, command, runs, firstRun, clock, chosen, gradle, cache,
+                    selected, runtime, registration, document)
             } catch (failure: Throwable) {
-                // No application is opened in this factory. Only our own fresh broker can close.
+                // This factory NEVER enters an export/application or mutates a source snapshot.
                 workbench?.close()
                 throw failure
             }
+        }
+        private fun freezeSelection(input: OwnerModelInvocationSelection, clock: OwnerModelCommandClock): OwnerModelInvocationSelection {
+            clock.checkpoint()
+            val bytes = ownerModelStrictBytes(ContractJson.encodeToJsonElement(input))
+            ownerModelRequire(bytes.size in 1..OWNER_MODEL_REQUEST_BYTES, "owner_model_selection_limit")
+            val value = ContractJson.decodeFromString<OwnerModelInvocationSelection>(strictJsonDocument(bytes, "owner_model_selection_invalid"))
+            ownerModelRequire(value.authorizeExecution && value.compilerArtifactPaths.size in 1..ModelWire.MAX_ARTIFACTS &&
+                value.compilerArtifactPaths.distinct().size == value.compilerArtifactPaths.size,
+                "owner_model_explicit_execution_consent_required")
+            return value.copy(compilerArtifactPaths = Collections.unmodifiableList(value.compilerArtifactPaths.toList()))
         }
     }
 }
@@ -363,101 +452,47 @@ private fun validateOwnerModelDocument(document: OwnerModelCommandDocument, dead
     ownerModelCheckpoint(deadline)
     ownerModelRequire(document.schemaVersion == 1 && listOf(document.workspaceId, document.worktreeId, document.clientId,
         document.sessionId, document.lineageId, document.taskId, document.patchId, document.idempotencyKey, document.planRef).all {
-        it.isNotBlank() && it.toByteArray(Charsets.UTF_8).size <= 256 && it.none { c -> c.code < 32 || c.code == 127 }
+        it.isNotBlank() && it.toByteArray(Charsets.UTF_8).size <= 256 && it.none { c -> c.isISOControl() }
     }, "owner_model_request_identity_invalid")
     ownerModelRequire(document.files.size in 1..ModelWire.MAX_SNAPSHOT_FILES &&
         document.files.map { it.path }.distinct().size == document.files.size, "owner_model_snapshot_limit_or_duplicate")
     var bytes = 0L
     document.files.forEach { file ->
         ownerModelCheckpoint(deadline)
-        val path = Path.of(file.path)
-        ownerModelRequire(file.path.isNotEmpty() && !path.isAbsolute && path.normalize() == path && path.toString() == file.path &&
-            file.path.toByteArray(Charsets.UTF_8).size <= ModelWire.MAX_LOGICAL_PATH_BYTES &&
-            file.path.split('/').size <= ModelWire.MAX_PATH_DEPTH && file.path.split('/').all { it.isNotEmpty() && it !in setOf(".", "..") } &&
-            file.path.none { it.code < 32 || it.code == 127 || it == '\\' } &&
-            (file.content == null) != (file.contentBase64 == null), "owner_model_snapshot_file_invalid")
+        ownerModelLogicalPath(file.path)
+        ownerModelRequire((file.content == null) != (file.contentBase64 == null), "owner_model_snapshot_file_invalid")
         val content = file.content?.toByteArray(Charsets.UTF_8) ?: try { Base64.getDecoder().decode(requireNotNull(file.contentBase64)) }
             catch (_: IllegalArgumentException) { throw CliProblem("owner_model_snapshot_file_invalid", "Invalid immutable file encoding.") }
+        ownerModelRequire(file.contentBase64 == null || Base64.getEncoder().encodeToString(content) == file.contentBase64,
+            "owner_model_snapshot_encoding_or_limit")
         ownerModelRequire(content.size <= ModelWire.MAX_SOURCE_BYTES && content.size.toLong() <= ModelWire.MAX_SNAPSHOT_BYTES - bytes,
             "owner_model_snapshot_limit")
         bytes += content.size
     }
     val names = document.files.map { it.path }.toSet()
-    ownerModelRequire(ownerModelDirectories(names).none { it in names }, "owner_model_snapshot_path_collision")
+    ownerModelPortableInventory(names)
 }
 
+/**
+ * Interim legacy CLI limitation: its review document has NO explicit owner-policy surface.
+ * Reject BEFORE path reads/state/install/export instead of inferring rules from execution consent.
+ * The executable typed-host route is openLineage -> configureCompilerPolicy -> completed patch.
+ * A separate audited CLI owner/config operation remains a release gate, not an automatic default.
+ */
 internal fun runOwnerModelPlan(options: Arguments): Int {
     val originalDeadline = OwnedApplicationDeadline.afterMillis(OWNER_MODEL_ORIGINAL_MILLIS) // FIRST statement.
     ownerModelRequire(options.words == listOf("model-plan") && options.has("authorize-execution") &&
         listOf("compiler-dir", "detekt-artifacts", "ktlint-artifacts", "workers", "prepared", "wait-ms", "review", "cursor",
             "limit", "finding", "expected", "layer", "rule", "workspace", "worktree", "client", "session", "lineage", "id", "owner-action")
             .none(options::has), "owner_model_command_options_invalid")
-    val state = ownerModelPath(Path.of(options.required("state")), false)
-    val javaHome = ownerModelPath(Path.of(options.required("compiler-java-home")))
-    val out = options["out"]?.let { ownerModelPath(Path.of(it), false) }
-    ownerModelRequire(out == null || !Files.exists(out, NOFOLLOW_LINKS), "owner_model_output_in_use")
-    val outputParent = out?.let { OwnerModelRootPin.capture(it.parent) }
-    val request = ownerModelPath(Path.of(options.required("request")))
-    val pin = OwnerModelFilePin.capture(request, OWNER_MODEL_REQUEST_BYTES.toLong()) { ownerModelCheckpoint(originalDeadline) }
-    val bytes = pin.read(OWNER_MODEL_REQUEST_BYTES) { ownerModelCheckpoint(originalDeadline) }
-    val document = try { ContractJson.decodeFromString<OwnerModelCommandDocument>(strictJsonDocument(bytes, "owner_model_request_invalid")) }
-        catch (_: Exception) { throw CliProblem("owner_model_request_invalid", "Expected the bounded explicit immutable-file model command schema.") }
-    ownerModelRequire(out == null || listOf(state, javaHome, Path.of(document.gradleHome), Path.of(document.gradleCacheSeed))
-        .none { out.startsWith(it) }, "owner_model_output_overlaps_selected_inputs")
-    var session: OwnerModelCommandSession? = null
-    var status: OwnerModelPlanStatus? = null
-    var failureCode: String? = null
-    try {
-        val owned = OwnerModelCommandSession.open(document, state, javaHome, true, originalDeadline)
-        session = owned
-        val admitted = owned.submitCompletedPatch()
-        status = owned.await(admitted)
-    } catch (failure: Throwable) {
-        if (failure is InterruptedException) Thread.currentThread().interrupt()
-        failureCode = ownerModelCommandFailure(failure)
-    }
-    val owned = session
-    if (owned != null) {
-        try { owned.retireOwnedGeneration() }
-        catch (failure: Throwable) { failureCode = failureCode ?: ownerModelCommandFailure(failure) }
-        if (!owned.safeToClose) {
-            // Retain BEFORE evidence construction/serialization/output. Occupancy never drops an
-            // already-owned session, and all write failures still reach idle retention below.
-            quarantinedOwnerModelCommands.add(owned)
-            try {
-                owned.quarantine()
-                try {
-                    val evidence = owned.evidence(status, failureCode ?: "owner_model_cleanup_unverified_retained")
-                    outputParent?.verify(); emit(evidence, out?.toString())
-                } catch (_: Throwable) {
-                    try { writeJsonLine(buildJsonObject {
-                        put("state", "cleanup_unverified_quarantine"); put("ownerState", state.toString())
-                        put("failureCode", "owner_model_cleanup_evidence_write_failed"); put("releaseQualified", false)
-                    }, System.out) } catch (_: Throwable) { /* Output cannot release retained ownership. */ }
-                }
-            } finally {
-                // No polling, process guess, signal, retry, Workbench.close or replacement clock.
-                // Interrupts do not authorize cleanup retry or normal owner-process exit.
-                val retained = CountDownLatch(1)
-                while (true) { try { retained.await() } catch (_: InterruptedException) { /* Stay idle and retain custody. */ } }
-            }
-        }
-        try { owned.close() }
-        catch (failure: Throwable) { failureCode = failureCode ?: ownerModelCommandFailure(failure) }
-        outputParent?.verify(); emit(owned.evidence(status, failureCode), out?.toString())
-    } else {
-        outputParent?.verify()
-        emit(buildJsonObject {
-        put("contractVersion", PREVIEW_CONTRACT); put("state", "failed_unaccepted")
-        put("failureCode", failureCode ?: "owner_model_operation_failed"); put("ownerState", state.toString())
-        put("originalDeadlineIdentity", originalDeadline.identity); put("originalDeadlineMillis", originalDeadline.durationMillis)
-        put("parentAccepted", false); put("releaseQualified", false); put("usefulComplete", false)
-        }, out?.toString())
-    }
-    return if (failureCode == null && status != null) 2 else 3 // NEVER useful-complete/qualified exit 0.
+    ownerModelCheckpoint(originalDeadline)
+    throw CliProblem("owner_model_explicit_policy_setup_required",
+        "Legacy model-plan has no owner-policy setup operation yet. Use the trusted typed owner host: " +
+            "openLineage, explicitly configureCompilerPolicy, then submitCompletedPatch. " +
+            "Execution consent never selects or enables compiler rules; no state or export was started.")
 }
 
-private fun ownerModelCommandFailure(failure: Throwable): String = when (failure) {
+internal fun ownerModelCommandFailure(failure: Throwable): String = when (failure) {
     is CliProblem -> failure.code
     is KernelException -> failure.code
     is SnapshotException -> failure.code

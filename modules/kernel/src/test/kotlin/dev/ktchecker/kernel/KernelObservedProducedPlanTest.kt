@@ -54,10 +54,10 @@ class KernelObservedProducedPlanTest {
         assertEquals(definition.binding.clientId, plan.clientId)
         assertEquals(definition.slots.first().input.snapshot.snapshotId, plan.sourceSnapshotId)
         assertEquals(Digests.sha256(canonical(definition)), plan.planDigest)
-        assertEquals(listOf(ProducedLaneFixture.PRODUCER, ProducedLaneFixture.CONSUMER), plan.slots.map { it.slotId })
+        assertEquals(listOf(ProducedLane1665Fixture.PRODUCER, ProducedLane1665Fixture.CONSUMER), plan.slots.map { it.slotId })
         assertEquals(2, plan.slots.map { it.reviewId }.distinct().size)
         assertEquals(definition.slots.map { it.input.requiredRuleIds }, plan.slots.map { it.requiredRuleIds })
-        assertTrue(plan.slots.all { it.requiredRuleIds.size == 1663 && GAP in it.reasons })
+        assertTrue(plan.slots.all { it.requiredRuleIds.size == 1665 && GAP in it.reasons })
         assertTrue(GAP in plan.reasons)
         assertTrue("produced_plan_preview_unqualified" in plan.reasons)
     }
@@ -66,7 +66,7 @@ class KernelObservedProducedPlanTest {
             "work", "work_certificates", "work_publications", "events").associateWith { c.count("SELECT COUNT(*) FROM $it") } +
             ("observed_nonces" to c.count("SELECT COUNT(*) FROM metadata WHERE key LIKE 'observed-export:%'"))
     }
-    private fun assertNoAdmission(service: KernelService, f: ProducedLaneFixture, provider: ProducedLaneFixture.Provider) {
+    private fun assertNoAdmission(service: KernelService, f: ProducedLane1665Fixture, provider: ProducedLane1665Fixture.Provider) {
         assertTrue(counts(service).values.all { it == 0L })
         service.ledger.read { c ->
             assertEquals(0L, c.count("SELECT COUNT(*) FROM clients WHERE next_review<>1 OR next_event<>1 OR epoch<>0"))
@@ -137,10 +137,10 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun everyObservedPolicyKeyRejectsScalarAndEachOrdinarySlotBeforeAdmission() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG.copy(workerCount = 0),
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider()
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0),
             planAuthority = f, preparedInputObserver = f.observer).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("marker"))
+            val client = service.registerClient(ProducedLane1665Fixture.binding("marker"))
             val base = f.definition(client.binding, "marker")
             // An otherwise executable ordinary vector, not a failure caused by declared slot state.
             val ordinary = base.copy(jvmProduced = null, slots = base.slots.map { slot ->
@@ -171,10 +171,10 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun removingTypedEvidenceCannotDowngradeAnyObservedMarker() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG.copy(workerCount = 0),
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider()
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0),
             planAuthority = f, preparedInputObserver = f.observer).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("downgrade"))
+            val client = service.registerClient(ProducedLane1665Fixture.binding("downgrade"))
             val observed = f.definition(client.binding, "downgrade", observedInvocation = "observed-downgrade")
             val graph = assertNotNull(observed.jvmProduced)
             // Removing the evidence object, or all but ONE raw/controller marker, never opens the old lane.
@@ -191,10 +191,10 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun evidenceRequiresExactBindingAssuranceDigestAndEachDeclaredGap() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG.copy(workerCount = 0),
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider()
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0),
             planAuthority = f, preparedInputObserver = f.observer).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("evidence"))
+            val client = service.registerClient(ProducedLane1665Fixture.binding("evidence"))
             val base = f.definition(client.binding, "evidence", observedInvocation = "observed-evidence")
             val graph = assertNotNull(base.jvmProduced); val observed = evidence(base); val binding = client.binding
             val foreignBindings = listOf(binding.copy(ownerId = "other-owner"), binding.copy(workspaceId = "other-workspace"),
@@ -230,10 +230,10 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun rawObservedContextCannotBeRetargetedOrHaveItsProvenanceStripped() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG.copy(workerCount = 0),
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider()
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0),
             planAuthority = f, preparedInputObserver = f.observer).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("raw-context"))
+            val client = service.registerClient(ProducedLane1665Fixture.binding("raw-context"))
             val base = f.definition(client.binding, "raw-context", observedInvocation = "observed-raw-context")
             val graph = assertNotNull(base.jvmProduced)
             val controllerOnly = setOf("ktchecker.catalog-inventory", "ktchecker.activation-plan", "ktchecker.observed-export-evidence")
@@ -265,15 +265,15 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun twoObservedSlotsRetainGapThroughProgressResultsPublicationSuppressionAndIdleRestart() {
-        val f = ProducedLaneFixture(temp.resolve("fixture"))
+        val f = ProducedLane1665Fixture(temp.resolve("fixture"))
         val provider = f.Provider { input, progress -> progress(f.partial(input)) }
-        val fence = ProducedLaneFixture.Fence(); val root = temp.resolve("ledger")
-        val definition = f.definition(ProducedLaneFixture.binding("positive"), "positive", "suppressed", observedInvocation = "observed-positive")
+        val fence = ProducedLane1665Fixture.Fence(); val root = temp.resolve("ledger")
+        val definition = f.definition(ProducedLane1665Fixture.binding("positive"), "positive", "suppressed", observedInvocation = "observed-positive")
         fence.install(definition)
         lateinit var client: ClientRegistration; lateinit var completed: ParentPlanStatus
         var results = emptyList<ReviewStatus>(); var rows = emptyList<Published>(); var events = emptyList<ReviewEvent>()
         var declared = emptyList<Triple<String, Long, String>>(); var nonce = ""; var policyCalls = 0
-        KernelService.open(root, provider, ProducedLaneFixture.CONFIG, snapshotGate = fence,
+        KernelService.open(root, provider, ProducedLane1665Fixture.CONFIG, snapshotGate = fence,
             planAuthority = f, preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
             client = service.registerClient(definition.binding)
             val accepted = service.submitPlan(client.client, definition.request)
@@ -314,7 +314,7 @@ class KernelObservedProducedPlanTest {
         }
         val replay = f.Provider()
         // Completed history is readable without a live grant; an idle restart is NOT execution authority.
-        KernelService.open(root, replay, ProducedLaneFixture.CONFIG.copy(workerCount = 0), snapshotGate = fence,
+        KernelService.open(root, replay, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0), snapshotGate = fence,
             planAuthority = ReviewPlanAuthority.DENY, preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
             service.registerClient(client)
             assertEquals(completed, service.planStatus(client.client, completed.planId))
@@ -330,10 +330,10 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun freshInvocationOnSameSnapshotExecutesTwiceInsteadOfReusingPublication() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG, planAuthority = f,
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider()
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG, planAuthority = f,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("fresh"))
+            val client = service.registerClient(ProducedLane1665Fixture.binding("fresh"))
             val a = f.definition(client.binding, "fresh-a", observedInvocation = "observed-fresh-a")
             val pa = service.submitPlan(client.client, a.request); pa.slots.forEach { f.finished(service, client, it.reviewId) }
             val first = published(service, pa); assertEquals(2, provider.calls.get())
@@ -363,12 +363,12 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun usedInvocationIsDeniedForAnotherRequestClientAndAfterRestart() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider(); val root = temp.resolve("ledger")
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider(); val root = temp.resolve("ledger")
         lateinit var client: ClientRegistration; lateinit var peer: ClientRegistration; lateinit var original: RequiredReviewPlan
         lateinit var accepted: ParentPlanStatus; var nonce = ""
-        KernelService.open(root, provider, ProducedLaneFixture.CONFIG, planAuthority = f,
+        KernelService.open(root, provider, ProducedLane1665Fixture.CONFIG, planAuthority = f,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
-            client = service.registerClient(ProducedLaneFixture.binding("used")); peer = service.registerClient(ProducedLaneFixture.binding("peer"))
+            client = service.registerClient(ProducedLane1665Fixture.binding("used")); peer = service.registerClient(ProducedLane1665Fixture.binding("peer"))
             original = f.definition(client.binding, "used", observedInvocation = "observed-used-once")
             accepted = service.submitPlan(client.client, original.request); accepted.slots.forEach { f.finished(service, client, it.reviewId) }
             nonce = nonceValue(service, evidence(original)); val before = counts(service)
@@ -384,7 +384,7 @@ class KernelObservedProducedPlanTest {
             service.ledger.read { c -> assertEquals(1L, c.count("SELECT next_review FROM clients WHERE client_id=?", peer.binding.clientId)) }
         }
         val replay = f.Provider()
-        KernelService.open(root, replay, ProducedLaneFixture.CONFIG.copy(workerCount = 0), planAuthority = f,
+        KernelService.open(root, replay, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0), planAuthority = f,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
             service.registerClient(client); service.registerClient(peer)
             val before = counts(service)
@@ -400,7 +400,7 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun exactRetryNeverReauthorizesOrRearmsProducerEvenAfterRestart() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider(); val root = temp.resolve("ledger")
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider(); val root = temp.resolve("ledger")
         val resolves = AtomicInteger(); val grants = AtomicInteger(); lateinit var grant: AuthorizedProducedPlan
         val authority = object : ReviewPlanAuthority {
             override fun resolve(binding: ClientBinding, request: SubmitPlanRequest): RequiredReviewPlan? {
@@ -412,9 +412,9 @@ class KernelObservedProducedPlanTest {
         }
         lateinit var client: ClientRegistration; lateinit var definition: RequiredReviewPlan; lateinit var completed: ParentPlanStatus
         var savedCounts = emptyMap<String, Long>(); var savedRows = emptyList<Published>(); var nonce = ""
-        KernelService.open(root, provider, ProducedLaneFixture.CONFIG, planAuthority = authority,
+        KernelService.open(root, provider, ProducedLane1665Fixture.CONFIG, planAuthority = authority,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
-            client = service.registerClient(ProducedLaneFixture.binding("retry"))
+            client = service.registerClient(ProducedLane1665Fixture.binding("retry"))
             definition = f.definition(client.binding, "retry", observedInvocation = "observed-exact-retry")
             val accepted = service.submitPlan(client.client, definition.request)
             val preparation = f.preparations.getValue(definition.request.planRef)
@@ -435,7 +435,7 @@ class KernelObservedProducedPlanTest {
             assertSame(preparation, f.preparations.getValue(definition.request.planRef)); assertEquals(2, provider.calls.get())
         }
         val replay = f.Provider()
-        KernelService.open(root, replay, ProducedLaneFixture.CONFIG.copy(workerCount = 0), planAuthority = ReviewPlanAuthority.DENY,
+        KernelService.open(root, replay, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0), planAuthority = ReviewPlanAuthority.DENY,
             preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
             service.registerClient(client)
             assertEquals(completed, service.submitPlan(client.client, definition.request))
@@ -446,16 +446,16 @@ class KernelObservedProducedPlanTest {
     }
 
     @Test fun missingOrAlteredNonceMetadataFailsStatusAndLiveClaimWithoutExecution() {
-        val f = ProducedLaneFixture(temp.resolve("fixture")); val provider = f.Provider()
-        KernelService.open(temp.resolve("ledger"), provider, ProducedLaneFixture.CONFIG.copy(workerCount = 0),
+        val f = ProducedLane1665Fixture(temp.resolve("fixture")); val provider = f.Provider()
+        KernelService.open(temp.resolve("ledger"), provider, ProducedLane1665Fixture.CONFIG.copy(workerCount = 0),
             planAuthority = f, preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
-            val client = service.registerClient(ProducedLaneFixture.binding("nonce-corrupt"))
+            val client = service.registerClient(ProducedLane1665Fixture.binding("nonce-corrupt"))
             val definition = f.definition(client.binding, "nonce-corrupt", observedInvocation = "observed-nonce-corrupt")
             val plan = service.submitPlan(client.client, definition.request); val observed = evidence(definition)
             val key = nonceKey(observed); val original = nonceValue(service, observed)
             val parts = nonceParts(f.admissions.getValue(definition.request.planRef)); assertEquals(canonical(parts), original)
             val work = service.ledger.read { c -> assertNotNull(c.one(
-                "SELECT work_key FROM plan_slot_resolutions WHERE plan_id=? AND slot_id=?", plan.planId, ProducedLaneFixture.PRODUCER) { it.getString(1) }) }
+                "SELECT work_key FROM plan_slot_resolutions WHERE plan_id=? AND slot_id=?", plan.planId, ProducedLane1665Fixture.PRODUCER) { it.getString(1) }) }
             assertTrue(service.ledger.transaction { c -> service.producedPlans.mayClaim(c, work) })
             val mutations: List<String?> = listOf(null) + parts.indices.map { changed ->
                 canonical(parts.mapIndexed { index, part -> if (index == changed) "$part:synthetic-altered" else part })
@@ -488,7 +488,7 @@ class KernelObservedProducedPlanTest {
 
     @Test fun kernelRejectsRawTaintLossOrCleanStatusEvenWhenOwnerClassifierClaimsClean() {
         for (mode in listOf("missing-gap", "complete-status", "complete-without-gap")) {
-            val f = ProducedLaneFixture(temp.resolve(mode)); val delegate = f.Provider()
+            val f = ProducedLane1665Fixture(temp.resolve(mode)); val delegate = f.Provider()
             val emitted = ConcurrentLinkedQueue<ProviderResult>(); val ownerClassifications = AtomicInteger()
             val provider = object : AnalysisProvider {
                 override val id = delegate.id
@@ -512,9 +512,9 @@ class KernelObservedProducedPlanTest {
                         operationalFaults = { ownerClassifications.incrementAndGet(); emptyList() }, resolveConsumer = original.resolveConsumer)
                 }
             }
-            KernelService.open(temp.resolve("ledger-$mode"), provider, ProducedLaneFixture.CONFIG, planAuthority = authority,
+            KernelService.open(temp.resolve("ledger-$mode"), provider, ProducedLane1665Fixture.CONFIG, planAuthority = authority,
                 preparedInputObserver = f.observer, resultPolicy = f.policy).use { service ->
-                val client = service.registerClient(ProducedLaneFixture.binding(mode))
+                val client = service.registerClient(ProducedLane1665Fixture.binding(mode))
                 val definition = f.definition(client.binding, mode, observedInvocation = "observed-$mode")
                 val plan = service.submitPlan(client.client, definition.request)
                 val producer = f.finished(service, client, plan.slots.first().reviewId)
@@ -543,16 +543,16 @@ class KernelObservedProducedPlanTest {
 
     @Test fun resultPolicyCannotEraseObservedGapOrPromoteRawResultToComplete() {
         for (mode in listOf("erase-gap", "promote-complete")) {
-            val f = ProducedLaneFixture(temp.resolve(mode)); val provider = f.Provider { input, progress -> progress(f.partial(input)) }
-            val fence = ProducedLaneFixture.Fence()
+            val f = ProducedLane1665Fixture(temp.resolve(mode)); val provider = f.Provider { input, progress -> progress(f.partial(input)) }
+            val fence = ProducedLane1665Fixture.Fence()
             val policy = ResultPolicy.versioned("synthetic/observed-protected-$mode/1") { binding, input, raw ->
                 val suppressed = f.policy.apply(binding, input, raw)
                 if (mode == "erase-gap") suppressed.copy(reasons = suppressed.reasons.filterNot { it == GAP })
                 else suppressed.copy(status = "complete")
             }
-            KernelService.open(temp.resolve("ledger-$mode"), provider, ProducedLaneFixture.CONFIG, snapshotGate = fence,
+            KernelService.open(temp.resolve("ledger-$mode"), provider, ProducedLane1665Fixture.CONFIG, snapshotGate = fence,
                 planAuthority = f, preparedInputObserver = f.observer, resultPolicy = policy).use { service ->
-                val client = service.registerClient(ProducedLaneFixture.binding(mode))
+                val client = service.registerClient(ProducedLane1665Fixture.binding(mode))
                 val definition = f.definition(client.binding, mode, "suppressed", observedInvocation = "observed-policy-$mode"); fence.install(definition)
                 val plan = service.submitPlan(client.client, definition.request)
                 plan.slots.forEach { slot ->

@@ -14,10 +14,12 @@ import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.io.TempDir
 
 /** Real SQLite/files/threads; the provider and model/source authorities are explicitly synthetic. */
@@ -409,7 +411,7 @@ class KernelIntegrationTest {
         }
     }
 
-    @Test fun reopeningDamagedSchema3RefusesMissingFairnessTableWithoutRepairingOrLosingAcceptedObligations() {
+    @Test fun reopeningDamagedSchema4RefusesMissingFairnessTableWithoutRepairingOrLosingAcceptedObligations() {
         val input = fixtureInput("damaged-fairness")
         val provider = Provider { i, _ -> passed(i) }
         val database = temp.resolve("damaged-fairness-ledger")
@@ -421,7 +423,7 @@ class KernelIntegrationTest {
             review = service.submit(client.client, request("retained", input))
             acceptedEvents = allEvents(service, client)
         }
-        // Test-only offline corruption of schema3, NOT a supported older-schema upgrade.
+        // Test-only offline corruption of schema4, NOT a supported older-schema upgrade.
         DriverManager.getConnection("jdbc:sqlite:${database.resolve("ledger.sqlite").toUri()}?mode=rw").use { c ->
             c.execute("DROP TABLE fair_clients")
             fun retained(connection: Connection) = listOf("metadata", "clients", "instances", "fair_queues", "work", "reviews", "events")
@@ -445,7 +447,7 @@ class KernelIntegrationTest {
         assertEquals(0, provider.calls.get())
     }
 
-    @Test fun concurrentSchema3ReopensKeepSidecarsPrivateAndRetainAcceptedWork() {
+    @Test fun concurrentSchema4ReopensKeepSidecarsPrivateAndRetainAcceptedWork() {
         val provider = Provider { i, _ -> passed(i) }
         val database = temp.resolve("reopen-sidecars-ledger")
         val config = testConfig.copy(workerCount = 0)
@@ -469,7 +471,7 @@ class KernelIntegrationTest {
                         assertEquals(review, reopened.status(client.client, review.reviewId))
                         assertEquals(acceptedEvents, allEvents(reopened, client))
                         reopened.ledger.read { c ->
-                            assertEquals("3", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
+                            assertEquals("4", c.one("SELECT value FROM metadata WHERE key='schema_version'") { it.getString(1) })
                             // This read connection keeps SQLite's sidecars present during inspection.
                             listOf("ledger.sqlite", "ledger.sqlite-wal", "ledger.sqlite-shm").forEach { name ->
                                 val path = database.resolve(name)
@@ -827,6 +829,335 @@ class KernelIntegrationTest {
                 } finally { release.countDown() }
                 assertEquals("incomplete", await(a, client, firstReview.reviewId).state)
                 assertEquals("complete", await(b, client, secondReview.reviewId).state)
+            }
+        }
+    }
+
+    @Test @Timeout(value = 90, unit = TimeUnit.SECONDS)
+    fun expiredBusyWorktreeCannotHeadOfLineBlockFairPeerClientsOrBorrowTheirFinalDelivery() {
+        // Real threads/SQLite, but one-rule scalar provider/source/delivery authorities are synthetic.
+        // An expired live claim keeps ITS slot; it must not block another eligible worktree's slot.
+        // This finite opportunity oracle does not promise progress for the saturated worktree or CPU fairness.
+        class Ticket(val label: String, val input: AnalysisInput) {
+            val release = CountDownLatch(1)
+            val calls = AtomicInteger()
+        }
+        data class Review(val clientIndex: Int, val plannedSequence: Long, val ordinal: Int,
+            val ticket: Ticket, val status: ReviewStatus, var cancelled: Boolean = false)
+        data class ClaimIdentity(val workKey: String, val owner: String, val attempt: Long, val deadline: Long)
+        val tickets = ConcurrentHashMap<String, Ticket>()
+        fun ticket(label: String, tree: String, parent: String? = null): Ticket {
+            val value = Ticket(label, fixtureInput("expired-fair-$label", worktree = tree, parent = parent))
+            assertNull(tickets.putIfAbsent(value.input.snapshot.snapshotId, value))
+            return value
+        }
+        val stalledFirst = ticket("stalled-first", "stalled")
+        val stalledNext = ticket("stalled-next", "stalled", stalledFirst.input.snapshot.snapshotId)
+        val initialShared = ticket("shared-initial", "healthy")
+        val stalledFence = SyntheticFence(stalledNext.input)
+        val healthyFence = SyntheticFence(initialShared.input)
+        val fences = object : SnapshotGate {
+            override fun <T> withCurrentSnapshot(input: AnalysisInput, action: (SnapshotCheck) -> T): T =
+                when (input.snapshot.worktreeId) {
+                    "stalled" -> stalledFence.withCurrentSnapshot(input, action)
+                    "healthy" -> healthyFence.withCurrentSnapshot(input, action)
+                    else -> error("Unexpected synthetic worktree")
+                }
+        }
+        val stalledEntered = LinkedBlockingQueue<CancellationToken>(1)
+        val healthyEntered = LinkedBlockingQueue<Pair<Ticket, CancellationToken>>(16)
+        val active = AtomicInteger()
+        val maximumActive = AtomicInteger()
+        val activeByTree = mapOf("stalled" to AtomicInteger(), "healthy" to AtomicInteger())
+        val maximumByTree = mapOf("stalled" to AtomicInteger(), "healthy" to AtomicInteger())
+        val provider = Provider { effective, cancellation ->
+            val current = tickets.getValue(effective.snapshot.snapshotId)
+            assertEquals(1, current.calls.incrementAndGet(), "A still-live claim must never be replaced")
+            val total = active.incrementAndGet()
+            val treeTotal = activeByTree.getValue(effective.snapshot.worktreeId).incrementAndGet()
+            maximumActive.accumulateAndGet(total, ::maxOf)
+            maximumByTree.getValue(effective.snapshot.worktreeId).accumulateAndGet(treeTotal, ::maxOf)
+            try {
+                assertTrue(total <= 2 && treeTotal <= 1, "Global/per-worktree reservations bound actual provider entries")
+                assertEquals(current.input.snapshot, effective.snapshot)
+                assertEquals(current.input.context, effective.context)
+                assertFalse(cancellation.isCancelled())
+                when (current) {
+                    stalledFirst -> {
+                        assertTrue(stalledEntered.offer(cancellation))
+                        assertTrue(current.release.await(60, TimeUnit.SECONDS), "Bounded stalled-provider release")
+                        assertTrue(cancellation.isCancelled(), "Returning clean bytes cannot erase the elapsed deadline")
+                    }
+                    stalledNext -> assertEquals(0L, stalledFirst.release.count, "Same-worktree work must wait for the live owner")
+                    else -> {
+                        assertTrue(healthyEntered.offer(current to cancellation))
+                        assertTrue(current.release.await(15, TimeUnit.SECONDS), "Bounded peer-provider release: ${current.label}")
+                        assertFalse(cancellation.isCancelled(), "A's cancellation or another worktree's expiry cannot revoke B's work")
+                    }
+                }
+                passed(effective)
+            } finally {
+                activeByTree.getValue(effective.snapshot.worktreeId).decrementAndGet()
+                active.decrementAndGet()
+            }
+        }
+        fun releaseAll() { tickets.values.forEach { it.release.countDown() } }
+        // Timeout/caps are durable policy and remain identical; only workerCount changes between instances.
+        val config = testConfig.copy(workerCount = 0, globalParallelism = 2, perWorktreeParallelism = 1,
+            analysisTimeoutMillis = 5_000)
+        val database = temp.resolve("expired-live-fair-ledger")
+        val actionCalls = List(3) { AtomicInteger() } // healthy A, healthy B, stalled client
+        KernelService.open(database, provider, config, fences).use { control ->
+            val stalled = control.registerClient(binding("stalled", "stalled"))
+            val peers = listOf("a", "b").map { control.registerClient(binding(it, "healthy")) }
+            val firstReview = control.submit(stalled.client, request(stalledFirst.label, stalledFirst.input))
+            val nextReview = control.submit(stalled.client, request(stalledNext.label, stalledNext.input))
+            assertEquals(listOf("queued", "queued"), listOf(firstReview.state, nextReview.state))
+            val reviews = mutableListOf<Review>()
+            val plannedSequences = LongArray(2)
+            var healthyParent = initialShared.input.snapshot.snapshotId
+            fun admit(current: Ticket, recipients: List<Int>): Ticket {
+                recipients.forEach { index ->
+                    val sequence = ++plannedSequences[index]
+                    val ordinal = reviews.size
+                    val status = control.submit(peers[index].client, request(current.label, current.input))
+                    assertEquals(sequence, status.sequence)
+                    assertEquals(peers[index].binding.clientId, status.clientId)
+                    assertEquals(current.input.snapshot.snapshotId, status.sourceSnapshotId)
+                    assertNull(status.result, "Each accepted ticket is new work, never a completed cache hit")
+                    reviews += Review(index, sequence, ordinal, current, status)
+                }
+                return current
+            }
+            fun add(label: String, recipients: List<Int>): Ticket {
+                val current = ticket(label, "healthy", healthyParent)
+                healthyParent = current.input.snapshot.snapshotId
+                return admit(current, recipients)
+            }
+            admit(initialShared, listOf(0, 1))
+            add("cold-initial", listOf(1))
+            repeat(2) { add("hot-initial-$it", listOf(0)) }
+            fun liveClaim(reviewId: String): ClaimIdentity = control.ledger.read { c ->
+                assertNotNull(c.one("""SELECT w.state,w.work_key,w.owner_instance,w.attempt,w.deadline FROM work w
+                    JOIN reviews r ON r.work_key=w.work_key WHERE r.review_id=?""", reviewId) {
+                    assertEquals("running", it.getString(1))
+                    ClaimIdentity(it.getString(2), it.getString(3), it.getLong(4), it.getLong(5))
+                })
+            }
+            KernelService.open(database, provider, config.copy(workerCount = 1), fences).use { stalledWorker ->
+                try {
+                    val stalledToken = assertNotNull(stalledEntered.poll(10, TimeUnit.SECONDS), "The first admitted worktree must own the first claim")
+                    val originalClaim = liveClaim(firstReview.reviewId)
+                    assertEquals(stalledWorker.instanceId, originalClaim.owner)
+                    assertEquals(1L, originalClaim.attempt)
+                    assertTrue(originalClaim.deadline > 0)
+                    // Observe the real monotonic deadline token, not a fixed sleep or a persisted wall-clock/lease guess.
+                    // The worker stays open throughout; its heartbeat may keep renewing lease_until.
+                    val expiryWait = System.nanoTime() + TimeUnit.SECONDS.toNanos(15)
+                    while (!stalledToken.isCancelled()) {
+                        assertTrue(System.nanoTime() < expiryWait, "The ordinary analysis deadline must reach this still-live provider")
+                        Thread.sleep(5)
+                    }
+                    fun assertStalledReservation() {
+                        assertTrue(stalledToken.isCancelled())
+                        assertFalse(stalledWorker.isStopped())
+                        assertEquals(originalClaim, liveClaim(firstReview.reviewId), "No deadline renewal, attempt replacement or slot reclamation")
+                        assertEquals("running", control.status(stalled.client, firstReview.reviewId).state)
+                        assertNull(control.status(stalled.client, firstReview.reviewId).result)
+                        assertEquals("queued", control.status(stalled.client, nextReview.reviewId).state)
+                        assertEquals(0, stalledNext.calls.get())
+                        assertEquals(1L, control.ledger.read { c -> c.count("SELECT COUNT(*) FROM instances WHERE instance_id=? AND closed=0", stalledWorker.instanceId) })
+                    }
+                    assertStalledReservation()
+                    // Only now admit a second worker: no healthy claim spends its timeout waiting for initial expiry.
+                    KernelService.open(database, provider, config.copy(workerCount = 1), fences).use { peerWorker ->
+                        try {
+                            val served = mutableSetOf<Ticket>()
+                            val expectedAges = mutableMapOf(0 to 0L, 1 to 0L)
+                            var dispatches = 1L // The first, still-running stalled claim already spent one opportunity.
+                            fun nextHealthyClaim(): Pair<Ticket, CancellationToken> {
+                                // Model only eligible healthy subscriptions, using planned sequence/admission order and
+                                // previously EXPECTED sponsor ages. Never infer the next winner from production SQL.
+                                val sponsor = assertNotNull(reviews.filter { it.ticket !in served }.minWithOrNull(
+                                    compareBy<Review>({ expectedAges.getValue(it.clientIndex) }, { it.plannedSequence }, { it.ordinal })))
+                                val entered = assertNotNull(healthyEntered.poll(10, TimeUnit.SECONDS), "A saturated older worktree cannot head-of-line block an eligible peer")
+                                assertSame(sponsor.ticket, entered.first, "The least-served eligible client selects its own oldest work")
+                                assertTrue(served.add(entered.first))
+                                expectedAges[sponsor.clientIndex] = ++dispatches
+                                val claim = liveClaim(reviews.first { it.ticket === entered.first }.status.reviewId)
+                                assertEquals(peerWorker.instanceId, claim.owner)
+                                assertEquals(1L, claim.attempt)
+                                assertFalse(entered.second.isCancelled())
+                                assertStalledReservation()
+                                assertEquals(2, active.get())
+                                assertEquals(mapOf("stalled" to 1, "healthy" to 1), activeByTree.mapValues { it.value.get() })
+                                control.ledger.read { c ->
+                                    assertEquals(2L, c.count("SELECT COUNT(*) FROM work WHERE state='running'"))
+                                    assertEquals(dispatches, c.count("SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'"))
+                                    assertEquals(mapOf("stalled" to 1L, "a" to expectedAges.getValue(0), "b" to expectedAges.getValue(1)),
+                                        c.query("SELECT client_id,last_served FROM fair_clients") { it.getString(1) to it.getLong(2) }.toMap(),
+                                        "Coalescing spends only the sponsor's age, not the incidental subscriber's turn")
+                                    assertEquals(mapOf("stalled" to 1L, "a" to dispatches, "b" to dispatches),
+                                        c.query("SELECT f.client_id,q.last_served FROM fair_clients f JOIN fair_queues q ON q.fair_key=f.fair_key") {
+                                            it.getString(1) to it.getLong(2)
+                                        }.toMap())
+                                }
+                                return entered
+                            }
+                            fun releaseAndAwait(current: Ticket) {
+                                current.release.countDown()
+                                reviews.filter { it.ticket === current }.forEach { await(control, peers[it.clientIndex], it.status.reviewId) }
+                            }
+                            var finalTicket: Ticket? = null
+                            repeat(13) { dispatch ->
+                                val (current, token) = nextHealthyClaim()
+                                if (dispatch == 0) {
+                                    assertSame(initialShared, current)
+                                    val own = reviews.single { it.ticket === current && it.clientIndex == 0 }
+                                    val other = reviews.single { it.ticket === current && it.clientIndex == 1 }
+                                    assertCode("review_not_found") { control.cancel(peers[0].client, other.status.reviewId) }
+                                    val cancelled = control.cancel(peers[0].client, own.status.reviewId)
+                                    assertEquals("cancelled", cancelled.state)
+                                    assertEquals(cancelled, control.cancel(peers[0].client, own.status.reviewId))
+                                    own.cancelled = true
+                                    val peer = control.status(peers[1].client, other.status.reviewId)
+                                    assertEquals("running", peer.state)
+                                    assertFalse(peer.cancelled)
+                                    assertFalse(token.isCancelled())
+                                }
+                                if (dispatch < 3) {
+                                    add("hot-$dispatch", listOf(0))
+                                    add("cold-$dispatch", listOf(1))
+                                    add("shared-$dispatch", listOf(0, 1))
+                                }
+                                if (dispatch == 12) {
+                                    // Parked predecessor prevents the final A/B pair racing its own dispatch sponsor.
+                                    finalTicket = add("final-current", listOf(0, 1))
+                                    healthyFence.update(assertNotNull(finalTicket).input)
+                                }
+                                releaseAndAwait(current)
+                            }
+                            val finalCurrent = assertNotNull(finalTicket)
+                            assertSame(finalCurrent, nextHealthyClaim().first)
+                            releaseAndAwait(finalCurrent)
+                            assertEquals(14, served.size)
+                            assertEquals(19, reviews.size)
+                            assertEquals(listOf(10L, 9L), plannedSequences.toList())
+                            assertEquals(15L, dispatches)
+                            assertEquals(15, provider.calls.get())
+                            assertStalledReservation()
+                            val peerEvents = peers.map { allEvents(control, it) }
+                            assertEquals(listOf(21, 18), peerEvents.map { it.size })
+                            peers.indices.forEach { index ->
+                                val events = peerEvents[index]
+                                assertEquals((1L..events.size.toLong()).toList(), events.map { it.sequence })
+                                assertTrue(events.all { it.clientId == peers[index].binding.clientId && it.generation == 1L && it.deliveryRequired })
+                                reviews.filter { it.clientIndex == index }.forEach { review ->
+                                    val status = control.status(peers[index].client, review.status.reviewId)
+                                    assertEquals(if (review.cancelled) "cancelled" else "complete", status.state)
+                                    assertEquals(review.cancelled, status.cancelled)
+                                    assertEquals("complete", assertNotNull(status.result).status)
+                                    assertEquals(if (review.cancelled) listOf("client_cancelled_obligation_retained") else emptyList(), status.reasons)
+                                    val owned = events.filter { it.reviewId == status.reviewId }
+                                    assertEquals(if (review.cancelled) listOf("accepted", "cancelled", "result") else listOf("accepted", "result"), owned.map { it.kind })
+                                    assertEquals(status, ContractJson.decodeFromString<ReviewStatus>(owned.last().payload))
+                                }
+                            }
+                            assertTrue(peerEvents[0].map { it.eventId }.toSet().intersect(peerEvents[1].map { it.eventId }.toSet()).isEmpty())
+                            val foreign = peerEvents[1].last()
+                            val foreignDigest = Digests.sha256("synthetic context item:${foreign.payload}")
+                            assertCode("event_not_found") { control.acknowledge(peers[0].adapter, listOf(foreign.eventId),
+                                ContextReceipt("wrong-client-ack", foreignDigest, "wrong-client-item", Instant.EPOCH.toString())) }
+                            assertCode("event_not_found") { control.observe(peers[0].adapter, listOf(foreign.eventId),
+                                ObservationReceipt("wrong-client-observe", "wrong-client-request", listOf(foreignDigest))) }
+                            assertEquals(peerEvents[0], insertAll(control, peers[0]))
+                            assertEquals(peerEvents[1], insertAll(control, peers[1], observe = false))
+                            val stalledAccepted = insertAll(control, stalled)
+                            assertEquals(listOf("accepted", "accepted"), stalledAccepted.map { it.kind })
+                            fun assertReceipts(acked: List<ReviewEvent>, observed: List<ReviewEvent>) = control.ledger.read { c ->
+                                assertEquals(acked.map { it.eventId to it.clientId }.sortedBy { it.first },
+                                    c.query("SELECT event_id,client_id FROM acknowledgements ORDER BY event_id") { it.getString(1) to it.getString(2) })
+                                assertEquals(observed.map { it.eventId to it.clientId }.sortedBy { it.first },
+                                    c.query("SELECT event_id,client_id FROM observations ORDER BY event_id") { it.getString(1) to it.getString(2) })
+                                assertEquals((acked.size + observed.size).toLong(), c.count("SELECT COUNT(*) FROM receipts"))
+                            }
+                            fun assertFrontier(cut: GateCut, client: ClientRegistration, events: List<ReviewEvent>, current: AnalysisInput) {
+                                assertEquals(client.binding.clientId, cut.clientId)
+                                assertEquals(client.binding.lineageId, cut.lineageId)
+                                assertEquals(client.binding.generation, cut.generation)
+                                assertEquals(current.snapshot.snapshotId, cut.sourceSnapshotId)
+                                assertEquals(events.last().sequence, cut.eventFrontier)
+                                assertEquals(events.map { it.eventId }, cut.requiredEventIds)
+                            }
+                            assertReceipts(stalledAccepted + peerEvents.flatten(), stalledAccepted + peerEvents[0])
+                            val missingB = control.prepareGate(peers[1].client)
+                            assertFrontier(missingB, peers[1], peerEvents[1], finalCurrent.input)
+                            assertFalse(missingB.ready)
+                            assertEquals(peerEvents[1].map { "model_observation_missing:${it.eventId}" }.toSet(), missingB.reasons.toSet(),
+                                "A's observations and B's own ACKs cannot discharge B's independent observation obligations")
+                            assertFalse(control.completeGate(peers[1].client, missingB.cutId) { actionCalls[1].incrementAndGet() }.allowed)
+                            assertEquals(peerEvents[1], insertAll(control, peers[1])) // Exact ACK retries, then B's own observations.
+                            assertReceipts(stalledAccepted + peerEvents.flatten(), stalledAccepted + peerEvents.flatten())
+                            val readyB = control.prepareGate(peers[1].client)
+                            assertFrontier(readyB, peers[1], peerEvents[1], finalCurrent.input)
+                            assertTrue(readyB.ready, readyB.reasons.toString())
+                            // Scalar callbacks run inside DB/source fences: no kernel re-entry, I/O or wait here.
+                            val completedB = control.completeGate(peers[1].client, readyB.cutId) { actionCalls[1].incrementAndGet() }
+                            assertTrue(completedB.allowed && completedB.actionPerformed)
+                            val cancelledA = control.prepareGate(peers[0].client)
+                            assertFrontier(cancelledA, peers[0], peerEvents[0], finalCurrent.input)
+                            assertEquals(listOf("review_cancelled:${reviews.single { it.cancelled }.status.reviewId}"), cancelledA.reasons)
+                            assertFalse(cancelledA.ready)
+                            assertFalse(control.completeGate(peers[0].client, cancelledA.cutId) { actionCalls[0].incrementAndGet() }.allowed)
+                            val pendingStalled = control.prepareGate(stalled.client)
+                            assertFrontier(pendingStalled, stalled, stalledAccepted, stalledNext.input)
+                            assertFalse(pendingStalled.ready)
+                            assertEquals(setOf("review_pending:${firstReview.reviewId}", "review_pending:${nextReview.reviewId}"),
+                                pendingStalled.reasons.filter { it.startsWith("review_pending:") }.toSet())
+                            assertTrue(pendingStalled.reasons.none { it.startsWith("insertion_missing:") || it.startsWith("model_observation_missing:") })
+                            assertFalse(control.completeGate(stalled.client, pendingStalled.cutId) { actionCalls[2].incrementAndGet() }.allowed)
+                            assertEquals(listOf(0, 1, 0), actionCalls.map { it.get() })
+                            assertEquals(mapOf("a" to "open", "b" to "complete", "stalled" to "open"), control.ledger.read { c ->
+                                c.query("SELECT client_id,gate_state FROM clients") { it.getString(1) to it.getString(2) }.toMap()
+                            })
+                            assertStalledReservation()
+                            assertEquals(1, active.get())
+                            assertEquals(peerEvents, peers.map { allEvents(control, it) }, "Delivery/finalization does not extend the finite work frontier")
+                            stalledFirst.release.countDown()
+                            val late = await(control, stalled, firstReview.reviewId)
+                            assertEquals("incomplete", late.state)
+                            assertEquals("incomplete", assertNotNull(late.result).status)
+                            assertTrue("analysis_deadline_exceeded" in late.reasons)
+                            assertEquals("complete", await(control, stalled, nextReview.reviewId).state)
+                            val stalledEvents = insertAll(control, stalled)
+                            assertEquals(4, stalledEvents.size)
+                            listOf(firstReview, nextReview).forEach { review ->
+                                assertEquals(listOf("accepted", "result"), stalledEvents.filter { it.reviewId == review.reviewId }.map { it.kind })
+                            }
+                            assertReceipts(stalledEvents + peerEvents.flatten(), stalledEvents + peerEvents.flatten())
+                            val incompleteStalled = control.prepareGate(stalled.client)
+                            assertFrontier(incompleteStalled, stalled, stalledEvents, stalledNext.input)
+                            assertFalse(incompleteStalled.ready)
+                            assertEquals(listOf("review_incomplete:${firstReview.reviewId}"), incompleteStalled.reasons,
+                                "Neither the eligible peer's final action nor a clean current descendant erases this historical timeout")
+                            assertFalse(control.completeGate(stalled.client, incompleteStalled.cutId) { actionCalls[2].incrementAndGet() }.allowed)
+                            assertEquals(listOf(0, 1, 0), actionCalls.map { it.get() })
+                            assertEquals(16, tickets.size)
+                            assertEquals(16, provider.calls.get())
+                            assertTrue(tickets.values.all { it.calls.get() == 1 })
+                            assertEquals(0, active.get())
+                            assertEquals(2, maximumActive.get())
+                            assertEquals(mapOf("stalled" to 1, "healthy" to 1), maximumByTree.mapValues { it.value.get() })
+                            control.ledger.read { c ->
+                                assertEquals(16L, c.count("SELECT CAST(value AS INTEGER) FROM metadata WHERE key='dispatch_counter'"))
+                                assertEquals(16L, c.count("SELECT COUNT(*) FROM work WHERE state='complete' AND attempt=1"))
+                                assertEquals(0L, c.count("SELECT COUNT(*) FROM work WHERE state<>'complete'"))
+                                assertEquals(21L, c.count("SELECT COUNT(*) FROM reviews"))
+                                assertEquals(43L, c.count("SELECT COUNT(*) FROM events"))
+                            }
+                        } finally { releaseAll() } // Before peerWorker.close(), including every failing assertion path.
+                    }
+                } finally { releaseAll() } // Also before stalledWorker.close() if peer startup/expiry observation fails.
             }
         }
     }

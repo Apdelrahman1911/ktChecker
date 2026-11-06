@@ -9,6 +9,10 @@ object SemanticFactsValidation {
         val problems = mutableListOf<String>()
         if (request.schemaVersion != 1 || request.adapterId != SEMANTIC_ADAPTER_ID ||
             request.compilerVersion != SEMANTIC_COMPILER_VERSION) problems += "semantic_tuple_unavailable"
+        if (request.directIntLiteralArgumentVersion != null &&
+            request.directIntLiteralArgumentVersion != DIRECT_INT_LITERAL_ARGUMENT_VERSION) {
+            problems += "semantic_direct_int_literal_request_version_unsupported"
+        }
         if (listOf(request.snapshotId, request.analysisId, request.toolchainId).any { !Digests.valid(it) }) {
             problems += "semantic_identity_invalid"
         }
@@ -68,7 +72,8 @@ object SemanticFactsValidation {
                  sourceBytes: ((SemanticSource) -> ByteArray)? = null): SemanticFactBundle {
         val frozenRequest = SemanticFactsFreeze.request(request)
         val frozenShards = try {
-            SemanticFactsFreeze.shards(shards, (frozenRequest.sources.size.toLong() * 4).coerceAtMost(200_000).toInt())
+            SemanticFactsFreeze.shards(shards, (frozenRequest.sources.size.toLong() * 4).coerceAtMost(200_000).toInt(),
+                directIntLiteralArgumentsRequested = frozenRequest.directIntLiteralArgumentVersion != null)
         } catch (e: SemanticFactException) {
             return SemanticFactBundle(frozenRequest.digest(), frozenRequest.snapshotId, frozenRequest.analysisId,
                 frozenRequest.target, frozenRequest.compilationId, "failed", compilerExitCode,
@@ -89,7 +94,7 @@ object SemanticFactsValidation {
         else if (compilerExitCode != 0) reasons += "semantic_compilation_failed"
         val digest = request.digest()
         val byPath = request.sources.associateBy { it.path }
-        var invalid = false
+        var invalid = "semantic_direct_int_literal_request_version_unsupported" in requestProblems
         val allSpans = mutableListOf<SemanticSpan>()
         shards.forEach { shard ->
             if (shard.schemaVersion != 1 || shard.adapterId != request.adapterId || shard.requestDigest != digest ||
@@ -99,6 +104,21 @@ object SemanticFactsValidation {
                 invalid = true
                 reasons += "semantic_evidence_binding_invalid"
             }
+            val binaryOriginProblems = JvmBinaryOriginValidation.problems(request.observeJvmBinaryOrigins,
+                shard.jvmBinaryOrigins, shard.symbols)
+            if (binaryOriginProblems.isNotEmpty()) {
+                invalid = true
+                reasons += binaryOriginProblems
+            }
+            val literalProblems = directIntLiteralProblems(request, shard)
+            if (literalProblems.isNotEmpty()) {
+                invalid = true
+                reasons += literalProblems
+            }
+            // Origin survey unknowns do not redefine the original semantic vocabulary's
+            // completeness. Every optional survey row retains its own explicit unknown reason.
+            // Neither do literal UNKNOWN/UNSUPPORTED or absent outcomes: they are never evidence
+            // of complete expression coverage, a clean bound, or a fixed descriptor proof.
             if (shard.unknown.isNotEmpty()) reasons += "semantic_facts_unknown"
             val spans = shard.symbols.mapNotNull { it.source } + shard.calls.map { it.source } +
                 shard.calls.flatMap { call -> call.arguments.mapNotNull { it.source } } +
@@ -188,6 +208,51 @@ object SemanticFactsValidation {
             when { invalid -> "failed"; complete -> "extracted"; !executedSuccessfully -> "unavailable"; else -> "incomplete" },
             compilerExitCode, SemanticFactsFreeze.list(reasons.distinct().sorted()),
             if (invalid) emptyList() else SemanticFactsFreeze.list(shards.sortedBy { it.input.path }), complete)
+    }
+
+    /** Shape/binding validation only. A well-formed DTO never authenticates its FIR producer. */
+    private fun directIntLiteralProblems(request: SemanticFactsRequest, shard: SemanticFactShard): List<String> {
+        val problems = mutableSetOf<String>()
+        shard.calls.forEach { call ->
+            call.arguments.forEach argumentLoop@ { argument ->
+                val literal = argument.directIntLiteral ?: return@argumentLoop
+                if (request.directIntLiteralArgumentVersion != DIRECT_INT_LITERAL_ARGUMENT_VERSION) {
+                    problems += if (request.directIntLiteralArgumentVersion == null)
+                        "semantic_direct_int_literal_not_requested" else "semantic_direct_int_literal_request_version_unsupported"
+                }
+                if (literal.version != DIRECT_INT_LITERAL_ARGUMENT_VERSION) {
+                    problems += "semantic_direct_int_literal_observation_version_unsupported"
+                }
+                val validOutcome = when (literal.state) {
+                    DirectIntLiteralArgumentState.OBSERVED -> literal.value != null && literal.reason == null
+                    DirectIntLiteralArgumentState.UNSUPPORTED -> literal.value == null && literal.reason in setOf(
+                        DirectIntLiteralArgumentReason.NOT_DIRECT_FIR_LITERAL,
+                        DirectIntLiteralArgumentReason.LITERAL_KIND_NOT_INT,
+                        DirectIntLiteralArgumentReason.VALUE_NOT_INT,
+                        DirectIntLiteralArgumentReason.TYPE_NOT_EXACT_INT)
+                    DirectIntLiteralArgumentState.UNKNOWN -> literal.value == null && literal.reason in setOf(
+                        DirectIntLiteralArgumentReason.SOURCE_UNAVAILABLE,
+                        DirectIntLiteralArgumentReason.SOURCE_SYNTHETIC,
+                        DirectIntLiteralArgumentReason.TYPE_UNAVAILABLE)
+                }
+                if (!validOutcome) problems += "semantic_direct_int_literal_outcome_invalid"
+                if (call.kind != "function_call" || call.source.path != shard.input.path ||
+                    call.source.digest != shard.input.digest || call.source.sourceSet != shard.input.sourceSet) {
+                    problems += "semantic_direct_int_literal_binding_invalid"
+                }
+                val source = argument.source
+                val sourceValid = when (literal.reason) {
+                    DirectIntLiteralArgumentReason.SOURCE_UNAVAILABLE -> source == null
+                    DirectIntLiteralArgumentReason.SOURCE_SYNTHETIC -> source != null && (source.synthetic || call.source.synthetic)
+                    else -> source != null && !source.synthetic && !call.source.synthetic &&
+                        source.path == call.source.path && source.digest == call.source.digest &&
+                        source.sourceSet == call.source.sourceSet && source.startByte < source.endByte &&
+                        source.startByte >= call.source.startByte && source.endByte <= call.source.endByte
+                }
+                if (!sourceValid) problems += "semantic_direct_int_literal_source_invalid"
+            }
+        }
+        return problems.sorted()
     }
 
     /** Compare actual FIR module refinement to the supplied graph, without name heuristics. */

@@ -52,6 +52,8 @@ object RealProducedJvmOwnerMain {
             realExpect(Digests.sha256(selected) == args[3], "real_produced_selection_changed")
             val selection = ContractJson.decodeFromString<RealProducedJvmSelection>(strictJsonDocument(selected, "real_produced_selection_json"))
             realExpect(selection.schemaVersion == 1 && selection.fixture == FIXTURE, "real_produced_selection_schema")
+            // No catalog-generation mismatch may reach a real compiler application launch.
+            realExpect(OwnerFullCatalog1665.accepts(Catalog().ids.sorted()), "real_produced_catalog_contract_changed")
             val fixture = RealProducedJvmFixture(selection.case)
             val run = realPath(selection.runRoot); realKey(run, true)
             val root = run.resolve("produced-owner")
@@ -100,7 +102,8 @@ object RealProducedJvmOwnerMain {
                 put("state", "owner_ready"); put("entryToReadyMillis", (System.nanoTime() - entered) / 1_000_000)
                 put("sameSelectedInstallationObject", true); put("compilerRosterCount", installation.compilerClasspath.size)
                 put("ownerInputsDigest", inputs.ownerManifestDigest); put("runtimeInputsDigest", inputs.runtimeDigest)
-                put("executionHomeDigest", home.digest); put("requiredParentRules", 1663); put("qualified", false)
+                put("executionHomeDigest", home.digest); put("requiredParentRules", OwnerFullCatalog1665.RULE_COUNT); put("qualified", false)
+                put("catalogContract", OwnerFullCatalog1665.ID); put("catalogRuleIdsDigest", OwnerFullCatalog1665.RULE_IDS_DIGEST)
             })
             RpcServer(owner).serve(System.`in`, System.out)
             if (owner.retirementVerified) {
@@ -173,8 +176,8 @@ private class RealProducedJvmOwner(
     var retirementVerified = false
         private set
     init {
+        realExpect(OwnerFullCatalog1665.accepts(catalog.ids.sorted()), "real_produced_catalog_contract_changed")
         snapshots.registerWorktree(identity)
-        realExpect(catalog.ids.size == 1663, "real_produced_catalog_size_changed")
     }
 
     override fun call(method: String, params: JsonObject): JsonObject = try {
@@ -185,6 +188,7 @@ private class RealProducedJvmOwner(
                     put("fixture", selection.fixture); put("case", fixture.selection); put("selectionDigest", selectionDigest)
                     put("binding", ContractJson.encodeToJsonElement(registration.binding)); put("generation", generation.evidence())
                     put("requiredParentRules", JsonArray(catalog.ids.sorted().map(::JsonPrimitive)))
+                    put("catalogContract", OwnerFullCatalog1665.ID); put("catalogRuleIdsDigest", OwnerFullCatalog1665.RULE_IDS_DIGEST)
                     put("phaseCount", fixture.phases); put("qualified", false); put("productionWorkbenchActivated", false)
                 }
             }
